@@ -1,5 +1,5 @@
-import SwiftUI
 import ProjectModel
+import SwiftUI
 
 struct WelcomeView: View {
     @Environment(UpdaterModel.self) private var updater
@@ -13,11 +13,13 @@ struct WelcomeView: View {
                 .font(.largeTitle.weight(.semibold))
             Text("Version \(OverlayGenVersion.marketing) (\(buildNumber))")
                 .foregroundStyle(.secondary)
-            Text(updater.canCheckForUpdates
-                 ? "Automatic updates enabled."
-                 : "Automatic updates unavailable in this build.")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
+            Text(
+                updater.canCheckForUpdates
+                    ? "Automatic updates enabled."
+                    : "Automatic updates unavailable in this build."
+            )
+            .font(.footnote)
+            .foregroundStyle(.tertiary)
         }
         .padding(40)
         .frame(minWidth: 420, minHeight: 300)

@@ -1,0 +1,3 @@
+# Public SSH keys allowed to sign commits on this repository (git allowed-signers format).
+# Format: <email> [namespaces="git"] <key-type> <base64-key>
+freedenizen@gmail.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPqJrYnL3fnwpgVLSgC8pOehoYxZH8Y9gXm9DMoD2P0d

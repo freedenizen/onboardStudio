@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 #if canImport(Sparkle)
-import Sparkle
+    import Sparkle
 #endif
 
 /// Wraps Sparkle when it is linked (Xcode app target). Under plain `swift run` Sparkle is not
@@ -12,29 +12,30 @@ final class UpdaterModel {
     private(set) var canCheckForUpdates = false
 
     #if canImport(Sparkle)
-    private let controller: SPUStandardUpdaterController
+        private let controller: SPUStandardUpdaterController
 
-    init() {
-        controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-        canCheckForUpdates = controller.updater.canCheckForUpdates
-        observeCanCheck()
-    }
+        init() {
+            controller = SPUStandardUpdaterController(
+                startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+            canCheckForUpdates = controller.updater.canCheckForUpdates
+            observeCanCheck()
+        }
 
-    private func observeCanCheck() {
-        // Sparkle exposes canCheckForUpdates as KVO-compliant; poll cheaply on the main loop.
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            MainActor.assumeIsolated {
-                self.canCheckForUpdates = self.controller.updater.canCheckForUpdates
+        private func observeCanCheck() {
+            // Sparkle exposes canCheckForUpdates as KVO-compliant; poll cheaply on the main loop.
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+                guard let self else { return }
+                MainActor.assumeIsolated {
+                    self.canCheckForUpdates = self.controller.updater.canCheckForUpdates
+                }
             }
         }
-    }
 
-    func checkForUpdates() {
-        controller.checkForUpdates(nil)
-    }
+        func checkForUpdates() {
+            controller.checkForUpdates(nil)
+        }
     #else
-    init() {}
-    func checkForUpdates() {}
+        init() {}
+        func checkForUpdates() {}
     #endif
 }

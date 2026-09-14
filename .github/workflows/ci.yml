@@ -3,13 +3,40 @@ on:
   push:
     branches: [main]
   pull_request:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
 jobs:
-  test:
+  lint:
+    name: Lint
     runs-on: macos-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+      - name: swift format
+        run: swift format lint --strict --recursive Sources Tests Package.swift
+      - name: SwiftLint
+        run: brew install swiftlint && swiftlint lint --strict --reporter github-actions-logging
+      - name: actionlint
+        run: brew install actionlint && actionlint -ignore SC2012 -ignore SC2086
+      - name: Shell scripts
+        run: brew install shellcheck && shellcheck -S warning Scripts/*.sh .githooks/*
+
+  test:
+    name: Test
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
       - name: Toolchain
         run: swift --version && xcodebuild -version
       - uses: actions/cache@v4
@@ -19,12 +46,63 @@ jobs:
           restore-keys: spm-${{ runner.os }}-
       - name: Build
         run: swift build
-      - name: Test
-        run: swift test
+      - name: Test with coverage
+        run: swift test --enable-code-coverage --parallel
+      - name: Coverage report
+        run: |
+          PROFDATA=$(find .build -name 'default.profdata' | head -1)
+          BIN=$(find .build -name 'OverlayGenPackageTests.xctest' -type d | head -1)/Contents/MacOS/OverlayGenPackageTests
+          xcrun llvm-cov report "$BIN" -instr-profile "$PROFDATA" -ignore-filename-regex='(\.build|Tests)/' | tee coverage.txt
+          xcrun llvm-cov export "$BIN" -instr-profile "$PROFDATA" -format=lcov -ignore-filename-regex='(\.build|Tests)/' > coverage.lcov
+          { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage.txt
+            coverage.lcov
+      - name: CLI smoke
+        run: swift run overlaygen --version
+
+  build-app:
+    name: Build app
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
       - name: Generate Xcode project
         run: brew install xcodegen && xcodegen generate --quiet
       - name: Build app (unsigned)
         run: |
+          set -o pipefail
           xcodebuild -project OverlayGen.xcodeproj -scheme OverlayGen -configuration Debug \
             -destination 'generic/platform=macOS' CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual \
             -derivedDataPath build/DerivedData build | tail -20
+
+  verify-signatures:
+    name: Verify commit signatures
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Verify every new commit is signed by an allowed key
+        run: |
+          git config gpg.ssh.allowedSignersFile .github/allowed_signers
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+            git cat-file -e "${{ github.event.before }}" 2>/dev/null || RANGE="${{ github.sha }}~5..${{ github.sha }}"
+          fi
+          echo "Checking $RANGE"
+          fail=0
+          for c in $(git rev-list "$RANGE"); do
+            status=$(git log -1 --format='%G?' "$c")
+            printf '%s %s %s\n' "$c" "$status" "$(git log -1 --format=%s "$c")"
+            [[ "$status" == "G" ]] || fail=1
+          done
+          [[ $fail -eq 0 ]] || { echo "::error::One or more commits are not signed by a key in .github/allowed_signers"; exit 1; }

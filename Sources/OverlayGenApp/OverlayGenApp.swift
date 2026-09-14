@@ -1,5 +1,5 @@
-import SwiftUI
 import ProjectModel
+import SwiftUI
 
 @main
 struct OverlayGenApp: App {

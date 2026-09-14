@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import Testing
+
 @testable import MediaKit
 
 @Test func fixtureVideoIsReadable() async throws {
