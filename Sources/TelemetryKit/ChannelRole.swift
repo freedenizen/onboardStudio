@@ -62,3 +62,25 @@ public enum ChannelRole: Hashable, Sendable, Codable {
 extension ChannelRole: CustomStringConvertible {
     public var description: String { identifier }
 }
+
+extension ChannelRole {
+    /// Parses the `identifier` form (`speed`, `obd:Coolant`, `aux:Oil temp`). Returns `nil` for
+    /// unknown standard names.
+    public init?(identifier: String) {
+        if identifier.hasPrefix("obd:") {
+            self = .obd(String(identifier.dropFirst(4)))
+            return
+        }
+        if identifier.hasPrefix("aux:") {
+            self = .aux(String(identifier.dropFirst(4)))
+            return
+        }
+        guard let standard = Self.standardRoles.first(where: { $0.identifier == identifier }) else { return nil }
+        self = standard
+    }
+
+    public static let standardRoles: [ChannelRole] = [
+        .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .speed, .heading, .lap, .distance,
+        .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG,
+    ]
+}

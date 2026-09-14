@@ -1,0 +1,80 @@
+import Foundation
+
+/// A path to a media or data file. Relative paths resolve against the project's directory.
+public struct MediaReference: Hashable, Codable, Sendable {
+    public var path: String
+
+    public init(path: String) { self.path = path }
+
+    public func resolved(relativeTo base: URL?) -> URL {
+        if path.hasPrefix("/") || base == nil { return URL(fileURLWithPath: path) }
+        return URL(fileURLWithPath: path, relativeTo: base).standardizedFileURL
+    }
+}
+
+public struct VideoInputSettings: Hashable, Codable, Sendable {
+    public var trim: TrimRange
+    public var includeAudio: Bool
+
+    public init(trim: TrimRange = .none, includeAudio: Bool = true) {
+        self.trim = trim
+        self.includeAudio = includeAudio
+    }
+}
+
+public struct DataInputSettings: Hashable, Codable, Sendable {
+    /// Importer id to force (e.g. `racechrono-csv`); `nil` auto-detects.
+    public var importerID: String?
+    /// Column name → channel role identifier (e.g. `"Coolant": "obd:Coolant"`, `"KPH": "speed"`).
+    public var roleOverrides: [String: String]
+    public var deriveSpeedFromPosition: Bool
+    public var deriveHeadingFromPosition: Bool
+
+    public init(
+        importerID: String? = nil,
+        roleOverrides: [String: String] = [:],
+        deriveSpeedFromPosition: Bool = true,
+        deriveHeadingFromPosition: Bool = true
+    ) {
+        self.importerID = importerID
+        self.roleOverrides = roleOverrides
+        self.deriveSpeedFromPosition = deriveSpeedFromPosition
+        self.deriveHeadingFromPosition = deriveHeadingFromPosition
+    }
+}
+
+public enum InputKind: Hashable, Codable, Sendable {
+    case video(VideoInputSettings)
+    case audio
+    case image
+    case data(DataInputSettings)
+
+    public var isVideo: Bool {
+        if case .video = self { return true }
+        return false
+    }
+
+    public var isData: Bool {
+        if case .data = self { return true }
+        return false
+    }
+}
+
+/// A source file (video, audio, image or telemetry) with its own sync settings.
+public struct Input: Identifiable, Hashable, Codable, Sendable {
+    public var id: InputID
+    public var label: String
+    public var source: MediaReference
+    public var kind: InputKind
+    public var sync: SyncSettings
+
+    public init(
+        id: InputID = InputID(), label: String, source: MediaReference, kind: InputKind, sync: SyncSettings = .identity
+    ) {
+        self.id = id
+        self.label = label
+        self.source = source
+        self.kind = kind
+        self.sync = sync
+    }
+}

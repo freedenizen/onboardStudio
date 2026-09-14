@@ -1,7 +1,7 @@
 import CoreGraphics
 
 /// A rectangle in unit coordinates (0…1) of the output frame, origin at the top-left.
-public struct UnitRect: Codable, Sendable, Equatable {
+public struct UnitRect: Hashable, Codable, Sendable {
     public var x: Double
     public var y: Double
     public var width: Double

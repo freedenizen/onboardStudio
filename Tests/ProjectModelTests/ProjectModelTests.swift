@@ -4,7 +4,7 @@ import Testing
 @testable import ProjectModel
 
 @Test func schemaVersionIsPositive() {
-    #expect(ProjectModelInfo.schemaVersion >= 1)
+    #expect(Project.currentSchemaVersion >= 1)
 }
 
 @Test func marketingVersionLooksSemantic() {
