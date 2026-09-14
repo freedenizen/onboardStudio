@@ -7,6 +7,12 @@ public struct ExportProgress: Sendable, Equatable {
     public let fraction: Double
     public let framesWritten: Int
     public let currentTime: Double
+
+    public init(fraction: Double, framesWritten: Int, currentTime: Double) {
+        self.fraction = fraction
+        self.framesWritten = framesWritten
+        self.currentTime = currentTime
+    }
 }
 
 public enum ExportError: Error, CustomStringConvertible {

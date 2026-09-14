@@ -8,6 +8,7 @@ excluded:
   - Tests/Fixtures
 disabled_rules:
   - trailing_comma            # swift-format owns trailing commas
+  - closure_parameter_position # swift-format owns closure layout
   - opening_brace             # swift-format owns brace placement
   - todo
 opt_in_rules:

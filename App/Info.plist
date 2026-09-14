@@ -6,6 +6,23 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>OverlayGen</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>OverlayGen Project</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.freedenizen.overlaygen.project</string>
+			</array>
+			<key>LSTypeIsPackage</key>
+			<true/>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -32,5 +49,26 @@
 	<string>https://github.com/freedenizen/overlayGen/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>F/7BM7lVhYVQxvRAW7G4ugBaJZ4UkOyjUf0YTCVLLcc=</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+				<string>public.composite-content</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>OverlayGen Project</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.freedenizen.overlaygen.project</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>overlayproj</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

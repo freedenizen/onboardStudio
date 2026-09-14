@@ -40,6 +40,18 @@ targets:
         SUFeedURL: https://github.com/freedenizen/overlayGen/releases/latest/download/appcast.xml
         SUPublicEDKey: F/7BM7lVhYVQxvRAW7G4ugBaJZ4UkOyjUf0YTCVLLcc=
         SUEnableInstallerLauncherService: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: OverlayGen Project
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSTypeIsPackage: true
+            LSItemContentTypes: [com.freedenizen.overlaygen.project]
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.freedenizen.overlaygen.project
+            UTTypeDescription: OverlayGen Project
+            UTTypeConformsTo: [com.apple.package, public.composite-content]
+            UTTypeTagSpecification:
+              public.filename-extension: [overlayproj]
     entitlements:
       path: App/OverlayGen.entitlements
       properties:
