@@ -11,17 +11,6 @@ struct OverlayGen: ParsableCommand {
     )
 }
 
-struct Probe: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Inspect a data or media file.")
-
-    @Argument(help: "Path to a telemetry or media file.")
-    var path: String
-
-    func run() throws {
-        print("probe: not implemented yet (milestone M1). Path: \(path)")
-    }
-}
-
 struct Render: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Render a project or video headlessly.")
 
