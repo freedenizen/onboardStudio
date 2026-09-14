@@ -22,21 +22,58 @@ public enum ProjectCompiler {
         return try await load(project, location: location)
     }
 
-    public static func load(_ project: Project, location: ProjectLocation) async throws -> LoadedProject {
+    /// Imports data and probes media. Pass `previous` to reuse sessions/media info for inputs whose
+    /// source and settings have not changed (the app calls this on every edit).
+    public static func load(_ project: Project, location: ProjectLocation, reusing previous: LoadedProject? = nil)
+        async throws
+        -> LoadedProject
+    {
         var sessions: [InputID: TelemetrySession] = [:]
         var mediaInfo: [InputID: MediaInfo] = [:]
         for input in project.inputs {
             let url = location.resolve(input.source)
+            let unchanged =
+                previous?.project.input(input.id).map { $0.source == input.source && $0.kind == input.kind } ?? false
             switch input.kind {
             case .data(let settings):
-                sessions[input.id] = try importData(at: url, settings: settings)
+                if unchanged, let cached = previous?.sessions[input.id] {
+                    sessions[input.id] = cached
+                } else {
+                    sessions[input.id] = try importData(at: url, settings: settings)
+                }
             case .video, .audio:
-                mediaInfo[input.id] = try await MediaProbe.probe(url)
+                if unchanged, let cached = previous?.mediaInfo[input.id] {
+                    mediaInfo[input.id] = cached
+                } else {
+                    mediaInfo[input.id] = try await MediaProbe.probe(url)
+                }
             case .image:
                 break
             }
         }
         return LoadedProject(project: project, location: location, sessions: sessions, mediaInfo: mediaInfo)
+    }
+
+    /// Whether `compile` must rebuild the media composition (inputs or timing changed) rather than
+    /// just swapping overlays and layer frames.
+    public static func needsRecompile(from old: Project, to new: Project) -> Bool {
+        old.inputs != new.inputs || old.settings != new.settings
+    }
+
+    /// Rebuilds only the plan (overlays + layer frames) on an existing compiled composition.
+    public static func replan(_ compiled: CompiledComposition, for loaded: LoadedProject) -> CompiledComposition {
+        let project = loaded.project
+        let videoInputIDs = project.inputs.filter(\.kind.isVideo).map(\.id)
+        var trackIDs: [InputID: Int32] = [:]
+        for (index, inputID) in videoInputIDs.enumerated() where index < compiled.trackIDs.count {
+            trackIDs[inputID] = compiled.trackIDs[index]
+        }
+        let overlays = RenderPlanner.overlays(for: project, sessions: loaded.sessions, cache: RenderCache())
+        let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs)
+        let plan = RenderPlan(
+            outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
+            frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays)
+        return compiled.replacingPlan(plan)
     }
 
     static func importData(at url: URL, settings: DataInputSettings) throws -> TelemetrySession {
@@ -77,8 +114,8 @@ public enum ProjectCompiler {
             duration: project.settings.duration)
         // Replace the builder's one-layer-per-input default with the project's video objects.
         var trackIDs: [InputID: Int32] = [:]
-        for (index, inputID) in specInputIDs.enumerated() where index < compiled.plan.videoLayers.count {
-            trackIDs[inputID] = compiled.plan.videoLayers[index].trackID
+        for (index, inputID) in specInputIDs.enumerated() where index < compiled.trackIDs.count {
+            trackIDs[inputID] = compiled.trackIDs[index]
         }
         let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs)
         compiled = compiled.replacingPlan(videoLayers: layers)

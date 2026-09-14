@@ -8,7 +8,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.2.0"
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
@@ -40,6 +40,18 @@ targets:
         SUFeedURL: https://github.com/freedenizen/overlayGen/releases/latest/download/appcast.xml
         SUPublicEDKey: F/7BM7lVhYVQxvRAW7G4ugBaJZ4UkOyjUf0YTCVLLcc=
         SUEnableInstallerLauncherService: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: OverlayGen Project
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSTypeIsPackage: true
+            LSItemContentTypes: [com.freedenizen.overlaygen.project]
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.freedenizen.overlaygen.project
+            UTTypeDescription: OverlayGen Project
+            UTTypeConformsTo: [com.apple.package, public.composite-content]
+            UTTypeTagSpecification:
+              public.filename-extension: [overlayproj]
     entitlements:
       path: App/OverlayGen.entitlements
       properties:

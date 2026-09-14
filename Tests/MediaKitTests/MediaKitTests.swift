@@ -249,3 +249,70 @@ struct ProjectCompilerTests {
         }
     }
 }
+
+@Suite("Preview/export parity", .serialized)
+struct ParityTests {
+    /// The preview (AVPlayer / AVAssetImageGenerator on the composition) and the export must show
+    /// the same pixels for the same time. Compares a generator frame against an exported frame.
+    @Test func previewFrameMatchesExportedFrame() async throws {
+        let output = MediaFixtures.temporaryOutput("parity")
+        defer { try? FileManager.default.removeItem(at: output) }
+        let loaded = try await ProjectCompiler.load(try ProjectCompilerTests.sliceURL)
+        let compiled = try await ProjectCompiler.compile(loaded)
+
+        let generator = AVAssetImageGenerator(asset: compiled.composition)
+        generator.videoComposition = compiled.videoComposition
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .zero
+        let previewImage = try await generator.image(at: CMTime(seconds: 1.0, preferredTimescale: 600)).image
+        let preview = try PixelBuffers.makeBuffer(width: previewImage.width, height: previewImage.height)
+        try PixelBuffers.draw(into: preview) { context, size in
+            context.translateBy(x: 0, y: size.height)
+            context.scaleBy(x: 1, y: -1)
+            context.draw(previewImage, in: CGRect(origin: .zero, size: size))
+        }
+
+        for try await _ in Exporter.export(compiled, settings: loaded.project.export, range: 0...1.5, to: output) {}
+        let exported = try await MediaFixtures.frame(of: output, at: 1.0)
+        #expect(CVPixelBufferGetWidth(preview) == CVPixelBufferGetWidth(exported))
+
+        // Compare on a grid. H.264 at 2 Mbit/s smears the pattern's noise blocks, so use the mean
+        // absolute error plus a cap on gross outliers rather than a strict per-pixel bound.
+        var totalError = 0
+        var gross = 0
+        var samples = 0
+        for y in stride(from: 4, to: 356, by: 8) {
+            for x in stride(from: 4, to: 636, by: 8) {
+                let a = PixelBuffers.pixel(in: preview, x: x, y: y)
+                let b = PixelBuffers.pixel(in: exported, x: x, y: y)
+                let error = abs(Int(a.r) - Int(b.r)) + abs(Int(a.g) - Int(b.g)) + abs(Int(a.b) - Int(b.b))
+                totalError += error
+                if error > 300 { gross += 1 }
+                samples += 1
+            }
+        }
+        let meanError = Double(totalError) / Double(samples * 3)
+        let grossFraction = Double(gross) / Double(samples)
+        print("parity: mean abs error \(meanError), gross outliers \(grossFraction * 100)%")
+        #expect(meanError < 12, "mean channel error \(meanError)")
+        #expect(grossFraction < 0.01, "\(gross)/\(samples) points differ grossly")
+    }
+
+    @Test func replanSwapsOverlaysWithoutRebuildingMedia() async throws {
+        let loaded = try await ProjectCompiler.load(try ProjectCompilerTests.sliceURL)
+        let compiled = try await ProjectCompiler.compile(loaded)
+        var project = loaded.project
+        project.displayObjects.removeAll { $0.kind.needsData }
+        let edited = ProjectCompiler.LoadedProject(
+            project: project, location: loaded.location, sessions: loaded.sessions, mediaInfo: loaded.mediaInfo)
+        #expect(!ProjectCompiler.needsRecompile(from: loaded.project, to: project))
+        let replanned = ProjectCompiler.replan(compiled, for: edited)
+        #expect(replanned.composition === compiled.composition)
+        #expect(replanned.plan.overlays.isEmpty)
+        #expect(replanned.plan.videoLayers == compiled.plan.videoLayers)
+        #expect(replanned.videoComposition !== compiled.videoComposition)
+        var moved = loaded.project
+        moved.inputs[0].sync.offsetInProject = 1
+        #expect(ProjectCompiler.needsRecompile(from: loaded.project, to: moved))
+    }
+}

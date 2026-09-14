@@ -30,17 +30,30 @@ public struct CompiledComposition {
     public let plan: RenderPlan
     /// Project duration in seconds.
     public let duration: Double
+    /// Composition track ID per video input, in the order the inputs were given.
+    public let trackIDs: [Int32]
 
-    /// Returns a copy whose plan uses `videoLayers` (same overlays), with the instruction rebuilt.
+    /// Returns a copy whose plan uses `videoLayers` (same overlays).
     public func replacingPlan(videoLayers: [VideoLayer]) -> CompiledComposition {
-        let newPlan = RenderPlan(
-            outputWidth: plan.outputWidth, outputHeight: plan.outputHeight, frameRate: plan.frameRate,
-            videoLayers: videoLayers, overlays: plan.overlays)
-        videoComposition.instructions = [
+        replacingPlan(
+            RenderPlan(
+                outputWidth: plan.outputWidth, outputHeight: plan.outputHeight, frameRate: plan.frameRate,
+                videoLayers: videoLayers, overlays: plan.overlays))
+    }
+
+    /// Returns a copy with a new plan (layers and overlays) and a freshly built video composition,
+    /// leaving the media composition untouched. This is how live edits reach the preview.
+    public func replacingPlan(_ newPlan: RenderPlan) -> CompiledComposition {
+        let newVideoComposition = AVMutableVideoComposition()
+        newVideoComposition.customVideoCompositorClass = OverlayCompositor.self
+        newVideoComposition.renderSize = newPlan.outputSize
+        newVideoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(newPlan.frameRate.rounded()))
+        newVideoComposition.instructions = [
             CompositionBuilder.instruction(for: newPlan, duration: duration, timescale: 600)
         ]
         return CompiledComposition(
-            composition: composition, videoComposition: videoComposition, plan: newPlan, duration: duration)
+            composition: composition, videoComposition: newVideoComposition, plan: newPlan, duration: duration,
+            trackIDs: trackIDs)
     }
 }
 
@@ -125,7 +138,8 @@ public enum CompositionBuilder {
         videoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(frameRate.rounded()))
         videoComposition.instructions = [Self.instruction(for: plan, duration: duration, timescale: timescale)]
         return CompiledComposition(
-            composition: composition, videoComposition: videoComposition, plan: plan, duration: duration)
+            composition: composition, videoComposition: videoComposition, plan: plan, duration: duration,
+            trackIDs: layers.map(\.trackID))
     }
 
     static func instruction(for plan: RenderPlan, duration: Double, timescale: CMTimeScale) -> OverlayInstruction {
