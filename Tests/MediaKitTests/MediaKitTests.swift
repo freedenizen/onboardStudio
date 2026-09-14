@@ -192,3 +192,60 @@ struct ExporterTests {
         #expect(text.hasPrefix("h264,320,180,"), "ffprobe reported \(text)")
     }
 }
+
+@Suite("ProjectCompiler", .serialized)
+struct ProjectCompilerTests {
+    static var sliceURL: URL {
+        get throws {
+            try #require(Bundle.module.url(forResource: "Fixtures", withExtension: nil)).appending(
+                path: "slice.overlayproj")
+        }
+    }
+
+    @Test func loadsMediaAndData() async throws {
+        let loaded = try await ProjectCompiler.load(try Self.sliceURL)
+        #expect(loaded.project.inputs.count == 2)
+        #expect(loaded.sessions.count == 1)
+        #expect(loaded.mediaInfo.count == 1)
+        let session = try #require(loaded.sessions.values.first)
+        #expect(session.laps.count == 3)
+        #expect(session[.speed] != nil)
+    }
+
+    @Test func compilesVideoLayerFromDisplayObjectFrame() async throws {
+        let loaded = try await ProjectCompiler.load(try Self.sliceURL)
+        let compiled = try await ProjectCompiler.compile(loaded)
+        #expect(compiled.plan.videoLayers.count == 1)
+        #expect(compiled.plan.videoLayers[0].frame == UnitRect(x: 0, y: 0, width: 0.5, height: 1))
+        #expect(compiled.plan.overlays.count == 5)
+        #expect(abs(compiled.duration - 3) < 0.05)
+    }
+
+    @Test func exportsTheSliceWithOverlays() async throws {
+        let output = MediaFixtures.temporaryOutput("slice")
+        defer { try? FileManager.default.removeItem(at: output) }
+        let loaded = try await ProjectCompiler.load(try Self.sliceURL)
+        let compiled = try await ProjectCompiler.compile(loaded)
+        for try await _ in Exporter.export(compiled, settings: loaded.project.export, range: 0...1.5, to: output) {}
+        let info = try await MediaProbe.probe(output)
+        #expect(info.width == 640 && info.height == 360)
+        let frame = try await MediaFixtures.frame(of: output, at: 1.0)
+        // Left half: the 16:9 clip letterboxed into a 320x360 area (rows 90…270). Right half: objects on black.
+        let video = PixelBuffers.pixel(in: frame, x: 100, y: 180)
+        #expect(Int(video.r) + Int(video.g) + Int(video.b) > 150, "expected test pattern on the left, got \(video)")
+        // Speedometer face centre sits around (0.66, 0.30) of the frame; its hub is white.
+        let hub = PixelBuffers.pixel(in: frame, x: Int(0.66 * 640), y: Int(0.30 * 360))
+        #expect(hub.r > 180 && hub.g > 180 && hub.b > 180, "expected the gauge hub, got \(hub)")
+        // Empty area between objects should be black.
+        let empty = PixelBuffers.pixel(in: frame, x: Int(0.99 * 640), y: Int(0.99 * 360))
+        #expect(empty.r < 20 && empty.g < 20 && empty.b < 20)
+    }
+
+    @Test func missingMediaFails() async throws {
+        var project = try ProjectLocation(try Self.sliceURL).load()
+        project.inputs[0].source = MediaReference(path: "../does-not-exist.mp4")
+        await #expect(throws: (any Error).self) {
+            _ = try await ProjectCompiler.load(project, location: ProjectLocation(try Self.sliceURL))
+        }
+    }
+}

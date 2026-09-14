@@ -54,7 +54,7 @@ before tagging a release.
 |---|---|---|
 | M1 telemetry | `probe` on your own logs | Every channel you expect is listed with sensible min/max/Hz; laps match the logger app |
 | M2 media | `render --range 0:10` on your own clip | Plays in QuickTime, timestamp visible, audio in sync, size/fps as requested |
-| M3 objects | `render --project x.overlayproj` (CLI) | Gauges move with the data, track map dot follows the car |
+| M3 objects | `render --project Tests/Fixtures/slice.overlayproj --out slice.mp4`, then your own project (`docs/project-format.md`) | Gauges move with the data, track map dot follows the car, lap timer resets at the line; golden images in `Tests/Fixtures/Goldens` show what each object should look like |
 | M4 app | `docs/qa-m4.md` | Preview frame == exported frame at the same time |
 | M5+ | milestone QA script + `swift test` | Listed in each PR |
 

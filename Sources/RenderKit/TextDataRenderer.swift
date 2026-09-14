@@ -1,0 +1,57 @@
+import CoreGraphics
+import Foundation
+import ProjectModel
+import TelemetryKit
+
+/// A labelled numeric readout of one channel, e.g. `SPEED  123 mph`.
+public struct TextDataRenderer: OverlayDrawing {
+    public let context: ObjectContext
+    public let params: TextDataParams
+
+    public init(context: ObjectContext, params: TextDataParams) {
+        self.context = context
+        self.params = params
+    }
+
+    public func draw(in cg: CGContext, size: CGSize, time: Double) {
+        let rect = context.rect(in: size)
+        guard rect.width > 4, rect.height > 4 else { return }
+        cg.setAlpha(context.opacity)
+        if params.backgroundColor.alpha > 0 {
+            cg.fillRoundedRect(rect, radius: rect.height * 0.15, color: params.backgroundColor.cgColor)
+        }
+        let value = ChannelValue.display(params.channel, in: context.sample(at: time), speedUnit: params.speedUnit)
+        let unit = ChannelValue.role(params.channel) == .speed ? params.speedUnit.rawValue : params.unitLabel
+        let valueText = value.map { ValueFormatting.format($0, decimals: params.decimals) } ?? "--"
+        let padding = rect.height * 0.12
+        let labelStyle = TextDrawing.Style(pointSize: rect.height * 0.3, color: params.textColor)
+        let valueStyle = TextDrawing.Style.mono(rect.height * 0.5, color: params.textColor)
+        let unitStyle = TextDrawing.Style(pointSize: rect.height * 0.25, color: params.textColor, weightBold: false)
+
+        let valueSize = TextDrawing.size(of: valueText, style: valueStyle)
+        let unitSize = unit.isEmpty ? .zero : TextDrawing.size(of: unit, style: unitStyle)
+        let gap = unit.isEmpty ? 0 : rect.height * 0.08
+        let groupWidth = valueSize.width + gap + unitSize.width
+        let valueX: Double =
+            switch params.alignment {
+            case .leading:
+                rect.minX + padding
+                    + (params.label.isEmpty ? 0 : TextDrawing.size(of: params.label, style: labelStyle).width + padding)
+            case .center: rect.midX - groupWidth / 2
+            case .trailing: rect.maxX - padding - groupWidth
+            }
+        if !params.label.isEmpty {
+            TextDrawing.draw(
+                params.label, at: CGPoint(x: rect.minX + padding, y: rect.minY + padding), style: labelStyle, in: cg)
+        }
+        let valueY = rect.midY - valueSize.height / 2
+        TextDrawing.draw(valueText, at: CGPoint(x: valueX, y: valueY), style: valueStyle, in: cg)
+        if !unit.isEmpty {
+            TextDrawing.draw(
+                unit,
+                at: CGPoint(
+                    x: valueX + valueSize.width + gap,
+                    y: valueY + valueSize.height - unitSize.height - rect.height * 0.04), style: unitStyle, in: cg)
+        }
+    }
+}

@@ -12,8 +12,11 @@ struct Render: AsyncParsableCommand {
             app uses for preview and export. Useful for verifying the pipeline and for sync checks.
             """)
 
-    @Option(name: .long, help: "Input video file (MP4/MOV).")
-    var video: String
+    @Option(name: .long, help: "Input video file (MP4/MOV). Mutually exclusive with --project.")
+    var video: String?
+
+    @Option(name: .long, help: "An .overlayproj package or project.json to render with all its display objects.")
+    var project: String?
 
     @Option(name: .long, help: "Output .mp4 path.")
     var out: String
@@ -55,25 +58,41 @@ struct Render: AsyncParsableCommand {
     var json = false
 
     func run() async throws {
-        let inputURL = URL(fileURLWithPath: video)
         let outputURL = URL(fileURLWithPath: out)
-        let info = try await MediaProbe.probe(inputURL)
-        guard info.hasVideo else { throw ValidationError("\(video) has no video track.") }
-
-        let settings = try resolveSettings(info: info)
-
         let exportRange = try range.map(Self.parseRange)
-        let spec = VideoInputSpec(
-            url: inputURL, sync: SyncSettings(startPositionInInput: startPosition, playSpeed: speed),
-            includeAudio: !noAudio)
-        let overlays: [any OverlayDrawing] = noTimestamp ? [] : [TimestampOverlay(label: inputURL.lastPathComponent)]
-        let compiled = try await CompositionBuilder.build(
-            videos: [spec], overlays: overlays, outputWidth: settings.width, outputHeight: settings.height,
-            frameRate: settings.frameRate)
+        let compiled: CompiledComposition
+        let settings: ExportSettings
+        if let project {
+            guard video == nil else { throw ValidationError("Use either --video or --project, not both.") }
+            let loaded = try await ProjectCompiler.load(URL(fileURLWithPath: project))
+            compiled = try await ProjectCompiler.compile(loaded)
+            settings = resolveProjectSettings(loaded.project)
+            if !json {
+                let objects = loaded.project.displayObjects.map(\.kind.typeName).joined(separator: ", ")
+                let counts = "\(loaded.project.inputs.count) inputs, \(loaded.sessions.count) data sessions"
+                print("Project:  \(counts); objects: \(objects)")
+            }
+        } else {
+            guard let video else { throw ValidationError("Provide --video or --project.") }
+            let inputURL = URL(fileURLWithPath: video)
+            let info = try await MediaProbe.probe(inputURL)
+            guard info.hasVideo else { throw ValidationError("\(video) has no video track.") }
+            settings = try resolveSettings(info: info)
+            let spec = VideoInputSpec(
+                url: inputURL, sync: SyncSettings(startPositionInInput: startPosition, playSpeed: speed),
+                includeAudio: !noAudio)
+            let overlays: [any OverlayDrawing] =
+                noTimestamp ? [] : [TimestampOverlay(label: inputURL.lastPathComponent)]
+            compiled = try await CompositionBuilder.build(
+                videos: [spec], overlays: overlays, outputWidth: settings.width, outputHeight: settings.height,
+                frameRate: settings.frameRate)
+            if !json {
+                let inputSize = "\(info.width)x\(info.height) @ \(fmt(info.nominalFrameRate)) fps"
+                print("Input:    \(inputURL.lastPathComponent)  \(inputSize), \(fmt(info.duration)) s")
+            }
+        }
 
         if !json {
-            let inputSize = "\(info.width)x\(info.height) @ \(fmt(info.nominalFrameRate)) fps"
-            print("Input:    \(inputURL.lastPathComponent)  \(inputSize), \(fmt(info.duration)) s")
             let outputSize = "\(settings.width)x\(settings.height) @ \(fmt(settings.frameRate)) fps"
             let encoding = "\(settings.codec.rawValue) \(settings.videoBitrate / 1000) kbit/s"
             print("Output:   \(outputURL.lastPathComponent)  \(outputSize), \(encoding)")
@@ -100,6 +119,20 @@ struct Render: AsyncParsableCommand {
         let elapsed = Date().timeIntervalSince(started)
         let fps = elapsed > 0 ? Double(frames) / elapsed : 0
         if !json { print("Done: \(frames) frames in \(fmt(elapsed)) s (\(fmt(fps)) fps) → \(out)") }
+    }
+
+    /// Project export settings with CLI overrides applied.
+    private func resolveProjectSettings(_ project: Project) -> ExportSettings {
+        var settings = project.export
+        settings.width = width ?? project.settings.outputWidth
+        settings.height = height ?? project.settings.outputHeight
+        settings.frameRate = fps ?? project.settings.frameRate
+        if let codec { settings.codec = codec }
+        if let bitrate { settings.videoBitrate = bitrate * 1000 }
+        if noAudio { settings.audioBitrate = nil }
+        settings.width -= settings.width % 2
+        settings.height -= settings.height % 2
+        return settings
     }
 
     /// Combines the preset, explicit overrides and the input's own properties into export settings.

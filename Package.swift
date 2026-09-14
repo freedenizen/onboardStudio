@@ -29,7 +29,11 @@ let package = Package(
         .target(name: "Importers", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .target(name: "GPMFKit", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .target(name: "RenderKit", dependencies: ["ProjectModel", "TelemetryKit"], swiftSettings: strict),
-        .target(name: "MediaKit", dependencies: ["ProjectModel", "TelemetryKit", "RenderKit"], swiftSettings: strict),
+        .target(
+            name: "MediaKit",
+            dependencies: ["ProjectModel", "TelemetryKit", "RenderKit", "Importers"],
+            swiftSettings: strict
+        ),
         .target(name: "Scripting", dependencies: ["RenderKit", "TelemetryKit"], swiftSettings: strict),
 
         // MARK: Executables

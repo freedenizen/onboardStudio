@@ -1,5 +1,5 @@
 /// Output video encoding settings.
-public struct ExportSettings: Codable, Sendable, Equatable {
+public struct ExportSettings: Hashable, Codable, Sendable {
     public enum VideoCodec: String, Codable, Sendable, CaseIterable {
         case h264
         case hevc

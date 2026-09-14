@@ -5,7 +5,7 @@ lap timers — into finished videos with data-driven overlays: gauges, track map
 lap timers, graphs, and more. A reimplementation of the classic RaceRender 3 workflow using
 Swift 6, SwiftUI, and AVFoundation.
 
-**Status:** early development (milestone M2: media pipeline). `overlaygen probe` reads RaceRender CSV, RaceChrono Pro CSV and GPX files (`docs/formats.md`); `overlaygen render` re-encodes video through the AVFoundation compositor. See `docs/testing.md` for how to verify each milestone. See `docs/architecture.md` for the
+**Status:** early development (milestone M3: project file and first display objects; no GUI yet). `overlaygen probe` reads RaceRender CSV, RaceChrono Pro CSV and GPX files (`docs/formats.md`); `overlaygen render --project` renders a project with speedometer, track map, g-force, lap timer and text readouts (`docs/project-format.md`). See `docs/testing.md` for how to verify each milestone. See `docs/architecture.md` for the
 design and roadmap.
 
 ## Requirements

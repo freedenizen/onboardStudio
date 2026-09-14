@@ -1,0 +1,78 @@
+{
+  "schemaVersion" : 1,
+  "settings" : { "outputWidth" : 640, "outputHeight" : 360, "frameRate" : 30, "duration" : null },
+  "export" : {
+    "codec" : "h264", "width" : 640, "height" : 360, "frameRate" : 30,
+    "videoBitrate" : 2000000, "audioBitrate" : 96000, "audioSampleRate" : 48000, "audioChannels" : 2
+  },
+  "inputs" : [
+    {
+      "id" : "11111111-1111-1111-1111-111111111111",
+      "label" : "Camera",
+      "source" : { "path" : "../test-3s.mp4" },
+      "kind" : { "video" : { "_0" : { "trim" : { "start" : null, "end" : null }, "includeAudio" : true } } },
+      "sync" : { "startPositionInInput" : 0, "offsetInProject" : 0, "playSpeed" : 1 }
+    },
+    {
+      "id" : "22222222-2222-2222-2222-222222222222",
+      "label" : "Data",
+      "source" : { "path" : "../racerender-basic.csv" },
+      "kind" : { "data" : { "_0" : { "importerID" : null, "roleOverrides" : {}, "deriveSpeedFromPosition" : true, "deriveHeadingFromPosition" : true } } },
+      "sync" : { "startPositionInInput" : 1.0, "offsetInProject" : 0, "playSpeed" : 1 }
+    }
+  ],
+  "displayObjects" : [
+    {
+      "id" : "aaaaaaaa-0000-0000-0000-000000000001",
+      "label" : "Camera",
+      "inputID" : "11111111-1111-1111-1111-111111111111",
+      "frame" : { "x" : 0, "y" : 0, "width" : 0.5, "height" : 1 },
+      "opacity" : 1, "isVisible" : true,
+      "kind" : { "video" : { "_0" : {} } }
+    },
+    {
+      "id" : "aaaaaaaa-0000-0000-0000-000000000002",
+      "label" : "Speed",
+      "inputID" : "22222222-2222-2222-2222-222222222222",
+      "frame" : { "x" : 0.52, "y" : 0.05, "width" : 0.28, "height" : 0.5 },
+      "opacity" : 1, "isVisible" : true,
+      "kind" : { "speedometer" : { "_0" : {
+        "channel" : "speed", "title" : "SPEED", "minValue" : 0, "maxValue" : 80, "speedUnit" : "mph", "unitLabel" : "",
+        "majorTick" : 20, "minorTick" : 10, "sweep" : 270, "rotation" : 0, "redlineFrom" : null, "valueDivisor" : 1,
+        "showValue" : true, "decimals" : 0, "faceColor" : "#141419BF", "needleColor" : "#FF9E1A", "textColor" : "#FFFFFF", "redlineColor" : "#E62626"
+      } } }
+    },
+    {
+      "id" : "aaaaaaaa-0000-0000-0000-000000000003",
+      "label" : "Map",
+      "inputID" : "22222222-2222-2222-2222-222222222222",
+      "frame" : { "x" : 0.81, "y" : 0.05, "width" : 0.17, "height" : 0.3 },
+      "opacity" : 1, "isVisible" : true,
+      "kind" : { "trackMap" : { "_0" : { "lineColor" : "#FFFFFF", "lineWidth" : 3, "dotColor" : "#FF9E1A", "dotRadius" : 7, "rotation" : 0, "backgroundColor" : "#00000000" } } }
+    },
+    {
+      "id" : "aaaaaaaa-0000-0000-0000-000000000004",
+      "label" : "G",
+      "inputID" : "22222222-2222-2222-2222-222222222222",
+      "frame" : { "x" : 0.81, "y" : 0.38, "width" : 0.17, "height" : 0.3 },
+      "opacity" : 1, "isVisible" : true,
+      "kind" : { "gForce" : { "_0" : { "maxG" : 1, "ringStep" : 0.5, "trailSeconds" : 1, "dotColor" : "#FF9E1A", "gridColor" : "#FFFFFF80", "faceColor" : "#141419BF", "showValues" : true } } }
+    },
+    {
+      "id" : "aaaaaaaa-0000-0000-0000-000000000005",
+      "label" : "Lap",
+      "inputID" : "22222222-2222-2222-2222-222222222222",
+      "frame" : { "x" : 0.52, "y" : 0.6, "width" : 0.46, "height" : 0.12 },
+      "opacity" : 1, "isVisible" : true,
+      "kind" : { "timer" : { "_0" : { "mode" : "currentLap", "showLapNumber" : true, "label" : null, "textColor" : "#FFFFFF", "backgroundColor" : "#0000008C" } } }
+    },
+    {
+      "id" : "aaaaaaaa-0000-0000-0000-000000000006",
+      "label" : "RPM",
+      "inputID" : "22222222-2222-2222-2222-222222222222",
+      "frame" : { "x" : 0.52, "y" : 0.75, "width" : 0.46, "height" : 0.12 },
+      "opacity" : 1, "isVisible" : true,
+      "kind" : { "textData" : { "_0" : { "channel" : "rpm", "label" : "RPM", "decimals" : 0, "speedUnit" : "mph", "unitLabel" : "", "alignment" : "trailing", "textColor" : "#FFFFFF", "backgroundColor" : "#0000008C" } } }
+    }
+  ]
+}
