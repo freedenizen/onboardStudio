@@ -1,0 +1,64 @@
+/// The semantic meaning of a telemetry channel. Importers tag columns with a role so display
+/// objects can find "speed" or "RPM" regardless of the source file's column names.
+public enum ChannelRole: Hashable, Sendable, Codable {
+    case time
+    case latitude
+    case longitude
+    case altitude
+    case gpsUpdate
+    case gpsDelay
+    case accuracy
+    case speed
+    case heading
+    case lap
+    case distance
+    case rpm
+    case gear
+    case throttle
+    case brake
+    /// Longitudinal acceleration (positive = accelerating).
+    case longitudinalG
+    /// Lateral acceleration (positive = right turn by RaceRender convention).
+    case lateralG
+    /// A channel from an OBD-II source that may update at a different rate than GPS.
+    case obd(String)
+    /// Any other named channel.
+    case aux(String)
+
+    /// A stable, human-readable identifier such as `speed` or `aux:engine_load`.
+    public var identifier: String {
+        switch self {
+        case .time: "time"
+        case .latitude: "latitude"
+        case .longitude: "longitude"
+        case .altitude: "altitude"
+        case .gpsUpdate: "gpsUpdate"
+        case .gpsDelay: "gpsDelay"
+        case .accuracy: "accuracy"
+        case .speed: "speed"
+        case .heading: "heading"
+        case .lap: "lap"
+        case .distance: "distance"
+        case .rpm: "rpm"
+        case .gear: "gear"
+        case .throttle: "throttle"
+        case .brake: "brake"
+        case .longitudinalG: "longitudinalG"
+        case .lateralG: "lateralG"
+        case .obd(let name): "obd:\(name)"
+        case .aux(let name): "aux:\(name)"
+        }
+    }
+
+    /// Whether the role is one of the well-known channels (as opposed to `obd`/`aux`).
+    public var isStandard: Bool {
+        switch self {
+        case .obd, .aux: false
+        default: true
+        }
+    }
+}
+
+extension ChannelRole: CustomStringConvertible {
+    public var description: String { identifier }
+}

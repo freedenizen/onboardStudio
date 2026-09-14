@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="OverlayGen tests" xmlns="http://www.topografix.com/GPX/1/1"
+     xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+  <metadata><name>Fixture ride</name></metadata>
+  <trk>
+    <name>Test loop</name>
+    <trkseg>
+      <trkpt lat="45.000000" lon="-122.000000"><ele>100.0</ele><time>2026-01-01T10:00:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>120</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>
+      <trkpt lat="45.000090" lon="-122.000000"><ele>101.0</ele><time>2026-01-01T10:00:01Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>121</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>
+      <trkpt lat="45.000180" lon="-122.000000"><ele>102.0</ele><time>2026-01-01T10:00:02Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>122</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>
+      <trkpt lat="45.000180" lon="-121.999873"><ele>102.0</ele><time>2026-01-01T10:00:03.500Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>123</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>
+      <trkpt lat="45.000090" lon="-121.999873"><ele>101.0</ele><time>2026-01-01T10:00:04.500Z</time></trkpt>
+      <trkpt lat="45.000000" lon="-121.999873"><ele>100.0</ele><time>2026-01-01T10:00:05.500Z</time></trkpt>
+      <trkpt lat="45.000000" lon="-122.000000"><ele>100.0</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
