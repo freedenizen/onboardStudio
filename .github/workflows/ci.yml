@@ -55,7 +55,7 @@ jobs:
           xcrun llvm-cov report "$BIN" -instr-profile "$PROFDATA" -ignore-filename-regex='(\.build|Tests)/' | tee coverage.txt
           xcrun llvm-cov export "$BIN" -instr-profile "$PROFDATA" -format=lcov -ignore-filename-regex='(\.build|Tests)/' > coverage.lcov
           { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: |
