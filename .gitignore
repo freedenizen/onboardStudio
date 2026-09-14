@@ -1,0 +1,12 @@
+.build/
+.swiftpm/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+dist/
+*.dmg
+.DS_Store
+xcuserdata/
+*.p12
+sparkle_private_key*
+build/

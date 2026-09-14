@@ -1,0 +1,65 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Tools
+        run: brew install xcodegen create-dmg
+      - name: Resolve packages (fetches Sparkle tools)
+        run: swift package resolve
+      - name: Import signing certificate
+        if: ${{ env.MACOS_CERT_P12 != '' }}
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN=$RUNNER_TEMP/build.keychain-db
+          security create-keychain -p ci "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p ci "$KEYCHAIN"
+          echo "$MACOS_CERT_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -P "$MACOS_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k ci "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          echo "SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep 'Developer ID Application' | head -1 | sed -E 's/.*"(.*)"/\1/')" >> $GITHUB_ENV
+      - name: Build app
+        env:
+          VERSION: ${{ github.ref_name }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: VERSION="${VERSION#v}" Scripts/bundle-app.sh
+      - name: Make DMG
+        run: Scripts/make-dmg.sh
+      - name: Notarize
+        if: ${{ env.SIGNING_IDENTITY != '' && secrets.NOTARY_KEY_ID != '' }}
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: |
+          echo "$NOTARY_KEY_P8" > $RUNNER_TEMP/AuthKey.p8
+          NOTARY_KEY_PATH=$RUNNER_TEMP/AuthKey.p8 Scripts/notarize.sh dist/OverlayGen-*.dmg
+      - name: Appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: Scripts/make-appcast.sh
+      - name: CLI tarball
+        run: |
+          swift build -c release --product overlaygen
+          tar -C .build/release -czf dist/overlaygen-cli-${{ github.ref_name }}-macos.tar.gz overlaygen
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE=""; [[ "${{ github.ref_name }}" == *-* ]] && PRERELEASE="--prerelease"
+          gh release create "${{ github.ref_name }}" $PRERELEASE --generate-notes \
+            dist/OverlayGen-*.dmg dist/appcast.xml dist/overlaygen-cli-*.tar.gz
