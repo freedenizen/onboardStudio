@@ -7,6 +7,9 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
+    env:
+      HAS_CERT: ${{ secrets.MACOS_CERT_P12 != '' }}
+      HAS_NOTARY: ${{ secrets.NOTARY_KEY_ID != '' }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -17,7 +20,7 @@ jobs:
       - name: Resolve packages (fetches Sparkle tools)
         run: swift package resolve
       - name: Import signing certificate
-        if: ${{ env.MACOS_CERT_P12 != '' }}
+        if: env.HAS_CERT == 'true'
         env:
           MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
           MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
@@ -40,7 +43,7 @@ jobs:
       - name: Make DMG
         run: Scripts/make-dmg.sh
       - name: Notarize
-        if: ${{ env.SIGNING_IDENTITY != '' && secrets.NOTARY_KEY_ID != '' }}
+        if: env.HAS_NOTARY == 'true' && env.SIGNING_IDENTITY != ''
         env:
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
@@ -60,6 +63,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PRERELEASE=""; [[ "${{ github.ref_name }}" == *-* ]] && PRERELEASE="--prerelease"
+          PRERELEASE=""; [[ "$GITHUB_REF_NAME" == *-* ]] && PRERELEASE="--prerelease"
           gh release create "${{ github.ref_name }}" $PRERELEASE --generate-notes \
             dist/OverlayGen-*.dmg dist/appcast.xml dist/overlaygen-cli-*.tar.gz
