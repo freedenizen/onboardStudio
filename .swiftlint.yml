@@ -1,0 +1,59 @@
+included:
+  - Sources
+  - Tests
+  - Package.swift
+excluded:
+  - .build
+  - build
+  - Tests/Fixtures
+disabled_rules:
+  - trailing_comma            # swift-format owns trailing commas
+  - opening_brace             # swift-format owns brace placement
+  - todo
+opt_in_rules:
+  - array_init
+  - closure_spacing
+  - contains_over_filter_count
+  - contains_over_first_not_nil
+  - discouraged_optional_boolean
+  - empty_collection_literal
+  - empty_count
+  - empty_string
+  - explicit_init
+  - fatal_error_message
+  - first_where
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - last_where
+  - literal_expression_end_indentation
+  - modifier_order
+  - multiline_arguments
+  - overridden_super_call
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - vertical_parameter_alignment_on_call
+  - yoda_condition
+line_length:
+  warning: 120
+  error: 160
+  ignores_comments: true
+  ignores_urls: true
+identifier_name:
+  min_length: 1
+  excluded: [x, y, z, w, h, t, id, dt, ok]
+type_name:
+  max_length: 50
+function_body_length:
+  warning: 60
+  error: 120
+file_length:
+  warning: 500
+  error: 900
+cyclomatic_complexity:
+  warning: 12
+  error: 20
+force_unwrapping: error
+force_cast: error
+force_try: error

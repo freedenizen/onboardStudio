@@ -2,7 +2,7 @@
 import PackageDescription
 
 let strict: [SwiftSetting] = [
-    .swiftLanguageMode(.v6),
+    .swiftLanguageMode(.v6)
 ]
 
 let package = Package(
@@ -20,7 +20,7 @@ let package = Package(
         .executable(name: "OverlayGenApp", targets: ["OverlayGenApp"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2"),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2")
     ],
     targets: [
         // MARK: Libraries
@@ -54,9 +54,19 @@ let package = Package(
         // MARK: Tests
         .testTarget(name: "ProjectModelTests", dependencies: ["ProjectModel"], swiftSettings: strict),
         .testTarget(name: "TelemetryKitTests", dependencies: ["TelemetryKit"], swiftSettings: strict),
-        .testTarget(name: "ImportersTests", dependencies: ["Importers"], resources: [.copy("../Fixtures")], swiftSettings: strict),
+        .testTarget(
+            name: "ImportersTests",
+            dependencies: ["Importers"],
+            resources: [.copy("../Fixtures")],
+            swiftSettings: strict
+        ),
         .testTarget(name: "RenderKitTests", dependencies: ["RenderKit"], swiftSettings: strict),
-        .testTarget(name: "MediaKitTests", dependencies: ["MediaKit"], resources: [.copy("../Fixtures")], swiftSettings: strict),
+        .testTarget(
+            name: "MediaKitTests",
+            dependencies: ["MediaKit"],
+            resources: [.copy("../Fixtures")],
+            swiftSettings: strict
+        ),
         .testTarget(name: "ScriptingTests", dependencies: ["Scripting"], swiftSettings: strict),
     ]
 )
