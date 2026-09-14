@@ -1,4 +1,5 @@
 import AVFoundation
+import Combine
 import Foundation
 import MediaKit
 import Observation
@@ -25,13 +26,30 @@ final class EditorModel {
     private(set) var loaded: ProjectCompiler.LoadedProject?
     private var compileTask: Task<Void, Never>?
     private var lastCompiledProject: Project?
+    private var documentSubscription: AnyCancellable?
+
+    /// Observed mirror of `document.project`. The document is an `ObservableObject`, which
+    /// `@Observable` views do not track, so every document change (edits, undo, redo, revert)
+    /// is copied here and triggers a recompile.
+    private(set) var project: Project
 
     init(document: ProjectDocument, fileURL: URL?) {
         self.document = document
         self.fileURL = fileURL
+        project = document.project
+        documentSubscription = document.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                // objectWillChange fires before the mutation; read the new value on the next turn.
+                DispatchQueue.main.async { self?.syncFromDocument() }
+            }
     }
 
-    var project: Project { document.project }
+    private func syncFromDocument() {
+        guard document.project != project else { return }
+        project = document.project
+        scheduleCompile()
+    }
     var location: ProjectLocation {
         ProjectLocation(fileURL ?? URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: "Untitled.overlayproj"))
     }
@@ -46,7 +64,7 @@ final class EditorModel {
 
     func edit(_ name: String, _ change: (inout Project) -> Void) {
         document.apply(undoManager, name: name, change)
-        scheduleCompile()
+        syncFromDocument()
     }
 
     func addVideo() {
