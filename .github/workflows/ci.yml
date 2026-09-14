@@ -90,7 +90,13 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify every new commit is signed by an allowed key
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          # A commit passes if either (a) git verifies its SSH signature against
+          # .github/allowed_signers, or (b) it is a squash/merge commit created and signed by
+          # GitHub itself (committer noreply@github.com, verified). Contributor keys registered
+          # on GitHub are deliberately NOT trusted here; they must be in allowed_signers.
           git config gpg.ssh.allowedSignersFile .github/allowed_signers
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
@@ -101,8 +107,11 @@ jobs:
           echo "Checking $RANGE"
           fail=0
           for c in $(git rev-list "$RANGE"); do
-            status=$(git log -1 --format='%G?' "$c")
-            printf '%s %s %s\n' "$c" "$status" "$(git log -1 --format=%s "$c")"
-            [[ "$status" == "G" ]] || fail=1
+            local_status=$(git log -1 --format='%G?' "$c" 2>/dev/null || echo "?")
+            github_signed=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${c}" \
+              --jq 'if .commit.verification.verified == true and .commit.committer.email == "noreply@github.com" then "true" else "false" end' \
+              2>/dev/null || echo "false")
+            printf '%s local=%s github-merge=%s %s\n' "$c" "$local_status" "$github_signed" "$(git log -1 --format=%s "$c")"
+            if [[ "$local_status" != "G" && "$github_signed" != "true" ]]; then fail=1; fi
           done
-          [[ $fail -eq 0 ]] || { echo "::error::One or more commits are not signed by a key in .github/allowed_signers"; exit 1; }
+          [[ $fail -eq 0 ]] || { echo "::error::One or more commits are neither signed by a key in .github/allowed_signers nor verified by GitHub"; exit 1; }
