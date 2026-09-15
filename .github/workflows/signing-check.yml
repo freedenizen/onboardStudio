@@ -22,11 +22,13 @@ jobs:
           echo "$MACOS_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12" || echo "::error::MACOS_CERT_P12 is not valid base64"
           echo "p12 size: $(stat -f %z "$RUNNER_TEMP/cert.p12") bytes"
           echo "--- contents of the p12 (subjects only) ---"
-          openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -passin "pass:$MACOS_CERT_PASSWORD" -nokeys -clcerts 2>/dev/null | openssl x509 -noout -subject -issuer -dates || echo "::error::could not read a certificate from the p12 (wrong password or not a PKCS#12 file)"
-          if openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -passin "pass:$MACOS_CERT_PASSWORD" -nocerts -nodes 2>/dev/null | grep -q 'PRIVATE KEY'; then
+          # Keychain Access exports use a legacy cipher that OpenSSL 3 only reads with -legacy.
+          p12() { openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -passin "pass:$MACOS_CERT_PASSWORD" "$@" 2>/dev/null || openssl pkcs12 -legacy -in "$RUNNER_TEMP/cert.p12" -passin "pass:$MACOS_CERT_PASSWORD" "$@" 2>/dev/null; }
+          p12 -nokeys -clcerts | openssl x509 -noout -subject -issuer -dates || echo "::warning::OpenSSL could not read the p12; relying on 'security import' below"
+          if p12 -nocerts -nodes | grep -q 'PRIVATE KEY'; then
             echo "private key: PRESENT"
           else
-            echo "::error::private key: MISSING — export the certificate from Keychain Access (My Certificates) so the .p12 includes its private key"
+            echo "::warning::private key not readable by OpenSSL; check the identities list below (a listed identity means the key is present)"
           fi
           echo "--- security import ---"
           security import "$RUNNER_TEMP/cert.p12" -P "$MACOS_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN" 2>&1 || true
