@@ -12,7 +12,7 @@ defaults:
 jobs:
   release:
     runs-on: macos-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     env:
       HAS_CERT: ${{ secrets.MACOS_CERT_P12 != '' }}
       HAS_NOTARY: ${{ secrets.NOTARY_KEY_ID != '' }}
