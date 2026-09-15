@@ -27,5 +27,20 @@ xcodebuild -project OverlayGen.xcodeproj -scheme OverlayGen -configuration Relea
 APP=$(find build/DerivedData/Build/Products/Release -maxdepth 1 -name 'OverlayGen.app' | head -1)
 [[ -d "$APP" ]] || { echo "Build failed: OverlayGen.app not found" >&2; exit 1; }
 cp -R "$APP" "$DIST/OverlayGen.app"
-codesign --verify --deep --strict "$DIST/OverlayGen.app"
+
+if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
+  # Xcode signs Sparkle.framework itself but not the helpers nested inside it, which ship with
+  # Sparkle's own signature. Notarization requires every binary to carry our Developer ID with a
+  # secure timestamp, so re-sign inside-out, then the framework, then the app.
+  FW="$DIST/OverlayGen.app/Contents/Frameworks/Sparkle.framework"
+  SIGN=(codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY")
+  for xpc in "$FW"/Versions/B/XPCServices/*.xpc; do
+    [[ -e "$xpc" ]] && "${SIGN[@]}" --preserve-metadata=entitlements "$xpc"
+  done
+  [[ -e "$FW/Versions/B/Autoupdate" ]] && "${SIGN[@]}" "$FW/Versions/B/Autoupdate"
+  [[ -e "$FW/Versions/B/Updater.app" ]] && "${SIGN[@]}" "$FW/Versions/B/Updater.app"
+  "${SIGN[@]}" "$FW"
+  "${SIGN[@]}" --entitlements App/OverlayGen.entitlements "$DIST/OverlayGen.app"
+fi
+codesign --verify --deep --strict --verbose=2 "$DIST/OverlayGen.app"
 echo "Built $DIST/OverlayGen.app ($VERSION build $BUILD_NUMBER)"
