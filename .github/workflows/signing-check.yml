@@ -1,0 +1,40 @@
+name: Signing check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    name: Inspect signing secrets
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - name: Import certificate and report identities (no secret values are printed)
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        shell: bash
+        run: |
+          set -u
+          KEYCHAIN="$RUNNER_TEMP/check.keychain-db"
+          security create-keychain -p ci "$KEYCHAIN"
+          security unlock-keychain -p ci "$KEYCHAIN"
+          echo "$MACOS_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12" || echo "::error::MACOS_CERT_P12 is not valid base64"
+          echo "p12 size: $(stat -f %z "$RUNNER_TEMP/cert.p12") bytes"
+          echo "--- contents of the p12 (subjects only) ---"
+          openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -passin "pass:$MACOS_CERT_PASSWORD" -nokeys -clcerts 2>/dev/null | openssl x509 -noout -subject -issuer -dates || echo "::error::could not read a certificate from the p12 (wrong password or not a PKCS#12 file)"
+          if openssl pkcs12 -in "$RUNNER_TEMP/cert.p12" -passin "pass:$MACOS_CERT_PASSWORD" -nocerts -nodes 2>/dev/null | grep -q 'PRIVATE KEY'; then
+            echo "private key: PRESENT"
+          else
+            echo "::error::private key: MISSING — export the certificate from Keychain Access (My Certificates) so the .p12 includes its private key"
+          fi
+          echo "--- security import ---"
+          security import "$RUNNER_TEMP/cert.p12" -P "$MACOS_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN" 2>&1 || true
+          security set-key-partition-list -S apple-tool:,apple: -k ci "$KEYCHAIN" >/dev/null 2>&1 || true
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          echo "--- identities (all) ---"
+          security find-identity -p codesigning "$KEYCHAIN" || true
+          echo "--- identities (valid only) ---"
+          security find-identity -v -p codesigning "$KEYCHAIN" || true
+          echo "--- Apple intermediates on the runner ---"
+          security find-certificate -a -c "Developer ID Certification Authority" -Z /Library/Keychains/System.keychain 2>/dev/null | grep -E 'SHA-1|"labl"' || echo "none found in System keychain"
