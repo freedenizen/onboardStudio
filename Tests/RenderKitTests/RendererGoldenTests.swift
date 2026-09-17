@@ -38,6 +38,9 @@ enum SyntheticSession {
                 channel(.lateralG, .gForce) { 0.8 * sin($0 / 10 * 2 * .pi) },
                 channel(.longitudinalG, .gForce) { 0.5 * cos($0 / 10 * 2 * .pi) },
                 channel(.gear, .count, { min(6, 1 + ($0 / 2).rounded(.down)) }, step: true),
+                channel(
+                    .heading, .degrees, { (($0 / 10 * 4).truncatingRemainder(dividingBy: 4)).rounded(.down) * 90 },
+                    step: true),
             ],
             laps: [
                 Lap(number: 0, start: 0, end: 4, isComplete: true),

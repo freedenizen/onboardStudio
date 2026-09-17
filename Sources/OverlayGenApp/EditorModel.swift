@@ -95,6 +95,22 @@ final class EditorModel {
         selectedInputID = input.id
     }
 
+    /// Adds an image input and an image object showing it.
+    func addImage() {
+        guard let url = OpenPanels.chooseImage() else { return }
+        let input = Input(
+            label: url.deletingPathExtension().lastPathComponent,
+            source: MediaReference.make(for: url, relativeTo: fileURL),
+            kind: .image(ImageInputSettings()))
+        let object = DisplayObject.makeDefault(
+            kind: .image(ImageObjectParams()), inputID: input.id, index: project.displayObjects.count)
+        edit("Add Image") { project in
+            project.inputs.append(input)
+            project.displayObjects.append(object)
+        }
+        selectedObjectID = object.id
+    }
+
     func removeInput(_ id: InputID) {
         edit("Remove Input") { project in
             project.inputs.removeAll { $0.id == id }

@@ -62,11 +62,13 @@ struct EditorToolbar: ToolbarContent {
             Menu {
                 ForEach(DisplayObject.templates, id: \.name) { template in
                     Button(template.name) { editor.addObject(template.kind) }
+                        .disabled(template.kind.needsData && editor.project.dataInputs.isEmpty)
                 }
+                Divider()
+                Button("Image…") { editor.addImage() }
             } label: {
                 Label("Add Object", systemImage: "gauge.with.dots.needle.33percent")
             }
-            .disabled(editor.project.dataInputs.isEmpty)
             Button {
                 editor.showSyncWizard = true
             } label: {

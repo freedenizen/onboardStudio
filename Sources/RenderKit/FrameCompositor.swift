@@ -32,7 +32,8 @@ public final class FrameCompositor: @unchecked Sendable {
         var image = CIImage(color: .black).cropped(to: CGRect(origin: .zero, size: plan.outputSize))
         for layer in plan.videoLayers {
             guard let buffer = sources[layer.trackID] else { continue }
-            image = place(CIImage(cvPixelBuffer: buffer), layer: layer).composited(over: image)
+            let source = layer.transform.apply(to: CIImage(cvPixelBuffer: buffer))
+            image = place(source, layer: layer).composited(over: image)
         }
         if !plan.overlays.isEmpty {
             let overlayBuffer = try PixelBuffers.makeBuffer(from: overlayPool)

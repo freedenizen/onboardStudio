@@ -15,11 +15,15 @@ public struct VideoLayer: Sendable, Equatable {
     public let trackID: Int32
     public let frame: UnitRect
     public let opacity: Double
+    /// Input-level processing (crop, rotation, colour, chroma key) combined with object-level
+    /// mirror and channel mask.
+    public let transform: VideoTransform
 
-    public init(trackID: Int32, frame: UnitRect = .full, opacity: Double = 1) {
+    public init(trackID: Int32, frame: UnitRect = .full, opacity: Double = 1, transform: VideoTransform = .identity) {
         self.trackID = trackID
         self.frame = frame
         self.opacity = opacity
+        self.transform = transform
     }
 }
 

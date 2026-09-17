@@ -6,31 +6,51 @@ import TelemetryKit
 /// loading happen elsewhere and are passed in.
 public enum RenderPlanner {
     /// Video layers in draw order, keyed by the composition track ID assigned to each video input.
+    /// Input picture settings and object mirror/mask combine into the layer transform.
     public static func videoLayers(for project: Project, trackIDs: [InputID: Int32]) -> [VideoLayer] {
         project.displayObjects.compactMap { object -> VideoLayer? in
-            guard object.isVisible, case .video = object.kind, let inputID = object.inputID,
+            guard object.isVisible, case .video(let params) = object.kind, let inputID = object.inputID,
                 let trackID = trackIDs[inputID]
             else { return nil }
-            return VideoLayer(trackID: trackID, frame: object.frame, opacity: object.opacity)
+            var transform = VideoTransform()
+            if let input = project.input(inputID), case .video(let settings) = input.kind {
+                transform = VideoTransform(
+                    crop: settings.crop, rotation: settings.rotation, mirror: settings.mirror, color: settings.color,
+                    chromaKey: settings.chromaKey)
+            }
+            transform.mirror = Mirror(
+                horizontal: transform.mirror.horizontal != params.mirror.horizontal,
+                vertical: transform.mirror.vertical != params.mirror.vertical)
+            transform.channelMask = params.channelMask
+            return VideoLayer(trackID: trackID, frame: object.frame, opacity: object.opacity, transform: transform)
         }
     }
 
     /// Overlay drawings in draw order for all visible non-video objects.
     public static func overlays(
-        for project: Project, sessions: [InputID: TelemetrySession], cache: RenderCache = RenderCache()
+        for project: Project,
+        sessions: [InputID: TelemetrySession],
+        images: [InputID: LoadedImage] = [:],
+        cache: RenderCache = RenderCache()
     ) -> [any OverlayDrawing] {
         project.displayObjects.compactMap { object -> (any OverlayDrawing)? in
-            guard object.isVisible, object.kind.needsData else { return nil }
+            guard object.isVisible, object.kind.isOverlay else { return nil }
             let input = object.inputID.flatMap(project.input)
-            let sampler = object.inputID.flatMap { sessions[$0] }.map(TelemetrySampler.init)
+            // Image objects take their picture from an image input and data from the first data input.
+            let dataInputID: InputID? = object.kind.needsImage ? project.dataInputs.first?.id : object.inputID
+            let sampler = dataInputID.flatMap { sessions[$0] }.map(TelemetrySampler.init)
+            let sync = (object.kind.needsImage ? project.dataInputs.first?.sync : input?.sync) ?? .identity
             let context = ObjectContext(
-                objectID: object.id, frame: object.frame, opacity: object.opacity, sampler: sampler,
-                sync: input?.sync ?? .identity, cache: cache)
-            return renderer(for: object.kind, context: context)
+                objectID: object.id, frame: object.frame, opacity: object.opacity, sampler: sampler, sync: sync,
+                cache: cache)
+            let image = object.inputID.flatMap { images[$0] }
+            return renderer(for: object.kind, context: context, image: image)
         }
     }
 
-    public static func renderer(for kind: DisplayObjectKind, context: ObjectContext) -> (any OverlayDrawing)? {
+    public static func renderer(
+        for kind: DisplayObjectKind, context: ObjectContext, image: LoadedImage? = nil
+    ) -> (any OverlayDrawing)? {
         switch kind {
         case .video: nil
         case .speedometer(let params), .tachometer(let params), .gauge(let params):
@@ -39,6 +59,9 @@ public enum RenderPlanner {
         case .gForce(let params): GForceRenderer(context: context, params: params)
         case .timer(let params): TimerRenderer(context: context, params: params)
         case .textData(let params): TextDataRenderer(context: context, params: params)
+        case .shape(let params): ShapeRenderer(context: context, params: params)
+        case .text(let params): TextRenderer(context: context, params: params)
+        case .image(let params): ImageRenderer(context: context, params: params, image: image)
         }
     }
 }

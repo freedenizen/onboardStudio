@@ -13,6 +13,25 @@ public enum ProjectCompiler {
         public var location: ProjectLocation
         public var sessions: [InputID: TelemetrySession]
         public var mediaInfo: [InputID: MediaInfo]
+        /// Playable URL per video input (differs from the source when ffmpeg converted it).
+        public var mediaURLs: [InputID: URL]
+        public var images: [InputID: LoadedImage]
+
+        public init(
+            project: Project,
+            location: ProjectLocation,
+            sessions: [InputID: TelemetrySession],
+            mediaInfo: [InputID: MediaInfo],
+            mediaURLs: [InputID: URL] = [:],
+            images: [InputID: LoadedImage] = [:]
+        ) {
+            self.project = project
+            self.location = location
+            self.sessions = sessions
+            self.mediaInfo = mediaInfo
+            self.mediaURLs = mediaURLs
+            self.images = images
+        }
     }
 
     /// Reads the project file and imports every data input.
@@ -57,7 +76,20 @@ public enum ProjectCompiler {
     /// Whether `compile` must rebuild the media composition (inputs or timing changed) rather than
     /// just swapping overlays and layer frames.
     public static func needsRecompile(from old: Project, to new: Project) -> Bool {
-        old.inputs != new.inputs || old.settings != new.settings
+        if old.settings != new.settings || old.inputs.count != new.inputs.count { return true }
+        for (a, b) in zip(old.inputs, new.inputs) {
+            if a.id != b.id || a.source != b.source || a.sync != b.sync { return true }
+            switch (a.kind, b.kind) {
+            case (.video(let x), .video(let y)):
+                // Picture settings are applied by the compositor (replan); timing and audio are not.
+                if x.trim != y.trim || x.includeAudio != y.includeAudio || x.audio != y.audio { return true }
+            case (.data, .data), (.image, .image), (.audio, .audio):
+                if a.kind != b.kind { return true }
+            default:
+                return true
+            }
+        }
+        return false
     }
 
     /// Rebuilds only the plan (overlays + layer frames) on an existing compiled composition.
@@ -68,7 +100,8 @@ public enum ProjectCompiler {
         for (index, inputID) in videoInputIDs.enumerated() where index < compiled.trackIDs.count {
             trackIDs[inputID] = compiled.trackIDs[index]
         }
-        let overlays = RenderPlanner.overlays(for: project, sessions: loaded.sessions, cache: RenderCache())
+        let overlays = RenderPlanner.overlays(
+            for: project, sessions: loaded.sessions, images: loaded.images, cache: RenderCache())
         let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs)
         let plan = RenderPlan(
             outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
@@ -102,12 +135,13 @@ public enum ProjectCompiler {
             guard case .video(let settings) = input.kind else { continue }
             specs.append(
                 VideoInputSpec(
-                    url: loaded.location.resolve(input.source), sync: input.sync, trim: settings.trim, frame: .full,
-                    includeAudio: settings.includeAudio))
+                    url: loaded.mediaURLs[input.id] ?? loaded.location.resolve(input.source), sync: input.sync,
+                    trim: settings.trim, frame: .full, includeAudio: settings.includeAudio, audio: settings.audio))
             specInputIDs.append(input.id)
         }
         let cache = RenderCache()
-        let overlays = RenderPlanner.overlays(for: project, sessions: loaded.sessions, cache: cache)
+        let overlays = RenderPlanner.overlays(
+            for: project, sessions: loaded.sessions, images: loaded.images, cache: cache)
         var compiled = try await CompositionBuilder.build(
             videos: specs, overlays: overlays, outputWidth: project.settings.outputWidth,
             outputHeight: project.settings.outputHeight, frameRate: project.settings.frameRate,

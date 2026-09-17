@@ -43,6 +43,8 @@ struct EditorCommands: Commands {
                 ForEach(DisplayObject.templates, id: \.name) { template in
                     Button(template.name) { editor?.addObject(template.kind) }
                 }
+                Divider()
+                Button("Image…") { editor?.addImage() }
             }
             Button("Delete Selected Object") { editor?.deleteSelectedObject() }.keyboardShortcut(.delete, modifiers: [])
             Divider()

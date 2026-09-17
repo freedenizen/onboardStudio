@@ -5,7 +5,15 @@ enum OpenPanels {
     static func chooseVideo() -> URL? {
         let panel = NSOpenPanel()
         panel.title = "Add Video"
-        panel.allowedContentTypes = [.movie, .mpeg4Movie, .quickTimeMovie]
+        panel.allowedContentTypes = [.movie, .mpeg4Movie, .quickTimeMovie, .avi, .mpeg2TransportStream, .data]
+        panel.allowsMultipleSelection = false
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    static func chooseImage() -> URL? {
+        let panel = NSOpenPanel()
+        panel.title = "Add Image"
+        panel.allowedContentTypes = [.png, .jpeg, .heic, .tiff, .gif, .bmp]
         panel.allowsMultipleSelection = false
         return panel.runModal() == .OK ? panel.url : nil
     }

@@ -31,6 +31,25 @@ files are referenced by path; relative paths resolve against the package directo
 `roleOverrides` maps a column name to a channel role identifier (`speed`, `rpm`, `obd:Coolant`,
 `aux:Oil temp`) when the importer's guess is wrong.
 
+Video input settings (all optional; older files decode as neutral):
+
+| Field | Meaning |
+|---|---|
+| `trim` | `start`/`end` seconds in the file |
+| `includeAudio` | whether the file's audio is used |
+| `rotation` | degrees clockwise (0/90/180/270) |
+| `mirror` | `{ "horizontal": bool, "vertical": bool }` |
+| `crop` | `top`/`left`/`bottom`/`right` as fractions of the picture (0…0.5) |
+| `color` | `brightness`, `contrast`, `saturation`, `sharpness` (1 = unchanged), `hue` degrees |
+| `chromaKey` | `{ "color": "#00FF00", "tolerance": 0.3, "softness": 0.1 }` or `null` |
+| `audio` | `volume` (1 = unchanged), `balance` (−1…1), `channels` (`stereo`/`mono`/`left`/`right`), `isMuted` |
+
+Containers macOS cannot open (MTS/M2TS, MKV, some AVI) are converted with `ffmpeg` if it is
+installed (`brew install ffmpeg`, or set `OVERLAYGEN_FFMPEG`); the converted copy lives in
+`~/Library/Caches/OverlayGen/remux` and the project keeps the original path.
+
+Image inputs: `{ "image": { "_0": {} } }` with `source.path` pointing at a PNG/JPEG/HEIC/TIFF.
+
 ## Display objects
 
 Every object has `id`, `label`, `inputID`, `frame` (unit rectangle, top-left origin, 0…1 of the
@@ -38,12 +57,15 @@ output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first 
 
 | kind | params |
 |---|---|
-| `video` | none; the layer is aspect-fitted into `frame` |
+| `video` | `mirror` (`horizontal`/`vertical`, combined with the input's mirror) and `channelMask` (`red`/`green`/`blue`); the layer is aspect-fitted into `frame` |
 | `speedometer`, `tachometer`, `gauge` | `GaugeParams`: `channel`, `title`, `minValue`, `maxValue`, `speedUnit` (`mph`/`kph`/`m/s`), `unitLabel`, `majorTick`, `minorTick`, `sweep`, `rotation`, `redlineFrom`, `valueDivisor`, `showValue`, `decimals`, colours |
 | `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation`, `backgroundColor` |
 | `gForce` | `maxG`, `ringStep`, `trailSeconds`, `dotColor`, `gridColor`, `faceColor`, `showValues` |
 | `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`), `showLapNumber`, `label`, colours |
 | `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours |
+| `shape` | `shape` (`rectangle`/`roundedRectangle`/`ellipse`), `fillColor`, `strokeColor`, `strokeWidth` (fraction of output height), `cornerRadius` |
+| `text` | `text`, `fontScale` (fraction of object height), `fontName`, `bold`, `color`, `backgroundColor`, `alignment`, `outlineWidth`, `outlineColor` |
+| `image` | `inputID` → an image input; `rotation`, `keepAspect`; data-driven: `rotationChannel` + `degreesPerUnit`, `opacityChannel` + `opacityScale`, `flashChannel` + `flashThreshold` + `flashHertz` (data comes from the first data input) |
 
 Colours are `#RRGGBB` or `#RRGGBBAA`. Speed channels are stored in m/s and converted for display
 by `speedUnit`; other channels are shown as stored.

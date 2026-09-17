@@ -35,6 +35,7 @@ final class PreviewController {
         duration = compiled.duration
         let item = AVPlayerItem(asset: compiled.composition)
         item.videoComposition = compiled.videoComposition
+        item.audioMix = compiled.audioMix
         player.replaceCurrentItem(with: item)
         seek(to: min(time, compiled.duration))
         if wasPlaying { player.play() }

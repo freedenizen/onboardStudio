@@ -10,16 +10,18 @@ public struct VideoInputSpec: Sendable {
     public var trim: TrimRange
     public var frame: UnitRect
     public var includeAudio: Bool
+    public var audio: AudioSettings
 
     public init(
         url: URL, sync: SyncSettings = .identity, trim: TrimRange = .none, frame: UnitRect = .full,
-        includeAudio: Bool = true
+        includeAudio: Bool = true, audio: AudioSettings = .neutral
     ) {
         self.url = url
         self.sync = sync
         self.trim = trim
         self.frame = frame
         self.includeAudio = includeAudio
+        self.audio = audio
     }
 }
 
@@ -27,6 +29,8 @@ public struct VideoInputSpec: Sendable {
 public struct CompiledComposition {
     public let composition: AVMutableComposition
     public let videoComposition: AVMutableVideoComposition
+    /// Volume / balance / channel processing for the audio tracks, or `nil` when all are neutral.
+    public let audioMix: AVMutableAudioMix?
     public let plan: RenderPlan
     /// Project duration in seconds.
     public let duration: Double
@@ -52,8 +56,8 @@ public struct CompiledComposition {
             CompositionBuilder.instruction(for: newPlan, duration: duration, timescale: 600)
         ]
         return CompiledComposition(
-            composition: composition, videoComposition: newVideoComposition, plan: newPlan, duration: duration,
-            trackIDs: trackIDs)
+            composition: composition, videoComposition: newVideoComposition, audioMix: audioMix, plan: newPlan,
+            duration: duration, trackIDs: trackIDs)
     }
 }
 
@@ -84,6 +88,7 @@ public enum CompositionBuilder {
     ) async throws -> CompiledComposition {
         let composition = AVMutableComposition()
         var layers: [VideoLayer] = []
+        var audioTracks: [(track: AVMutableCompositionTrack, settings: AudioSettings)] = []
         var projectEnd = 0.0
         let timescale: CMTimeScale = 600
 
@@ -124,6 +129,7 @@ public enum CompositionBuilder {
                     audioTrack.scaleTimeRange(
                         CMTimeRange(start: insertAt, duration: inputRange.duration), toDuration: scaledDuration)
                 }
+                audioTracks.append((audioTrack, spec.audio))
             }
             projectEnd = max(projectEnd, spec.sync.offsetInProject + scaledDuration.seconds)
         }
@@ -138,8 +144,9 @@ public enum CompositionBuilder {
         videoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(frameRate.rounded()))
         videoComposition.instructions = [Self.instruction(for: plan, duration: duration, timescale: timescale)]
         return CompiledComposition(
-            composition: composition, videoComposition: videoComposition, plan: plan, duration: duration,
-            trackIDs: layers.map(\.trackID))
+            composition: composition, videoComposition: videoComposition,
+            audioMix: AudioMixBuilder.mix(for: audioTracks),
+            plan: plan, duration: duration, trackIDs: layers.map(\.trackID))
     }
 
     static func instruction(for plan: RenderPlan, duration: Double, timescale: CMTimeScale) -> OverlayInstruction {

@@ -116,17 +116,7 @@ struct InputInspector: View {
             }
         }
         if case .video(let settings) = input.kind {
-            Section("Audio") {
-                Toggle(
-                    "Include audio",
-                    isOn: Binding(
-                        get: { settings.includeAudio },
-                        set: { value in
-                            editor.updateInput(input.id, name: "Toggle Audio") {
-                                $0.kind = .video(VideoInputSettings(trim: settings.trim, includeAudio: value))
-                            }
-                        }))
-            }
+            VideoInputInspector(editor: editor, input: input, settings: settings)
         }
         Section {
             Button("Remove Input", role: .destructive) { editor.removeInput(input.id) }
@@ -175,8 +165,14 @@ struct ObjectInspector: View {
 
     @ViewBuilder var kindSection: some View {
         switch object.kind {
-        case .video:
-            EmptyView()
+        case .video(let params):
+            VideoObjectInspector(editor: editor, object: object, params: params)
+        case .shape(let params):
+            ShapeInspector(editor: editor, object: object, params: params)
+        case .text(let params):
+            TextInspector(editor: editor, object: object, params: params)
+        case .image(let params):
+            ImageObjectInspector(editor: editor, object: object, params: params)
         case .speedometer(let params), .tachometer(let params), .gauge(let params):
             GaugeInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):
