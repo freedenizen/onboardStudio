@@ -39,14 +39,16 @@ Scripts/bundle-app.sh        # builds dist/OverlayGen.app
 Scripts/make-dmg.sh          # builds dist/OverlayGen-<version>.dmg
 ```
 
-## Installing an unsigned build
+## Installing
 
-Builds that are not signed with an Apple Developer ID are blocked by Gatekeeper on first launch.
-Either right-click the app and choose **Open**, or run:
+Download the latest `OverlayGen-<version>.dmg` from the
+[Releases page](https://github.com/freedenizen/overlayGen/releases), open it and drag OverlayGen
+to Applications. Releases from v0.2.3 onward are signed with a Developer ID certificate and
+notarized by Apple, so the app opens with a normal double-click and updates itself through
+**OverlayGen ▸ Check for Updates…**.
 
-```sh
-xattr -dr com.apple.quarantine /Applications/OverlayGen.app
-```
+Earlier builds (v0.1.0 – v0.2.2) were unsigned test builds; they cannot self-update to a signed
+release, so replace them by installing the current DMG once.
 
 ## License
 

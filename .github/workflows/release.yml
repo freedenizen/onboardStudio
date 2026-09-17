@@ -46,9 +46,18 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
         run: VERSION="${VERSION#v}" Scripts/bundle-app.sh
+      - name: Notarize app
+        if: env.HAS_NOTARY == 'true' && env.SIGNING_IDENTITY != ''
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: |
+          echo "$NOTARY_KEY_P8" > $RUNNER_TEMP/AuthKey.p8
+          NOTARY_KEY_PATH=$RUNNER_TEMP/AuthKey.p8 Scripts/notarize.sh dist/OverlayGen.app
       - name: Make DMG
         run: Scripts/make-dmg.sh
-      - name: Notarize
+      - name: Notarize DMG
         if: env.HAS_NOTARY == 'true' && env.SIGNING_IDENTITY != ''
         env:
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
