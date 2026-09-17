@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
-# Notarizes and staples a DMG. Requires NOTARY_KEY_ID, NOTARY_ISSUER_ID and NOTARY_KEY_PATH (.p8).
-# Submits, reports the submission id immediately, waits up to NOTARY_TIMEOUT (default 90m),
-# then prints Apple's notary log on anything other than Accepted.
+# Notarizes and staples an .app bundle or a .dmg. Requires NOTARY_KEY_ID, NOTARY_ISSUER_ID and
+# NOTARY_KEY_PATH (.p8). An .app is zipped for submission and the bundle itself is stapled.
+# Submits, prints the submission id, waits up to NOTARY_TIMEOUT (default 90m), then prints
+# Apple's notary log on anything other than Accepted.
 set -euo pipefail
-DMG="$1"
+TARGET="$1"
 AUTH=(--key "$NOTARY_KEY_PATH" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID")
 TIMEOUT="${NOTARY_TIMEOUT:-90m}"
 
-SUBMIT=$(xcrun notarytool submit "$DMG" "${AUTH[@]}" --output-format json)
+SUBMIT_PATH="$TARGET"
+if [[ -d "$TARGET" && "$TARGET" == *.app ]]; then
+  SUBMIT_PATH="$(mktemp -d)/$(basename "$TARGET").zip"
+  ditto -c -k --keepParent "$TARGET" "$SUBMIT_PATH"
+fi
+
+SUBMIT=$(xcrun notarytool submit "$SUBMIT_PATH" "${AUTH[@]}" --output-format json)
 ID=$(echo "$SUBMIT" | /usr/bin/plutil -extract id raw -o - - 2>/dev/null || true)
 [[ -n "$ID" ]] || { echo "::error::notarytool submit returned no submission id: $SUBMIT"; exit 1; }
-echo "Submitted $(basename "$DMG") as $ID at $(date -u +%H:%M:%SZ); waiting up to $TIMEOUT for Apple…"
+echo "Submitted $(basename "$TARGET") as $ID at $(date -u +%H:%M:%SZ); waiting up to $TIMEOUT for Apple…"
 
 xcrun notarytool wait "$ID" "${AUTH[@]}" --timeout "$TIMEOUT" || true
 INFO=$(xcrun notarytool info "$ID" "${AUTH[@]}" --output-format json)
@@ -24,5 +31,5 @@ if [[ "$STATUS" != "Accepted" ]]; then
   echo "::error::Notarization was not accepted (status: $STATUS). See the notary log above."
   exit 1
 fi
-xcrun stapler staple "$DMG"
-xcrun stapler validate "$DMG"
+xcrun stapler staple "$TARGET"
+xcrun stapler validate "$TARGET"
