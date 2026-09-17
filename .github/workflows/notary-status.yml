@@ -1,0 +1,35 @@
+name: Notary status
+on:
+  workflow_dispatch:
+    inputs:
+      submission_id:
+        description: Submission id to inspect (optional; history is always printed)
+        required: false
+        default: ""
+permissions:
+  contents: read
+jobs:
+  status:
+    name: Query Apple notary service
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - name: History and submission details
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          SUBMISSION_ID: ${{ inputs.submission_id }}
+        shell: bash
+        run: |
+          set -u
+          echo "$NOTARY_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+          AUTH=(--key "$RUNNER_TEMP/AuthKey.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID")
+          echo "--- history ---"
+          xcrun notarytool history "${AUTH[@]}" | head -40
+          if [[ -n "$SUBMISSION_ID" ]]; then
+            echo "--- info $SUBMISSION_ID ---"
+            xcrun notarytool info "$SUBMISSION_ID" "${AUTH[@]}" || true
+            echo "--- log $SUBMISSION_ID ---"
+            xcrun notarytool log "$SUBMISSION_ID" "${AUTH[@]}" || true
+          fi
