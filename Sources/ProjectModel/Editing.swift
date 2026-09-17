@@ -103,6 +103,9 @@ extension DisplayObject {
             case .gForce: UnitRect(x: 0.03 + stagger, y: 0.6 - stagger, width: 0.16, height: 0.28)
             case .timer: UnitRect(x: 0.3, y: 0.03 + stagger, width: 0.4, height: 0.08)
             case .textData: UnitRect(x: 0.3, y: 0.88 - stagger, width: 0.4, height: 0.08)
+            case .shape: UnitRect(x: 0.25 + stagger, y: 0.4, width: 0.5, height: 0.2)
+            case .text: UnitRect(x: 0.2, y: 0.05 + stagger, width: 0.6, height: 0.1)
+            case .image: UnitRect(x: 0.05 + stagger, y: 0.05 + stagger, width: 0.15, height: 0.15)
             }
         return DisplayObject(label: kind.typeName, inputID: inputID, frame: frame, kind: kind)
     }
@@ -122,5 +125,7 @@ extension DisplayObject {
         ("G-Force", .gForce(GForceParams())),
         ("Lap Timer", .timer(TimerParams())),
         ("Text Data", .textData(TextDataParams(channel: "rpm", label: "RPM"))),
+        ("Shape", .shape(ShapeParams())),
+        ("Text", .text(TextParams())),
     ]
 }

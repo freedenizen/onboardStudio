@@ -141,6 +141,7 @@ final class ExportJob: @unchecked Sendable {
         let audioTracks = compiled.composition.tracks(withMediaType: .audio)
         if let audioBitrate = settings.audioBitrate, !audioTracks.isEmpty {
             let output = AVAssetReaderAudioMixOutput(audioTracks: audioTracks, audioSettings: nil)
+            output.audioMix = compiled.audioMix
             output.alwaysCopiesSampleData = false
             let input = AVAssetWriterInput(
                 mediaType: .audio,

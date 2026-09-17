@@ -15,7 +15,129 @@ public enum SpeedDisplayUnit: String, Codable, Sendable, CaseIterable {
 }
 
 public struct VideoObjectParams: Hashable, Codable, Sendable {
-    public init() {}
+    public var mirror: Mirror
+    public var channelMask: RGBMask
+
+    public init(mirror: Mirror = .none, channelMask: RGBMask = .all) {
+        self.mirror = mirror
+        self.channelMask = channelMask
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mirror, channelMask
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mirror = try c.decodeIfPresent(Mirror.self, forKey: .mirror) ?? .none
+        channelMask = try c.decodeIfPresent(RGBMask.self, forKey: .channelMask) ?? .all
+    }
+}
+
+public enum ShapeKind: String, Codable, Sendable, CaseIterable {
+    case rectangle
+    case roundedRectangle
+    case ellipse
+}
+
+public struct ShapeParams: Hashable, Codable, Sendable {
+    public var shape: ShapeKind
+    public var fillColor: RGBAColor
+    public var strokeColor: RGBAColor
+    /// Stroke width as a fraction of the output height (0 = none).
+    public var strokeWidth: Double
+    /// Corner radius as a fraction of the shorter object side (rounded rectangles only).
+    public var cornerRadius: Double
+
+    public init(
+        shape: ShapeKind = .roundedRectangle,
+        fillColor: RGBAColor = .translucentBlack,
+        strokeColor: RGBAColor = .white,
+        strokeWidth: Double = 0,
+        cornerRadius: Double = 0.15
+    ) {
+        self.shape = shape
+        self.fillColor = fillColor
+        self.strokeColor = strokeColor
+        self.strokeWidth = strokeWidth
+        self.cornerRadius = cornerRadius
+    }
+}
+
+public struct TextParams: Hashable, Codable, Sendable {
+    public var text: String
+    /// Font size as a fraction of the object's height (0…1).
+    public var fontScale: Double
+    public var fontName: String
+    public var bold: Bool
+    public var color: RGBAColor
+    public var backgroundColor: RGBAColor
+    public var alignment: TextAlignment
+    /// Outline width as a fraction of the font size (0 = none).
+    public var outlineWidth: Double
+    public var outlineColor: RGBAColor
+
+    public init(
+        text: String = "Title",
+        fontScale: Double = 0.6,
+        fontName: String = "Helvetica Neue",
+        bold: Bool = true,
+        color: RGBAColor = .white,
+        backgroundColor: RGBAColor = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0),
+        alignment: TextAlignment = .center,
+        outlineWidth: Double = 0,
+        outlineColor: RGBAColor = .black
+    ) {
+        self.text = text
+        self.fontScale = fontScale
+        self.fontName = fontName
+        self.bold = bold
+        self.color = color
+        self.backgroundColor = backgroundColor
+        self.alignment = alignment
+        self.outlineWidth = outlineWidth
+        self.outlineColor = outlineColor
+    }
+}
+
+/// An embedded still image whose rotation, opacity and visibility can follow data channels.
+public struct ImageObjectParams: Hashable, Codable, Sendable {
+    /// Channel role identifier driving rotation, or `nil` for a static image.
+    public var rotationChannel: String?
+    /// Degrees of rotation per unit of the channel value (e.g. 1 for a heading channel).
+    public var degreesPerUnit: Double
+    /// Static rotation in degrees added to any channel-driven rotation.
+    public var rotation: Double
+    /// Channel whose value (0…1 after scaling) drives opacity, or `nil`.
+    public var opacityChannel: String?
+    public var opacityScale: Double
+    /// Channel that makes the image flash when above `flashThreshold`, or `nil`.
+    public var flashChannel: String?
+    public var flashThreshold: Double
+    public var flashHertz: Double
+    public var keepAspect: Bool
+
+    public init(
+        rotationChannel: String? = nil,
+        degreesPerUnit: Double = 1,
+        rotation: Double = 0,
+        opacityChannel: String? = nil,
+        opacityScale: Double = 1,
+        flashChannel: String? = nil,
+        flashThreshold: Double = 0,
+        flashHertz: Double = 3,
+        keepAspect: Bool = true
+    ) {
+        self.rotationChannel = rotationChannel
+        self.degreesPerUnit = degreesPerUnit
+        self.rotation = rotation
+        self.opacityChannel = opacityChannel
+        self.opacityScale = opacityScale
+        self.flashChannel = flashChannel
+        self.flashThreshold = flashThreshold
+        self.flashHertz = flashHertz
+        self.keepAspect = keepAspect
+    }
 }
 
 /// A round gauge. Speedometer and tachometer are presets of this.
@@ -233,6 +355,9 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
     case gForce(GForceParams)
     case timer(TimerParams)
     case textData(TextDataParams)
+    case shape(ShapeParams)
+    case text(TextParams)
+    case image(ImageObjectParams)
 
     public var typeName: String {
         switch self {
@@ -244,10 +369,28 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .gForce: "G-Force"
         case .timer: "Timer"
         case .textData: "Text Data"
+        case .shape: "Shape"
+        case .text: "Text"
+        case .image: "Image"
         }
     }
 
+    /// Objects fed by a telemetry input.
     public var needsData: Bool {
+        switch self {
+        case .video, .shape, .text, .image: false
+        default: true
+        }
+    }
+
+    /// Objects fed by an image input.
+    public var needsImage: Bool {
+        if case .image = self { return true }
+        return false
+    }
+
+    /// Objects drawn by the overlay renderer (everything except video layers).
+    public var isOverlay: Bool {
         if case .video = self { return false }
         return true
     }

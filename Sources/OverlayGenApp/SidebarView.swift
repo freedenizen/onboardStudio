@@ -12,7 +12,9 @@ struct SidebarView: View {
                 }
                 ForEach(editor.project.inputs) { input in
                     HStack {
-                        Image(systemName: input.kind.isVideo ? "video" : "waveform.path.ecg")
+                        Image(
+                            systemName: input.kind.isVideo
+                                ? "video" : input.kind.isImage ? "photo" : "waveform.path.ecg")
                         VStack(alignment: .leading) {
                             Text(input.label)
                             Text(inputDetail(input)).font(.caption).foregroundStyle(.secondary)
@@ -73,7 +75,9 @@ struct SidebarView: View {
             }
             return "data"
         case .audio: return "audio"
-        case .image: return "image"
+        case .image:
+            if let image = editor.loaded?.images[input.id] { return "\(image.width)×\(image.height) image" }
+            return "image"
         }
     }
 
@@ -85,6 +89,9 @@ struct SidebarView: View {
         case .gForce: "scope"
         case .timer: "stopwatch"
         case .textData: "textformat.123"
+        case .shape: "square.on.circle"
+        case .text: "textformat"
+        case .image: "photo"
         }
     }
 }

@@ -15,11 +15,54 @@ public struct MediaReference: Hashable, Codable, Sendable {
 public struct VideoInputSettings: Hashable, Codable, Sendable {
     public var trim: TrimRange
     public var includeAudio: Bool
+    /// Degrees, clockwise; any value, normally 0 / 90 / 180 / 270.
+    public var rotation: Double
+    public var mirror: Mirror
+    public var crop: CropInsets
+    public var color: ColorAdjustments
+    public var chromaKey: ChromaKey?
+    public var audio: AudioSettings
 
-    public init(trim: TrimRange = .none, includeAudio: Bool = true) {
+    public init(
+        trim: TrimRange = .none,
+        includeAudio: Bool = true,
+        rotation: Double = 0,
+        mirror: Mirror = .none,
+        crop: CropInsets = .none,
+        color: ColorAdjustments = .neutral,
+        chromaKey: ChromaKey? = nil,
+        audio: AudioSettings = .neutral
+    ) {
         self.trim = trim
         self.includeAudio = includeAudio
+        self.rotation = rotation
+        self.mirror = mirror
+        self.crop = crop
+        self.color = color
+        self.chromaKey = chromaKey
+        self.audio = audio
     }
+
+    // Older documents lack the picture/audio fields; decode them as neutral.
+    private enum CodingKeys: String, CodingKey {
+        case trim, includeAudio, rotation, mirror, crop, color, chromaKey, audio
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
+        includeAudio = try c.decodeIfPresent(Bool.self, forKey: .includeAudio) ?? true
+        rotation = try c.decodeIfPresent(Double.self, forKey: .rotation) ?? 0
+        mirror = try c.decodeIfPresent(Mirror.self, forKey: .mirror) ?? .none
+        crop = try c.decodeIfPresent(CropInsets.self, forKey: .crop) ?? .none
+        color = try c.decodeIfPresent(ColorAdjustments.self, forKey: .color) ?? .neutral
+        chromaKey = try c.decodeIfPresent(ChromaKey.self, forKey: .chromaKey)
+        audio = try c.decodeIfPresent(AudioSettings.self, forKey: .audio) ?? .neutral
+    }
+}
+
+public struct ImageInputSettings: Hashable, Codable, Sendable {
+    public init() {}
 }
 
 public struct DataInputSettings: Hashable, Codable, Sendable {
@@ -46,7 +89,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
 public enum InputKind: Hashable, Codable, Sendable {
     case video(VideoInputSettings)
     case audio
-    case image
+    case image(ImageInputSettings)
     case data(DataInputSettings)
 
     public var isVideo: Bool {
@@ -56,6 +99,11 @@ public enum InputKind: Hashable, Codable, Sendable {
 
     public var isData: Bool {
         if case .data = self { return true }
+        return false
+    }
+
+    public var isImage: Bool {
+        if case .image = self { return true }
         return false
     }
 }

@@ -56,7 +56,8 @@ before tagging a release.
 | M2 media | `render --range 0:10` on your own clip | Plays in QuickTime, timestamp visible, audio in sync, size/fps as requested |
 | M3 objects | `render --project Tests/Fixtures/slice.overlayproj --out slice.mp4`, then your own project (`docs/project-format.md`) | Gauges move with the data, track map dot follows the car, lap timer resets at the line; golden images in `Tests/Fixtures/Goldens` show what each object should look like |
 | M4 app | `docs/qa-m4.md` | Preview frame == exported frame at the same time |
-| M5+ | milestone QA script + `swift test` | Listed in each PR |
+| M5 inputs | `docs/qa-m5.md` | Rotation/mirror/crop/colour/chroma key change the preview immediately; volume, balance and channel selection are audible; MTS files import when ffmpeg is installed |
+| M6+ | milestone QA script + `swift test` | Listed in each PR |
 
 ## Release smoke test
 
