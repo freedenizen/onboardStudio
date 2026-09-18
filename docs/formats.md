@@ -111,3 +111,39 @@ Every data input can be post-processed (`docs/project-format.md`, `DataInputSett
 
 FIT (Garmin SDK), RaceChrono `.rcz` archives, and GoPro GPMF metadata tracks. See
 `docs/architecture.md`.
+
+## GoPro GPMF (embedded telemetry)
+
+GoPro recordings carry a `gpmd` metadata track (GPMF) with GPS, accelerometer, gyroscope and
+camera sensor streams. AVFoundation does not expose it, so `GPMFKit` reads the MP4 sample tables
+directly and parses the KLV payloads. HERO11 and later write `GPS9` (position, altitude, 2D/3D
+speed, UTC days and seconds, DOP, fix) at 10 Hz; samples without a fix keep their time but carry no
+position. The accelerometer and gyro (`ACCL`, `GYRO`, 200 Hz) become `aux:accel_x/y/z` in G and
+`aux:gyro_x/y/z` in rad/s, axes re-ordered by the stream's `ORIN` string.
+
+Times are seconds from the start of the video, so a data input made from the video itself needs
+no sync (the app's **Use Embedded GPS** button creates one with the video's sync). The first GPS
+fix gives the recording's wall-clock start (`createdAt`), which other loggers can be synced to.
+CLI: `overlaygen probe GX010037.MP4`; importer id `gopro-gpmf`.
+
+## Garmin FIT
+
+`record` messages supply position (semicircles → degrees), altitude, speed (enhanced when
+present), distance, heart rate, cadence, power and temperature; `lap` messages become lap markers.
+Both byte orders, compressed-timestamp headers and developer fields (skipped) are handled. Times
+are seconds from the first record and `createdAt` is the absolute start (FIT epoch 1989-12-31).
+Importer id `fit`.
+
+## Timestamp auto-sync
+
+When a data file has a clock (epoch timestamps such as RaceChrono's, or a recorded start date such
+as GPX, TCX, FIT, VBO and NMEA files) and the video has one too (the GoPro GPS clock when the file
+has GPMF, otherwise the container's creation time), the app aligns them automatically when the
+data file is added, and **Auto-Sync from Timestamps** in the data inspector re-applies it. The
+video's own trim, offset and speed are honoured. Cameras whose clocks drift can still be nudged
+with the sync wizard afterwards.
+
+The GPS clock is preferred because container creation times are unreliable: on a HERO13 the
+`creation_time` of a clip was 32 s later than the GPS clock at its first frame, and only the GPS
+clock lines the clip up with a RaceChrono log recorded in the same car (median position
+disagreement about 6 m, versus hundreds of metres with the creation time).

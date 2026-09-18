@@ -18,6 +18,8 @@ public enum FormatDetector {
         TCXImporter(),
         NMEAImporter(),
         VBOImporter(),
+        FITImporter(),
+        GoProImporter(),
         GenericCSVImporter(),
     ]
 

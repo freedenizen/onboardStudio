@@ -1,3 +1,4 @@
+import MediaKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -109,6 +110,11 @@ struct InputInspector: View {
                 LabeledContent("Size", value: "\(info.width) × \(info.height)")
                 LabeledContent("Duration", value: "\(fmt(info.duration)) s")
                 LabeledContent("Frame rate", value: fmt(info.nominalFrameRate))
+                if info.hasGPMF {
+                    Button("Use Embedded GPS") { editor.useEmbeddedTelemetry(of: input.id) }
+                    Text("This GoPro recording carries GPS, accelerometer and gyro data.").font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         Section("Synchronization") {
@@ -119,6 +125,11 @@ struct InputInspector: View {
             NumberField("Play speed", value: binding(\.sync.playSpeed, name: "Change Speed"))
             if !input.kind.isVideo {
                 Button("Synchronize with Video…") { editor.showSyncWizard = true }
+                if let suggestion = editor.suggestedSync(for: input.id) {
+                    Button("Auto-Sync from Timestamps") { editor.autoSync(input.id) }
+                    Text("Aligns the data's clock with the video's \(suggestion.videoClock).").font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         if case .video(let settings) = input.kind {
