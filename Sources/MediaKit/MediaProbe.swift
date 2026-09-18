@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import GPMFKit
 
 /// Basic facts about a media file, loaded asynchronously via AVFoundation.
 public struct MediaInfo: Sendable, Equatable {
@@ -15,6 +16,8 @@ public struct MediaInfo: Sendable, Equatable {
     public var creationDate: Date?
     /// Whether the file carries a GoPro `gpmd` or similar metadata track.
     public var hasMetadataTrack: Bool
+    /// Whether the file carries GoPro GPMF telemetry (AVFoundation hides that track; see GPMFKit).
+    public var hasGPMF: Bool = false
 }
 
 public enum MediaProbeError: Error, CustomStringConvertible {
@@ -64,7 +67,7 @@ public enum MediaProbe {
             nominalFrameRate: frameRate,
             videoCodec: codec,
             creationDate: creation,
-            hasMetadataTrack: !metadataTracks.isEmpty)
+            hasMetadataTrack: !metadataTracks.isEmpty, hasGPMF: MP4Boxes.hasTrack("gpmd", in: url))
     }
 
     static func fourCC(_ code: FourCharCode) -> String {

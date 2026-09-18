@@ -26,12 +26,12 @@ let package = Package(
         // MARK: Libraries
         .target(name: "ProjectModel", swiftSettings: strict),
         .target(name: "TelemetryKit", swiftSettings: strict),
-        .target(name: "Importers", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .target(name: "GPMFKit", dependencies: ["TelemetryKit"], swiftSettings: strict),
+        .target(name: "Importers", dependencies: ["TelemetryKit", "GPMFKit"], swiftSettings: strict),
         .target(name: "RenderKit", dependencies: ["ProjectModel", "TelemetryKit"], swiftSettings: strict),
         .target(
             name: "MediaKit",
-            dependencies: ["ProjectModel", "TelemetryKit", "RenderKit", "Importers"],
+            dependencies: ["ProjectModel", "TelemetryKit", "RenderKit", "Importers", "GPMFKit"],
             swiftSettings: strict
         ),
         .target(name: "Scripting", dependencies: ["RenderKit", "TelemetryKit"], swiftSettings: strict),
@@ -65,6 +65,7 @@ let package = Package(
             swiftSettings: strict
         ),
         .testTarget(name: "RenderKitTests", dependencies: ["RenderKit"], swiftSettings: strict),
+        .testTarget(name: "GPMFKitTests", dependencies: ["GPMFKit"], swiftSettings: strict),
         .testTarget(
             name: "MediaKitTests",
             dependencies: ["MediaKit"],

@@ -107,6 +107,22 @@ final class EditorModel {
             kind: .data(DataInputSettings()))
         edit("Add Data") { $0.inputs.append(input) }
         selectedInputID = input.id
+        pendingAutoSync = input.id
+    }
+
+    /// A data input added by the user that should be synced from timestamps once it has loaded.
+    var pendingAutoSync: InputID?
+
+    /// Called after every compile: applies a pending timestamp sync when the clocks allow it.
+    func applyPendingAutoSync() {
+        guard let id = pendingAutoSync, sessions[id] != nil else { return }
+        pendingAutoSync = nil
+        guard project.input(id)?.sync == SyncSettings() else { return }  // the user already changed it
+        if let suggestion = suggestedSync(for: id) {
+            updateInput(id, name: "Auto-Sync from Timestamps") { $0.sync = suggestion.sync }
+            statusMessage =
+                "Synced \(project.input(id)?.label ?? "data") from timestamps using the \(suggestion.videoClock)."
+        }
     }
 
     /// Adds an image input and an image object showing it.
@@ -274,6 +290,7 @@ final class EditorModel {
                     }
                     lastCompiledProject = project
                     errorMessage = nil
+                    applyPendingAutoSync()
                 } else {
                     compilePending = true  // superseded by a newer edit
                 }
