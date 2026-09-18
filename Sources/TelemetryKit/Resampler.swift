@@ -9,7 +9,11 @@ public enum Resampler {
             return channel
         }
         let step = 1 / hertz
-        let count = Int(((last - first) / step).rounded(.down)) + 1
+        // Cap the output at ten million samples (about 28 hours at 100 Hz) so a corrupt time axis
+        // cannot ask for an absurd allocation.
+        let wanted = ((last - first) / step).rounded(.down)
+        guard wanted.isFinite, wanted < 10_000_000 else { return channel }
+        let count = Int(wanted) + 1
         var times: [Double] = []
         var values: [Double] = []
         times.reserveCapacity(count)

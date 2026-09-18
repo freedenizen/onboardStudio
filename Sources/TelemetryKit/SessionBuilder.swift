@@ -49,7 +49,8 @@ public enum SessionBuilder {
         }
     }
 
-    public static func build(_ table: RawTable, options: Options = Options()) -> TelemetrySession {
+    public static func build(_ rawTable: RawTable, options: Options = Options()) -> TelemetrySession {
+        let table = sanitised(rawTable)
         var channels: [Channel] = []
         var usedRoles = Set<ChannelRole>()
 
@@ -100,6 +101,30 @@ public enum SessionBuilder {
             session.laps = deriveLaps(table: table, session: session)
         }
         return session
+    }
+
+    // MARK: - Time axis
+
+    /// Every importer promises a finite, strictly increasing time axis, but a corrupt file can
+    /// break that promise; rows with NaN, infinite or non-increasing times are dropped here so
+    /// binary searches and time ranges stay valid.
+    static func sanitised(_ table: RawTable) -> RawTable {
+        var keep: [Int] = []
+        keep.reserveCapacity(table.times.count)
+        var last = -Double.infinity
+        for (index, time) in table.times.enumerated() where time.isFinite && time > last {
+            keep.append(index)
+            last = time
+        }
+        guard keep.count != table.times.count else { return table }
+        var out = table
+        out.times = keep.map { table.times[$0] }
+        out.columns = table.columns.map { column in
+            var copy = column
+            copy.values = keep.map { $0 < column.values.count ? column.values[$0] : nil }
+            return copy
+        }
+        return out
     }
 
     // MARK: - Channels
@@ -178,11 +203,13 @@ public enum SessionBuilder {
     /// the file ends before the next boundary.
     private static func lapsFromLapNumbers(_ channel: Channel, sessionEnd: Double?) -> [Lap] {
         guard !channel.isEmpty else { return [] }
+        // Lap numbers are small integers; anything else (a corrupt file) is clamped, not trapped on.
+        func lapNumber(_ value: Double) -> Int { Int(min(max(value.isFinite ? value.rounded() : 0, -1e6), 1e6)) }
         var runs: [(number: Int, start: Double)] = []
-        var current = Int(channel.values[0].rounded())
+        var current = lapNumber(channel.values[0])
         runs.append((current, channel.times[0]))
         for index in 1..<channel.count {
-            let number = Int(channel.values[index].rounded())
+            let number = lapNumber(channel.values[index])
             if number != current {
                 current = number
                 runs.append((number, channel.times[index]))

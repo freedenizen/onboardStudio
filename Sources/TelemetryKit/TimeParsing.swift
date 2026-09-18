@@ -21,7 +21,8 @@ public enum TimeParsing {
 
     /// Formats seconds as `m:ss.hh` (or `h:mm:ss.hh` when an hour or longer).
     public static func lapTimeString(_ seconds: Double) -> String {
-        let total = max(0, seconds)
+        // Clamp to under 100 hours so garbage values format instead of trapping on Int().
+        let total = seconds.isFinite ? min(max(0, seconds), 359_999.99) : 0
         let hours = Int(total / 3600)
         let minutes = Int(total.truncatingRemainder(dividingBy: 3600) / 60)
         let secs = total.truncatingRemainder(dividingBy: 60)

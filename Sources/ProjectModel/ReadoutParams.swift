@@ -259,8 +259,8 @@ public struct GearParams: Hashable, Codable, Sendable {
 
     /// Text shown for a gear value.
     public func text(for value: Double?) -> String {
-        guard let value else { return "-" }
-        let gear = Int(value.rounded())
+        guard let value, value.isFinite else { return "-" }
+        let gear = Int(min(max(value.rounded(), -1_000_000), 1_000_000))
         switch gear {
         case 0: return neutralText
         case -1: return reverseText

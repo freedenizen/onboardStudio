@@ -23,6 +23,11 @@ swift test --filter "RaceChrono"            # tests whose name matches
 CI runs the same suite on every pull request together with lint, an app build and the commit
 signature check; a PR cannot merge until all four pass.
 
+Fuzz suites mutate every fixture (byte flips, truncation, inserted garbage, digit storms) with a
+fixed seed and feed them to every importer, the GPMF/MP4 readers, the expression parser and the
+spherical-metadata reader; throwing is fine, crashing or hanging is the failure. Raise the
+iteration counts locally when hunting a bug; CI runs the committed counts.
+
 ## 2. Headless checks with the CLI
 
 The `overlaygen` tool exercises the same libraries the app uses, without the GUI:
@@ -34,6 +39,7 @@ swift run overlaygen probe session.csv --json             # machine-readable
 
 swift run overlaygen render --video clip.mp4 --out out.mp4 --range 0:10      # M2 pipeline check
 swift run overlaygen render --video clip.mp4 --out out.mp4 --preset 720p --codec hevc --speed 2
+swift run -c release overlaygen bench --project my.overlayproj --export --codec hevc --seconds 60   # M14 speed check
 ```
 
 `render` re-encodes the clip through the AVFoundation composition and custom compositor with a
@@ -65,7 +71,7 @@ before tagging a release.
 | M11 scripting | `docs/qa-m11.md`; `ScriptingTests` (data API, canvas pixels, error badge, examples, RaceRender-style names, frame budget) | An example script draws live; a typo shows a badge and an inspector message, never a crash; the busy-script test stays under 4 ms/frame |
 | M12 lens/360/maps | `docs/qa-m12.md`; `LensUnwrapTests` (synthetic equirectangular and fisheye sources on both kernel backends, golden), `SphericalMetadataTests` (uuid box present, file still decodes, ffprobe reports a spherical mapping when installed), `TrackMapExtrasTests` (two-vehicle and map-background goldens) | A 360° clip shows a flat, pannable view; a tagged export plays as a panorama in QuickTime Player; a second data input appears as a second dot; a map background lines up with the outline |
 | M13 motion sync / YouTube / sidecars | `docs/qa-m13.md`; `SignalCorrelationTests`, `MotionSyncTests` (a synthetic clip with motion bursts is written with AVAssetWriter and matched against a shifted speed log), `YouTubeKitTests` (device flow, token refresh and a resumable upload with a dropped chunk against a mock Google served by a `URLProtocol`), `DJISRTTests`, `CompanionTelemetryTests` | Auto-Sync by Motion lands within a second of the manual sync on the real project; `overlaygen sync` prints a convincing match; a DJI clip's SRT is offered as sidecar data; an upload reaches YouTube after the device-code sign-in |
-| M14+ | milestone QA script + `swift test` | Listed in each PR |
+| M14 performance/hardening | `overlaygen bench [--export]`; `LongSessionTests` (two-hour 20 Hz session, memory flat, frames quick), fuzz suites (`ImporterFuzzTests`, `GPMFFuzzTests`, `ExpressionFuzzTests`, `SphericalFuzzTests`) with fixed seeds; `docs/parity.md` | 4K HEVC export faster than real time on Apple silicon; resident memory flat over a long export; no importer crashes on mutated files |
 
 ## Release smoke test
 

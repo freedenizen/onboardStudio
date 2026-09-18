@@ -63,6 +63,10 @@ jobs:
             coverage.lcov
       - name: CLI smoke
         run: swift run overlaygen --version
+      - name: Render benchmark (fixture project)
+        run: |
+          swift run overlaygen bench --frames 90 --json | tee bench.json
+          { echo '### Bench (fixture slice, debug build)'; echo '```'; cat bench.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   build-app:
     name: Build app

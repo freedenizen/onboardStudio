@@ -186,3 +186,32 @@ struct SphericalMetadataTests {
             "ffprobe reported \(text)")
     }
 }
+
+@Suite("Spherical fuzzing")
+struct SphericalFuzzTests {
+    @Test func mutatedContainersNeverCrashTheReaderOrInjector() throws {
+        let seed = try Data(contentsOf: try MediaFixtures.video)
+        var state: UInt64 = 5
+        func next() -> Int {
+            state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            return Int(state >> 33)
+        }
+        for iteration in 0..<80 {
+            var bytes = [UInt8](seed)
+            switch next() % 3 {
+            case 0: for _ in 0..<(1 + next() % 40) { bytes[next() % min(bytes.count, 4096)] = UInt8(next() % 256) }
+            case 1: bytes = Array(bytes.prefix(next() % bytes.count))
+            default:
+                let at = next() % min(bytes.count, 4096)
+                bytes.insert(contentsOf: (0..<(1 + next() % 64)).map { _ in UInt8(next() % 256) }, at: at)
+            }
+            let url = FileManager.default.temporaryDirectory.appending(path: "fuzz-spherical-\(iteration).mp4")
+            try Data(bytes).write(to: url)
+            defer { try? FileManager.default.removeItem(at: url) }
+            let started = Date()
+            _ = try? SphericalMetadata.isSpherical(url)
+            _ = try? SphericalMetadata.inject(into: url)
+            #expect(Date().timeIntervalSince(started) < 5, "iteration \(iteration) hung")
+        }
+    }
+}

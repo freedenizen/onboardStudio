@@ -83,27 +83,12 @@ public enum MP4Boxes {
         let chunkBox = try child("co64", of: stbl, in: handle) ?? child("stco", of: stbl, in: handle)
         guard let chunkBox else { throw ReadError.malformed("missing chunk offsets") }
 
-        // Sizes.
-        let uniform = try uint32(at: stsz.start + 4, in: handle)
-        let sampleCount = Int(try uint32(at: stsz.start + 8, in: handle))
-        var sizes: [Int] = []
-        if uniform != 0 {
-            sizes = Array(repeating: Int(uniform), count: sampleCount)
-        } else {
-            let raw = try bytes(at: stsz.start + 12, count: sampleCount * 4, in: handle)
-            sizes = (0..<sampleCount).map { Int(be32(raw, $0 * 4)) }
-        }
-
-        // Chunk offsets.
-        let chunkCount = Int(try uint32(at: chunkBox.start + 4, in: handle))
-        let wide = chunkBox.type == "co64"
-        let rawOffsets = try bytes(at: chunkBox.start + 8, count: chunkCount * (wide ? 8 : 4), in: handle)
-        let chunkOffsets: [UInt64] = (0..<chunkCount).map {
-            wide ? be64(rawOffsets, $0 * 8) : UInt64(be32(rawOffsets, $0 * 4))
-        }
+        let sizes = try sampleSizes(stsz: stsz, in: handle)
+        let sampleCount = sizes.count
+        let chunkOffsets = try chunkOffsets(box: chunkBox, in: handle)
 
         // Samples per chunk (stsc runs).
-        let runCount = Int(try uint32(at: stsc.start + 4, in: handle))
+        let runCount = min(Int(try uint32(at: stsc.start + 4, in: handle)), Int(stsc.end - stsc.start - 8) / 12)
         let rawRuns = try bytes(at: stsc.start + 8, count: runCount * 12, in: handle)
         var runs: [(firstChunk: Int, samplesPerChunk: Int)] = []
         for run in 0..<runCount {
@@ -116,7 +101,7 @@ public enum MP4Boxes {
             let chunkNumber = chunkIndex + 1
             let perChunk = runs.last { $0.firstChunk <= chunkNumber }?.samplesPerChunk ?? 1
             var offset = chunkStart
-            for _ in 0..<perChunk where sampleIndex < sampleCount {
+            for _ in 0..<min(perChunk, sampleCount - sampleIndex) {
                 offsets.append(offset)
                 offset += UInt64(sizes[sampleIndex])
                 sampleIndex += 1
@@ -125,7 +110,7 @@ public enum MP4Boxes {
         guard offsets.count == sampleCount else { throw ReadError.malformed("chunk table does not cover all samples") }
 
         // Timing.
-        let entryCount = Int(try uint32(at: stts.start + 4, in: handle))
+        let entryCount = min(Int(try uint32(at: stts.start + 4, in: handle)), Int(stts.end - stts.start - 8) / 8)
         let rawTimes = try bytes(at: stts.start + 8, count: entryCount * 8, in: handle)
         var times: [Double] = []
         var durations: [Double] = []
@@ -133,7 +118,7 @@ public enum MP4Boxes {
         for entry in 0..<entryCount {
             let count = Int(be32(rawTimes, entry * 8))
             let delta = Double(be32(rawTimes, entry * 8 + 4)) / Double(max(timescale, 1))
-            for _ in 0..<count where times.count < sampleCount {
+            for _ in 0..<min(count, sampleCount - times.count) {
                 times.append(clock)
                 durations.append(delta)
                 clock += delta
@@ -145,6 +130,29 @@ public enum MP4Boxes {
             clock += durations.last ?? 1
         }
         return TrackSamples(timescale: timescale, times: times, durations: durations, sizes: sizes, offsets: offsets)
+    }
+
+    /// `stsz` sizes; every count is bounded by the bytes actually present in the table (a corrupt
+    /// file can claim billions of samples).
+    private static func sampleSizes(stsz: Box, in handle: FileHandle) throws -> [Int] {
+        let fileSize = try handle.seekToEnd()
+        let uniform = try uint32(at: stsz.start + 4, in: handle)
+        let claimed = Int(try uint32(at: stsz.start + 8, in: handle))
+        if uniform != 0 {
+            guard claimed <= Int(fileSize) else { throw ReadError.malformed("sample count exceeds the file") }
+            return Array(repeating: Int(uniform), count: claimed)
+        }
+        let count = min(claimed, Int(stsz.end - stsz.start - 12) / 4)
+        let raw = try bytes(at: stsz.start + 12, count: count * 4, in: handle)
+        return (0..<count).map { Int(be32(raw, $0 * 4)) }
+    }
+
+    /// `stco` / `co64` chunk offsets, bounded the same way.
+    private static func chunkOffsets(box: Box, in handle: FileHandle) throws -> [UInt64] {
+        let wide = box.type == "co64"
+        let count = min(Int(try uint32(at: box.start + 4, in: handle)), Int(box.end - box.start - 8) / (wide ? 8 : 4))
+        let raw = try bytes(at: box.start + 8, count: count * (wide ? 8 : 4), in: handle)
+        return (0..<count).map { wide ? be64(raw, $0 * 8) : UInt64(be32(raw, $0 * 4)) }
     }
 
     // MARK: - Box walking

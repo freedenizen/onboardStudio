@@ -146,7 +146,9 @@ public struct GenericCSVImporter: TelemetryImporter {
     static func mapping(_ rawName: String, profile: Profile?) -> (ChannelRole?, TelemetryUnit) {
         var name = rawName.lowercased().trimmingCharacters(in: .whitespaces)
         var unit = TelemetryUnit.none
-        if let open = name.lastIndex(of: "("), name.hasSuffix(")") {
+        if let open = name.lastIndex(of: "("), name.hasSuffix(")"),
+            name.index(after: open) <= name.index(before: name.endIndex)
+        {
             unit = TelemetryUnit(parsing: String(name[name.index(after: open)..<name.index(before: name.endIndex)]))
             name = String(name[..<open]).trimmingCharacters(in: .whitespaces)
         }

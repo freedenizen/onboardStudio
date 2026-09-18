@@ -237,27 +237,32 @@ final class ExportJob: @unchecked Sendable {
         nonisolated(unsafe) let input = input
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             input.requestMediaDataWhenReady(on: queue) {
-                while input.isReadyForMoreMediaData {
-                    if finished.value { return }
-                    if Task.isCancelled {
-                        input.markAsFinished()
-                        if !finished.exchange(true) { continuation.resume(throwing: ExportError.cancelled) }
-                        return
-                    }
-                    guard let sample = output.copyNextSampleBuffer() else {
-                        input.markAsFinished()
-                        if !finished.exchange(true) { continuation.resume() }
-                        return
-                    }
-                    if !input.append(sample) {
-                        input.markAsFinished()
-                        if !finished.exchange(true) {
-                            continuation.resume(throwing: ExportError.writerFailed("append rejected"))
+                // One pool per sample: a ready writer can take hundreds of frames in one call, and
+                // every decoded frame and composited buffer is autoreleased.
+                while input.isReadyForMoreMediaData,
+                    autoreleasepool(invoking: { () -> Bool in
+                        if finished.value { return false }
+                        if Task.isCancelled {
+                            input.markAsFinished()
+                            if !finished.exchange(true) { continuation.resume(throwing: ExportError.cancelled) }
+                            return false
                         }
-                        return
-                    }
-                    onSample(CMSampleBufferGetPresentationTimeStamp(sample).seconds)
-                }
+                        guard let sample = output.copyNextSampleBuffer() else {
+                            input.markAsFinished()
+                            if !finished.exchange(true) { continuation.resume() }
+                            return false
+                        }
+                        if !input.append(sample) {
+                            input.markAsFinished()
+                            if !finished.exchange(true) {
+                                continuation.resume(throwing: ExportError.writerFailed("append rejected"))
+                            }
+                            return false
+                        }
+                        onSample(CMSampleBufferGetPresentationTimeStamp(sample).seconds)
+                        return true
+                    })
+                {}
             }
         }
     }

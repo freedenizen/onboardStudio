@@ -169,7 +169,10 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
             name = String(name[..<star.lowerBound])
         }
         var unit = ""
-        if let open = name.range(of: "(", options: .backwards), name.hasSuffix(")") {
+        // Unicode combining marks can put the "(" and ")" indices out of order in a mangled file.
+        if let open = name.range(of: "(", options: .backwards), name.hasSuffix(")"),
+            open.upperBound <= name.index(before: name.endIndex)
+        {
             unit = String(name[open.upperBound..<name.index(before: name.endIndex)])
             name = String(name[..<open.lowerBound])
         }
