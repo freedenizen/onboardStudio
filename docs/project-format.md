@@ -68,11 +68,15 @@ output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first 
 | kind | params |
 |---|---|
 | `video` | `mirror` (`horizontal`/`vertical`, combined with the input's mirror) and `channelMask` (`red`/`green`/`blue`); the layer is aspect-fitted into `frame` |
-| `speedometer`, `tachometer`, `gauge` | `GaugeParams`: `channel`, `title`, `minValue`, `maxValue`, `speedUnit` (`mph`/`kph`/`m/s`), `unitLabel`, `majorTick`, `minorTick`, `sweep`, `rotation`, `redlineFrom`, `valueDivisor`, `showValue`, `decimals`, colours |
+| `speedometer`, `tachometer`, `gauge` | `GaugeParams` (the Gauge Designer): `channel`, `title`, `minValue`, `maxValue`, `speedUnit` (`mph`/`kph`/`m/s`), `unitLabel`, `majorTick`, `minorTick`, `sweep` (≤ 360), `rotation`, `counterClockwise`, `style` (`needle`/`dualNeedle`/`arc`), `secondChannel` + `secondNeedleColor`, `needle` (`length`, `tailLength`, `width`, `hubRadius`, `tapered`, `smoothingSeconds`; fractions of the radius), `ticks` (`showMajor`, `showMinor`, `showLabels`, `majorLength`, `minorLength`, `outerRadius`, `labelRadius`, `labelDecimals`, `labelScale`, `declutter`), `zones` (`[{ "from", "to" (or null = to max), "color" }]`), `zoneTargets` (`face`, `marks`, `needle`, `gradient`), `arcWidth`, `arcTrackColor`, `showFace`, `faceImageInputID` (an image input drawn as the face), `valueDivisor`, `showValue`, `decimals`, colours. Pre-0.5 files with `redlineFrom`/`redlineColor` load as a single zone. |
+| `bar` | `channel`, `label`, `minValue`, `maxValue`, `orientation` (`horizontal`/`vertical`), `fillColor`, `trackColor`, `textColor`, `zones`, `zoneColorsFill` (zone colours the fill, otherwise paints the track), `segments` (0 = continuous), `showValue`, `decimals`, `speedUnit`, `unitLabel`, `cornerRadius` |
+| `graph` | `series` (`[{ "channel", "color", "lineWidth" }]`, up to 4), `axis` (`time` = last `window` seconds, `distance` = last `window` metres, `lap` = distance into the current lap), `window`, `minValue`/`maxValue` (null = fit the data), `speedUnit`, `label`, `backgroundColor`, `gridColor`, `textColor`, `gridLines`, `fillUnderLine`, `showCursor`, `showLabels`, `compareBestLap` + `ghostColor` (lap axis: the best lap's trace) |
+| `gear` | `channel` (0 = neutral, −1 = reverse, −99 = park), `label`, `showLabel`, `neutralText`, `reverseText`, `parkText`, `fontScale`, colours |
+| `lapCounter` | `label`, `showTotal`, `numberOffset`, colours |
 | `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation`, `backgroundColor` |
 | `gForce` | `maxG`, `ringStep`, `trailSeconds`, `dotColor`, `gridColor`, `faceColor`, `showValues` |
-| `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`), `showLapNumber`, `label`, colours |
-| `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours |
+| `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`/`projectTime`/`timeOfDay`/`deltaToBest`), `showLapNumber`, `label`, `decimals` (1–3), colours, `aheadColor`/`behindColor` for the delta. `deltaToBest` compares the lap in progress with the best completed lap at the same distance into the lap (needs a distance channel; GPS files get one automatically). `timeOfDay` needs epoch timestamps (RaceChrono) or a recorded start time. |
+| `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours; formatting: `multiplier`, `offset` (shown = value × multiplier + offset), `prefix`, `thousandsSeparator`, `showPlusSign`, `minimumIntegerDigits`, `absoluteValue`, `fontScale`, `labelScale`, `fontName` (empty = monospaced) |
 | `shape` | `shape` (`rectangle`/`roundedRectangle`/`ellipse`), `fillColor`, `strokeColor`, `strokeWidth` (fraction of output height), `cornerRadius` |
 | `text` | `text`, `fontScale` (fraction of object height), `fontName`, `bold`, `color`, `backgroundColor`, `alignment`, `outlineWidth`, `outlineColor` |
 | `image` | `inputID` → an image input; `rotation`, `keepAspect`; data-driven: `rotationChannel` + `degreesPerUnit`, `opacityChannel` + `opacityScale`, `flashChannel` + `flashThreshold` + `flashHertz` (data comes from the first data input) |
@@ -85,3 +89,11 @@ See `Tests/Fixtures/slice.overlayproj/project.json` for a complete example, and 
 ```sh
 swift run overlaygen render --project Tests/Fixtures/slice.overlayproj --out slice.mp4
 ```
+
+## Object styles
+
+**Project ▸ Export Object Style…** writes the selected object's `kind`, `opacity`, `width` and `height` to a
+`.overlaystyle` JSON file (`{ "formatVersion": 1, "kind": …, "opacity": 1, "width": 0.22, "height": 0.38 }`).
+**Import Object Style…** applies a file to the selected object (keeping its position, label and data source)
+or adds a new object when nothing is selected. **Copy / Paste Object Style** (⌥⌘C / ⌥⌘V) do the same through
+the clipboard.

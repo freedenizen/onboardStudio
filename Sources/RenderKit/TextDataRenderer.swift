@@ -3,7 +3,7 @@ import Foundation
 import ProjectModel
 import TelemetryKit
 
-/// A labelled numeric readout of one channel, e.g. `SPEED  123 mph`.
+/// A labelled numeric readout of one channel, e.g. `SPEED  123 mph`, with number formatting.
 public struct TextDataRenderer: OverlayDrawing {
     public let context: ObjectContext
     public let params: TextDataParams
@@ -13,6 +13,17 @@ public struct TextDataRenderer: OverlayDrawing {
         self.params = params
     }
 
+    /// The formatted value text (without caption or unit) for a raw channel value.
+    func valueText(for raw: Double?) -> String {
+        guard var value = raw else { return params.prefix + "--" }
+        if params.absoluteValue { value = abs(value) }
+        value = value * params.multiplier + params.offset
+        return params.prefix
+            + ValueFormatting.format(
+                value, decimals: params.decimals, thousandsSeparator: params.thousandsSeparator,
+                plusSign: params.showPlusSign, minimumIntegerDigits: params.minimumIntegerDigits)
+    }
+
     public func draw(in cg: CGContext, size: CGSize, time: Double) {
         let rect = context.rect(in: size)
         guard rect.width > 4, rect.height > 4 else { return }
@@ -20,15 +31,20 @@ public struct TextDataRenderer: OverlayDrawing {
         if params.backgroundColor.alpha > 0 {
             cg.fillRoundedRect(rect, radius: rect.height * 0.15, color: params.backgroundColor.cgColor)
         }
-        let value = ChannelValue.display(params.channel, in: context.sample(at: time), speedUnit: params.speedUnit)
+        let raw = ChannelValue.display(params.channel, in: context.sample(at: time), speedUnit: params.speedUnit)
         let unit = ChannelValue.role(params.channel) == .speed ? params.speedUnit.rawValue : params.unitLabel
-        let valueText = value.map { ValueFormatting.format($0, decimals: params.decimals) } ?? "--"
+        let text = valueText(for: raw)
         let padding = rect.height * 0.12
-        let labelStyle = TextDrawing.Style(pointSize: rect.height * 0.3, color: params.textColor)
-        let valueStyle = TextDrawing.Style.mono(rect.height * 0.5, color: params.textColor)
-        let unitStyle = TextDrawing.Style(pointSize: rect.height * 0.25, color: params.textColor, weightBold: false)
+        let labelStyle = TextDrawing.Style(pointSize: rect.height * params.labelScale, color: params.textColor)
+        let valueStyle =
+            params.fontName.isEmpty
+            ? TextDrawing.Style.mono(rect.height * params.fontScale, color: params.textColor)
+            : TextDrawing.Style(
+                fontName: params.fontName, pointSize: rect.height * params.fontScale, color: params.textColor)
+        let unitStyle = TextDrawing.Style(
+            pointSize: rect.height * params.fontScale * 0.5, color: params.textColor, weightBold: false)
 
-        let valueSize = TextDrawing.size(of: valueText, style: valueStyle)
+        let valueSize = TextDrawing.size(of: text, style: valueStyle)
         let unitSize = unit.isEmpty ? .zero : TextDrawing.size(of: unit, style: unitStyle)
         let gap = unit.isEmpty ? 0 : rect.height * 0.08
         let groupWidth = valueSize.width + gap + unitSize.width
@@ -45,7 +61,7 @@ public struct TextDataRenderer: OverlayDrawing {
                 params.label, at: CGPoint(x: rect.minX + padding, y: rect.minY + padding), style: labelStyle, in: cg)
         }
         let valueY = rect.midY - valueSize.height / 2
-        TextDrawing.draw(valueText, at: CGPoint(x: valueX, y: valueY), style: valueStyle, in: cg)
+        TextDrawing.draw(text, at: CGPoint(x: valueX, y: valueY), style: valueStyle, in: cg)
         if !unit.isEmpty {
             TextDrawing.draw(
                 unit,

@@ -1,4 +1,5 @@
 import AppKit
+import ProjectModel
 import UniformTypeIdentifiers
 
 enum OpenPanels {
@@ -25,6 +26,25 @@ enum OpenPanels {
             .commaSeparatedText, .plainText, .xml, UTType(filenameExtension: "gpx") ?? .xml, .data,
         ]
         panel.allowsMultipleSelection = false
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    static let styleType = UTType(exportedAs: "com.freedenizen.overlaygen.style", conformingTo: .json)
+
+    static func chooseStyle() -> URL? {
+        let panel = NSOpenPanel()
+        panel.title = "Import Object Style"
+        panel.allowedContentTypes = [styleType, .json]
+        panel.allowsMultipleSelection = false
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    static func chooseStyleDestination(suggestedName: String) -> URL? {
+        let panel = NSSavePanel()
+        panel.title = "Export Object Style"
+        panel.allowedContentTypes = [styleType]
+        panel.nameFieldStringValue = suggestedName + "." + ObjectStyle.fileExtension
+        panel.canCreateDirectories = true
         return panel.runModal() == .OK ? panel.url : nil
     }
 

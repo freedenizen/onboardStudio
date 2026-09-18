@@ -164,6 +164,28 @@ struct SourceOrientationMediaTests {
         #expect(plain.plan.videoLayers.first?.sourceTransform == .identity)
     }
 
+    @Test func replanKeepsTheSourceTransform() async throws {
+        let video = Input(
+            label: "v", source: MediaReference(path: try Self.rotated.path), kind: .video(VideoInputSettings()))
+        var project = Project(
+            inputs: [video],
+            displayObjects: [
+                DisplayObject(label: "v", inputID: video.id, frame: .full, kind: .video(VideoObjectParams()))
+            ])
+        project.settings.outputWidth = 320
+        project.settings.outputHeight = 180
+        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj"))
+        let loaded = try await ProjectCompiler.load(project, location: location)
+        let compiled = try await ProjectCompiler.compile(loaded)
+        #expect(compiled.plan.videoLayers.first?.sourceTransform != .identity)
+        // An object edit goes through replan; the rotation must survive it.
+        project.displayObjects[0].opacity = 0.5
+        let replanned = ProjectCompiler.replan(
+            compiled, for: try await ProjectCompiler.load(project, location: location, reusing: loaded))
+        #expect(replanned.plan.videoLayers.first?.sourceTransform == compiled.plan.videoLayers.first?.sourceTransform)
+        #expect(replanned.plan.videoLayers.first?.opacity == 0.5)
+    }
+
     /// Our export must show the clip the way macOS shows it (AVAssetImageGenerator applies the
     /// preferred transform), i.e. upside down relative to the encoded pixels.
     @Test func exportMatchesSystemOrientation() async throws {

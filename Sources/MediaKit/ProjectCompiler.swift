@@ -102,7 +102,10 @@ public enum ProjectCompiler {
         }
         let overlays = RenderPlanner.overlays(
             for: project, sessions: loaded.sessions, images: loaded.images, cache: RenderCache())
-        let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs)
+        // The source rotation lives on the existing layers; a replan must keep it.
+        let sourceTransforms = Dictionary(
+            compiled.plan.videoLayers.map { ($0.trackID, $0.sourceTransform) }, uniquingKeysWith: { first, _ in first })
+        let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
         let plan = RenderPlan(
             outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
             frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays)

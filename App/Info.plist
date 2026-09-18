@@ -69,6 +69,23 @@
 				</array>
 			</dict>
 		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>OverlayGen Object Style</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.freedenizen.overlaygen.style</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>overlaystyle</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
 </dict>
 </plist>

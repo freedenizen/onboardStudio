@@ -93,6 +93,10 @@ struct SidebarView: View {
         case .shape: "square.on.circle"
         case .text: "textformat"
         case .image: "photo"
+        case .bar: "chart.bar.fill"
+        case .graph: "chart.xyaxis.line"
+        case .gear: "g.square"
+        case .lapCounter: "number.square"
         }
     }
 }
