@@ -64,7 +64,50 @@ GPX 1.0/1.1 tracks.
 - Speed, heading and cumulative distance are derived from position when the file has none.
 - The first `<trk><name>` is used as the session title.
 
+## TCX (`tcx`)
+
+Garmin Training Center XML. Trackpoints give position, altitude, distance, heart rate, cadence
+and the `Speed`/`Watts` extensions; each `<Lap StartTime>` becomes a lap boundary. Times are
+relative to the first trackpoint.
+
+## NMEA 0183 (`nmea`)
+
+Plain sentence logs (`$GPRMC`, `$GPGGA`, `$GPGLL`, also `$GN…`/`$GL…`). Fixes are merged by
+their UTC time; RMC supplies speed (knots → m/s), course and the date; GGA supplies altitude, fix
+quality, satellites and HDOP; void (`V`) sentences are skipped; midnight rollover is handled.
+
+## Racelogic VBO (`vbo`)
+
+`[header]` (or `[column names]`) lists the channels; `[data]` rows are space separated. Time is
+`hhmmss.ss`; `lat`/`long` are in minutes with west positive (VBO convention) and are converted to
+signed degrees; `velocity` is km/h. Known channels: sats, heading, height, lapnumber, rpm,
+throttle, brake, gear, distance, latacc/longacc.
+
+## Generic CSV (`generic-csv`)
+
+For apps without a dedicated importer. The header is the first row with at least three fields and a
+time-like column; a units row after it is skipped. Time may be unix seconds, relative seconds or
+`hh:mm:ss.nn`. Column names are matched against app profiles when a signature is present (Harry's
+LapTimer, AIM, MoTeC i2) and otherwise fuzzily (`lat`, `lon`, `speed`/`mph`/`kph`, `heading`/
+`course`, `alt`, `lap`, `rpm`, `gear`, `throttle`, `brake`, `lateral g`, `long g`, `dist`), with a
+trailing `(unit)` respected. Everything unmatched becomes an aux channel. Fix mistakes with the
+channel mapping in the inspector (`roleOverrides` / `unitOverrides` in the project file).
+
+## Processing options
+
+Every data input can be post-processed (`docs/project-format.md`, `DataInputSettings`):
+
+- **Channel mapping**: `roleOverrides` (column → role) and `unitOverrides` (column → unit text).
+- **Resampling** to a fixed rate and **smoothing** (centred moving average; headings are averaged
+  as unit vectors; step channels such as gear and lap are left alone).
+- **Calculated fields**: `name = expression`, e.g. `kph = speed * 3.6`,
+  `hard_brake = if(brake > 50, 1, 0)`, `delta = [aux:Oil temp] - obd:Coolant`. Operators
+  `+ - * / %`, comparisons, `&& || !`, functions `abs sqrt floor ceil round min max pow clamp if`.
+- **Lap detection** from a start/finish line (latitude, longitude, optional heading, half-width,
+  heading tolerance, warm-up crossings to ignore) with sub-sample crossing times. On a real
+  RaceChrono session this reproduces the app's own lap times to within about 10 ms.
+
 ## Planned
 
-TCX, FIT (Garmin SDK), NMEA 0183, Racelogic VBO, generic CSV profiles for TrackAddict, Harry's
-LapTimer, AIM and MoTeC exports, and GoPro GPMF metadata tracks. See `docs/architecture.md`.
+FIT (Garmin SDK), RaceChrono `.rcz` archives, and GoPro GPMF metadata tracks. See
+`docs/architecture.md`.

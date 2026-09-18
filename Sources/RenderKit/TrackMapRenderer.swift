@@ -93,8 +93,10 @@ struct TrackProjection: Sendable {
             rotation: rotationDegrees * .pi / 180)
         var projected: [(x: Double, y: Double)] = []
         projected.reserveCapacity(lat.count)
+        // Compare the time axes once; doing it per sample made this quadratic on long sessions.
+        let sharedAxis = lon.times == lat.times
         for (index, time) in lat.times.enumerated() {
-            let longitude = lon.times == lat.times ? lon.values[index] : (lon.value(at: time) ?? longitude0)
+            let longitude = sharedAxis ? lon.values[index] : (lon.value(at: time) ?? longitude0)
             projected.append(basis.project(latitude: lat.values[index], longitude: longitude))
         }
         points = projected

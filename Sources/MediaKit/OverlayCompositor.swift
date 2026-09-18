@@ -34,7 +34,9 @@ public final class OverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
     ]
 
     private let lock = NSLock()
-    private var compositors: [ObjectIdentifier: FrameCompositor] = [:]
+    /// Per-instruction compositors. The entry retains its instruction so a recycled object address
+    /// can never be mistaken for the instruction that created the cached plan.
+    private var compositors: [ObjectIdentifier: (instruction: OverlayInstruction, compositor: FrameCompositor)] = [:]
 
     public func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
         lock.lock()
@@ -67,9 +69,9 @@ public final class OverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         lock.lock()
         defer { lock.unlock() }
         let key = ObjectIdentifier(instruction)
-        if let existing = compositors[key] { return existing }
+        if let existing = compositors[key], existing.instruction === instruction { return existing.compositor }
         let created = try FrameCompositor(plan: instruction.plan)
-        compositors[key] = created
+        compositors[key] = (instruction, created)
         return created
     }
 }

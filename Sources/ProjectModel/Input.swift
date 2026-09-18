@@ -65,24 +65,103 @@ public struct ImageInputSettings: Hashable, Codable, Sendable {
     public init() {}
 }
 
+/// A user-defined channel: `name` becomes `aux:<name>`, `expression` uses the calculated-field
+/// language (`speed * 3.6`, `if(rpm > 6500, 1, 0)`, `[aux:Oil temp] - coolant`).
+public struct CalculatedFieldSpec: Hashable, Codable, Sendable {
+    public var name: String
+    public var expression: String
+    public var unit: String
+
+    public init(name: String, expression: String, unit: String = "") {
+        self.name = name
+        self.expression = expression
+        self.unit = unit
+    }
+}
+
+/// Start/finish line for lap detection.
+public struct LapLineSpec: Hashable, Codable, Sendable {
+    public var latitude: Double
+    public var longitude: Double
+    /// Direction of travel across the line in degrees, or `nil` for any direction.
+    public var headingDegrees: Double?
+    public var halfWidthMeters: Double
+    public var headingToleranceDegrees: Double
+    /// Warm-up crossings to skip before lap 1 starts.
+    public var ignoreFirstCrossings: Int
+
+    public init(
+        latitude: Double,
+        longitude: Double,
+        headingDegrees: Double? = nil,
+        halfWidthMeters: Double = 25,
+        headingToleranceDegrees: Double = 60,
+        ignoreFirstCrossings: Int = 0
+    ) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.headingDegrees = headingDegrees
+        self.halfWidthMeters = halfWidthMeters
+        self.headingToleranceDegrees = headingToleranceDegrees
+        self.ignoreFirstCrossings = ignoreFirstCrossings
+    }
+}
+
 public struct DataInputSettings: Hashable, Codable, Sendable {
     /// Importer id to force (e.g. `racechrono-csv`); `nil` auto-detects.
     public var importerID: String?
     /// Column name → channel role identifier (e.g. `"Coolant": "obd:Coolant"`, `"KPH": "speed"`).
     public var roleOverrides: [String: String]
+    /// Column name → unit text (`km/h`, `mph`, `ft`, …) when the file's unit is missing or wrong.
+    public var unitOverrides: [String: String]
     public var deriveSpeedFromPosition: Bool
     public var deriveHeadingFromPosition: Bool
+    /// Resample linear channels to this rate (Hz); `nil` keeps the recorded rate.
+    public var resampleHertz: Double?
+    /// Moving-average window in seconds (0 = off).
+    public var smoothingSeconds: Double
+    public var calculatedFields: [CalculatedFieldSpec]
+    /// When set, laps come from crossings of this line instead of the file's lap markers.
+    public var lapLine: LapLineSpec?
 
     public init(
         importerID: String? = nil,
         roleOverrides: [String: String] = [:],
+        unitOverrides: [String: String] = [:],
         deriveSpeedFromPosition: Bool = true,
-        deriveHeadingFromPosition: Bool = true
+        deriveHeadingFromPosition: Bool = true,
+        resampleHertz: Double? = nil,
+        smoothingSeconds: Double = 0,
+        calculatedFields: [CalculatedFieldSpec] = [],
+        lapLine: LapLineSpec? = nil
     ) {
         self.importerID = importerID
         self.roleOverrides = roleOverrides
+        self.unitOverrides = unitOverrides
         self.deriveSpeedFromPosition = deriveSpeedFromPosition
         self.deriveHeadingFromPosition = deriveHeadingFromPosition
+        self.resampleHertz = resampleHertz
+        self.smoothingSeconds = smoothingSeconds
+        self.calculatedFields = calculatedFields
+        self.lapLine = lapLine
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case importerID, roleOverrides, unitOverrides, deriveSpeedFromPosition, deriveHeadingFromPosition
+        case resampleHertz, smoothingSeconds, calculatedFields, lapLine
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        importerID = try c.decodeIfPresent(String.self, forKey: .importerID)
+        roleOverrides = try c.decodeIfPresent([String: String].self, forKey: .roleOverrides) ?? [:]
+        unitOverrides = try c.decodeIfPresent([String: String].self, forKey: .unitOverrides) ?? [:]
+        deriveSpeedFromPosition = try c.decodeIfPresent(Bool.self, forKey: .deriveSpeedFromPosition) ?? true
+        deriveHeadingFromPosition = try c.decodeIfPresent(Bool.self, forKey: .deriveHeadingFromPosition) ?? true
+        resampleHertz = try c.decodeIfPresent(Double.self, forKey: .resampleHertz)
+        smoothingSeconds = try c.decodeIfPresent(Double.self, forKey: .smoothingSeconds) ?? 0
+        calculatedFields = try c.decodeIfPresent([CalculatedFieldSpec].self, forKey: .calculatedFields) ?? []
+        lapLine = try c.decodeIfPresent(LapLineSpec.self, forKey: .lapLine)
     }
 }
 

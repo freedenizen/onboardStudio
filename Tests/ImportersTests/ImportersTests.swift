@@ -298,3 +298,102 @@ struct RaceChronoV2Tests {
         #expect(session[.aux("trap_name")] == nil)
     }
 }
+
+@Suite("TCX importer")
+struct TCXImporterTests {
+    @Test func importsLapsAndExtensions() throws {
+        let url = try Fixtures.url("activity.tcx")
+        #expect(TCXImporter.confidence(for: try FileSniff.sniff(url)) == .certain)
+        let table = try TCXImporter().importFile(at: url)
+        #expect(table.rowCount == 4 && table.times == [0, 1, 2, 3])
+        #expect(table.column(named: "Speed")?.suggestedRole == .speed)
+        #expect(table.column(named: "Power")?.values[0] == 200)
+        #expect(table.column(named: "Heart rate")?.values[3] == nil)
+        #expect(table.lapMarkers == [RawLapMarker(number: 0, time: 2)])
+        let session = try TCXImporter().importSession(at: url)
+        #expect(session.laps.map(\.number) == [0, 1])
+        #expect(session.info.title == "Biking")
+        #expect(try FormatDetector.detect(url)?.id == "tcx")
+    }
+}
+
+@Suite("NMEA importer")
+struct NMEAImporterTests {
+    @Test func parsesSentences() throws {
+        let url = try Fixtures.url("track.nmea")
+        #expect(NMEAImporter.confidence(for: try FileSniff.sniff(url)) == .certain)
+        let table = try NMEAImporter().importFile(at: url)
+        #expect(table.rowCount == 4)
+        #expect(table.times == [0, 1, 2, 3])
+        #expect(abs((table.column(named: "Latitude")?.values[1] ?? 0) - 45.00009) < 1e-6)
+        #expect(abs((table.column(named: "Longitude")?.values[0] ?? 0) + 122) < 1e-9)
+        #expect(abs((table.column(named: "Speed")?.values[0] ?? 0) - 10) < 0.01)  // 19.44 kn
+        #expect(table.column(named: "Course")?.values[2] == 90)
+        #expect(table.column(named: "Altitude")?.values[3] == 102)
+        #expect(table.column(named: "Satellites")?.values[3] == 9)
+        let created = try #require(table.info.createdAt)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
+        #expect(calendar.component(.year, from: created) == 2026 && calendar.component(.hour, from: created) == 12)
+    }
+
+    @Test func helpers() throws {
+        #expect(NMEAImporter.utcSeconds("120001.50") == 43201.5)
+        #expect(NMEAImporter.coordinate("4500.0000", hemisphere: "N") == 45)
+        #expect(NMEAImporter.coordinate("12230.0000", hemisphere: "W") == -122.5)
+        #expect(try FormatDetector.detect(try Fixtures.url("track.nmea"))?.id == "nmea")
+    }
+}
+
+@Suite("VBO importer")
+struct VBOImporterTests {
+    @Test func parsesHeaderAndData() throws {
+        let url = try Fixtures.url("session.vbo")
+        #expect(VBOImporter.confidence(for: try FileSniff.sniff(url)) == .certain)
+        let table = try VBOImporter().importFile(at: url)
+        #expect(table.rowCount == 5 && table.times == [0, 1, 2, 3, 4])
+        #expect(abs((table.column(named: "lat")?.values[0] ?? 0) - 45) < 1e-9)
+        #expect(abs((table.column(named: "long")?.values[0] ?? 0) + 122) < 1e-9)
+        #expect(table.column(named: "velocity")?.unit == .kilometersPerHour)
+        #expect(table.column(named: "lapnumber")?.suggestedRole == .lap)
+        let session = try VBOImporter().importSession(at: url)
+        #expect(abs((session[.speed]?.values[0] ?? 0) - 20) < 1e-6)
+        #expect(session.laps.map(\.number) == [1, 2])
+        #expect(session.info.createdAt != nil)
+        #expect(try FormatDetector.detect(url)?.id == "vbo")
+    }
+}
+
+@Suite("Generic CSV importer")
+struct GenericCSVImporterTests {
+    @Test func harrysProfile() throws {
+        let url = try Fixtures.url("harrys.csv")
+        let table = try GenericCSVImporter().importFile(at: url)
+        #expect(table.info.sourceFormat.contains("Harry"))
+        #expect(table.column(named: "Speed (km/h)")?.suggestedRole == .speed)
+        #expect(table.column(named: "Speed (km/h)")?.unit == .kilometersPerHour)
+        #expect(table.column(named: "Lap")?.suggestedRole == .lap)
+        let session = try GenericCSVImporter().importSession(at: url)
+        #expect(abs((session[.speed]?.values[0] ?? 0) - 20) < 1e-6)
+        #expect(session.laps.map(\.number) == [1, 2])
+        #expect(try FormatDetector.detect(url)?.id == "generic-csv")
+    }
+
+    @Test func fuzzyNamesAndClockTimes() throws {
+        let url = try Fixtures.url("generic.csv")
+        let table = try GenericCSVImporter().importFile(at: url)
+        #expect(table.times == [0, 0.5, 1])
+        #expect(
+            table.column(named: "mph")?.suggestedRole == .speed && table.column(named: "mph")?.unit == .milesPerHour)
+        #expect(table.column(named: "course")?.suggestedRole == .heading)
+        #expect(table.column(named: "lateral g")?.suggestedRole == .lateralG)
+        #expect(table.column(named: "long g")?.suggestedRole == .longitudinalG)
+        #expect(table.column(named: "gear")?.interpolation == .step)
+        #expect(try FormatDetector.detect(url)?.id == "generic-csv")
+    }
+
+    @Test func racechronoAndRacerenderStillWinDetection() throws {
+        #expect(try FormatDetector.detect(try Fixtures.url("racechrono-v3.csv"))?.id == "racechrono-csv")
+        #expect(try FormatDetector.detect(try Fixtures.url("racerender-basic.csv"))?.id == "racerender-csv")
+    }
+}

@@ -117,8 +117,10 @@ public enum CompositionBuilder {
                 videoTrack.scaleTimeRange(
                     CMTimeRange(start: insertAt, duration: inputRange.duration), toDuration: scaledDuration)
             }
+            // The composition track deliberately keeps an identity transform: the compositor applies
+            // the source rotation itself, so AVFoundation must not apply it a second time when it
+            // delivers source frames or displays the composed output.
             let preferredTransform = try await sourceVideo.load(.preferredTransform)
-            videoTrack.preferredTransform = preferredTransform
             layers.append(
                 VideoLayer(
                     trackID: videoTrack.trackID, frame: spec.frame,

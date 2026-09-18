@@ -118,6 +118,9 @@ struct InputInspector: View {
         if case .video(let settings) = input.kind {
             VideoInputInspector(editor: editor, input: input, settings: settings)
         }
+        if case .data(let settings) = input.kind {
+            DataInputInspector(editor: editor, input: input, settings: settings)
+        }
         Section {
             Button("Remove Input", role: .destructive) { editor.removeInput(input.id) }
         }
@@ -459,14 +462,16 @@ struct SpeedUnitPicker: View {
 struct NumberField: View {
     let title: String
     @Binding var value: Double
+    let fractionDigits: ClosedRange<Int>
 
-    init(_ title: String, value: Binding<Double>) {
+    init(_ title: String, value: Binding<Double>, fractionDigits: ClosedRange<Int> = 0...3) {
         self.title = title
         _value = value
+        self.fractionDigits = fractionDigits
     }
 
     var body: some View {
-        TextField(title, value: $value, format: .number.precision(.fractionLength(0...3)))
+        TextField(title, value: $value, format: .number.precision(.fractionLength(fractionDigits)))
     }
 }
 

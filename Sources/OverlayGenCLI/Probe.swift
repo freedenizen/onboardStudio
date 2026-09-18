@@ -19,6 +19,21 @@ struct Probe: ParsableCommand {
     @Option(name: .long, help: "Print interpolated values at this time (seconds, session time).")
     var at: Double?
 
+    @Option(name: .long, help: "Detect laps from a finish line: lat,lon[,heading[,halfWidthMeters]].")
+    var lapLine: String?
+
+    @Option(name: .long, help: "Warm-up crossings to ignore before lap 1 (with --lap-line).")
+    var ignoreFirst: Int = 0
+
+    @Option(name: .long, help: "Moving-average smoothing window in seconds.")
+    var smooth: Double = 0
+
+    @Option(name: .long, help: "Resample linear channels to this rate (Hz).")
+    var resample: Double?
+
+    @Option(name: .long, parsing: .upToNextOption, help: "Calculated field as name=expression, e.g. kph=speed*3.6.")
+    var calc: [String] = []
+
     func run() throws {
         let url = URL(fileURLWithPath: path)
         let candidates = try FormatDetector.candidates(for: url)
@@ -32,7 +47,7 @@ struct Probe: ParsableCommand {
             guard let best = candidates.first else { throw ValidationError("Unrecognised file format.") }
             chosen = best
         }
-        var session = try chosen.importer.importSession(at: url)
+        var session = try chosen.importer.importSession(at: url, options: try buildOptions())
         if session.info.sourceFileName == nil { session.info.sourceFileName = url.lastPathComponent }
 
         if json {
@@ -40,6 +55,27 @@ struct Probe: ParsableCommand {
         } else {
             printReport(session, candidates: candidates, chosen: chosen)
         }
+    }
+
+    private func buildOptions() throws -> SessionBuilder.Options {
+        var options = SessionBuilder.Options()
+        options.smoothingSeconds = smooth
+        options.resampleHertz = resample
+        options.calculatedFields = try calc.map { entry in
+            let parts = entry.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+            guard parts.count == 2 else { throw ValidationError("--calc expects name=expression, got '\(entry)'.") }
+            _ = try Expression(parts[1])
+            return CalculatedField(name: parts[0], expression: parts[1])
+        }
+        if let lapLine {
+            let parts = lapLine.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+            guard parts.count >= 2 else { throw ValidationError("--lap-line expects lat,lon[,heading[,halfWidth]].") }
+            options.finishLine = FinishLine(
+                latitude: parts[0], longitude: parts[1], headingDegrees: parts.count > 2 ? parts[2] : nil,
+                halfWidthMeters: parts.count > 3 ? parts[3] : 25)
+            options.ignoreFirstCrossings = ignoreFirst
+        }
+        return options
     }
 
     // MARK: - Text report
