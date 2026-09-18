@@ -29,6 +29,7 @@ struct EditorView: View {
         .focusedSceneValue(\.editor, editor)
         .sheet(isPresented: $editor.showSyncWizard) { SyncWizardView(editor: editor) }
         .sheet(isPresented: $editor.showExport) { ExportSheet(editor: editor) }
+        .sheet(item: $editor.uploadURL) { url in UploadSheet(file: url) }
         .alert(
             "Problem",
             isPresented: Binding(get: { editor.errorMessage != nil }, set: { if !$0 { editor.errorMessage = nil } })
@@ -98,4 +99,8 @@ struct EditorToolbar: ToolbarContent {
             .disabled(editor.project.videoInputs.isEmpty)
         }
     }
+}
+
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
 }

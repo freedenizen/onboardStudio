@@ -64,7 +64,8 @@ before tagging a release.
 | M10 GoPro/FIT/auto-sync | `docs/qa-m10.md`; `GPMFKitTests` build a synthetic MP4 with a `gpmd` track; `FITTests` encode a FIT file in-test; set `OVERLAYGEN_SAMPLES_DIR` to also run against a real HERO13 clip | Use Embedded GPS gives a moving map from the video alone; adding a RaceChrono file next to the GoPro clip syncs to within a second without the wizard |
 | M11 scripting | `docs/qa-m11.md`; `ScriptingTests` (data API, canvas pixels, error badge, examples, RaceRender-style names, frame budget) | An example script draws live; a typo shows a badge and an inspector message, never a crash; the busy-script test stays under 4 ms/frame |
 | M12 lens/360/maps | `docs/qa-m12.md`; `LensUnwrapTests` (synthetic equirectangular and fisheye sources on both kernel backends, golden), `SphericalMetadataTests` (uuid box present, file still decodes, ffprobe reports a spherical mapping when installed), `TrackMapExtrasTests` (two-vehicle and map-background goldens) | A 360° clip shows a flat, pannable view; a tagged export plays as a panorama in QuickTime Player; a second data input appears as a second dot; a map background lines up with the outline |
-| M13+ | milestone QA script + `swift test` | Listed in each PR |
+| M13 motion sync / YouTube / sidecars | `docs/qa-m13.md`; `SignalCorrelationTests`, `MotionSyncTests` (a synthetic clip with motion bursts is written with AVAssetWriter and matched against a shifted speed log), `YouTubeKitTests` (device flow, token refresh and a resumable upload with a dropped chunk against a mock Google served by a `URLProtocol`), `DJISRTTests`, `CompanionTelemetryTests` | Auto-Sync by Motion lands within a second of the manual sync on the real project; `overlaygen sync` prints a convincing match; a DJI clip's SRT is offered as sidecar data; an upload reaches YouTube after the device-code sign-in |
+| M14+ | milestone QA script + `swift test` | Listed in each PR |
 
 ## Release smoke test
 

@@ -114,6 +114,10 @@ struct InputInspector: View {
                     Button("Use Embedded GPS") { editor.useEmbeddedTelemetry(of: input.id) }
                     Text("This GoPro recording carries GPS, accelerometer and gyro data.").font(.caption)
                         .foregroundStyle(.secondary)
+                } else if let companion = info.companion {
+                    Button("Use Sidecar Data (\(companion.displayName))") { editor.useEmbeddedTelemetry(of: input.id) }
+                    Text("\(companion.url.lastPathComponent) was recorded with this video.").font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -129,6 +133,23 @@ struct InputInspector: View {
                     Button("Auto-Sync from Timestamps") { editor.autoSync(input.id) }
                     Text("Aligns the data's clock with the video's \(suggestion.videoClock).").font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                if input.kind.isData, !editor.project.videoInputs.isEmpty {
+                    if let progress = editor.motionSyncProgress {
+                        HStack {
+                            if progress > 0 {
+                                ProgressView(value: progress) { Text("Analysing picture motion…") }
+                            } else {
+                                ProgressView { Text("Listening to the audio…") }
+                            }
+                            Button("Cancel") { editor.cancelMotionSync() }
+                        }
+                    } else {
+                        Button("Auto-Sync by Motion") { editor.motionSync(input.id) }
+                            .disabled(editor.motionSyncTask != nil)
+                        Text("Matches the video's sound and motion against the log's speed; needs no clocks.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
             }
         }

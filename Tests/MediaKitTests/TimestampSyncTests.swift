@@ -66,3 +66,44 @@ struct TimestampSyncTests {
         #expect(start?.epoch == 1_700_000_000 && start?.source == "file creation time")
     }
 }
+
+@Suite("Companion telemetry")
+struct CompanionTelemetryTests {
+    @Test func findsADJILogNextToTheVideoAndUsesItsClock() async throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "companion-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let video = dir.appending(path: "DJI_0001.MP4")
+        try FileManager.default.copyItem(at: try MediaFixtures.video, to: video)
+        #expect(CompanionTelemetry.find(for: video) == nil)
+        let fixtures = try #require(Bundle.module.url(forResource: "Fixtures", withExtension: nil))
+        try FileManager.default.copyItem(
+            at: fixtures.appending(path: "dji-osmo.srt"), to: dir.appending(path: "DJI_0001.SRT"))
+        let companion = try #require(CompanionTelemetry.find(for: video))
+        #expect(companion.importerID == "dji-srt")
+        let info = try await MediaProbe.probe(video)
+        #expect(info.companion == companion)
+        let start = try #require(TimestampSync.recordingStart(of: video, info: info))
+        #expect(start.source == "DJI SRT clock")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let parts = calendar.dateComponents([.hour, .minute, .second], from: Date(timeIntervalSince1970: start.epoch))
+        #expect(parts.hour == 14 && parts.minute == 5 && parts.second == 10)
+    }
+
+    @Test func readsASonySidecarDate() throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "sony-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let video = dir.appending(path: "C0001.MP4")
+        try Data().write(to: video)
+        try """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <NonRealTimeMeta xmlns="urn:schemas-professionalDisc:nonRealTimeMeta:ver.2.00">
+        <CreationDate value="2024-06-02T14:05:10+02:00"/>
+        </NonRealTimeMeta>
+        """.write(to: dir.appending(path: "C0001M01.XML"), atomically: true, encoding: .utf8)
+        let date = try #require(CompanionTelemetry.sonyCreationDate(for: video))
+        #expect(date.timeIntervalSince1970 == 1_717_329_910)
+    }
+}

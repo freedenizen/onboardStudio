@@ -7,6 +7,9 @@ struct SettingsView: View {
     @AppStorage("defaultExportPreset") private var defaultExportPreset = "project"
     @AppStorage("ffmpegPath") private var ffmpegPath = ""
     @AppStorage("nudgeStepPercent") private var nudgeStep = 1.0
+    @AppStorage("youtubeClientID") private var youtubeClientID = ""
+    @AppStorage("youtubeClientSecret") private var youtubeClientSecret = ""
+    @Environment(YouTubeModel.self) private var youtube
 
     var body: some View {
         Form {
@@ -32,13 +35,27 @@ struct SettingsView: View {
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }
+            Section("YouTube") {
+                TextField("OAuth client ID", text: $youtubeClientID)
+                SecureField("OAuth client secret", text: $youtubeClientSecret)
+                HStack {
+                    Text(youtube.isSignedIn ? "Signed in." : "Not signed in.").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Sign Out") { youtube.signOut() }.disabled(!youtube.isSignedIn)
+                }
+                Text(
+                    "Create a Google Cloud OAuth client of type “TVs and Limited Input devices” with the "
+                        + "YouTube Data API enabled; see docs/youtube.md."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Updates") {
                 Toggle("Check for updates automatically", isOn: automaticUpdates)
                 Button("Check Now") { updater.checkForUpdates() }.disabled(!updater.canCheckForUpdates)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 400)
+        .frame(width: 480, height: 560)
     }
 
     var automaticUpdates: Binding<Bool> {

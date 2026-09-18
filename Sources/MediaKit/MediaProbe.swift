@@ -18,6 +18,10 @@ public struct MediaInfo: Sendable, Equatable {
     public var hasMetadataTrack: Bool
     /// Whether the file carries GoPro GPMF telemetry (AVFoundation hides that track; see GPMFKit).
     public var hasGPMF: Bool = false
+    /// A telemetry file the camera wrote next to the video (DJI SRT, Garmin FIT, GPX).
+    public var companion: CompanionTelemetry?
+    /// Recording start from a Sony XML sidecar, when present.
+    public var sidecarCreationDate: Date?
 }
 
 public enum MediaProbeError: Error, CustomStringConvertible {
@@ -67,7 +71,9 @@ public enum MediaProbe {
             nominalFrameRate: frameRate,
             videoCodec: codec,
             creationDate: creation,
-            hasMetadataTrack: !metadataTracks.isEmpty, hasGPMF: MP4Boxes.hasTrack("gpmd", in: url))
+            hasMetadataTrack: !metadataTracks.isEmpty, hasGPMF: MP4Boxes.hasTrack("gpmd", in: url),
+            companion: CompanionTelemetry.find(for: url),
+            sidecarCreationDate: CompanionTelemetry.sonyCreationDate(for: url))
     }
 
     static func fourCC(_ code: FourCharCode) -> String {

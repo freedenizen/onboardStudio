@@ -21,6 +21,10 @@ final class EditorModel {
     var selectedSegmentID: SegmentID?
     var showSyncWizard = false
     var showExport = false
+    /// The file to offer for upload, set when an export finishes or a file is chosen from the menu.
+    var uploadURL: URL?
+    var motionSyncTask: Task<Void, Never>?
+    var motionSyncProgress: Double?
     var errorMessage: String?
     var statusMessage: String?
 
