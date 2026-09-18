@@ -48,7 +48,9 @@ public enum RenderPlanner {
             let context = ObjectContext(
                 objectID: object.id, frame: object.frame, opacity: object.opacity, sampler: sampler, sync: sync,
                 cache: cache)
-            let image = object.inputID.flatMap { images[$0] }
+            let image =
+                object.inputID.flatMap { images[$0] }
+                ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }
             return renderer(for: object.kind, context: context, image: image)
         }
     }
@@ -59,7 +61,7 @@ public enum RenderPlanner {
         switch kind {
         case .video: nil
         case .speedometer(let params), .tachometer(let params), .gauge(let params):
-            GaugeRenderer(context: context, params: params)
+            GaugeRenderer(context: context, params: params, faceImage: params.faceImageInputID == nil ? nil : image)
         case .trackMap(let params): TrackMapRenderer(context: context, params: params)
         case .gForce(let params): GForceRenderer(context: context, params: params)
         case .timer(let params): TimerRenderer(context: context, params: params)
@@ -67,6 +69,10 @@ public enum RenderPlanner {
         case .shape(let params): ShapeRenderer(context: context, params: params)
         case .text(let params): TextRenderer(context: context, params: params)
         case .image(let params): ImageRenderer(context: context, params: params, image: image)
+        case .bar(let params): BarRenderer(context: context, params: params)
+        case .graph(let params): GraphRenderer(context: context, params: params)
+        case .gear(let params): GearRenderer(context: context, params: params)
+        case .lapCounter(let params): LapCounterRenderer(context: context, params: params)
         }
     }
 }

@@ -140,7 +140,8 @@ public struct ImageObjectParams: Hashable, Codable, Sendable {
     }
 }
 
-/// A round gauge. Speedometer and tachometer are presets of this.
+/// A round gauge. Speedometer and tachometer are presets of this; the Gauge Designer edits
+/// every field.
 public struct GaugeParams: Hashable, Codable, Sendable {
     /// Channel role identifier, e.g. `speed`, `rpm`, `aux:Oil temp`.
     public var channel: String
@@ -153,12 +154,28 @@ public struct GaugeParams: Hashable, Codable, Sendable {
     public var unitLabel: String
     public var majorTick: Double
     public var minorTick: Double
-    /// Total arc in degrees.
+    /// Total arc in degrees (up to 360).
     public var sweep: Double
     /// Rotation of the arc's centre in degrees, 0 = arc centred at the bottom gap (classic 270° gauge).
     public var rotation: Double
-    /// Start of the red zone in channel units, or `nil` for none.
-    public var redlineFrom: Double?
+    /// Values increase anticlockwise instead of clockwise.
+    public var counterClockwise: Bool
+    public var style: GaugeStyle
+    /// Channel shown by the second needle in `.dualNeedle` style.
+    public var secondChannel: String
+    public var secondNeedleColor: RGBAColor
+    public var needle: NeedleStyle
+    public var ticks: TickStyle
+    /// Coloured value ranges (red zone, shift band…).
+    public var zones: [GaugeZone]
+    public var zoneTargets: ZoneTargets
+    /// Width of the filled arc in `.arc` style as a fraction of the radius.
+    public var arcWidth: Double
+    public var arcTrackColor: RGBAColor
+    /// Paint the round face (`faceColor`) behind the scale.
+    public var showFace: Bool
+    /// An image input drawn as the face (aspect-fitted into the gauge square), or `nil`.
+    public var faceImageInputID: InputID?
     /// Divide the channel value by this before display (e.g. 1000 for "x1000 rpm").
     public var valueDivisor: Double
     public var showValue: Bool
@@ -166,7 +183,6 @@ public struct GaugeParams: Hashable, Codable, Sendable {
     public var faceColor: RGBAColor
     public var needleColor: RGBAColor
     public var textColor: RGBAColor
-    public var redlineColor: RGBAColor
 
     public init(
         channel: String,
@@ -179,14 +195,24 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         minorTick: Double,
         sweep: Double = 270,
         rotation: Double = 0,
-        redlineFrom: Double? = nil,
+        counterClockwise: Bool = false,
+        style: GaugeStyle = .needle,
+        secondChannel: String = "",
+        secondNeedleColor: RGBAColor = .white,
+        needle: NeedleStyle = NeedleStyle(),
+        ticks: TickStyle = TickStyle(),
+        zones: [GaugeZone] = [],
+        zoneTargets: ZoneTargets = ZoneTargets(),
+        arcWidth: Double = 0.14,
+        arcTrackColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.15),
+        showFace: Bool = true,
+        faceImageInputID: InputID? = nil,
         valueDivisor: Double = 1,
         showValue: Bool = true,
         decimals: Int = 0,
         faceColor: RGBAColor = .faceDark,
         needleColor: RGBAColor = .accent,
-        textColor: RGBAColor = .white,
-        redlineColor: RGBAColor = .red
+        textColor: RGBAColor = .white
     ) {
         self.channel = channel
         self.title = title
@@ -198,14 +224,110 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         self.minorTick = minorTick
         self.sweep = sweep
         self.rotation = rotation
-        self.redlineFrom = redlineFrom
+        self.counterClockwise = counterClockwise
+        self.style = style
+        self.secondChannel = secondChannel
+        self.secondNeedleColor = secondNeedleColor
+        self.needle = needle
+        self.ticks = ticks
+        self.zones = zones
+        self.zoneTargets = zoneTargets
+        self.arcWidth = arcWidth
+        self.arcTrackColor = arcTrackColor
+        self.showFace = showFace
+        self.faceImageInputID = faceImageInputID
         self.valueDivisor = valueDivisor
         self.showValue = showValue
         self.decimals = decimals
         self.faceColor = faceColor
         self.needleColor = needleColor
         self.textColor = textColor
-        self.redlineColor = redlineColor
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case channel, title, minValue, maxValue, speedUnit, unitLabel, majorTick, minorTick, sweep, rotation
+        case counterClockwise, style, secondChannel, secondNeedleColor, needle, ticks, zones, zoneTargets
+        case arcWidth, arcTrackColor, showFace, faceImageInputID, valueDivisor, showValue, decimals
+        case faceColor, needleColor, textColor
+        // Pre-0.5 files: a single red zone.
+        case redlineFrom, redlineColor
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = GaugeParams(channel: "", title: "", minValue: 0, maxValue: 1, majorTick: 1, minorTick: 1)
+        channel = try c.decode(String.self, forKey: .channel)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        minValue = try c.decodeIfPresent(Double.self, forKey: .minValue) ?? 0
+        maxValue = try c.decodeIfPresent(Double.self, forKey: .maxValue) ?? 100
+        speedUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .speedUnit) ?? d.speedUnit
+        unitLabel = try c.decodeIfPresent(String.self, forKey: .unitLabel) ?? d.unitLabel
+        majorTick = try c.decodeIfPresent(Double.self, forKey: .majorTick) ?? (maxValue - minValue) / 5
+        minorTick = try c.decodeIfPresent(Double.self, forKey: .minorTick) ?? majorTick / 2
+        sweep = try c.decodeIfPresent(Double.self, forKey: .sweep) ?? d.sweep
+        rotation = try c.decodeIfPresent(Double.self, forKey: .rotation) ?? d.rotation
+        counterClockwise = try c.decodeIfPresent(Bool.self, forKey: .counterClockwise) ?? d.counterClockwise
+        style = try c.decodeIfPresent(GaugeStyle.self, forKey: .style) ?? d.style
+        secondChannel = try c.decodeIfPresent(String.self, forKey: .secondChannel) ?? d.secondChannel
+        secondNeedleColor = try c.decodeIfPresent(RGBAColor.self, forKey: .secondNeedleColor) ?? d.secondNeedleColor
+        needle = try c.decodeIfPresent(NeedleStyle.self, forKey: .needle) ?? d.needle
+        ticks = try c.decodeIfPresent(TickStyle.self, forKey: .ticks) ?? d.ticks
+        if let zones = try c.decodeIfPresent([GaugeZone].self, forKey: .zones) {
+            self.zones = zones
+        } else if let redline = try c.decodeIfPresent(Double.self, forKey: .redlineFrom) {
+            let color = try c.decodeIfPresent(RGBAColor.self, forKey: .redlineColor) ?? .red
+            zones = [GaugeZone(from: redline, to: nil, color: color)]
+        } else {
+            zones = []
+        }
+        zoneTargets = try c.decodeIfPresent(ZoneTargets.self, forKey: .zoneTargets) ?? d.zoneTargets
+        arcWidth = try c.decodeIfPresent(Double.self, forKey: .arcWidth) ?? d.arcWidth
+        arcTrackColor = try c.decodeIfPresent(RGBAColor.self, forKey: .arcTrackColor) ?? d.arcTrackColor
+        showFace = try c.decodeIfPresent(Bool.self, forKey: .showFace) ?? d.showFace
+        faceImageInputID = try c.decodeIfPresent(InputID.self, forKey: .faceImageInputID)
+        valueDivisor = try c.decodeIfPresent(Double.self, forKey: .valueDivisor) ?? d.valueDivisor
+        showValue = try c.decodeIfPresent(Bool.self, forKey: .showValue) ?? d.showValue
+        decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? d.decimals
+        faceColor = try c.decodeIfPresent(RGBAColor.self, forKey: .faceColor) ?? d.faceColor
+        needleColor = try c.decodeIfPresent(RGBAColor.self, forKey: .needleColor) ?? d.needleColor
+        textColor = try c.decodeIfPresent(RGBAColor.self, forKey: .textColor) ?? d.textColor
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(channel, forKey: .channel)
+        try c.encode(title, forKey: .title)
+        try c.encode(minValue, forKey: .minValue)
+        try c.encode(maxValue, forKey: .maxValue)
+        try c.encode(speedUnit, forKey: .speedUnit)
+        try c.encode(unitLabel, forKey: .unitLabel)
+        try c.encode(majorTick, forKey: .majorTick)
+        try c.encode(minorTick, forKey: .minorTick)
+        try c.encode(sweep, forKey: .sweep)
+        try c.encode(rotation, forKey: .rotation)
+        try c.encode(counterClockwise, forKey: .counterClockwise)
+        try c.encode(style, forKey: .style)
+        try c.encode(secondChannel, forKey: .secondChannel)
+        try c.encode(secondNeedleColor, forKey: .secondNeedleColor)
+        try c.encode(needle, forKey: .needle)
+        try c.encode(ticks, forKey: .ticks)
+        try c.encode(zones, forKey: .zones)
+        try c.encode(zoneTargets, forKey: .zoneTargets)
+        try c.encode(arcWidth, forKey: .arcWidth)
+        try c.encode(arcTrackColor, forKey: .arcTrackColor)
+        try c.encode(showFace, forKey: .showFace)
+        try c.encodeIfPresent(faceImageInputID, forKey: .faceImageInputID)
+        try c.encode(valueDivisor, forKey: .valueDivisor)
+        try c.encode(showValue, forKey: .showValue)
+        try c.encode(decimals, forKey: .decimals)
+        try c.encode(faceColor, forKey: .faceColor)
+        try c.encode(needleColor, forKey: .needleColor)
+        try c.encode(textColor, forKey: .textColor)
+    }
+
+    /// The start of the first zone that runs to the maximum (the classic red line), if any.
+    public var redlineFrom: Double? {
+        zones.first { $0.to == nil }?.from
     }
 
     public static func speedometer(unit: SpeedDisplayUnit = .mph, max: Double = 160) -> GaugeParams {
@@ -216,132 +338,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
     public static func tachometer(max: Double = 8000, redline: Double = 6500) -> GaugeParams {
         GaugeParams(
             channel: "rpm", title: "RPM", minValue: 0, maxValue: max, unitLabel: "rpm", majorTick: 1000, minorTick: 500,
-            redlineFrom: redline)
-    }
-}
-
-public struct TrackMapParams: Hashable, Codable, Sendable {
-    public var lineColor: RGBAColor
-    public var lineWidth: Double
-    public var dotColor: RGBAColor
-    public var dotRadius: Double
-    /// Rotate the map clockwise in degrees (0 = north up).
-    public var rotation: Double
-    public var backgroundColor: RGBAColor
-
-    public init(
-        lineColor: RGBAColor = .white,
-        lineWidth: Double = 3,
-        dotColor: RGBAColor = .accent,
-        dotRadius: Double = 7,
-        rotation: Double = 0,
-        backgroundColor: RGBAColor = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0)
-    ) {
-        self.lineColor = lineColor
-        self.lineWidth = lineWidth
-        self.dotColor = dotColor
-        self.dotRadius = dotRadius
-        self.rotation = rotation
-        self.backgroundColor = backgroundColor
-    }
-}
-
-public struct GForceParams: Hashable, Codable, Sendable {
-    /// Radius of the plot in G.
-    public var maxG: Double
-    /// Ring spacing in G.
-    public var ringStep: Double
-    /// Seconds of history drawn as a fading trail; 0 disables.
-    public var trailSeconds: Double
-    public var dotColor: RGBAColor
-    public var gridColor: RGBAColor
-    public var faceColor: RGBAColor
-    public var showValues: Bool
-
-    public init(
-        maxG: Double = 2,
-        ringStep: Double = 0.5,
-        trailSeconds: Double = 1.5,
-        dotColor: RGBAColor = .accent,
-        gridColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.5),
-        faceColor: RGBAColor = .faceDark,
-        showValues: Bool = true
-    ) {
-        self.maxG = maxG
-        self.ringStep = ringStep
-        self.trailSeconds = trailSeconds
-        self.dotColor = dotColor
-        self.gridColor = gridColor
-        self.faceColor = faceColor
-        self.showValues = showValues
-    }
-}
-
-public enum TimerMode: String, Codable, Sendable, CaseIterable {
-    /// Time since the current lap started.
-    case currentLap
-    case lastLap
-    case bestLap
-    /// Time since the data session started.
-    case session
-}
-
-public struct TimerParams: Hashable, Codable, Sendable {
-    public var mode: TimerMode
-    public var showLapNumber: Bool
-    public var label: String?
-    public var textColor: RGBAColor
-    public var backgroundColor: RGBAColor
-
-    public init(
-        mode: TimerMode = .currentLap,
-        showLapNumber: Bool = true,
-        label: String? = nil,
-        textColor: RGBAColor = .white,
-        backgroundColor: RGBAColor = .translucentBlack
-    ) {
-        self.mode = mode
-        self.showLapNumber = showLapNumber
-        self.label = label
-        self.textColor = textColor
-        self.backgroundColor = backgroundColor
-    }
-}
-
-public enum TextAlignment: String, Codable, Sendable, CaseIterable {
-    case leading
-    case center
-    case trailing
-}
-
-public struct TextDataParams: Hashable, Codable, Sendable {
-    public var channel: String
-    public var label: String
-    public var decimals: Int
-    public var speedUnit: SpeedDisplayUnit
-    public var unitLabel: String
-    public var alignment: TextAlignment
-    public var textColor: RGBAColor
-    public var backgroundColor: RGBAColor
-
-    public init(
-        channel: String,
-        label: String,
-        decimals: Int = 0,
-        speedUnit: SpeedDisplayUnit = .mph,
-        unitLabel: String = "",
-        alignment: TextAlignment = .leading,
-        textColor: RGBAColor = .white,
-        backgroundColor: RGBAColor = .translucentBlack
-    ) {
-        self.channel = channel
-        self.label = label
-        self.decimals = decimals
-        self.speedUnit = speedUnit
-        self.unitLabel = unitLabel
-        self.alignment = alignment
-        self.textColor = textColor
-        self.backgroundColor = backgroundColor
+            zones: [GaugeZone(from: redline, to: nil, color: .red)])
     }
 }
 
@@ -358,6 +355,10 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
     case shape(ShapeParams)
     case text(TextParams)
     case image(ImageObjectParams)
+    case bar(BarParams)
+    case graph(GraphParams)
+    case gear(GearParams)
+    case lapCounter(LapCounterParams)
 
     public var typeName: String {
         switch self {
@@ -372,6 +373,10 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .shape: "Shape"
         case .text: "Text"
         case .image: "Image"
+        case .bar: "Bar"
+        case .graph: "Graph"
+        case .gear: "Gear"
+        case .lapCounter: "Lap Counter"
         }
     }
 
@@ -380,6 +385,14 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         switch self {
         case .video, .shape, .text, .image: false
         default: true
+        }
+    }
+
+    /// The gauge parameters for the three round-gauge kinds.
+    public var gaugeParams: GaugeParams? {
+        switch self {
+        case .speedometer(let p), .tachometer(let p), .gauge(let p): p
+        default: nil
         }
     }
 

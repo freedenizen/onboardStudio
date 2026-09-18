@@ -48,6 +48,15 @@ struct EditorCommands: Commands {
             }
             Button("Delete Selected Object") { editor?.deleteSelectedObject() }.keyboardShortcut(.delete, modifiers: [])
             Divider()
+            Button("Copy Object Style") { editor?.copyStyle() }
+                .keyboardShortcut("c", modifiers: [.command, .option])
+                .disabled(editor?.selectedObject == nil)
+            Button("Paste Object Style") { editor?.pasteStyle() }
+                .keyboardShortcut("v", modifiers: [.command, .option])
+                .disabled(editor?.canPasteStyle != true)
+            Button("Import Object Style…") { editor?.importStyle() }
+            Button("Export Object Style…") { editor?.exportStyle() }.disabled(editor?.selectedObject == nil)
+            Divider()
             Button("Synchronize Data…") { editor?.showSyncWizard = true }.keyboardShortcut("y", modifiers: [.command])
             Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
         }

@@ -177,7 +177,15 @@ struct ObjectInspector: View {
         case .image(let params):
             ImageObjectInspector(editor: editor, object: object, params: params)
         case .speedometer(let params), .tachometer(let params), .gauge(let params):
-            GaugeInspector(editor: editor, object: object, params: params)
+            GaugeDesignerInspector(editor: editor, object: object, params: params)
+        case .bar(let params):
+            BarInspector(editor: editor, object: object, params: params)
+        case .graph(let params):
+            GraphInspector(editor: editor, object: object, params: params)
+        case .gear(let params):
+            GearInspector(editor: editor, object: object, params: params)
+        case .lapCounter(let params):
+            LapCounterInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):
             Section("Track Map") {
                 NumberField(
@@ -250,112 +258,9 @@ struct ObjectInspector: View {
                         }))
             }
         case .timer(let params):
-            Section("Timer") {
-                Picker(
-                    "Shows",
-                    selection: Binding(
-                        get: { params.mode },
-                        set: { v in
-                            set(
-                                .timer(
-                                    {
-                                        var p = params
-                                        p.mode = v
-                                        return p
-                                    }()))
-                        })
-                ) {
-                    Text("Current lap").tag(TimerMode.currentLap)
-                    Text("Last lap").tag(TimerMode.lastLap)
-                    Text("Best lap").tag(TimerMode.bestLap)
-                    Text("Session time").tag(TimerMode.session)
-                }
-                Toggle(
-                    "Show lap number",
-                    isOn: Binding(
-                        get: { params.showLapNumber },
-                        set: { v in
-                            set(
-                                .timer(
-                                    {
-                                        var p = params
-                                        p.showLapNumber = v
-                                        return p
-                                    }()))
-                        }))
-            }
+            TimerInspector(editor: editor, object: object, params: params)
         case .textData(let params):
-            Section("Text Data") {
-                ChannelPicker(
-                    editor: editor, object: object,
-                    selection: Binding(
-                        get: { params.channel },
-                        set: { v in
-                            set(
-                                .textData(
-                                    {
-                                        var p = params
-                                        p.channel = v
-                                        return p
-                                    }()))
-                        }))
-                TextField(
-                    "Caption",
-                    text: Binding(
-                        get: { params.label },
-                        set: { v in
-                            set(
-                                .textData(
-                                    {
-                                        var p = params
-                                        p.label = v
-                                        return p
-                                    }()))
-                        }))
-                Stepper(
-                    "Decimals: \(params.decimals)",
-                    value: Binding(
-                        get: { params.decimals },
-                        set: { v in
-                            set(
-                                .textData(
-                                    {
-                                        var p = params
-                                        p.decimals = max(0, min(3, v))
-                                        return p
-                                    }()))
-                        }))
-                SpeedUnitPicker(
-                    selection: Binding(
-                        get: { params.speedUnit },
-                        set: { v in
-                            set(
-                                .textData(
-                                    {
-                                        var p = params
-                                        p.speedUnit = v
-                                        return p
-                                    }()))
-                        }))
-                Picker(
-                    "Alignment",
-                    selection: Binding(
-                        get: { params.alignment },
-                        set: { v in
-                            set(
-                                .textData(
-                                    {
-                                        var p = params
-                                        p.alignment = v
-                                        return p
-                                    }()))
-                        })
-                ) {
-                    Text("Leading").tag(ProjectModel.TextAlignment.leading)
-                    Text("Center").tag(ProjectModel.TextAlignment.center)
-                    Text("Trailing").tag(ProjectModel.TextAlignment.trailing)
-                }
-            }
+            TextDataInspector(editor: editor, object: object, params: params)
         }
     }
 
@@ -383,52 +288,6 @@ struct ObjectInspector: View {
         Binding(
             get: { object.inputID },
             set: { value in editor.updateObject(object.id, name: "Change Data Source") { $0.inputID = value } })
-    }
-}
-
-struct GaugeInspector: View {
-    @Bindable var editor: EditorModel
-    let object: DisplayObject
-    let params: GaugeParams
-
-    var body: some View {
-        Section("Gauge") {
-            ChannelPicker(editor: editor, object: object, selection: field(\.channel))
-            TextField("Title", text: field(\.title))
-            NumberField("Minimum", value: field(\.minValue))
-            NumberField("Maximum", value: field(\.maxValue))
-            NumberField("Major tick", value: field(\.majorTick))
-            NumberField("Minor tick", value: field(\.minorTick))
-            NumberField("Sweep (°)", value: field(\.sweep))
-            NumberField("Rotation (°)", value: field(\.rotation))
-            NumberField(
-                "Red zone from",
-                value: Binding(
-                    get: { params.redlineFrom ?? 0 }, set: { v in update { $0.redlineFrom = v > 0 ? v : nil } }))
-            if ChannelRole(identifier: params.channel) == .speed {
-                SpeedUnitPicker(selection: field(\.speedUnit))
-            } else {
-                TextField("Unit label", text: field(\.unitLabel))
-                NumberField("Divide value by", value: field(\.valueDivisor))
-            }
-            Toggle("Show digital value", isOn: field(\.showValue))
-        }
-    }
-
-    func field<T>(_ keyPath: WritableKeyPath<GaugeParams, T>) -> Binding<T> {
-        Binding(get: { params[keyPath: keyPath] }, set: { value in update { $0[keyPath: keyPath] = value } })
-    }
-
-    func update(_ change: (inout GaugeParams) -> Void) {
-        var new = params
-        change(&new)
-        let kind: DisplayObjectKind =
-            switch object.kind {
-            case .speedometer: .speedometer(new)
-            case .tachometer: .tachometer(new)
-            default: .gauge(new)
-            }
-        editor.updateObject(object.id, name: "Edit Gauge") { $0.kind = kind }
     }
 }
 

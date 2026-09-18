@@ -145,19 +145,22 @@ struct RendererBehaviourTests {
             sync: .identity, cache: RenderCache())
         let sample = context.sample(at: 6)
         #expect(
-            TimerRenderer(context: context, params: TimerParams(mode: .currentLap)).timeText(
-                sample: sample, projectTime: 6) == "0:02.00")
+            TimerRenderer(context: context, params: TimerParams(mode: .currentLap)).readout(
+                sample: sample, projectTime: 6
+            ).text == "0:02.00")
         #expect(
-            TimerRenderer(context: context, params: TimerParams(mode: .lastLap)).timeText(
-                sample: sample, projectTime: 6) == "0:04.00")
+            TimerRenderer(context: context, params: TimerParams(mode: .lastLap)).readout(
+                sample: sample, projectTime: 6
+            ).text == "0:04.00")
         #expect(
             TimerRenderer(context: context, params: TimerParams(mode: .bestLap)).labelText(sample: sample) == "BEST 0")
         #expect(
             TimerRenderer(context: context, params: TimerParams(mode: .currentLap)).labelText(sample: sample) == "LAP 1"
         )
         #expect(
-            TimerRenderer(context: context, params: TimerParams(mode: .session)).timeText(
-                sample: sample, projectTime: 6) == "0:06.00")
+            TimerRenderer(context: context, params: TimerParams(mode: .session)).readout(
+                sample: sample, projectTime: 6
+            ).text == "0:06.00")
     }
 
     @Test func plannerBuildsOneRendererPerVisibleDataObject() {

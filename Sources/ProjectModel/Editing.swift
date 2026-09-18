@@ -106,6 +106,10 @@ extension DisplayObject {
             case .shape: UnitRect(x: 0.25 + stagger, y: 0.4, width: 0.5, height: 0.2)
             case .text: UnitRect(x: 0.2, y: 0.05 + stagger, width: 0.6, height: 0.1)
             case .image: UnitRect(x: 0.05 + stagger, y: 0.05 + stagger, width: 0.15, height: 0.15)
+            case .bar: UnitRect(x: 0.3, y: 0.8 - stagger, width: 0.4, height: 0.05)
+            case .graph: UnitRect(x: 0.03 + stagger, y: 0.7 - stagger, width: 0.3, height: 0.2)
+            case .gear: UnitRect(x: 0.6 - stagger, y: 0.05 + stagger, width: 0.08, height: 0.14)
+            case .lapCounter: UnitRect(x: 0.03 + stagger, y: 0.35 + stagger, width: 0.14, height: 0.08)
             }
         return DisplayObject(label: kind.typeName, inputID: inputID, frame: frame, kind: kind)
     }
@@ -123,7 +127,11 @@ extension DisplayObject {
         ),
         ("Track Map", .trackMap(TrackMapParams())),
         ("G-Force", .gForce(GForceParams())),
+        ("Bar", .bar(BarParams(channel: "throttle", label: "THROTTLE", unitLabel: "%"))),
+        ("Graph", .graph(GraphParams(series: [GraphSeries(channel: "speed")], label: "SPEED"))),
+        ("Gear", .gear(GearParams())),
         ("Lap Timer", .timer(TimerParams())),
+        ("Lap Counter", .lapCounter(LapCounterParams())),
         ("Text Data", .textData(TextDataParams(channel: "rpm", label: "RPM"))),
         ("Shape", .shape(ShapeParams())),
         ("Text", .text(TextParams())),
