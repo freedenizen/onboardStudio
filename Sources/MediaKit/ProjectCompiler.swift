@@ -17,6 +17,9 @@ public enum ProjectCompiler {
         /// Playable URL per video input (differs from the source when ffmpeg converted it).
         public var mediaURLs: [InputID: URL]
         public var images: [InputID: LoadedImage]
+        /// Inputs that could not be loaded (missing or unreadable files) with the reason; the
+        /// rest of the project still renders so the user can relink them.
+        public var problems: [InputID: String]
 
         public init(
             project: Project,
@@ -24,7 +27,8 @@ public enum ProjectCompiler {
             sessions: [InputID: TelemetrySession],
             mediaInfo: [InputID: MediaInfo],
             mediaURLs: [InputID: URL] = [:],
-            images: [InputID: LoadedImage] = [:]
+            images: [InputID: LoadedImage] = [:],
+            problems: [InputID: String] = [:]
         ) {
             self.project = project
             self.location = location
@@ -32,6 +36,7 @@ public enum ProjectCompiler {
             self.mediaInfo = mediaInfo
             self.mediaURLs = mediaURLs
             self.images = images
+            self.problems = problems
         }
     }
 
@@ -42,36 +47,102 @@ public enum ProjectCompiler {
         return try await load(project, location: location)
     }
 
-    /// Imports data and probes media. Pass `previous` to reuse sessions/media info for inputs whose
-    /// source and settings have not changed (the app calls this on every edit).
+    /// Imports data, prepares and probes media, and loads images. Pass `previous` to reuse the
+    /// results for inputs whose source and settings have not changed (the app calls this on every
+    /// edit). An input whose file is missing or unreadable is recorded in `problems` instead of
+    /// failing the whole load, so the project still opens and the file can be relinked.
     public static func load(_ project: Project, location: ProjectLocation, reusing previous: LoadedProject? = nil)
         async throws
         -> LoadedProject
     {
-        var sessions: [InputID: TelemetrySession] = [:]
-        var mediaInfo: [InputID: MediaInfo] = [:]
+        var loaded = LoadedProject(project: project, location: location, sessions: [:], mediaInfo: [:])
         for input in project.inputs {
             let url = location.resolve(input.source)
             let unchanged =
                 previous?.project.input(input.id).map { $0.source == input.source && $0.kind == input.kind } ?? false
-            switch input.kind {
-            case .data(let settings):
-                if unchanged, let cached = previous?.sessions[input.id] {
-                    sessions[input.id] = cached
-                } else {
-                    sessions[input.id] = try importData(at: url, settings: settings)
+                && previous?.problems[input.id] == nil
+            do {
+                guard FileManager.default.fileExists(atPath: url.path) else { throw LoadError.missingFile(url) }
+                switch input.kind {
+                case .data(let settings):
+                    if unchanged, let cached = previous?.sessions[input.id] {
+                        loaded.sessions[input.id] = cached
+                    } else {
+                        loaded.sessions[input.id] = try importData(at: url, settings: settings)
+                    }
+                case .video, .audio:
+                    if unchanged, let cached = previous?.mediaInfo[input.id] {
+                        loaded.mediaInfo[input.id] = cached
+                        loaded.mediaURLs[input.id] = previous?.mediaURLs[input.id]
+                    } else {
+                        let playable = try await FFmpegBridge.prepare(url)
+                        loaded.mediaInfo[input.id] = try await MediaProbe.probe(playable)
+                        if playable != url { loaded.mediaURLs[input.id] = playable }
+                    }
+                case .image:
+                    if unchanged, let cached = previous?.images[input.id] {
+                        loaded.images[input.id] = cached
+                    } else {
+                        loaded.images[input.id] = try LoadedImage.load(url)
+                    }
                 }
-            case .video, .audio:
-                if unchanged, let cached = previous?.mediaInfo[input.id] {
-                    mediaInfo[input.id] = cached
-                } else {
-                    mediaInfo[input.id] = try await MediaProbe.probe(url)
-                }
-            case .image:
-                break
+            } catch {
+                loaded.problems[input.id] = "\(error)"
             }
         }
-        return LoadedProject(project: project, location: location, sessions: sessions, mediaInfo: mediaInfo)
+        return loaded
+    }
+
+    public enum LoadError: Error, CustomStringConvertible {
+        case missingFile(URL)
+        case noPlayableVideo
+
+        public var description: String {
+            switch self {
+            case .missingFile(let url): "File not found: \(url.path)"
+            case .noPlayableVideo: "The project has no video input that can be opened."
+            }
+        }
+    }
+
+    // MARK: - Export helpers
+
+    /// The project seconds to export for `range`, or `nil` for everything. Lap ranges use the
+    /// first data input that has laps, mapped through that input's sync settings.
+    public static func exportRange(_ range: ExportRange, in loaded: LoadedProject, duration: Double)
+        -> ClosedRange<Double>?
+    {
+        switch range {
+        case .whole:
+            return nil
+        case .span(let start, let end):
+            let s = min(max(start, 0), duration)
+            let e = min(max(end, s), duration)
+            return e > s ? s...e : nil
+        case .laps(let first, let last):
+            for input in loaded.project.dataInputs {
+                guard let session = loaded.sessions[input.id], !session.laps.isEmpty else { continue }
+                let laps = session.laps.filter { $0.number >= min(first, last) && $0.number <= max(first, last) }
+                guard let start = laps.map(\.start).min() else { return nil }
+                let end = laps.compactMap { $0.end ?? session.timeRange?.upperBound }.max() ?? start
+                let s = min(max(input.sync.projectTime(forInputTime: start), 0), duration)
+                let e = min(max(input.sync.projectTime(forInputTime: end), s), duration)
+                return e > s ? s...e : nil
+            }
+            return nil
+        }
+    }
+
+    /// The composition to hand to the exporter: overlay-only exports drop the video layers and
+    /// clear to the key colour or to transparent.
+    public static func prepareForExport(_ compiled: CompiledComposition, settings: ExportSettings)
+        -> CompiledComposition
+    {
+        switch settings.background {
+        case .video: return compiled
+        case .keyColor(let color): return compiled.overlayOnly(background: color)
+        case .transparent: return compiled.overlayOnly(background: RGBAColor(red: 0, green: 0, blue: 0, alpha: 0))
+        }
     }
 
     /// Whether `compile` must rebuild the media composition (inputs or timing changed) rather than
@@ -163,13 +234,14 @@ public enum ProjectCompiler {
         var specs: [VideoInputSpec] = []
         var specInputIDs: [InputID] = []
         for input in project.inputs {
-            guard case .video(let settings) = input.kind else { continue }
+            guard case .video(let settings) = input.kind, loaded.problems[input.id] == nil else { continue }
             specs.append(
                 VideoInputSpec(
                     url: loaded.mediaURLs[input.id] ?? loaded.location.resolve(input.source), sync: input.sync,
                     trim: settings.trim, frame: .full, includeAudio: settings.includeAudio, audio: settings.audio))
             specInputIDs.append(input.id)
         }
+        guard !specs.isEmpty else { throw LoadError.noPlayableVideo }
         let compiled = try await CompositionBuilder.build(
             videos: specs, overlays: [], outputWidth: project.settings.outputWidth,
             outputHeight: project.settings.outputHeight, frameRate: project.settings.frameRate,

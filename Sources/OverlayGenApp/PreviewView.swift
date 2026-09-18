@@ -193,8 +193,26 @@ final class GizmoView: NSView {
             editor.deleteSelectedObject()
         case 49:  // space
             editor.togglePlayback()
+        case 123, 124, 125, 126:  // arrows
+            guard let id = selectedID, let object = objects.first(where: { $0.id == id }) else { return }
+            let step = UserDefaults.standard.double(forKey: "nudgeStepPercent").nonZero(default: 1) / 100
+            let amount = event.modifierFlags.contains(.shift) ? step * 5 : step
+            var frame = object.frame
+            switch event.keyCode {
+            case 123: frame.x -= amount
+            case 124: frame.x += amount
+            case 125: frame.y += amount
+            default: frame.y -= amount
+            }
+            frame.x = min(max(frame.x, 0), 1 - frame.width)
+            frame.y = min(max(frame.y, 0), 1 - frame.height)
+            editor.moveObject(id, frame: frame)
         default:
             super.keyDown(with: event)
         }
     }
+}
+
+extension Double {
+    fileprivate func nonZero(default value: Double) -> Double { self == 0 ? value : self }
 }

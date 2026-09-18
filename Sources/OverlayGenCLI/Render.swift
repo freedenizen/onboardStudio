@@ -36,8 +36,19 @@ struct Render: AsyncParsableCommand {
     @Option(name: .long, help: "Output frame rate. Defaults to the input's.")
     var fps: Double?
 
-    @Option(name: .long, help: "Video codec: h264 or hevc.")
+    @Option(
+        name: .long, help: "Video codec: h264, hevc, hevcAlpha or proRes4444 (the alpha codecs write .mov).")
     var codec: ExportSettings.VideoCodec?
+
+    @Option(name: .long, help: "Lap range of the first data input to export, as first:last (project only).")
+    var laps: String?
+
+    @Option(
+        name: .long, help: "Behind the overlays: video (default), key:#RRGGBB or transparent (both drop the video).")
+    var background: String?
+
+    @Option(name: .long, help: "Apply an .overlaytemplate to the project before rendering (project only).")
+    var template: String?
 
     @Option(name: .long, help: "Video bitrate in kbit/s.")
     var bitrate: Int?
@@ -59,19 +70,15 @@ struct Render: AsyncParsableCommand {
 
     func run() async throws {
         let outputURL = URL(fileURLWithPath: out)
-        let exportRange = try range.map(Self.parseRange)
-        let compiled: CompiledComposition
-        let settings: ExportSettings
+        var exportRange = try range.map(Self.parseRange)
+        var compiled: CompiledComposition
+        var settings: ExportSettings
         if let project {
             guard video == nil else { throw ValidationError("Use either --video or --project, not both.") }
-            let loaded = try await ProjectCompiler.load(URL(fileURLWithPath: project))
-            compiled = try await ProjectCompiler.compile(loaded)
-            settings = resolveProjectSettings(loaded.project)
-            if !json {
-                let objects = loaded.project.displayObjects.map(\.kind.typeName).joined(separator: ", ")
-                let counts = "\(loaded.project.inputs.count) inputs, \(loaded.sessions.count) data sessions"
-                print("Project:  \(counts); objects: \(objects)")
-            }
+            let result = try await loadProject(project, range: exportRange)
+            compiled = result.compiled
+            settings = result.settings
+            exportRange = result.range
         } else {
             guard let video else { throw ValidationError("Provide --video or --project.") }
             let inputURL = URL(fileURLWithPath: video)
@@ -90,6 +97,12 @@ struct Render: AsyncParsableCommand {
                 let inputSize = "\(info.width)x\(info.height) @ \(fmt(info.nominalFrameRate)) fps"
                 print("Input:    \(inputURL.lastPathComponent)  \(inputSize), \(fmt(info.duration)) s")
             }
+        }
+
+        if let background {
+            settings.background = try Self.parseBackground(background)
+            settings = settings.reconciled
+            compiled = ProjectCompiler.prepareForExport(compiled, settings: settings)
         }
 
         if !json {
@@ -119,6 +132,43 @@ struct Render: AsyncParsableCommand {
         let elapsed = Date().timeIntervalSince(started)
         let fps = elapsed > 0 ? Double(frames) / elapsed : 0
         if !json { print("Done: \(frames) frames in \(fmt(elapsed)) s (\(fmt(fps)) fps) → \(out)") }
+    }
+
+    /// Loads, optionally templates, and compiles a project; resolves its settings and lap range.
+    private struct LoadedForRender {
+        var compiled: CompiledComposition
+        var settings: ExportSettings
+        var range: ClosedRange<Double>?
+    }
+
+    private func loadProject(_ path: String, range: ClosedRange<Double>?) async throws -> LoadedForRender {
+        var loaded = try await ProjectCompiler.load(URL(fileURLWithPath: path))
+        if let template {
+            let file = try ProjectTemplate(data: Data(contentsOf: URL(fileURLWithPath: template)))
+            file.apply(to: &loaded.project)
+        }
+        for (id, problem) in loaded.problems {
+            let label = loaded.project.input(id)?.label ?? "\(id)"
+            FileHandle.standardError.write(Data("warning: \(label): \(problem)\n".utf8))
+        }
+        let compiled = try await ProjectCompiler.compile(loaded)
+        let settings = resolveProjectSettings(loaded.project)
+        var exportRange = range
+        if let laps {
+            let parts = laps.split(separator: ":").compactMap { Int($0) }
+            guard parts.count == 2 else { throw ValidationError("--laps expects first:last, e.g. 2:4.") }
+            guard
+                let lapRange = ProjectCompiler.exportRange(
+                    .laps(first: parts[0], last: parts[1]), in: loaded, duration: compiled.duration)
+            else { throw ValidationError("No laps \(parts[0])–\(parts[1]) in the project's data.") }
+            exportRange = lapRange
+        }
+        if !json {
+            let objects = loaded.project.displayObjects.map(\.kind.typeName).joined(separator: ", ")
+            let counts = "\(loaded.project.inputs.count) inputs, \(loaded.sessions.count) data sessions"
+            print("Project:  \(counts); objects: \(objects)")
+        }
+        return LoadedForRender(compiled: compiled, settings: settings, range: exportRange)
     }
 
     /// Project export settings with CLI overrides applied.
@@ -154,6 +204,14 @@ struct Render: AsyncParsableCommand {
         settings.width -= settings.width % 2
         settings.height -= settings.height % 2
         return settings
+    }
+
+    static func parseBackground(_ text: String) throws -> ExportBackground {
+        let lower = text.lowercased()
+        if lower == "video" { return .video }
+        if lower == "transparent" { return .transparent }
+        if lower.hasPrefix("key:"), let color = RGBAColor(hex: String(text.dropFirst(4))) { return .keyColor(color) }
+        throw ValidationError("--background must be video, transparent or key:#RRGGBB.")
     }
 
     static func parseRange(_ text: String) throws -> ClosedRange<Double> {

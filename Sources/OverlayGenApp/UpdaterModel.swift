@@ -34,8 +34,14 @@ final class UpdaterModel {
         func checkForUpdates() {
             controller.checkForUpdates(nil)
         }
+
+        var automaticallyChecksForUpdates: Bool {
+            get { controller.updater.automaticallyChecksForUpdates }
+            set { controller.updater.automaticallyChecksForUpdates = newValue }
+        }
     #else
         init() {}
         func checkForUpdates() {}
+        var automaticallyChecksForUpdates = false
     #endif
 }

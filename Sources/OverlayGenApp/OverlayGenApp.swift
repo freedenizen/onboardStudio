@@ -16,13 +16,46 @@ struct OverlayGenApp: App {
         )
         .defaultSize(width: 1280, height: 800)
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("New") { NSDocumentController.shared.newDocument(nil) }.keyboardShortcut(
+                    "n", modifiers: [.command])
+                Menu("New from Template") {
+                    ForEach(ProjectTemplate.builtIn, id: \.name) { template in
+                        Button(template.name) { newDocument(from: template) }
+                    }
+                    let user = TemplateStore.userTemplates()
+                    if !user.isEmpty { Divider() }
+                    ForEach(user) { entry in
+                        Button(entry.name) {
+                            if let template = try? TemplateStore.load(entry.url) { newDocument(from: template) }
+                        }
+                    }
+                }
+            }
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { updater.checkForUpdates() }
                     .disabled(!updater.canCheckForUpdates)
             }
             EditorCommands()
         }
+        Settings {
+            SettingsView().environment(updater)
+        }
     }
+
+    /// Opens a new untitled document showing the template's objects.
+    func newDocument(from template: ProjectTemplate) {
+        NSDocumentController.shared.newDocument(nil)
+        // The new window's editor picks the pending template up when it appears.
+        PendingTemplate.shared.template = template
+    }
+}
+
+/// Hands a template to the next editor that appears (New from Template).
+@MainActor
+final class PendingTemplate {
+    static let shared = PendingTemplate()
+    var template: ProjectTemplate?
 }
 
 extension UTType {
@@ -56,6 +89,20 @@ struct EditorCommands: Commands {
                 .disabled(editor?.canPasteStyle != true)
             Button("Import Object Style…") { editor?.importStyle() }
             Button("Export Object Style…") { editor?.exportStyle() }.disabled(editor?.selectedObject == nil)
+            Divider()
+            Menu("Apply Template") {
+                ForEach(ProjectTemplate.builtIn, id: \.name) { template in
+                    Button(template.name) { editor?.apply(template) }
+                }
+                let user = TemplateStore.userTemplates()
+                if !user.isEmpty { Divider() }
+                ForEach(user) { entry in
+                    Button(entry.name) { editor?.applyTemplate(at: entry.url) }
+                }
+                Divider()
+                Button("Import Template File…") { editor?.importTemplate() }
+            }
+            Button("Save as Template…") { editor?.saveAsTemplate() }
             Divider()
             Menu("Camera Layout") {
                 ForEach(LayoutPreset.allCases, id: \.self) { preset in

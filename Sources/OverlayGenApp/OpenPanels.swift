@@ -48,10 +48,34 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    static func chooseExportDestination(suggestedName: String) -> URL? {
+    static let templateType = UTType(exportedAs: "com.freedenizen.overlaygen.template", conformingTo: .json)
+
+    static func chooseTemplate() -> URL? {
+        let panel = NSOpenPanel()
+        panel.title = "Import Template"
+        panel.allowedContentTypes = [templateType, .json]
+        panel.allowsMultipleSelection = false
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    /// Asks for a template name; returns nil when cancelled.
+    static func askTemplateName(default name: String) -> String? {
+        let alert = NSAlert()
+        alert.messageText = "Save as Template"
+        alert.informativeText = "The objects, timeline and export settings are saved; inputs are not."
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+        field.stringValue = name
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        return alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil
+    }
+
+    static func chooseExportDestination(suggestedName: String, fileExtension: String = "mp4") -> URL? {
         let panel = NSSavePanel()
         panel.title = "Export Video"
-        panel.allowedContentTypes = [.mpeg4Movie]
+        panel.allowedContentTypes = [fileExtension == "mov" ? .quickTimeMovie : .mpeg4Movie]
         panel.nameFieldStringValue = suggestedName
         panel.canCreateDirectories = true
         return panel.runModal() == .OK ? panel.url : nil

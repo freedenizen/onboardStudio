@@ -8,7 +8,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.6.0"
+    MARKETING_VERSION: "0.7.0"
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
@@ -52,6 +52,11 @@ targets:
             UTTypeConformsTo: [com.apple.package, public.composite-content]
             UTTypeTagSpecification:
               public.filename-extension: [overlayproj]
+          - UTTypeIdentifier: com.freedenizen.overlaygen.template
+            UTTypeDescription: OverlayGen Template
+            UTTypeConformsTo: [public.json]
+            UTTypeTagSpecification:
+              public.filename-extension: [overlaytemplate]
           - UTTypeIdentifier: com.freedenizen.overlaygen.style
             UTTypeDescription: OverlayGen Object Style
             UTTypeConformsTo: [public.json]

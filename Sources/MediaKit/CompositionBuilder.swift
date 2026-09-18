@@ -95,10 +95,19 @@ public struct CompiledComposition {
         newVideoComposition.customVideoCompositorClass = OverlayCompositor.self
         newVideoComposition.renderSize = first.outputSize
         newVideoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(first.frameRate.rounded()))
-        newVideoComposition.instructions = CompositionBuilder.instructions(for: sorted, duration: duration)
+        newVideoComposition.instructions = CompositionBuilder.instructions(
+            for: sorted, duration: duration, trackIDs: trackIDs)
         return CompiledComposition(
             composition: composition, videoComposition: newVideoComposition, audioMix: audioMix, plans: sorted,
             duration: duration, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
+    }
+}
+
+extension CompiledComposition {
+    /// The same composition rendering only the overlays over `background` (key colour or
+    /// transparent), for compositing in another editor.
+    public func overlayOnly(background: RGBAColor) -> CompiledComposition {
+        replacingPlans(plans.map { TimedPlan(start: $0.start, plan: $0.plan.overlayOnly(background: background)) })
     }
 }
 
@@ -243,7 +252,7 @@ public enum CompositionBuilder {
     }
 
     /// One instruction per plan, tiling `0..<duration` exactly (AVFoundation rejects gaps and overlaps).
-    static func instructions(for plans: [TimedPlan], duration: Double) -> [OverlayInstruction] {
+    static func instructions(for plans: [TimedPlan], duration: Double, trackIDs: [Int32]) -> [OverlayInstruction] {
         let timescale: CMTimeScale = 600
         var result: [OverlayInstruction] = []
         for (index, timed) in plans.enumerated() where timed.start < duration {
@@ -252,11 +261,9 @@ public enum CompositionBuilder {
             let range = CMTimeRange(
                 start: CMTime(seconds: timed.start, preferredTimescale: timescale),
                 end: CMTime(seconds: end, preferredTimescale: timescale))
-            // Every source track is required by every instruction so switching cameras never
-            // stalls on a track that was not being decoded.
-            let allTracks = Set(plans.flatMap { $0.plan.videoLayers.map(\.trackID) })
-            result.append(
-                OverlayInstruction(timeRange: range, plan: timed.plan, sourceTrackIDs: Array(allTracks).sorted()))
+            // Every composition track is required by every instruction so switching cameras never
+            // stalls on a track that was not being decoded (and overlay-only plans still get frames).
+            result.append(OverlayInstruction(timeRange: range, plan: timed.plan, sourceTrackIDs: trackIDs))
         }
         return result
     }

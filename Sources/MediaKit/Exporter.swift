@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import ProjectModel
+import VideoToolbox
 
 public struct ExportProgress: Sendable, Equatable {
     /// 0…1
@@ -69,19 +70,32 @@ public enum Exporter {
     }
 
     static func videoSettings(_ settings: ExportSettings) -> [String: Any] {
-        let codec: AVVideoCodecType = settings.codec == .hevc ? .hevc : .h264
+        let codec: AVVideoCodecType =
+            switch settings.codec {
+            case .h264: .h264
+            case .hevc: .hevc
+            case .hevcAlpha: .hevcWithAlpha
+            case .proRes4444: .proRes4444
+            }
+        var output: [String: Any] = [
+            AVVideoCodecKey: codec, AVVideoWidthKey: settings.width, AVVideoHeightKey: settings.height,
+        ]
+        guard settings.codec.usesBitrate else { return output }
         var compression: [String: Any] = [
             AVVideoAverageBitRateKey: settings.videoBitrate,
             AVVideoExpectedSourceFrameRateKey: settings.frameRate,
             AVVideoMaxKeyFrameIntervalKey: Int(settings.frameRate * 2),
         ]
         if settings.codec == .h264 { compression[AVVideoProfileLevelKey] = AVVideoProfileLevelH264HighAutoLevel }
-        return [
-            AVVideoCodecKey: codec,
-            AVVideoWidthKey: settings.width,
-            AVVideoHeightKey: settings.height,
-            AVVideoCompressionPropertiesKey: compression,
-        ]
+        if settings.codec == .hevcAlpha {
+            compression[kVTCompressionPropertyKey_TargetQualityForAlpha as String] = 0.75
+        }
+        output[AVVideoCompressionPropertiesKey] = compression
+        return output
+    }
+
+    static func fileType(for settings: ExportSettings) -> AVFileType {
+        settings.codec.fileExtension == "mov" ? .mov : .mp4
     }
 }
 
@@ -120,7 +134,7 @@ final class ExportJob: @unchecked Sendable {
             throw ExportError.cannotCreateReader("\(error)")
         }
         reader.timeRange = timeRange
-        do { writer = try AVAssetWriter(outputURL: outputURL, fileType: .mp4) } catch {
+        do { writer = try AVAssetWriter(outputURL: outputURL, fileType: Exporter.fileType(for: settings)) } catch {
             throw ExportError.cannotCreateWriter("\(error)")
         }
         writer.shouldOptimizeForNetworkUse = true

@@ -241,12 +241,13 @@ struct ProjectCompilerTests {
         #expect(empty.r < 20 && empty.g < 20 && empty.b < 20)
     }
 
-    @Test func missingMediaFails() async throws {
+    @Test func missingMediaIsReportedPerInput() async throws {
         var project = try ProjectLocation(try Self.sliceURL).load()
+        let id = project.inputs[0].id
         project.inputs[0].source = MediaReference(path: "../does-not-exist.mp4")
-        await #expect(throws: (any Error).self) {
-            _ = try await ProjectCompiler.load(project, location: ProjectLocation(try Self.sliceURL))
-        }
+        let loaded = try await ProjectCompiler.load(project, location: ProjectLocation(try Self.sliceURL))
+        #expect(loaded.problems[id]?.contains("does-not-exist") == true)
+        #expect(loaded.problems.count == 1)
     }
 }
 

@@ -39,6 +39,10 @@ struct EditorView: View {
         }
         .onAppear {
             editor.undoManager = undoManager
+            if let template = PendingTemplate.shared.template, editor.project.displayObjects.isEmpty {
+                PendingTemplate.shared.template = nil
+                editor.apply(template)
+            }
             editor.scheduleCompile()
         }
         .onChange(of: undoManager) { _, newValue in editor.undoManager = newValue }

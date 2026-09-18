@@ -71,6 +71,8 @@ final class EditorModel {
     var currentTime: Double { preview.currentTime }
     var duration: Double { preview.duration }
     var sessions: [InputID: TelemetrySession] { loaded?.sessions ?? [:] }
+    /// Inputs whose files could not be loaded, with the reason.
+    var problems: [InputID: String] { loaded?.problems ?? [:] }
 
     // MARK: - Editing
 

@@ -92,6 +92,10 @@ struct InputInspector: View {
     var body: some View {
         Section(input.kind.isVideo ? "Video" : "Data") {
             LabeledContent("File", value: input.source.path).font(.caption)
+            if let problem = editor.problems[input.id] {
+                Label(problem, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.yellow).font(.callout)
+                Button("Relink…") { editor.relink(input.id) }
+            }
             TextField("Label", text: binding(\.label, name: "Rename Input"))
             if let session = editor.sessions[input.id] {
                 LabeledContent("Format", value: session.info.sourceFormat)
