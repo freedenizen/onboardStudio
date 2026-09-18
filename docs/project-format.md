@@ -53,6 +53,7 @@ Video input settings (all optional; older files decode as neutral):
 | `color` | `brightness`, `contrast`, `saturation`, `sharpness` (1 = unchanged), `hue` degrees |
 | `chromaKey` | `{ "color": "#00FF00", "tolerance": 0.3, "softness": 0.1 }` or `null` |
 | `audio` | `volume` (1 = unchanged), `balance` (−1…1), `channels` (`stereo`/`mono`/`left`/`right`), `isMuted` |
+| `lens` | `{ "mode": "none" / "fisheye" / "equirectangular", "fov": 180, "outputFov": 90, "yaw": 0, "pitch": 0, "roll": 0 }`: unwraps a fisheye (equidistant, `fov` across the picture width) or a 360° equirectangular source into a flat view. `outputFov` is the horizontal field of view of the result; `yaw` turns right, `pitch` looks up, `roll` tilts. A 360° source becomes a 16:9 picture half the source width. Applied on the GPU with a Metal kernel compiled at run time (CPU fallback when Core Image renders in software). |
 
 Containers macOS cannot open (MTS/M2TS, MKV, some AVI) are converted with `ffmpeg` if it is
 installed (`brew install ffmpeg`, or set `OVERLAYGEN_FFMPEG`); the converted copy lives in
@@ -74,7 +75,7 @@ output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first 
 | `gear` | `channel` (0 = neutral, −1 = reverse, −99 = park), `label`, `showLabel`, `neutralText`, `reverseText`, `parkText`, `fontScale`, colours |
 | `lapCounter` | `label`, `showTotal`, `numberOffset`, colours |
 | `scripted` | `source`: JavaScript defining `background(canvas)` and/or `frame(canvas, data)`; see `docs/scripting.md` |
-| `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation`, `backgroundColor` |
+| `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation` (degrees clockwise), `backgroundColor`; `background` (`none`/`standard`/`satellite`/`hybrid`: Apple Maps imagery behind the outline, fetched once for the session's area and cached in `~/Library/Caches/OverlayGen/maps`); `secondInputID` + `secondDotColor` (another data input drawn as a second dot, positioned through that input's own sync) |
 | `gForce` | `maxG`, `ringStep`, `trailSeconds`, `dotColor`, `gridColor`, `faceColor`, `showValues` |
 | `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`/`projectTime`/`timeOfDay`/`deltaToBest`), `showLapNumber`, `label`, `decimals` (1–3), colours, `aheadColor`/`behindColor` for the delta. `deltaToBest` compares the lap in progress with the best completed lap at the same distance into the lap (needs a distance channel; GPS files get one automatically). `timeOfDay` needs epoch timestamps (RaceChrono) or a recorded start time. |
 | `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours; formatting: `multiplier`, `offset` (shown = value × multiplier + offset), `prefix`, `thousandsSeparator`, `showPlusSign`, `minimumIntegerDigits`, `absoluteValue`, `fontScale`, `labelScale`, `fontName` (empty = monospaced) |
@@ -101,11 +102,12 @@ swift run overlaygen render --project Tests/Fixtures/slice.overlayproj --out sli
 | `width`, `height`, `frameRate`, `videoBitrate` | output size and rate; ProRes ignores the bitrate |
 | `audioBitrate` (null = no audio), `audioSampleRate`, `audioChannels` | AAC audio |
 | `background` | `{ "video": {} }` (normal), `{ "keyColor": { "_0": "#0000FF" } }` (overlays over a flat colour, no video) or `{ "transparent": {} }` (overlays over alpha; needs an alpha codec) |
+| `spherical` | `true` tags the file as a 360° equirectangular video (Google Spherical Video V1 `uuid` box in the video track, written after encoding) so players and YouTube show a panorama; use with a full equirectangular frame and the lens unwrap off |
 | `range` | `{ "whole": {} }`, `{ "span": { "start": 90, "end": 240 } }` (project seconds) or `{ "laps": { "first": 2, "last": 4 } }` (lap numbers of the first data input with laps, mapped through its sync) |
 
 Presets (`--preset` on the CLI, the Preset menu in the app): `720p`, `1080p`, `1440p`, `4k`, `vertical` (1080 × 1920),
 `overlay-alpha` (transparent ProRes 4444) and `overlay-key` (blue key, H.264). The CLI also takes
-`--laps first:last`, `--background video|transparent|key:#RRGGBB` and `--template file.overlaytemplate`.
+`--laps first:last`, `--background video|transparent|key:#RRGGBB`, `--spherical` and `--template file.overlaytemplate`.
 
 ## Templates
 

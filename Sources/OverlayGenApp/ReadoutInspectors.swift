@@ -311,3 +311,56 @@ struct TextDataInspector: View {
         editor.updateObject(object.id, name: "Edit Text Data") { $0.kind = .textData(new) }
     }
 }
+
+struct TrackMapInspector: View {
+    @Bindable var editor: EditorModel
+    let object: DisplayObject
+    let params: TrackMapParams
+
+    var body: some View {
+        Section("Track Map") {
+            NumberField("Rotation (°)", value: field(\.rotation))
+            NumberField("Line width", value: field(\.lineWidth))
+            NumberField("Dot radius", value: field(\.dotRadius))
+            ColorPicker("Line", selection: color(\.lineColor))
+            ColorPicker("Dot", selection: color(\.dotColor))
+            ColorPicker("Panel", selection: color(\.backgroundColor), supportsOpacity: true)
+        }
+        Section("Map Background") {
+            Picker("Imagery", selection: field(\.background)) {
+                ForEach(MapBackgroundStyle.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            if params.background != .none {
+                Text("Fetched from Apple Maps for the session's area and cached; needs a network connection once.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        Section("Second Vehicle") {
+            Picker("Data input", selection: field(\.secondInputID)) {
+                Text("None").tag(InputID?.none)
+                ForEach(editor.project.dataInputs.filter { $0.id != object.inputID }) { input in
+                    Text(input.label).tag(InputID?.some(input.id))
+                }
+            }
+            if params.secondInputID != nil {
+                ColorPicker("Second dot", selection: color(\.secondDotColor))
+                Text("Positions come from that input's own sync settings, so both cars share project time.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    func field<T>(_ keyPath: WritableKeyPath<TrackMapParams, T>) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    }
+
+    func color(_ keyPath: WritableKeyPath<TrackMapParams, RGBAColor>) -> Binding<Color> {
+        Binding(get: { Color(params[keyPath: keyPath]) }, set: { v in update { $0[keyPath: keyPath] = RGBAColor(v) } })
+    }
+
+    func update(_ change: (inout TrackMapParams) -> Void) {
+        var new = params
+        change(&new)
+        editor.updateObject(object.id, name: "Edit Track Map") { $0.kind = .trackMap(new) }
+    }
+}

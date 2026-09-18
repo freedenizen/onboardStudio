@@ -3,15 +3,33 @@ import Foundation
 import ProjectModel
 import TelemetryKit
 
-/// Draws the whole session's GPS trace (cached) and a dot at the current position.
+/// A second data input shown as another dot on the same map.
+public struct SecondVehicle: Sendable {
+    public let sampler: TelemetrySampler
+    public let sync: SyncSettings
+
+    public init(sampler: TelemetrySampler, sync: SyncSettings) {
+        self.sampler = sampler
+        self.sync = sync
+    }
+}
+
+/// Draws the whole session's GPS trace (cached, optionally over map imagery) and a dot at the
+/// current position; a second vehicle's position can be shown as another dot.
 public struct TrackMapRenderer: OverlayDrawing {
     public let context: ObjectContext
     public let params: TrackMapParams
+    public let second: SecondVehicle?
+    public let background: MapBackground?
     let projection: TrackProjection?
 
-    public init(context: ObjectContext, params: TrackMapParams) {
+    public init(
+        context: ObjectContext, params: TrackMapParams, second: SecondVehicle? = nil, background: MapBackground? = nil
+    ) {
         self.context = context
         self.params = params
+        self.second = second
+        self.background = background
         projection = context.sampler.flatMap { TrackProjection(session: $0.session, rotationDegrees: params.rotation) }
     }
 
@@ -19,7 +37,8 @@ public struct TrackMapRenderer: OverlayDrawing {
         let rect = context.rect(in: size)
         guard let projection, rect.width > 4, rect.height > 4 else { return }
         cg.setAlpha(context.opacity)
-        let key = context.cacheKey("trackmap|\(params.hashValue)", size: size)
+        let key = context.cacheKey(
+            "trackmap|\(params.hashValue)|\(background?.request.hashValue ?? 0)", size: size)
         if let trace = context.cache.image(
             for: key, size: rect.size,
             draw: { traceContext, traceSize in
@@ -28,24 +47,45 @@ public struct TrackMapRenderer: OverlayDrawing {
         {
             context.cache.drawImage(trace, in: rect, context: cg)
         }
+        let bounds = CGRect(origin: .zero, size: rect.size)
+        let radius = params.dotRadius * max(0.5, min(rect.width, rect.height) / 300)
+        if let second, let lat = second.sampler.sample(at: second.sync.inputTime(forProjectTime: time))[.latitude],
+            let lon = second.sampler.sample(at: second.sync.inputTime(forProjectTime: time))[.longitude]
+        {
+            let point = projection.point(latitude: lat, longitude: lon, in: bounds)
+            drawDot(
+                at: CGPoint(x: rect.minX + point.x, y: rect.minY + point.y), radius: radius,
+                color: params.secondDotColor, in: cg)
+        }
         guard let sample = context.sample(at: time), let lat = sample[.latitude], let lon = sample[.longitude] else {
             return
         }
-        let point = projection.point(latitude: lat, longitude: lon, in: CGRect(origin: .zero, size: rect.size))
-        let dot = CGPoint(x: rect.minX + point.x, y: rect.minY + point.y)
-        let radius = params.dotRadius * max(0.5, min(rect.width, rect.height) / 300)
-        cg.setFillColor(params.dotColor.cgColor)
-        cg.fillEllipse(in: CGRect(x: dot.x - radius, y: dot.y - radius, width: 2 * radius, height: 2 * radius))
+        let point = projection.point(latitude: lat, longitude: lon, in: bounds)
+        drawDot(
+            at: CGPoint(x: rect.minX + point.x, y: rect.minY + point.y), radius: radius, color: params.dotColor, in: cg)
+    }
+
+    func drawDot(at dot: CGPoint, radius: Double, color: RGBAColor, in cg: CGContext) {
+        let box = CGRect(x: dot.x - radius, y: dot.y - radius, width: 2 * radius, height: 2 * radius)
+        cg.setFillColor(color.cgColor)
+        cg.fillEllipse(in: box)
         cg.setStrokeColor(RGBAColor.black.cgColor)
         cg.setLineWidth(max(1, radius * 0.25))
-        cg.strokeEllipse(in: CGRect(x: dot.x - radius, y: dot.y - radius, width: 2 * radius, height: 2 * radius))
+        cg.strokeEllipse(in: box)
     }
 
     func drawTrace(in cg: CGContext, size: CGSize, projection: TrackProjection) {
         let bounds = CGRect(origin: .zero, size: size)
+        let radius = min(size.width, size.height) * 0.05
+        if let background {
+            cg.saveGState()
+            cg.addPath(CGPath(roundedRect: bounds, cornerWidth: radius, cornerHeight: radius, transform: nil))
+            cg.clip()
+            drawBackground(background, in: cg, bounds: bounds, projection: projection)
+            cg.restoreGState()
+        }
         if params.backgroundColor.alpha > 0 {
-            cg.fillRoundedRect(
-                bounds, radius: min(size.width, size.height) * 0.05, color: params.backgroundColor.cgColor)
+            cg.fillRoundedRect(bounds, radius: radius, color: params.backgroundColor.cgColor)
         }
         let points = projection.points.map { projection.point(x: $0.x, y: $0.y, in: bounds) }
         guard points.count > 1 else { return }
@@ -56,6 +96,36 @@ public struct TrackMapRenderer: OverlayDrawing {
         cg.move(to: points[0])
         for point in points.dropFirst() { cg.addLine(to: point) }
         cg.strokePath()
+    }
+
+    /// Places the map image so its geography lines up with the projected trace: a similarity
+    /// transform (both mappings are locally conformal) fitted on the centre and a point due north.
+    func drawBackground(_ background: MapBackground, in cg: CGContext, bounds: CGRect, projection: TrackProjection) {
+        let lat0 = projection.basis.latitude0
+        let lon0 = projection.basis.longitude0
+        let step = 0.001
+        let imageA = background.point(latitude: lat0, longitude: lon0)
+        let imageB = background.point(latitude: lat0 + step, longitude: lon0)
+        let boundsA = projection.point(latitude: lat0, longitude: lon0, in: bounds)
+        let boundsB = projection.point(latitude: lat0 + step, longitude: lon0, in: bounds)
+        let imageSpan = hypot(imageB.x - imageA.x, imageB.y - imageA.y)
+        let boundsSpan = hypot(boundsB.x - boundsA.x, boundsB.y - boundsA.y)
+        guard imageSpan > 0, boundsSpan > 0 else { return }
+        let scale = boundsSpan / imageSpan
+        let angle =
+            atan2(boundsB.y - boundsA.y, boundsB.x - boundsA.x) - atan2(imageB.y - imageA.y, imageB.x - imageA.x)
+        cg.saveGState()
+        cg.translateBy(x: boundsA.x, y: boundsA.y)
+        cg.rotate(by: angle)
+        cg.scaleBy(x: scale, y: scale)
+        cg.translateBy(x: -imageA.x, y: -imageA.y)
+        // The context is flipped (y down); undo that for the image so it is not drawn upside down.
+        let height = CGFloat(background.image.height)
+        cg.translateBy(x: 0, y: height)
+        cg.scaleBy(x: 1, y: -1)
+        cg.interpolationQuality = .high
+        cg.draw(background.image, in: CGRect(x: 0, y: 0, width: CGFloat(background.image.width), height: height))
+        cg.restoreGState()
     }
 }
 
@@ -90,7 +160,7 @@ struct TrackProjection: Sendable {
         let longitude0 = (lonMin + lonMax) / 2
         basis = Basis(
             latitude0: latitude0, longitude0: longitude0, cosLat: cos(latitude0 * .pi / 180),
-            rotation: rotationDegrees * .pi / 180)
+            rotation: -rotationDegrees * .pi / 180)  // clockwise on screen (y-up maths rotates anticlockwise)
         var projected: [(x: Double, y: Double)] = []
         projected.reserveCapacity(lat.count)
         // Compare the time axes once; doing it per sample made this quadratic on long sessions.

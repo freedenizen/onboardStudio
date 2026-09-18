@@ -19,7 +19,8 @@ public enum RenderPlanner {
             var transform = VideoTransform()
             if let input = project.input(inputID), case .video(let settings) = input.kind {
                 transform = VideoTransform(
-                    crop: settings.crop, rotation: settings.rotation, mirror: settings.mirror, color: settings.color,
+                    lens: settings.lens, crop: settings.crop, rotation: settings.rotation, mirror: settings.mirror,
+                    color: settings.color,
                     chromaKey: settings.chromaKey)
             }
             transform.mirror = Mirror(
@@ -43,7 +44,8 @@ public enum RenderPlanner {
         sessions: [InputID: TelemetrySession],
         images: [InputID: LoadedImage] = [:],
         cache: RenderCache = RenderCache(),
-        scriptRenderer: ScriptRendererFactory? = nil
+        scriptRenderer: ScriptRendererFactory? = nil,
+        mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:]
     ) -> [any OverlayDrawing] {
         (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
@@ -59,8 +61,34 @@ public enum RenderPlanner {
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }
             if case .scripted(let params) = object.kind { return scriptRenderer?(params, context) }
+            if case .trackMap(let params) = object.kind {
+                let session = dataInputID.flatMap { sessions[$0] }
+                let request = session.flatMap { MapBackgroundRequest(session: $0, style: params.background) }
+                let second = params.secondInputID.flatMap { id -> SecondVehicle? in
+                    guard let session = sessions[id], let input = project.input(id) else { return nil }
+                    return SecondVehicle(sampler: TelemetrySampler(session: session), sync: input.sync)
+                }
+                return TrackMapRenderer(
+                    context: context, params: params, second: second, background: request.flatMap { mapBackgrounds[$0] }
+                )
+            }
             return renderer(for: object.kind, context: context, image: image)
         }
+    }
+
+    /// The map imagery every track map in `project` needs, given the loaded sessions.
+    public static func mapBackgroundRequests(for project: Project, sessions: [InputID: TelemetrySession])
+        -> Set<MapBackgroundRequest>
+    {
+        var requests = Set<MapBackgroundRequest>()
+        for object in project.displayObjects {
+            guard case .trackMap(let params) = object.kind, params.background != .none, let inputID = object.inputID,
+                let session = sessions[inputID],
+                let request = MapBackgroundRequest(session: session, style: params.background)
+            else { continue }
+            requests.insert(request)
+        }
+        return requests
     }
 
     public static func renderer(

@@ -113,6 +113,8 @@ final class ExportJob: @unchecked Sendable {
     private let end: Double
     private let onProgress: @Sendable (ExportProgress) -> Void
     private let frames = Counter()
+    private let outputURL: URL
+    private let spherical: Bool
 
     init(
         compiled: CompiledComposition,
@@ -128,6 +130,8 @@ final class ExportJob: @unchecked Sendable {
             start: CMTime(seconds: start, preferredTimescale: timescale),
             end: CMTime(seconds: end, preferredTimescale: timescale))
         self.onProgress = onProgress
+        self.outputURL = outputURL
+        spherical = settings.spherical
 
         try? FileManager.default.removeItem(at: outputURL)
         do { reader = try AVAssetReader(asset: compiled.composition) } catch {
@@ -214,6 +218,7 @@ final class ExportJob: @unchecked Sendable {
         }
         await writer.finishWriting()
         if writer.status == .failed { throw ExportError.writerFailed(writer.error?.localizedDescription ?? "unknown") }
+        if spherical { try SphericalMetadata.inject(into: outputURL) }
         onProgress(ExportProgress(fraction: 1, framesWritten: frames.value, currentTime: end))
     }
 

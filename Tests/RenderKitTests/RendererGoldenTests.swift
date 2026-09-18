@@ -197,3 +197,112 @@ struct RendererBehaviourTests {
         }
     }
 }
+
+@Suite("Track map extras")
+struct TrackMapExtrasTests {
+    static let size = CGSize(width: 400, height: 400)
+
+    func context(sync: SyncSettings = .identity) -> ObjectContext {
+        ObjectContext(
+            objectID: DisplayObjectID(UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()),
+            frame: UnitRect(x: 0.05, y: 0.05, width: 0.9, height: 0.9), opacity: 1,
+            sampler: TelemetrySampler(session: SyntheticSession.session), sync: sync, cache: RenderCache())
+    }
+
+    func render(_ renderer: any OverlayDrawing, time: Double) throws -> CVPixelBuffer {
+        let plan = RenderPlan(
+            outputWidth: Int(Self.size.width), outputHeight: Int(Self.size.height), frameRate: 30, videoLayers: [],
+            overlays: [renderer])
+        return try FrameCompositor(plan: plan).renderFrame(sources: [:], time: time)
+    }
+
+    /// A synthetic "map": green land with a blue diagonal river, mapped so the square track sits
+    /// in its middle.
+    static func syntheticBackground(request: MapBackgroundRequest) throws -> MapBackground {
+        let width = 256
+        let height = 256
+        let cg = try #require(
+            CGContext(
+                data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                space: PixelBuffers.colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue))
+        cg.setFillColor(PixelBuffers.color(red: 0.55, green: 0.75, blue: 0.45))
+        cg.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        cg.setStrokeColor(PixelBuffers.color(red: 0.3, green: 0.5, blue: 0.9))
+        cg.setLineWidth(18)
+        cg.move(to: CGPoint(x: 0, y: 0))
+        cg.addLine(to: CGPoint(x: width, y: height))
+        cg.strokePath()
+        let pixelsPerDegreeLatitude = Double(height) / (request.maxLatitude - request.minLatitude)
+        let pixelsPerDegreeLongitude = Double(width) / (request.maxLongitude - request.minLongitude)
+        // A dark band just north of the track (45.0009…45.0012°) so orientation is visible.
+        func row(_ latitude: Double) -> Double {
+            Double(height) / 2 + (latitude - request.centerLatitude) * pixelsPerDegreeLatitude
+        }
+        cg.setFillColor(PixelBuffers.color(red: 0.2, green: 0.2, blue: 0.2))
+        cg.fill(CGRect(x: 0, y: row(45.00095), width: Double(width), height: row(45.0012) - row(45.00095)))
+        let image = try #require(cg.makeImage())
+        return MapBackground(
+            request: request, image: image, centerPoint: CGPoint(x: width / 2, y: height / 2),
+            pixelsPerDegreeLongitude: pixelsPerDegreeLongitude, pixelsPerDegreeLatitude: pixelsPerDegreeLatitude)
+    }
+
+    @Test func twoVehiclesShowTwoDots() throws {
+        // The second vehicle is the same session two seconds behind, so its dot sits elsewhere.
+        let second = SecondVehicle(
+            sampler: TelemetrySampler(session: SyntheticSession.session), sync: SyncSettings(startPositionInInput: -2))
+        let params = TrackMapParams(
+            backgroundColor: .faceDark, secondDotColor: RGBAColor(red: 0.25, green: 0.6, blue: 1))
+        let frame = try render(TrackMapRenderer(context: context(), params: params, second: second), time: 2.5)
+        try GoldenImage.assertMatches(frame, named: "trackmap-two-vehicles-2.5s")
+        var orange = 0
+        var blue = 0
+        for y in stride(from: 0, to: 400, by: 2) {
+            for x in stride(from: 0, to: 400, by: 2) {
+                let p = PixelBuffers.pixel(in: frame, x: x, y: y)
+                if p.r > 200, p.g > 100, p.g < 200, p.b < 80 { orange += 1 }
+                if p.b > 200, p.r < 100, p.g > 100 { blue += 1 }
+            }
+        }
+        #expect(orange > 20 && blue > 20, "orange \(orange) blue \(blue)")
+    }
+
+    @Test func mapBackgroundIsDrawnBehindTheTrace() throws {
+        let request = try #require(MapBackgroundRequest(session: SyntheticSession.session, style: .standard))
+        let background = try Self.syntheticBackground(request: request)
+        let params = TrackMapParams(background: .standard)
+        let frame = try render(TrackMapRenderer(context: context(), params: params, background: background), time: 1)
+        try GoldenImage.assertMatches(frame, named: "trackmap-map-background-1s")
+        // Land green fills a corner inside the object; the north band is at the top (north up).
+        let corner = PixelBuffers.pixel(in: frame, x: 60, y: 200)
+        #expect(corner.g > corner.r && corner.g > corner.b, "corner \(corner)")
+        let top = PixelBuffers.pixel(in: frame, x: 200, y: 26)
+        #expect(top.r < 80 && top.g < 80, "top \(top)")
+    }
+
+    @Test func rotatedMapKeepsNorthBandOnTheLeft() throws {
+        let request = try #require(MapBackgroundRequest(session: SyntheticSession.session, style: .satellite))
+        let background = try Self.syntheticBackground(request: request)
+        let params = TrackMapParams(rotation: 90, background: .satellite)
+        let frame = try render(TrackMapRenderer(context: context(), params: params, background: background), time: 1)
+        // Rotating the map 90° clockwise puts north on the right.
+        let right = PixelBuffers.pixel(in: frame, x: 374, y: 200)
+        #expect(right.r < 80 && right.g < 80, "right \(right)")
+        let left = PixelBuffers.pixel(in: frame, x: 26, y: 200)
+        #expect(left.g > 100, "left \(left)")
+    }
+
+    @Test func requestsRoundAndPad() throws {
+        let request = try #require(MapBackgroundRequest(session: SyntheticSession.session, style: .hybrid))
+        #expect(request.minLatitude < 45 && request.maxLatitude > 45.0009)
+        #expect(request.minLongitude < -122 && request.maxLongitude > -122 + 0.0009)
+        #expect(MapBackgroundRequest(session: SyntheticSession.session, style: .none) == nil)
+        let project = Project(
+            inputs: [],
+            displayObjects: [
+                DisplayObject(
+                    label: "m", inputID: nil, frame: .full, kind: .trackMap(TrackMapParams(background: .standard)))
+            ])
+        #expect(RenderPlanner.mapBackgroundRequests(for: project, sessions: [:]).isEmpty)
+    }
+}

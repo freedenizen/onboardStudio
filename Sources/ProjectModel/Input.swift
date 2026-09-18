@@ -22,6 +22,8 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
     public var color: ColorAdjustments
     public var chromaKey: ChromaKey?
     public var audio: AudioSettings
+    /// Fisheye / 360° unwrap (M12); `.none` leaves the picture as recorded.
+    public var lens: LensSettings
 
     public init(
         trim: TrimRange = .none,
@@ -31,7 +33,8 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         crop: CropInsets = .none,
         color: ColorAdjustments = .neutral,
         chromaKey: ChromaKey? = nil,
-        audio: AudioSettings = .neutral
+        audio: AudioSettings = .neutral,
+        lens: LensSettings = .none
     ) {
         self.trim = trim
         self.includeAudio = includeAudio
@@ -41,11 +44,12 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         self.color = color
         self.chromaKey = chromaKey
         self.audio = audio
+        self.lens = lens
     }
 
     // Older documents lack the picture/audio fields; decode them as neutral.
     private enum CodingKeys: String, CodingKey {
-        case trim, includeAudio, rotation, mirror, crop, color, chromaKey, audio
+        case trim, includeAudio, rotation, mirror, crop, color, chromaKey, audio, lens
     }
 
     public init(from decoder: any Decoder) throws {
@@ -58,6 +62,7 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         color = try c.decodeIfPresent(ColorAdjustments.self, forKey: .color) ?? .neutral
         chromaKey = try c.decodeIfPresent(ChromaKey.self, forKey: .chromaKey)
         audio = try c.decodeIfPresent(AudioSettings.self, forKey: .audio) ?? .neutral
+        lens = try c.decodeIfPresent(LensSettings.self, forKey: .lens) ?? .none
     }
 }
 
