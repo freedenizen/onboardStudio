@@ -59,7 +59,8 @@ before tagging a release.
 | M5 inputs | `docs/qa-m5.md` | Rotation/mirror/crop/colour/chroma key change the preview immediately; volume, balance and channel selection are audible; MTS files import when ffmpeg is installed |
 | M6 data | `docs/qa-m6.md`; `probe file --lap-line lat,lon,heading` on your own log | Detected lap times match your logger app; channel mapping fixes a mis-detected column; calculated field shows in Text Data |
 | M7 gauges | `docs/qa-m7.md`; goldens in `Tests/Fixtures/Goldens` (`gauge-*`, `bar-*`, `graph-*`, `gear-*`, `lapcounter-*`, `timer-delta-*`) | Every designer option changes the preview live; a `.overlaystyle` round-trips; the delta timer reads 0.00 on the best lap |
-| M8+ | milestone QA script + `swift test` | Listed in each PR |
+| M8 timeline | `docs/qa-m8.md`; `TimelineMediaTests` exports a two-camera switch at 1.5 s and pixel-probes both sides | Segment badges show what is set where; a camera switch lands on the same frame in preview and export |
+| M9+ | milestone QA script + `swift test` | Listed in each PR |
 
 ## Release smoke test
 

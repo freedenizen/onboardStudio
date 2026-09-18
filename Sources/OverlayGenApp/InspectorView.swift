@@ -9,6 +9,8 @@ struct InspectorView: View {
         Form {
             if let object = editor.selectedObject {
                 ObjectInspector(editor: editor, object: object)
+            } else if let segment = editor.selectedSegment {
+                SegmentInspector(editor: editor, segment: segment)
             } else if let input = editor.selectedInput {
                 InputInspector(editor: editor, input: input)
             } else {
@@ -148,14 +150,20 @@ struct ObjectInspector: View {
                     ForEach(editor.project.dataInputs) { Text($0.label).tag(InputID?.some($0.id)) }
                 }
             }
-            Toggle("Visible", isOn: binding(\.isVisible, name: "Toggle Visibility"))
-            Slider(value: binding(\.opacity, name: "Change Opacity"), in: 0...1) { Text("Opacity") }
+            OverrideRow(editor: editor, object: object, property: .isVisible) {
+                Toggle("Visible", isOn: visibleBinding)
+            }
+            OverrideRow(editor: editor, object: object, property: .opacity) {
+                Slider(value: opacityBinding, in: 0...1) { Text("Opacity") }
+            }
         }
-        Section("Position & Size (% of frame)") {
-            NumberField("X", value: percent(\.frame.x))
-            NumberField("Y", value: percent(\.frame.y))
-            NumberField("Width", value: percent(\.frame.width))
-            NumberField("Height", value: percent(\.frame.height))
+        Section {
+            NumberField("X", value: percent(\.x))
+            NumberField("Y", value: percent(\.y))
+            NumberField("Width", value: percent(\.width))
+            NumberField("Height", value: percent(\.height))
+        } header: {
+            OverrideRow(editor: editor, object: object, property: .frame) { Text("Position & Size (% of frame)") }
         }
         kindSection
         Section {
@@ -274,13 +282,28 @@ struct ObjectInspector: View {
             set: { value in editor.updateObject(object.id, name: name) { $0[keyPath: keyPath] = value } })
     }
 
-    func percent(_ keyPath: WritableKeyPath<DisplayObject, Double>) -> Binding<Double> {
+    /// The object as it appears at the playhead (segment overrides applied).
+    var resolved: DisplayObject { editor.resolvedObject(object.id) ?? object }
+
+    var visibleBinding: Binding<Bool> {
         Binding(
-            get: { ((editor.project.displayObject(object.id)?[keyPath: keyPath] ?? 0) * 100).rounded() },
+            get: { resolved.isVisible },
+            set: { value in editor.setOverridable(object.id, name: "Toggle Visibility") { $0.isVisible = value } })
+    }
+
+    var opacityBinding: Binding<Double> {
+        Binding(
+            get: { resolved.opacity },
+            set: { value in editor.setOverridable(object.id, name: "Change Opacity") { $0.opacity = value } })
+    }
+
+    func percent(_ keyPath: WritableKeyPath<UnitRect, Double>) -> Binding<Double> {
+        Binding(
+            get: { (resolved.frame[keyPath: keyPath] * 100).rounded() },
             set: { value in
-                editor.updateObject(object.id, name: "Move Object") {
-                    $0[keyPath: keyPath] = min(max(value / 100, 0), 1)
-                }
+                var frame = resolved.frame
+                frame[keyPath: keyPath] = min(max(value / 100, 0), 1)
+                editor.setOverridable(object.id, name: "Move Object") { $0.frame = frame }
             })
     }
 
@@ -288,6 +311,78 @@ struct ObjectInspector: View {
         Binding(
             get: { object.inputID },
             set: { value in editor.updateObject(object.id, name: "Change Data Source") { $0.inputID = value } })
+    }
+}
+
+/// Wraps a control for an overridable property with a badge showing whether the segment at the
+/// playhead sets it, and a button to inherit it again.
+struct OverrideRow<Content: View>: View {
+    let editor: EditorModel
+    let object: DisplayObject
+    let property: OverridableProperty
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        HStack {
+            content()
+            if let segment = editor.editingSegment {
+                if editor.isOverriddenHere(property, object.id) {
+                    Button {
+                        editor.resetOverride(property, object.id)
+                    } label: {
+                        Label(
+                            "Set in \(segment.label.isEmpty ? "this segment" : segment.label)", systemImage: "pin.fill"
+                        )
+                        .labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Color.accentColor)
+                    .help("Set in \(segment.label.isEmpty ? "this segment" : segment.label). Click to inherit instead.")
+                } else {
+                    Image(systemName: "pin.slash").foregroundStyle(.secondary)
+                        .help("Inherited from earlier segments; editing sets it for this segment.")
+                }
+            }
+        }
+    }
+}
+
+struct SegmentInspector: View {
+    @Bindable var editor: EditorModel
+    let segment: Segment
+
+    var body: some View {
+        Section("Segment") {
+            TextField(
+                "Label", text: Binding(get: { segment.label }, set: { editor.renameSegment(segment.id, to: $0) }))
+            NumberField(
+                "Start (s)", value: Binding(get: { segment.start }, set: { editor.shiftSegment(segment.id, to: $0) }),
+                fractionDigits: 0...3)
+            Text("Moving a segment shifts every later segment by the same amount.").font(.caption)
+                .foregroundStyle(.secondary)
+            Button("Go to Segment") { editor.seek(to: segment.start) }
+        }
+        Section("Overrides") {
+            let names = segment.overrides.keys.compactMap { editor.project.displayObject($0)?.label }.sorted()
+            if names.isEmpty {
+                Text("No object changes yet. Seek into this segment and edit visibility, position or opacity.")
+                    .font(.callout).foregroundStyle(.secondary)
+            } else {
+                ForEach(names, id: \.self) { Text($0) }
+            }
+        }
+        Section("Camera Layout") {
+            ForEach(LayoutPreset.allCases, id: \.self) { preset in
+                Button(preset.displayName) {
+                    editor.seek(to: segment.start)
+                    editor.applyLayout(preset)
+                }
+            }
+            .disabled(editor.project.videoObjects.isEmpty)
+        }
+        Section {
+            Button("Delete Segment", role: .destructive) { editor.deleteSegment(segment.id) }
+        }
     }
 }
 

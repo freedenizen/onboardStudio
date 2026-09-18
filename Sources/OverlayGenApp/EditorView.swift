@@ -18,6 +18,7 @@ struct EditorView: View {
                 PreviewView(editor: editor)
                 Divider()
                 TransportView(editor: editor)
+                TimelineView(editor: editor)
             }
         }
         .inspector(isPresented: .constant(true)) {
@@ -69,6 +70,16 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Add Object", systemImage: "gauge.with.dots.needle.33percent")
             }
+            Menu {
+                ForEach(LayoutPreset.allCases, id: \.self) { preset in
+                    Button(preset.displayName) { editor.applyLayout(preset) }
+                }
+                Divider()
+                Button("Add Segment at Playhead") { editor.addSegmentAtPlayhead() }
+            } label: {
+                Label("Layout", systemImage: "rectangle.3.group")
+            }
+            .disabled(editor.project.videoInputs.isEmpty)
             Button {
                 editor.showSyncWizard = true
             } label: {
