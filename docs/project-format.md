@@ -90,6 +90,38 @@ See `Tests/Fixtures/slice.overlayproj/project.json` for a complete example, and 
 swift run overlaygen render --project Tests/Fixtures/slice.overlayproj --out slice.mp4
 ```
 
+## Export settings
+
+`export` holds the last export configuration and is what `overlaygen render --project` uses:
+
+| Field | Meaning |
+|---|---|
+| `codec` | `h264`, `hevc` (MP4), `hevcAlpha`, `proRes4444` (QuickTime `.mov`, with alpha) |
+| `width`, `height`, `frameRate`, `videoBitrate` | output size and rate; ProRes ignores the bitrate |
+| `audioBitrate` (null = no audio), `audioSampleRate`, `audioChannels` | AAC audio |
+| `background` | `{ "video": {} }` (normal), `{ "keyColor": { "_0": "#0000FF" } }` (overlays over a flat colour, no video) or `{ "transparent": {} }` (overlays over alpha; needs an alpha codec) |
+| `range` | `{ "whole": {} }`, `{ "span": { "start": 90, "end": 240 } }` (project seconds) or `{ "laps": { "first": 2, "last": 4 } }` (lap numbers of the first data input with laps, mapped through its sync) |
+
+Presets (`--preset` on the CLI, the Preset menu in the app): `720p`, `1080p`, `1440p`, `4k`, `vertical` (1080 × 1920),
+`overlay-alpha` (transparent ProRes 4444) and `overlay-key` (blue key, H.264). The CLI also takes
+`--laps first:last`, `--background video|transparent|key:#RRGGBB` and `--template file.overlaytemplate`.
+
+## Templates
+
+A `.overlaytemplate` file is a project without its inputs: `settings`, `export`, `displayObjects`
+(with `inputID` cleared), `timeline`, and `videoOrdinals` (which video input, by order, each video
+object used). Applying a template keeps the project's inputs and rebinds: video objects to the
+video inputs in order (extra ones are dropped), data-driven objects to the first data input. Three
+templates are built in (Classic Dash, Minimal, Data Wall); user templates live in
+`~/Library/Application Support/OverlayGen/Templates/`. **File ▸ New from Template**, **Project ▸
+Apply Template** and **Save as Template…** use them.
+
+## Missing media
+
+Inputs whose files cannot be found or read are reported per input (a warning in the sidebar, the
+reason and a **Relink…** button in the inspector; a `warning:` line from the CLI) and the rest of
+the project still loads and renders.
+
 ## Timeline
 
 `timeline.segments` is a list of points in project time from which some object properties change:

@@ -52,16 +52,27 @@ public struct RenderPlan: Sendable {
     public let videoLayers: [VideoLayer]
     /// Drawn on top of all video layers, in order.
     public let overlays: [any OverlayDrawing]
+    /// What the frame is cleared to before any layer draws (opaque black for normal output;
+    /// a key colour or transparent for overlay-only exports).
+    public let background: RGBAColor
 
     public init(
         outputWidth: Int, outputHeight: Int, frameRate: Double, videoLayers: [VideoLayer],
-        overlays: [any OverlayDrawing]
+        overlays: [any OverlayDrawing], background: RGBAColor = .black
     ) {
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
         self.frameRate = frameRate
         self.videoLayers = videoLayers
         self.overlays = overlays
+        self.background = background
+    }
+
+    /// The same plan without video layers, cleared to `background`.
+    public func overlayOnly(background: RGBAColor) -> RenderPlan {
+        RenderPlan(
+            outputWidth: outputWidth, outputHeight: outputHeight, frameRate: frameRate, videoLayers: [],
+            overlays: overlays, background: background)
     }
 
     public var outputSize: CGSize { CGSize(width: outputWidth, height: outputHeight) }

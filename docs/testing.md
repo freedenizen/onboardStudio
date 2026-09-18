@@ -60,7 +60,8 @@ before tagging a release.
 | M6 data | `docs/qa-m6.md`; `probe file --lap-line lat,lon,heading` on your own log | Detected lap times match your logger app; channel mapping fixes a mis-detected column; calculated field shows in Text Data |
 | M7 gauges | `docs/qa-m7.md`; goldens in `Tests/Fixtures/Goldens` (`gauge-*`, `bar-*`, `graph-*`, `gear-*`, `lapcounter-*`, `timer-delta-*`) | Every designer option changes the preview live; a `.overlaystyle` round-trips; the delta timer reads 0.00 on the best lap |
 | M8 timeline | `docs/qa-m8.md`; `TimelineMediaTests` exports a two-camera switch at 1.5 s and pixel-probes both sides | Segment badges show what is set where; a camera switch lands on the same frame in preview and export |
-| M9+ | milestone QA script + `swift test` | Listed in each PR |
+| M9 templates/export | `docs/qa-m9.md`; `ExportOptionsTests` (lap-range duration, key-colour and ProRes-alpha exports, missing media) | A lap export is exactly the lap long; a transparent export composites cleanly in another editor; templates rebind to new inputs |
+| M10+ | milestone QA script + `swift test` | Listed in each PR |
 
 ## Release smoke test
 

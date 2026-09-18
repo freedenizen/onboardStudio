@@ -29,7 +29,11 @@ public final class FrameCompositor: @unchecked Sendable {
     public func render(sources: [Int32: CVPixelBuffer], time: Double, into output: CVPixelBuffer) throws {
         lock.lock()
         defer { lock.unlock() }
-        var image = CIImage(color: .black).cropped(to: CGRect(origin: .zero, size: plan.outputSize))
+        let clear =
+            CIColor(
+                red: plan.background.red, green: plan.background.green, blue: plan.background.blue,
+                alpha: plan.background.alpha, colorSpace: PixelBuffers.colorSpace) ?? .black
+        var image = CIImage(color: clear).cropped(to: CGRect(origin: .zero, size: plan.outputSize))
         for layer in plan.videoLayers {
             guard let buffer = sources[layer.trackID] else { continue }
             var raw = CIImage(cvPixelBuffer: buffer)

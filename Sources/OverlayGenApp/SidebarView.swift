@@ -19,6 +19,11 @@ struct SidebarView: View {
                             Text(input.label)
                             Text(inputDetail(input)).font(.caption).foregroundStyle(.secondary)
                         }
+                        if editor.problems[input.id] != nil {
+                            Spacer()
+                            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
+                                .help(editor.problems[input.id] ?? "")
+                        }
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {

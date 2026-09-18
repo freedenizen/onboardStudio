@@ -22,7 +22,9 @@ public enum FFmpegBridge {
     /// Candidate ffmpeg locations, first match wins. `OVERLAYGEN_FFMPEG` overrides.
     public static var executable: URL? {
         let env = ProcessInfo.processInfo.environment["OVERLAYGEN_FFMPEG"]
-        let candidates = [env, "/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"].compactMap { $0 }
+        let preference = UserDefaults.standard.string(forKey: "ffmpegPath").flatMap { $0.isEmpty ? nil : $0 }
+        let candidates = [env, preference, "/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
+            .compactMap { $0 }
         return candidates.map(URL.init(fileURLWithPath:)).first {
             FileManager.default.isExecutableFile(atPath: $0.path)
         }
