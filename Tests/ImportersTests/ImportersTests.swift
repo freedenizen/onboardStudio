@@ -244,3 +244,57 @@ struct FormatDetectorTests {
         #expect(throws: ImportError.unrecognisedFormat) { try FormatDetector.importSession(at: url) }
     }
 }
+
+@Suite("RaceChrono CSV v2 importer")
+struct RaceChronoV2Tests {
+    @Test func parsesV2HeaderNames() {
+        let lateral = RaceChronoCSVImporter.parseV2Header("Lateral acceleration (G) *calc")
+        #expect(lateral.key == "lateral_acc" && lateral.unit == "G" && lateral.source == "calc")
+        let time = RaceChronoCSVImporter.parseV2Header("Time (s)")
+        #expect(time.key == "timestamp" && time.unit == "s" && time.source.isEmpty)
+        let gear = RaceChronoCSVImporter.parseV2Header("Gear *canbus")
+        #expect(gear.key == "gear" && gear.unit.isEmpty && gear.source == "canbus")
+        let rot = RaceChronoCSVImporter.parseV2Header("X rate of rotation (deg/s) *gyro")
+        #expect(rot.key == "x_gyro" && rot.unit == "deg/s")
+        #expect(RaceChronoCSVImporter.parseV2Header("Analog 1 *canbus").key == "analog_1")
+        #expect(RaceChronoCSVImporter.parseV2Header("Trap name").key == "trap_name")
+    }
+
+    @Test func importsTheV2Fixture() throws {
+        let url = try Fixtures.url("racechrono-v2.csv")
+        let sniff = try FileSniff.sniff(url)
+        #expect(RaceChronoCSVImporter.confidence(for: sniff) == .certain)
+        let table = try RaceChronoCSVImporter().importFile(at: url)
+        #expect(table.info.title == "Test Circuit")
+        #expect(table.rowCount == 8)
+        #expect(table.times.first == 1_787_528_164.60)
+        let speeds = table.columns.filter { $0.name == "speed" }
+        #expect(speeds.count == 3)
+        #expect(speeds[0].source == nil && speeds[0].suggestedRole == .speed && speeds[0].unit == .metersPerSecond)
+        #expect(speeds[1].source == "calc" && speeds[1].suggestedRole == .speed)
+        #expect(speeds[2].source == "canbus" && speeds[2].suggestedRole == .obd("speed"))
+        #expect(table.column(named: "rpm")?.suggestedRole == .rpm)
+        #expect(table.column(named: "rpm")?.values[5] == nil)  // blank CAN cell
+        #expect(table.column(named: "brake_pos")?.suggestedRole == .brake)
+        #expect(table.column(named: "throttle_pos")?.suggestedRole == .throttle)
+        #expect(table.column(named: "accuracy")?.suggestedRole == .accuracy)
+        #expect(table.column(named: "lateral_acc")?.suggestedRole == .lateralG)
+        #expect(table.column(named: "trap_name")?.values.allSatisfy { $0 == nil } == true)
+        #expect(table.column(named: "steering_angle")?.unit == .degrees)
+        #expect(table.column(named: "x_gyro")?.unit == .custom("deg/s"))
+    }
+
+    @Test func v2SessionHasLapsAndCanonicalChannels() throws {
+        let session = try RaceChronoCSVImporter().importSession(at: try Fixtures.url("racechrono-v2.csv"))
+        #expect(session.laps.map(\.number) == [1, 2])
+        #expect(session.laps[0].start == 1_787_528_165.0)
+        #expect(session[.speed]?.count == 8)
+        #expect(session[.obd("speed")] != nil)
+        #expect(session[.aux("speed (calc)")] != nil)
+        #expect(session[.accuracy]?.unit == .meters)
+        #expect(session[.gear]?.interpolation == .step)
+        #expect(session[.rpm]?.count == 7)
+        #expect(session[.heading]?.value(at: 1_787_528_165.3) == 90)
+        #expect(session[.aux("trap_name")] == nil)
+    }
+}
