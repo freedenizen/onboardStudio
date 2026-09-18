@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreGraphics
 import Foundation
 import Importers
 import ProjectModel
@@ -100,16 +101,30 @@ public enum ProjectCompiler {
         for (index, inputID) in videoInputIDs.enumerated() where index < compiled.trackIDs.count {
             trackIDs[inputID] = compiled.trackIDs[index]
         }
-        let overlays = RenderPlanner.overlays(
-            for: project, sessions: loaded.sessions, images: loaded.images, cache: RenderCache())
-        // The source rotation lives on the existing layers; a replan must keep it.
-        let sourceTransforms = Dictionary(
-            compiled.plan.videoLayers.map { ($0.trackID, $0.sourceTransform) }, uniquingKeysWith: { first, _ in first })
-        let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
-        let plan = RenderPlan(
-            outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
-            frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays)
-        return compiled.replacingPlan(plan)
+        return compiled.replacingPlans(
+            timedPlans(
+                for: loaded, trackIDs: trackIDs, sourceTransforms: compiled.sourceTransforms,
+                duration: compiled.duration))
+    }
+
+    /// One plan per timeline cut point, with the objects resolved for that segment.
+    static func timedPlans(
+        for loaded: LoadedProject, trackIDs: [InputID: Int32], sourceTransforms: [Int32: CGAffineTransform],
+        duration: Double
+    ) -> [TimedPlan] {
+        let project = loaded.project
+        let cache = RenderCache()
+        return project.timeline.cutPoints(duration: duration).map { start in
+            let objects = project.displayObjects(at: start)
+            let overlays = RenderPlanner.overlays(
+                for: project, objects: objects, sessions: loaded.sessions, images: loaded.images, cache: cache)
+            let layers = RenderPlanner.videoLayers(
+                for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
+            let plan = RenderPlan(
+                outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
+                frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays)
+            return TimedPlan(start: start, plan: plan)
+        }
     }
 
     static func importData(at url: URL, settings: DataInputSettings) throws -> TelemetrySession {
@@ -155,22 +170,18 @@ public enum ProjectCompiler {
                     trim: settings.trim, frame: .full, includeAudio: settings.includeAudio, audio: settings.audio))
             specInputIDs.append(input.id)
         }
-        let cache = RenderCache()
-        let overlays = RenderPlanner.overlays(
-            for: project, sessions: loaded.sessions, images: loaded.images, cache: cache)
-        var compiled = try await CompositionBuilder.build(
-            videos: specs, overlays: overlays, outputWidth: project.settings.outputWidth,
+        let compiled = try await CompositionBuilder.build(
+            videos: specs, overlays: [], outputWidth: project.settings.outputWidth,
             outputHeight: project.settings.outputHeight, frameRate: project.settings.frameRate,
             duration: project.settings.duration)
-        // Replace the builder's one-layer-per-input default with the project's video objects.
+        // Replace the builder's one-layer-per-input default with the project's objects per segment.
         var trackIDs: [InputID: Int32] = [:]
         for (index, inputID) in specInputIDs.enumerated() where index < compiled.trackIDs.count {
             trackIDs[inputID] = compiled.trackIDs[index]
         }
-        let sourceTransforms = Dictionary(
-            uniqueKeysWithValues: compiled.plan.videoLayers.map { ($0.trackID, $0.sourceTransform) })
-        let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
-        compiled = compiled.replacingPlan(videoLayers: layers)
-        return compiled
+        return compiled.replacingPlans(
+            timedPlans(
+                for: loaded, trackIDs: trackIDs, sourceTransforms: compiled.sourceTransforms,
+                duration: compiled.duration))
     }
 }

@@ -34,7 +34,7 @@ struct PlayerAndGizmo: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: PreviewContainerView, context: Context) {
-        nsView.gizmo.objects = editor.project.displayObjects
+        nsView.gizmo.objects = editor.resolvedObjects
         nsView.gizmo.selectedID = editor.selectedObjectID
         let settings = editor.project.settings
         nsView.gizmo.outputAspect = Double(settings.outputWidth) / Double(max(settings.outputHeight, 1))

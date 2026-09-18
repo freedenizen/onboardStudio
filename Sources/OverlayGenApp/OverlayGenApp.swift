@@ -57,6 +57,18 @@ struct EditorCommands: Commands {
             Button("Import Object Style…") { editor?.importStyle() }
             Button("Export Object Style…") { editor?.exportStyle() }.disabled(editor?.selectedObject == nil)
             Divider()
+            Menu("Camera Layout") {
+                ForEach(LayoutPreset.allCases, id: \.self) { preset in
+                    Button(preset.displayName) { editor?.applyLayout(preset) }
+                }
+            }
+            Button("Add Segment at Playhead") { editor?.addSegmentAtPlayhead() }
+                .keyboardShortcut("k", modifiers: [.command])
+            Button("Delete Selected Segment") {
+                if let id = editor?.selectedSegmentID { editor?.deleteSegment(id) }
+            }
+            .disabled(editor?.selectedSegmentID == nil)
+            Divider()
             Button("Synchronize Data…") { editor?.showSyncWizard = true }.keyboardShortcut("y", modifiers: [.command])
             Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
         }

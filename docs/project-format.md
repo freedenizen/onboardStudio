@@ -90,6 +90,28 @@ See `Tests/Fixtures/slice.overlayproj/project.json` for a complete example, and 
 swift run overlaygen render --project Tests/Fixtures/slice.overlayproj --out slice.mp4
 ```
 
+## Timeline
+
+`timeline.segments` is a list of points in project time from which some object properties change:
+
+```json
+"timeline": { "segments": [
+  { "id": "…", "start": 92.5, "label": "Chase cam",
+    "overrides": { "<object id>": { "isVisible": false },
+                   "<object id>": { "isVisible": true, "frame": { "x": 0, "y": 0, "width": 1, "height": 1 } } } },
+  { "id": "…", "start": 130, "label": "Fade gauges",
+    "overrides": { "<object id>": { "opacity": 0.4 } } }
+] }
+```
+
+Each override may set `isVisible`, `frame` and/or `opacity`; anything not set is inherited from the
+previous segment, and before the first segment the objects' own values apply. Camera switching and
+picture-in-picture are therefore visibility and frame overrides on the video objects. Moving a
+segment shifts every later segment by the same amount. Projects without `timeline` load with none.
+
+At render time each segment becomes its own video-composition instruction, so switches land on
+exact frames in both the preview and the export.
+
 ## Object styles
 
 **Project ▸ Export Object Style…** writes the selected object's `kind`, `opacity`, `width` and `height` to a

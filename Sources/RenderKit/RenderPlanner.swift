@@ -9,9 +9,10 @@ public enum RenderPlanner {
     /// Video layers in draw order, keyed by the composition track ID assigned to each video input.
     /// Input picture settings and object mirror/mask combine into the layer transform.
     public static func videoLayers(
-        for project: Project, trackIDs: [InputID: Int32], sourceTransforms: [Int32: CGAffineTransform] = [:]
+        for project: Project, objects: [DisplayObject]? = nil, trackIDs: [InputID: Int32],
+        sourceTransforms: [Int32: CGAffineTransform] = [:]
     ) -> [VideoLayer] {
-        project.displayObjects.compactMap { object -> VideoLayer? in
+        (objects ?? project.displayObjects).compactMap { object -> VideoLayer? in
             guard object.isVisible, case .video(let params) = object.kind, let inputID = object.inputID,
                 let trackID = trackIDs[inputID]
             else { return nil }
@@ -34,11 +35,12 @@ public enum RenderPlanner {
     /// Overlay drawings in draw order for all visible non-video objects.
     public static func overlays(
         for project: Project,
+        objects: [DisplayObject]? = nil,
         sessions: [InputID: TelemetrySession],
         images: [InputID: LoadedImage] = [:],
         cache: RenderCache = RenderCache()
     ) -> [any OverlayDrawing] {
-        project.displayObjects.compactMap { object -> (any OverlayDrawing)? in
+        (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
             let input = object.inputID.flatMap(project.input)
             // Image objects take their picture from an image input and data from the first data input.

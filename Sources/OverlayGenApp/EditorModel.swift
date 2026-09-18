@@ -18,6 +18,7 @@ final class EditorModel {
 
     var selectedObjectID: DisplayObjectID?
     var selectedInputID: InputID?
+    var selectedSegmentID: SegmentID?
     var showSyncWizard = false
     var showExport = false
     var errorMessage: String?
@@ -59,6 +60,12 @@ final class EditorModel {
         ProjectLocation(fileURL ?? URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: "Untitled.overlayproj"))
     }
     var selectedObject: DisplayObject? { selectedObjectID.flatMap(project.displayObject) }
+    var selectedSegment: Segment? { selectedSegmentID.flatMap(project.timeline.segment) }
+    /// The segment in effect at the playhead: visibility, position and opacity edits go there.
+    var editingSegment: Segment? { project.timeline.segment(at: currentTime) }
+    /// Objects as they appear at the playhead.
+    var resolvedObjects: [DisplayObject] { project.displayObjects(at: currentTime) }
+    func resolvedObject(_ id: DisplayObjectID) -> DisplayObject? { resolvedObjects.first { $0.id == id } }
     var selectedInput: Input? { selectedInputID.flatMap(project.input) }
     var isPlaying: Bool { preview.isPlaying }
     var currentTime: Double { preview.currentTime }
@@ -212,26 +219,15 @@ final class EditorModel {
 
     func deleteSelectedObject() {
         guard let id = selectedObjectID else { return }
-        edit("Delete Object") { $0.displayObjects.removeAll { $0.id == id } }
+        edit("Delete Object") { project in
+            project.displayObjects.removeAll { $0.id == id }
+            project.timeline.prune(keeping: project.displayObjects.map(\.id))
+        }
         selectedObjectID = nil
     }
 
-    func updateObject(_ id: DisplayObjectID, name: String = "Edit Object", _ change: (inout DisplayObject) -> Void) {
-        edit(name) { project in
-            guard let index = project.displayObjects.firstIndex(where: { $0.id == id }) else { return }
-            change(&project.displayObjects[index])
-        }
-    }
-
-    func updateInput(_ id: InputID, name: String = "Edit Input", _ change: (inout Input) -> Void) {
-        edit(name) { project in
-            guard let index = project.inputs.firstIndex(where: { $0.id == id }) else { return }
-            change(&project.inputs[index])
-        }
-    }
-
     func moveObject(_ id: DisplayObjectID, frame: UnitRect) {
-        updateObject(id, name: "Move Object") { $0.frame = frame }
+        setOverridable(id, name: "Move Object") { $0.frame = frame }
     }
 
     // MARK: - Playback

@@ -22,22 +22,50 @@ public struct Project: Hashable, Codable, Sendable {
     public var schemaVersion: Int
     public var settings: ProjectSettings
     public var inputs: [Input]
-    /// Bottom-to-top draw order.
+    /// Bottom-to-top draw order, as they are before the first timeline segment.
     public var displayObjects: [DisplayObject]
     public var export: ExportSettings
+    /// Time-based changes to object visibility, position and opacity (camera switches, layouts).
+    public var timeline: Timeline
 
     public init(
         schemaVersion: Int = Project.currentSchemaVersion,
         settings: ProjectSettings = ProjectSettings(),
         inputs: [Input] = [],
         displayObjects: [DisplayObject] = [],
-        export: ExportSettings = .hd1080
+        export: ExportSettings = .hd1080,
+        timeline: Timeline = .empty
     ) {
         self.schemaVersion = schemaVersion
         self.settings = settings
         self.inputs = inputs
         self.displayObjects = displayObjects
         self.export = export
+        self.timeline = timeline
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, settings, inputs, displayObjects, export, timeline
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decode(Int.self, forKey: .schemaVersion)
+        settings = try c.decodeIfPresent(ProjectSettings.self, forKey: .settings) ?? ProjectSettings()
+        inputs = try c.decodeIfPresent([Input].self, forKey: .inputs) ?? []
+        displayObjects = try c.decodeIfPresent([DisplayObject].self, forKey: .displayObjects) ?? []
+        export = try c.decodeIfPresent(ExportSettings.self, forKey: .export) ?? .hd1080
+        timeline = try c.decodeIfPresent(Timeline.self, forKey: .timeline) ?? .empty
+    }
+
+    /// The objects as they appear at project `time`, with timeline overrides applied.
+    public func displayObjects(at time: Double) -> [DisplayObject] {
+        timeline.resolve(displayObjects, at: time)
+    }
+
+    /// Video objects in draw order.
+    public var videoObjects: [DisplayObject] {
+        displayObjects.filter { if case .video = $0.kind { return true } else { return false } }
     }
 
     public func input(_ id: InputID) -> Input? { inputs.first { $0.id == id } }

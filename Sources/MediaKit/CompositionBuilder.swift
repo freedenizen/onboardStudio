@@ -31,11 +31,45 @@ public struct CompiledComposition {
     public let videoComposition: AVMutableVideoComposition
     /// Volume / balance / channel processing for the audio tracks, or `nil` when all are neutral.
     public let audioMix: AVMutableAudioMix?
+    /// The plan in effect at time 0 (the only one without timeline segments).
     public let plan: RenderPlan
+    /// One plan per timeline cut point, in time order; `plans[0].start == 0`.
+    public let plans: [TimedPlan]
     /// Project duration in seconds.
     public let duration: Double
     /// Composition track ID per video input, in the order the inputs were given.
     public let trackIDs: [Int32]
+    /// Each video track's display rotation (Core Image convention), kept here so a track that is
+    /// hidden in every current plan still renders upright when a later plan shows it.
+    public let sourceTransforms: [Int32: CGAffineTransform]
+
+    public init(
+        composition: AVMutableComposition, videoComposition: AVMutableVideoComposition, audioMix: AVMutableAudioMix?,
+        plans: [TimedPlan], duration: Double, trackIDs: [Int32], sourceTransforms: [Int32: CGAffineTransform]? = nil
+    ) {
+        precondition(!plans.isEmpty, "a composition needs at least one plan")
+        self.composition = composition
+        self.videoComposition = videoComposition
+        self.audioMix = audioMix
+        self.plans = plans
+        self.plan = plans[0].plan
+        self.duration = duration
+        self.trackIDs = trackIDs
+        self.sourceTransforms =
+            sourceTransforms
+            ?? Dictionary(
+                plans.flatMap { $0.plan.videoLayers.map { ($0.trackID, $0.sourceTransform) } },
+                uniquingKeysWith: { first, _ in first })
+    }
+
+    public init(
+        composition: AVMutableComposition, videoComposition: AVMutableVideoComposition, audioMix: AVMutableAudioMix?,
+        plan: RenderPlan, duration: Double, trackIDs: [Int32]
+    ) {
+        self.init(
+            composition: composition, videoComposition: videoComposition, audioMix: audioMix,
+            plans: [TimedPlan(start: 0, plan: plan)], duration: duration, trackIDs: trackIDs)
+    }
 
     /// Returns a copy whose plan uses `videoLayers` (same overlays).
     public func replacingPlan(videoLayers: [VideoLayer]) -> CompiledComposition {
@@ -48,16 +82,34 @@ public struct CompiledComposition {
     /// Returns a copy with a new plan (layers and overlays) and a freshly built video composition,
     /// leaving the media composition untouched. This is how live edits reach the preview.
     public func replacingPlan(_ newPlan: RenderPlan) -> CompiledComposition {
+        replacingPlans([TimedPlan(start: 0, plan: newPlan)])
+    }
+
+    /// Like `replacingPlan` with one plan per timeline segment: each becomes a video composition
+    /// instruction covering its time span, so camera switches and moves happen at exact frames.
+    public func replacingPlans(_ newPlans: [TimedPlan]) -> CompiledComposition {
+        let sorted = newPlans.sorted { $0.start < $1.start }
+        precondition(sorted.first?.start == 0, "the first plan must start at 0")
+        let first = sorted[0].plan
         let newVideoComposition = AVMutableVideoComposition()
         newVideoComposition.customVideoCompositorClass = OverlayCompositor.self
-        newVideoComposition.renderSize = newPlan.outputSize
-        newVideoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(newPlan.frameRate.rounded()))
-        newVideoComposition.instructions = [
-            CompositionBuilder.instruction(for: newPlan, duration: duration, timescale: 600)
-        ]
+        newVideoComposition.renderSize = first.outputSize
+        newVideoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(first.frameRate.rounded()))
+        newVideoComposition.instructions = CompositionBuilder.instructions(for: sorted, duration: duration)
         return CompiledComposition(
-            composition: composition, videoComposition: newVideoComposition, audioMix: audioMix, plan: newPlan,
-            duration: duration, trackIDs: trackIDs)
+            composition: composition, videoComposition: newVideoComposition, audioMix: audioMix, plans: sorted,
+            duration: duration, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
+    }
+}
+
+/// A render plan that applies from `start` until the next plan begins.
+public struct TimedPlan: Sendable {
+    public let start: Double
+    public let plan: RenderPlan
+
+    public init(start: Double, plan: RenderPlan) {
+        self.start = start
+        self.plan = plan
     }
 }
 
@@ -188,5 +240,24 @@ public enum CompositionBuilder {
             timeRange: CMTimeRange(start: .zero, duration: CMTime(seconds: duration, preferredTimescale: timescale)),
             plan: plan,
             sourceTrackIDs: plan.videoLayers.map(\.trackID))
+    }
+
+    /// One instruction per plan, tiling `0..<duration` exactly (AVFoundation rejects gaps and overlaps).
+    static func instructions(for plans: [TimedPlan], duration: Double) -> [OverlayInstruction] {
+        let timescale: CMTimeScale = 600
+        var result: [OverlayInstruction] = []
+        for (index, timed) in plans.enumerated() where timed.start < duration {
+            let end = index + 1 < plans.count ? min(plans[index + 1].start, duration) : duration
+            guard end > timed.start else { continue }
+            let range = CMTimeRange(
+                start: CMTime(seconds: timed.start, preferredTimescale: timescale),
+                end: CMTime(seconds: end, preferredTimescale: timescale))
+            // Every source track is required by every instruction so switching cameras never
+            // stalls on a track that was not being decoded.
+            let allTracks = Set(plans.flatMap { $0.plan.videoLayers.map(\.trackID) })
+            result.append(
+                OverlayInstruction(timeRange: range, plan: timed.plan, sourceTrackIDs: Array(allTracks).sorted()))
+        }
+        return result
     }
 }

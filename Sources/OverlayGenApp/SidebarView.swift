@@ -24,6 +24,7 @@ struct SidebarView: View {
                     .onTapGesture {
                         editor.selectedInputID = input.id
                         editor.selectedObjectID = nil
+                        editor.selectedSegmentID = nil
                     }
                     .listRowBackground(
                         editor.selectedInputID == input.id && editor.selectedObjectID == nil
@@ -38,17 +39,21 @@ struct SidebarView: View {
                         Image(systemName: icon(for: object.kind))
                         Text(object.label)
                         Spacer()
+                        let visible = editor.resolvedObject(object.id)?.isVisible ?? object.isVisible
                         Button {
-                            editor.updateObject(object.id, name: object.isVisible ? "Hide Object" : "Show Object") {
-                                $0.isVisible.toggle()
+                            editor.setOverridable(object.id, name: visible ? "Hide Object" : "Show Object") {
+                                $0.isVisible = !visible
                             }
                         } label: {
-                            Image(systemName: object.isVisible ? "eye" : "eye.slash").foregroundStyle(.secondary)
+                            Image(systemName: visible ? "eye" : "eye.slash").foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                     }
                     .contentShape(Rectangle())
-                    .onTapGesture { editor.selectedObjectID = object.id }
+                    .onTapGesture {
+                        editor.selectedObjectID = object.id
+                        editor.selectedSegmentID = nil
+                    }
                     .listRowBackground(editor.selectedObjectID == object.id ? Color.accentColor.opacity(0.2) : nil)
                     .contextMenu {
                         Button("Delete", role: .destructive) {
