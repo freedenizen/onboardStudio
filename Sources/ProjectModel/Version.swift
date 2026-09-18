@@ -1,4 +1,4 @@
 /// Marketing version of OverlayGen. The release workflow rewrites this from the git tag.
 public enum OverlayGenVersion {
-    public static let marketing = "0.3.0"
+    public static let marketing = "0.3.1"
 }

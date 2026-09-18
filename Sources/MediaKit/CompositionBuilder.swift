@@ -117,18 +117,17 @@ public enum CompositionBuilder {
                 videoTrack.scaleTimeRange(
                     CMTimeRange(start: insertAt, duration: inputRange.duration), toDuration: scaledDuration)
             }
-            videoTrack.preferredTransform = try await sourceVideo.load(.preferredTransform)
-            layers.append(VideoLayer(trackID: videoTrack.trackID, frame: spec.frame))
+            let preferredTransform = try await sourceVideo.load(.preferredTransform)
+            videoTrack.preferredTransform = preferredTransform
+            layers.append(
+                VideoLayer(
+                    trackID: videoTrack.trackID, frame: spec.frame,
+                    sourceTransform: Self.ciTransform(preferredTransform)))
 
-            if spec.includeAudio, let sourceAudio = try await asset.loadTracks(withMediaType: .audio).first,
-                let audioTrack = composition.addMutableTrack(
-                    withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+            let timing = TrackTiming(
+                range: inputRange, insertAt: insertAt, scaledDuration: scaledDuration, playSpeed: spec.sync.playSpeed)
+            if spec.includeAudio, let audioTrack = try await addAudioTrack(from: asset, to: composition, timing: timing)
             {
-                try audioTrack.insertTimeRange(inputRange, of: sourceAudio, at: insertAt)
-                if spec.sync.playSpeed != 1 {
-                    audioTrack.scaleTimeRange(
-                        CMTimeRange(start: insertAt, duration: inputRange.duration), toDuration: scaledDuration)
-                }
                 audioTracks.append((audioTrack, spec.audio))
             }
             projectEnd = max(projectEnd, spec.sync.offsetInProject + scaledDuration.seconds)
@@ -147,6 +146,39 @@ public enum CompositionBuilder {
             composition: composition, videoComposition: videoComposition,
             audioMix: AudioMixBuilder.mix(for: audioTracks),
             plan: plan, duration: duration, trackIDs: layers.map(\.trackID))
+    }
+
+    /// Where an input's samples land on the project timeline.
+    struct TrackTiming {
+        let range: CMTimeRange
+        let insertAt: CMTime
+        let scaledDuration: CMTime
+        let playSpeed: Double
+    }
+
+    /// Inserts the asset's first audio track (if any) into the composition, mirroring the video timing.
+    static func addAudioTrack(
+        from asset: AVURLAsset, to composition: AVMutableComposition, timing: TrackTiming
+    ) async throws -> AVMutableCompositionTrack? {
+        guard let sourceAudio = try await asset.loadTracks(withMediaType: .audio).first,
+            let audioTrack = composition.addMutableTrack(
+                withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+        else { return nil }
+        try audioTrack.insertTimeRange(timing.range, of: sourceAudio, at: timing.insertAt)
+        if timing.playSpeed != 1 {
+            audioTrack.scaleTimeRange(
+                CMTimeRange(start: timing.insertAt, duration: timing.range.duration), toDuration: timing.scaledDuration)
+        }
+        return audioTrack
+    }
+
+    /// AVFoundation's preferred transform is expressed in a top-left coordinate system; Core Image
+    /// uses bottom-left. Rotations by multiples of 90° convert by inverting the sign of the
+    /// rotation (equivalently, conjugating with a vertical flip); pure translations are dropped
+    /// because the compositor re-normalises the origin.
+    static func ciTransform(_ t: CGAffineTransform) -> CGAffineTransform {
+        guard t != .identity else { return .identity }
+        return CGAffineTransform(a: t.a, b: -t.b, c: -t.c, d: t.d, tx: 0, ty: 0)
     }
 
     static func instruction(for plan: RenderPlan, duration: Double, timescale: CMTimeScale) -> OverlayInstruction {

@@ -18,12 +18,27 @@ public struct VideoLayer: Sendable, Equatable {
     /// Input-level processing (crop, rotation, colour, chroma key) combined with object-level
     /// mirror and channel mask.
     public let transform: VideoTransform
+    /// The source track's preferred (display) transform. Custom compositors receive buffers in
+    /// encoded orientation, so this must be applied before anything else.
+    public let sourceTransform: CGAffineTransform
 
-    public init(trackID: Int32, frame: UnitRect = .full, opacity: Double = 1, transform: VideoTransform = .identity) {
+    public init(
+        trackID: Int32,
+        frame: UnitRect = .full,
+        opacity: Double = 1,
+        transform: VideoTransform = .identity,
+        sourceTransform: CGAffineTransform = .identity
+    ) {
         self.trackID = trackID
         self.frame = frame
         self.opacity = opacity
         self.transform = transform
+        self.sourceTransform = sourceTransform
+    }
+
+    public func with(frame: UnitRect, opacity: Double, transform: VideoTransform) -> VideoLayer {
+        VideoLayer(
+            trackID: trackID, frame: frame, opacity: opacity, transform: transform, sourceTransform: sourceTransform)
     }
 }
 
