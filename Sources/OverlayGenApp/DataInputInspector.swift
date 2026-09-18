@@ -1,0 +1,271 @@
+import ProjectModel
+import SwiftUI
+import TelemetryKit
+
+/// Data-input sections: channel mapping, processing, calculated fields and lap detection.
+struct DataInputInspector: View {
+    @Bindable var editor: EditorModel
+    let input: Input
+    let settings: DataInputSettings
+
+    @State private var showChannels = false
+
+    var session: TelemetrySession? { editor.sessions[input.id] }
+
+    var body: some View {
+        Section {
+            if let session {
+                DisclosureGroup(isExpanded: $showChannels) {
+                    ForEach(session.orderedChannels, id: \.role) { channel in
+                        ChannelMappingRow(editor: editor, input: input, settings: settings, channel: channel)
+                    }
+                } label: {
+                    Text("Channels (\(session.channels.count))")
+                }
+            } else {
+                Text("Loading…").foregroundStyle(.secondary)
+            }
+        }
+        Section("Processing") {
+            Toggle(
+                "Derive speed from GPS when missing",
+                isOn: field(\.deriveSpeedFromPosition, name: "Toggle Speed Derivation"))
+            Toggle(
+                "Derive heading from GPS when missing",
+                isOn: field(\.deriveHeadingFromPosition, name: "Toggle Heading Derivation"))
+            Picker(
+                "Resample",
+                selection: Binding(
+                    get: { settings.resampleHertz ?? 0 },
+                    set: { v in update("Change Resampling") { $0.resampleHertz = v > 0 ? v : nil } })
+            ) {
+                Text("As recorded").tag(0.0)
+                Text("10 Hz").tag(10.0)
+                Text("25 Hz").tag(25.0)
+                Text("50 Hz").tag(50.0)
+            }
+            Slider(value: field(\.smoothingSeconds, name: "Change Smoothing"), in: 0...3, step: 0.1) {
+                Text(
+                    settings.smoothingSeconds == 0
+                        ? "Smoothing off" : "Smoothing \(String(format: "%.1f", settings.smoothingSeconds)) s")
+            }
+        }
+        Section("Calculated Fields") {
+            ForEach(Array(settings.calculatedFields.enumerated()), id: \.offset) { index, spec in
+                CalculatedFieldRow(spec: spec, valid: (try? Expression(spec.expression)) != nil) { newSpec in
+                    update("Edit Calculated Field") { $0.calculatedFields[index] = newSpec }
+                } remove: {
+                    update("Remove Calculated Field") { $0.calculatedFields.remove(at: index) }
+                }
+            }
+            Button("Add Calculated Field") {
+                update("Add Calculated Field") {
+                    $0.calculatedFields.append(
+                        CalculatedFieldSpec(
+                            name: "field\($0.calculatedFields.count + 1)", expression: "speed * 3.6", unit: "km/h"))
+                }
+            }
+            Text(
+                "Channels by identifier (speed, rpm, obd:Coolant, [aux:Oil temp]); + − × ÷, comparisons, "
+                    + "if(cond, a, b), min, max, abs, clamp."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+        }
+        Section("Laps") {
+            Toggle(
+                "Detect laps from a start/finish line",
+                isOn: Binding(
+                    get: { settings.lapLine != nil },
+                    set: { on in
+                        update(on ? "Enable Lap Detection" : "Use File Laps") {
+                            $0.lapLine = on ? (currentPositionLine ?? LapLineSpec(latitude: 0, longitude: 0)) : nil
+                        }
+                    }))
+            if let line = settings.lapLine {
+                Button("Use Current Preview Position as Start/Finish") {
+                    if let here = currentPositionLine {
+                        update("Set Start/Finish") {
+                            $0.lapLine = LapLineSpec(
+                                latitude: here.latitude, longitude: here.longitude, headingDegrees: here.headingDegrees,
+                                halfWidthMeters: line.halfWidthMeters,
+                                headingToleranceDegrees: line.headingToleranceDegrees,
+                                ignoreFirstCrossings: line.ignoreFirstCrossings)
+                        }
+                    }
+                }
+                .disabled(currentPositionLine == nil)
+                NumberField("Latitude", value: lineField(\.latitude), fractionDigits: 0...6)
+                NumberField("Longitude", value: lineField(\.longitude), fractionDigits: 0...6)
+                NumberField(
+                    "Heading (°)",
+                    value: Binding(
+                        get: { line.headingDegrees ?? -1 },
+                        set: { v in updateLine { $0.headingDegrees = v < 0 ? nil : v } }))
+                NumberField("Line half-width (m)", value: lineField(\.halfWidthMeters))
+                NumberField("Heading tolerance (°)", value: lineField(\.headingToleranceDegrees))
+                Stepper(
+                    "Ignore first crossings: \(line.ignoreFirstCrossings)",
+                    value: Binding(
+                        get: { line.ignoreFirstCrossings },
+                        set: { v in updateLine { $0.ignoreFirstCrossings = max(0, v) } }), in: 0...10)
+            }
+            if let session, !session.laps.isEmpty {
+                ForEach(session.laps, id: \.number) { lap in
+                    LabeledContent("Lap \(lap.number)") {
+                        Text(lap.duration.map(TimeParsing.lapTimeString) ?? "—").monospacedDigit()
+                            .foregroundStyle(lap.isComplete ? .primary : .secondary)
+                    }
+                }
+            } else {
+                Text("No laps found.").foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// Position and heading at the current preview time, mapped through this input's sync.
+    var currentPositionLine: LapLineSpec? {
+        guard let session else { return nil }
+        let inputTime = input.sync.inputTime(forProjectTime: editor.currentTime)
+        guard let line = LapDetector.finishLine(at: inputTime, in: session) else { return nil }
+        return LapLineSpec(latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees)
+    }
+
+    func field<T>(_ keyPath: WritableKeyPath<DataInputSettings, T>, name: String) -> Binding<T> {
+        Binding(get: { settings[keyPath: keyPath] }, set: { value in update(name) { $0[keyPath: keyPath] = value } })
+    }
+
+    func lineField(_ keyPath: WritableKeyPath<LapLineSpec, Double>) -> Binding<Double> {
+        Binding(
+            get: { settings.lapLine?[keyPath: keyPath] ?? 0 }, set: { v in updateLine { $0[keyPath: keyPath] = v } })
+    }
+
+    func updateLine(_ change: (inout LapLineSpec) -> Void) {
+        update("Edit Start/Finish") { settings in
+            guard var line = settings.lapLine else { return }
+            change(&line)
+            settings.lapLine = line
+        }
+    }
+
+    func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
+        var new = settings
+        change(&new)
+        editor.updateInput(input.id, name: name) { $0.kind = .data(new) }
+    }
+}
+
+/// One imported channel with its role and unit, editable via overrides.
+struct ChannelMappingRow: View {
+    @Bindable var editor: EditorModel
+    let input: Input
+    let settings: DataInputSettings
+    let channel: Channel
+
+    static let roles: [String] = ChannelRole.standardRoles.map(\.identifier)
+    static let units = [
+        "", "m/s", "km/h", "mph", "m", "ft", "km", "mi", "deg", "G", "rpm", "%", "C", "F", "kPa", "psi",
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(channel.name).lineLimit(1).truncationMode(.middle)
+                Spacer()
+                Text("\(channel.count) samples · \(channel.unit.symbol.isEmpty ? "no unit" : channel.unit.symbol)")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            HStack {
+                Picker("Role", selection: roleBinding) {
+                    Text(channel.role.identifier).tag(channel.role.identifier)
+                    Divider()
+                    ForEach(Self.roles, id: \.self) { Text($0).tag($0) }
+                    Text("aux:\(channel.name)").tag("aux:\(channel.name)")
+                }
+                .labelsHidden()
+                Picker("Unit", selection: unitBinding) {
+                    ForEach(Self.units, id: \.self) { Text($0.isEmpty ? "file unit" : $0).tag($0) }
+                }
+                .labelsHidden()
+            }
+        }
+    }
+
+    var roleBinding: Binding<String> {
+        Binding(
+            get: { settings.roleOverrides[channel.name] ?? channel.role.identifier },
+            set: { value in update("Change Channel Role") { $0.roleOverrides[channel.name] = value } })
+    }
+
+    var unitBinding: Binding<String> {
+        Binding(
+            get: { settings.unitOverrides[channel.name] ?? "" },
+            set: { value in
+                update("Change Channel Unit") {
+                    if value.isEmpty {
+                        $0.unitOverrides[channel.name] = nil
+                    } else {
+                        $0.unitOverrides[channel.name] = value
+                    }
+                }
+            })
+    }
+
+    func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
+        var new = settings
+        change(&new)
+        editor.updateInput(input.id, name: name) { $0.kind = .data(new) }
+    }
+}
+
+struct CalculatedFieldRow: View {
+    let spec: CalculatedFieldSpec
+    let valid: Bool
+    let change: (CalculatedFieldSpec) -> Void
+    let remove: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                TextField(
+                    "Name",
+                    text: Binding(
+                        get: { spec.name },
+                        set: { v in
+                            var s = spec
+                            s.name = v
+                            change(s)
+                        })
+                )
+                .frame(width: 110)
+                TextField(
+                    "Unit",
+                    text: Binding(
+                        get: { spec.unit },
+                        set: { v in
+                            var s = spec
+                            s.unit = v
+                            change(s)
+                        })
+                )
+                .frame(width: 60)
+                Button(role: .destructive) {
+                    remove()
+                } label: {
+                    Image(systemName: "minus.circle")
+                }.buttonStyle(.borderless)
+            }
+            TextField(
+                "Expression",
+                text: Binding(
+                    get: { spec.expression },
+                    set: { v in
+                        var s = spec
+                        s.expression = v
+                        change(s)
+                    })
+            )
+            .font(.system(.body, design: .monospaced))
+            .foregroundStyle(valid ? .primary : Color.red)
+        }
+    }
+}

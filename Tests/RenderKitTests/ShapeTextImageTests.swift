@@ -124,3 +124,24 @@ struct ShapeTextImageTests {
         #expect(overlays[0] is ImageRenderer && overlays[1] is TextRenderer)
     }
 }
+
+@Suite("Track projection performance")
+struct TrackProjectionPerformanceTests {
+    /// A 20-minute session at 100 Hz (120k points) must project in well under a second; a
+    /// quadratic implementation took minutes on real RaceChrono exports.
+    @Test func projectsLongSessionsQuickly() {
+        let count = 120_000
+        let times = (0..<count).map { Double($0) / 100 }
+        let lat = Channel(
+            role: .latitude, name: "lat", unit: .degrees, times: times, values: times.map { 45 + 0.001 * sin($0 / 60) })
+        let lon = Channel(
+            role: .longitude, name: "lon", unit: .degrees, times: times,
+            values: times.map { -122 + 0.001 * cos($0 / 60) })
+        let session = TelemetrySession(info: SessionInfo(sourceFormat: "perf"), channels: [lat, lon])
+        let start = Date()
+        let projection = TrackProjection(session: session, rotationDegrees: 0)
+        let elapsed = Date().timeIntervalSince(start)
+        #expect(projection?.points.count == count)
+        #expect(elapsed < 5, "projection took \(elapsed) s")
+    }
+}

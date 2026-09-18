@@ -28,8 +28,18 @@ files are referenced by path; relative paths resolve against the package directo
 | `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … } } }` |
 | `sync` | `startPositionInInput`, `offsetInProject`, `playSpeed` — `inputTime = (t − offsetInProject) × playSpeed + startPositionInInput` |
 
-`roleOverrides` maps a column name to a channel role identifier (`speed`, `rpm`, `obd:Coolant`,
-`aux:Oil temp`) when the importer's guess is wrong.
+Data input settings (all optional):
+
+| Field | Meaning |
+|---|---|
+| `importerID` | force an importer (`racechrono-csv`, `gpx`, …) instead of auto-detection |
+| `roleOverrides` | column name → channel role identifier (`speed`, `rpm`, `obd:Coolant`, `aux:Oil temp`) |
+| `unitOverrides` | column name → unit text (`km/h`, `mph`, `ft`, …) |
+| `deriveSpeedFromPosition`, `deriveHeadingFromPosition` | derive from GPS when the file lacks the channel |
+| `resampleHertz` | resample linear channels to this rate (`null` = as recorded) |
+| `smoothingSeconds` | moving-average window (0 = off) |
+| `calculatedFields` | `[{ "name", "expression", "unit" }]` (see `docs/formats.md`) |
+| `lapLine` | `{ "latitude", "longitude", "headingDegrees" (or null), "halfWidthMeters", "headingToleranceDegrees", "ignoreFirstCrossings" }`; when present, laps come from line crossings instead of the file |
 
 Video input settings (all optional; older files decode as neutral):
 

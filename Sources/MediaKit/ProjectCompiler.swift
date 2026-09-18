@@ -115,8 +115,21 @@ public enum ProjectCompiler {
             if let role = ChannelRole(identifier: identifier) { overrides[column] = role }
         }
         let options = SessionBuilder.Options(
-            roleOverrides: overrides, deriveSpeedFromPosition: settings.deriveSpeedFromPosition,
-            deriveHeadingFromPosition: settings.deriveHeadingFromPosition)
+            roleOverrides: overrides,
+            deriveSpeedFromPosition: settings.deriveSpeedFromPosition,
+            deriveHeadingFromPosition: settings.deriveHeadingFromPosition,
+            unitOverrides: settings.unitOverrides.mapValues { TelemetryUnit(parsing: $0) },
+            resampleHertz: settings.resampleHertz,
+            smoothingSeconds: settings.smoothingSeconds,
+            calculatedFields: settings.calculatedFields.map {
+                CalculatedField(name: $0.name, expression: $0.expression, unit: $0.unit)
+            },
+            finishLine: settings.lapLine.map {
+                FinishLine(
+                    latitude: $0.latitude, longitude: $0.longitude, headingDegrees: $0.headingDegrees,
+                    halfWidthMeters: $0.halfWidthMeters, headingToleranceDegrees: $0.headingToleranceDegrees)
+            },
+            ignoreFirstCrossings: settings.lapLine?.ignoreFirstCrossings ?? 0)
         if let importerID = settings.importerID {
             guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {
                 throw ImportError.unrecognisedFormat

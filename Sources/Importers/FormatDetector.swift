@@ -15,6 +15,10 @@ public enum FormatDetector {
         RaceRenderCSVImporter(),
         RaceChronoCSVImporter(),
         GPXImporter(),
+        TCXImporter(),
+        NMEAImporter(),
+        VBOImporter(),
+        GenericCSVImporter(),
     ]
 
     public static func candidates(for url: URL) throws -> [Candidate] {

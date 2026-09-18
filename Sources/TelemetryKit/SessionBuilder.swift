@@ -12,17 +12,40 @@ public enum SessionBuilder {
         public var deriveHeadingFromPosition: Bool
         /// Whether to derive distance travelled from position when the file has none.
         public var deriveDistanceFromPosition: Bool
+        /// Column name → unit override (e.g. a bare "Speed" column that is really km/h).
+        public var unitOverrides: [String: TelemetryUnit]
+        /// Resample every linear channel to this rate before smoothing (`nil` = keep as recorded).
+        public var resampleHertz: Double?
+        /// Centred moving-average window applied to linear channels (0 = none).
+        public var smoothingSeconds: Double
+        /// Additional channels computed from expressions.
+        public var calculatedFields: [CalculatedField]
+        /// Lap detection from a finish line; `nil` keeps the file's own laps.
+        public var finishLine: FinishLine?
+        public var ignoreFirstCrossings: Int
 
         public init(
             roleOverrides: [String: ChannelRole] = [:],
             deriveSpeedFromPosition: Bool = true,
             deriveHeadingFromPosition: Bool = true,
-            deriveDistanceFromPosition: Bool = true
+            deriveDistanceFromPosition: Bool = true,
+            unitOverrides: [String: TelemetryUnit] = [:],
+            resampleHertz: Double? = nil,
+            smoothingSeconds: Double = 0,
+            calculatedFields: [CalculatedField] = [],
+            finishLine: FinishLine? = nil,
+            ignoreFirstCrossings: Int = 0
         ) {
             self.roleOverrides = roleOverrides
             self.deriveSpeedFromPosition = deriveSpeedFromPosition
             self.deriveHeadingFromPosition = deriveHeadingFromPosition
             self.deriveDistanceFromPosition = deriveDistanceFromPosition
+            self.unitOverrides = unitOverrides
+            self.resampleHertz = resampleHertz
+            self.smoothingSeconds = smoothingSeconds
+            self.calculatedFields = calculatedFields
+            self.finishLine = finishLine
+            self.ignoreFirstCrossings = ignoreFirstCrossings
         }
     }
 
@@ -44,13 +67,38 @@ public enum SessionBuilder {
                 finalRole = role
             }
             usedRoles.insert(finalRole)
-            guard let channel = makeChannel(role: finalRole, column: column, times: table.times) else { continue }
-            channels.append(channel.convertedToCanonicalUnit())
+            var effectiveColumn = column
+            if let unit = options.unitOverrides.first(where: {
+                $0.key.caseInsensitiveCompare(column.name) == .orderedSame
+            })?.value {
+                effectiveColumn.unit = unit
+            }
+            guard var channel = makeChannel(role: finalRole, column: effectiveColumn, times: table.times) else {
+                continue
+            }
+            channel = channel.convertedToCanonicalUnit()
+            if let hertz = options.resampleHertz, channel.interpolation == .linear {
+                channel = Resampler.resample(channel, hertz: hertz)
+            }
+            if options.smoothingSeconds > 0 {
+                channel =
+                    channel.role == .heading
+                    ? Resampler.smoothHeading(channel, windowSeconds: options.smoothingSeconds)
+                    : Resampler.smooth(channel, windowSeconds: options.smoothingSeconds)
+            }
+            channels.append(channel)
         }
 
         var session = TelemetrySession(info: table.info, channels: channels)
         addDerivedChannels(to: &session, options: options)
-        session.laps = deriveLaps(table: table, session: session)
+        for field in options.calculatedFields {
+            try? session.addCalculatedField(field)
+        }
+        if let line = options.finishLine {
+            session.laps = LapDetector.detect(in: session, line: line, ignoreFirst: options.ignoreFirstCrossings)
+        } else {
+            session.laps = deriveLaps(table: table, session: session)
+        }
         return session
     }
 

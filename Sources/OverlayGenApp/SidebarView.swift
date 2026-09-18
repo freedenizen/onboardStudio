@@ -71,7 +71,8 @@ struct SidebarView: View {
             return "video"
         case .data:
             if let session = editor.sessions[input.id] {
-                return "\(session.info.sourceFormat), \(session.channels.count) channels, \(session.laps.count) laps"
+                let laps = session.laps.count == 1 ? "1 lap" : "\(session.laps.count) laps"
+                return "\(session.info.sourceFormat), \(session.channels.count) channels, \(laps)"
             }
             return "data"
         case .audio: return "audio"

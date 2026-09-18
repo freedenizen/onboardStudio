@@ -24,7 +24,11 @@ final class EditorModel {
 
     let preview = PreviewController()
     private(set) var loaded: ProjectCompiler.LoadedProject?
-    private var compileTask: Task<Void, Never>?
+    /// Most recent import result, including ones superseded before they were applied, so the next
+    /// compile can reuse whatever sessions and media info are still valid.
+    private var reusableLoad: ProjectCompiler.LoadedProject?
+    private var compileInFlight = false
+    private var compilePending = false
     private var lastCompiledProject: Project?
     private var documentSubscription: AnyCancellable?
 
@@ -162,29 +166,48 @@ final class EditorModel {
 
     /// Rebuilds the preview after edits. Media/data are reloaded only when inputs change;
     /// object edits just swap the overlay plan.
+    ///
+    /// Compiles are serialised: a data import cannot be cancelled once it is running, so edits
+    /// that arrive while one is in flight are coalesced into a single follow-up compile of the
+    /// latest project, and a result for an outdated project is discarded.
     func scheduleCompile() {
-        compileTask?.cancel()
+        if compileInFlight {
+            compilePending = true
+            return
+        }
+        compileInFlight = true
         let project = self.project
         let location = self.location
-        let previous = loaded
+        let previous = reusableLoad ?? loaded
         let needsRecompile = lastCompiledProject.map { ProjectCompiler.needsRecompile(from: $0, to: project) } ?? true
-        compileTask = Task { [weak self] in
+        Task { [weak self] in
             guard let self else { return }
             do {
-                let loaded = try await ProjectCompiler.load(project, location: location, reusing: previous)
-                guard !Task.isCancelled else { return }
-                self.loaded = loaded
-                if needsRecompile || preview.compiled == nil {
-                    let compiled = try await ProjectCompiler.compile(loaded)
-                    guard !Task.isCancelled else { return }
-                    preview.replace(with: compiled)
-                } else if let current = preview.compiled {
-                    preview.update(with: ProjectCompiler.replan(current, for: loaded))
+                // Importing data and probing media is CPU-heavy; keep it off the main actor.
+                let loaded = try await Task.detached(priority: .userInitiated) {
+                    try await ProjectCompiler.load(project, location: location, reusing: previous)
+                }.value
+                reusableLoad = loaded
+                if project == self.project {
+                    self.loaded = loaded
+                    if needsRecompile || preview.compiled == nil {
+                        let compiled = try await ProjectCompiler.compile(loaded)
+                        preview.replace(with: compiled)
+                    } else if let current = preview.compiled {
+                        preview.update(with: ProjectCompiler.replan(current, for: loaded))
+                    }
+                    lastCompiledProject = project
+                    errorMessage = nil
+                } else {
+                    compilePending = true  // superseded by a newer edit
                 }
-                lastCompiledProject = project
-                errorMessage = nil
             } catch {
                 errorMessage = "\(error)"
+            }
+            compileInFlight = false
+            if compilePending {
+                compilePending = false
+                scheduleCompile()
             }
         }
     }

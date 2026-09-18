@@ -1,0 +1,24 @@
+File created on 23/08/2026 at 16:36:04
+
+[header]
+sats
+time
+lat
+long
+velocity
+heading
+height
+lapnumber
+
+[comments]
+Synthetic OverlayGen fixture
+
+[column names]
+sats time lat long velocity heading height lapnumber
+
+[data]
+008 163604.00 +02700.0000 +07320.0000 072.00 000.00 +0100.00 001
+008 163605.00 +02700.0054 +07320.0000 073.00 000.00 +0101.00 001
+008 163606.00 +02700.0108 +07320.0000 074.00 000.00 +0102.00 001
+008 163607.00 +02700.0108 +07319.9940 075.00 090.00 +0102.00 002
+008 163608.00 +02700.0108 +07319.9880 076.00 090.00 +0102.00 002
