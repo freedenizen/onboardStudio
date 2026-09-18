@@ -19,7 +19,8 @@ public enum RenderPlanner {
             var transform = VideoTransform()
             if let input = project.input(inputID), case .video(let settings) = input.kind {
                 transform = VideoTransform(
-                    lens: settings.lens, crop: settings.crop, rotation: settings.rotation, mirror: settings.mirror,
+                    lens: settings.lens, crop: project.settings.framing.effectiveCrop(over: settings.crop),
+                    rotation: settings.rotation, mirror: settings.mirror,
                     color: settings.color,
                     chromaKey: settings.chromaKey)
             }

@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct OverlayGenApp: App {
     @State private var updater = UpdaterModel()
     @State private var youtube = YouTubeModel()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         DocumentGroup(
@@ -38,8 +39,24 @@ struct OverlayGenApp: App {
                 Button("Check for Updates…") { updater.checkForUpdates() }
                     .disabled(!updater.canCheckForUpdates)
             }
+            CommandGroup(replacing: .help) {
+                Button("OverlayGen User Guide") { HelpLinks.open(.userGuide) }
+                Button("Supported Data Formats") { HelpLinks.open(.formats) }
+                Button("Scripting Reference") { HelpLinks.open(.scripting) }
+                Button("YouTube Upload Setup") { HelpLinks.open(.youtube) }
+                Button("Project File Format") { HelpLinks.open(.projectFormat) }
+                Divider()
+                Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
+                Button("Show Getting Started") { UserDefaults.standard.set(true, forKey: "showGettingStarted") }
+                Divider()
+                Button("Open the Sample Project") { SampleProject.open() }.disabled(!SampleProject.isAvailable)
+            }
             EditorCommands()
         }
+        Window("Keyboard Shortcuts", id: "shortcuts") {
+            ShortcutsView()
+        }
+        .windowResizability(.contentSize)
         Settings {
             SettingsView().environment(updater).environment(youtube)
         }

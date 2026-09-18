@@ -11,7 +11,8 @@ files are referenced by path; relative paths resolve against the package directo
 ```json
 {
   "schemaVersion": 1,
-  "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null },
+  "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null,
+                "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } } },
   "export": { "codec": "h264", "width": 1920, "height": 1080, "frameRate": 30, "videoBitrate": 16000000,
               "audioBitrate": 192000, "audioSampleRate": 48000, "audioChannels": 2 },
   "inputs": [ … ],
@@ -53,6 +54,7 @@ Video input settings (all optional; older files decode as neutral):
 | `color` | `brightness`, `contrast`, `saturation`, `sharpness` (1 = unchanged), `hue` degrees |
 | `chromaKey` | `{ "color": "#00FF00", "tolerance": 0.3, "softness": 0.1 }` or `null` |
 | `audio` | `volume` (1 = unchanged), `balance` (−1…1), `channels` (`stereo`/`mono`/`left`/`right`), `isMuted` |
+| `clips` | `[{ "path": "GX020037.MP4" }, …]`: files played back to back after `source` as one continuous video; trim, sync and picture settings cover the whole sequence (the first file's orientation is used for all) |
 | `lens` | `{ "mode": "none" / "fisheye" / "equirectangular", "fov": 180, "outputFov": 90, "yaw": 0, "pitch": 0, "roll": 0 }`: unwraps a fisheye (equidistant, `fov` across the picture width) or a 360° equirectangular source into a flat view. `outputFov` is the horizontal field of view of the result; `yaw` turns right, `pitch` looks up, `roll` tilts. A 360° source becomes a 16:9 picture half the source width. Applied on the GPU with a Metal kernel compiled at run time (CPU fallback when Core Image renders in software). |
 
 Containers macOS cannot open (MTS/M2TS, MKV, some AVI) are converted with `ffmpeg` if it is

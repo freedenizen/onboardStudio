@@ -6,6 +6,8 @@ import RenderKit
 /// One video file to place on the project timeline.
 public struct VideoInputSpec: Sendable {
     public var url: URL
+    /// Files played back to back after `url` as one continuous video (camera chapters).
+    public var clips: [URL]
     public var sync: SyncSettings
     public var trim: TrimRange
     public var frame: UnitRect
@@ -13,16 +15,20 @@ public struct VideoInputSpec: Sendable {
     public var audio: AudioSettings
 
     public init(
-        url: URL, sync: SyncSettings = .identity, trim: TrimRange = .none, frame: UnitRect = .full,
+        url: URL, clips: [URL] = [], sync: SyncSettings = .identity, trim: TrimRange = .none, frame: UnitRect = .full,
         includeAudio: Bool = true, audio: AudioSettings = .neutral
     ) {
         self.url = url
+        self.clips = clips
         self.sync = sync
         self.trim = trim
         self.frame = frame
         self.includeAudio = includeAudio
         self.audio = audio
     }
+
+    /// Every file of the sequence in playback order.
+    public var urls: [URL] { [url] + clips }
 }
 
 /// The compiled AVFoundation objects for a project. Not Sendable: keep on the queue that built it.
@@ -154,18 +160,14 @@ public enum CompositionBuilder {
         let timescale: CMTimeScale = 600
 
         for spec in videos {
-            let asset = AVURLAsset(url: spec.url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
-            let assetDuration = try await asset.load(.duration).seconds
-            guard let sourceVideo = try await asset.loadTracks(withMediaType: .video).first else {
-                throw CompositionError.noVideoTrack(spec.url)
-            }
+            let (clips, sequenceDuration) = try await loadClips(spec)
+            guard let first = clips.first else { throw CompositionError.noVideoTrack(spec.url) }
             let inputStart = max(spec.trim.start ?? 0, spec.sync.startPositionInInput)
-            let inputEnd = min(spec.trim.end ?? assetDuration, assetDuration)
+            let inputEnd = min(spec.trim.end ?? sequenceDuration, sequenceDuration)
             guard inputEnd > inputStart else { throw CompositionError.emptyRange(spec.url) }
-            let inputRange = CMTimeRange(
-                start: CMTime(seconds: inputStart, preferredTimescale: timescale),
-                end: CMTime(seconds: inputEnd, preferredTimescale: timescale))
             let insertAt = CMTime(seconds: spec.sync.offsetInProject, preferredTimescale: timescale)
+            let unscaled = CMTimeRange(
+                start: insertAt, duration: CMTime(seconds: inputEnd - inputStart, preferredTimescale: timescale))
             let scaledDuration = CMTime(
                 seconds: (inputEnd - inputStart) / spec.sync.playSpeed, preferredTimescale: timescale)
 
@@ -173,26 +175,35 @@ public enum CompositionBuilder {
                 let videoTrack = composition.addMutableTrack(
                     withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)
             else { throw CompositionError.cannotAddTrack }
-            try videoTrack.insertTimeRange(inputRange, of: sourceVideo, at: insertAt)
+            var audioTrack: AVMutableCompositionTrack?
+            for clip in clips {
+                // The part of this clip inside the trimmed sequence window.
+                let from = max(inputStart, clip.start)
+                let to = min(inputEnd, clip.start + clip.duration)
+                guard to > from else { continue }
+                let range = CMTimeRange(
+                    start: CMTime(seconds: from - clip.start, preferredTimescale: timescale),
+                    end: CMTime(seconds: to - clip.start, preferredTimescale: timescale))
+                let at = CMTime(seconds: spec.sync.offsetInProject + (from - inputStart), preferredTimescale: timescale)
+                try videoTrack.insertTimeRange(range, of: clip.video, at: at)
+                if spec.includeAudio {
+                    audioTrack = try await insertAudio(
+                        from: clip.asset, range: range, at: at, into: composition, track: audioTrack)
+                }
+            }
             if spec.sync.playSpeed != 1 {
-                videoTrack.scaleTimeRange(
-                    CMTimeRange(start: insertAt, duration: inputRange.duration), toDuration: scaledDuration)
+                videoTrack.scaleTimeRange(unscaled, toDuration: scaledDuration)
+                audioTrack?.scaleTimeRange(unscaled, toDuration: scaledDuration)
             }
             // The composition track deliberately keeps an identity transform: the compositor applies
             // the source rotation itself, so AVFoundation must not apply it a second time when it
             // delivers source frames or displays the composed output.
-            let preferredTransform = try await sourceVideo.load(.preferredTransform)
+            let preferredTransform = try await first.video.load(.preferredTransform)
             layers.append(
                 VideoLayer(
                     trackID: videoTrack.trackID, frame: spec.frame,
                     sourceTransform: Self.ciTransform(preferredTransform)))
-
-            let timing = TrackTiming(
-                range: inputRange, insertAt: insertAt, scaledDuration: scaledDuration, playSpeed: spec.sync.playSpeed)
-            if spec.includeAudio, let audioTrack = try await addAudioTrack(from: asset, to: composition, timing: timing)
-            {
-                audioTracks.append((audioTrack, spec.audio))
-            }
+            if let audioTrack { audioTracks.append((audioTrack, spec.audio)) }
             projectEnd = max(projectEnd, spec.sync.offsetInProject + scaledDuration.seconds)
         }
 
@@ -211,28 +222,43 @@ public enum CompositionBuilder {
             plan: plan, duration: duration, trackIDs: layers.map(\.trackID))
     }
 
-    /// Where an input's samples land on the project timeline.
-    struct TrackTiming {
-        let range: CMTimeRange
-        let insertAt: CMTime
-        let scaledDuration: CMTime
-        let playSpeed: Double
+    /// One file of a clip sequence and where it sits on the sequence's own time axis.
+    struct LoadedClip {
+        let asset: AVURLAsset
+        let video: AVAssetTrack
+        let start: Double
+        let duration: Double
     }
 
-    /// Inserts the asset's first audio track (if any) into the composition, mirroring the video timing.
-    static func addAudioTrack(
-        from asset: AVURLAsset, to composition: AVMutableComposition, timing: TrackTiming
-    ) async throws -> AVMutableCompositionTrack? {
-        guard let sourceAudio = try await asset.loadTracks(withMediaType: .audio).first,
-            let audioTrack = composition.addMutableTrack(
-                withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
-        else { return nil }
-        try audioTrack.insertTimeRange(timing.range, of: sourceAudio, at: timing.insertAt)
-        if timing.playSpeed != 1 {
-            audioTrack.scaleTimeRange(
-                CMTimeRange(start: timing.insertAt, duration: timing.range.duration), toDuration: timing.scaledDuration)
+    /// Loads every clip of the sequence; the sequence's time axis runs across them in order.
+    static func loadClips(_ spec: VideoInputSpec) async throws -> ([LoadedClip], Double) {
+        var clips: [LoadedClip] = []
+        var sequenceDuration = 0.0
+        for url in spec.urls {
+            let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
+            let assetDuration = try await asset.load(.duration).seconds
+            guard let sourceVideo = try await asset.loadTracks(withMediaType: .video).first else {
+                throw CompositionError.noVideoTrack(url)
+            }
+            clips.append(LoadedClip(asset: asset, video: sourceVideo, start: sequenceDuration, duration: assetDuration))
+            sequenceDuration += assetDuration
         }
-        return audioTrack
+        return (clips, sequenceDuration)
+    }
+
+    /// Inserts one clip's audio (if it has any) into the input's audio track, creating the track
+    /// on first use so a whole clip sequence shares one track and one mix setting.
+    static func insertAudio(
+        from asset: AVURLAsset, range: CMTimeRange, at: CMTime, into composition: AVMutableComposition,
+        track existing: AVMutableCompositionTrack?
+    ) async throws -> AVMutableCompositionTrack? {
+        guard let sourceAudio = try await asset.loadTracks(withMediaType: .audio).first else { return existing }
+        guard
+            let track = existing
+                ?? composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+        else { return existing }
+        try track.insertTimeRange(range, of: sourceAudio, at: at)
+        return track
     }
 
     /// AVFoundation's preferred transform is expressed in a top-left coordinate system; Core Image

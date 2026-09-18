@@ -24,6 +24,9 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
     public var audio: AudioSettings
     /// Fisheye / 360° unwrap (M12); `.none` leaves the picture as recorded.
     public var lens: LensSettings
+    /// Further files played back to back after `source` as one continuous video (camera
+    /// chapters); trim, sync and picture settings apply to the whole sequence.
+    public var clips: [MediaReference]
 
     public init(
         trim: TrimRange = .none,
@@ -34,7 +37,8 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         color: ColorAdjustments = .neutral,
         chromaKey: ChromaKey? = nil,
         audio: AudioSettings = .neutral,
-        lens: LensSettings = .none
+        lens: LensSettings = .none,
+        clips: [MediaReference] = []
     ) {
         self.trim = trim
         self.includeAudio = includeAudio
@@ -45,11 +49,12 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         self.chromaKey = chromaKey
         self.audio = audio
         self.lens = lens
+        self.clips = clips
     }
 
     // Older documents lack the picture/audio fields; decode them as neutral.
     private enum CodingKeys: String, CodingKey {
-        case trim, includeAudio, rotation, mirror, crop, color, chromaKey, audio, lens
+        case trim, includeAudio, rotation, mirror, crop, color, chromaKey, audio, lens, clips
     }
 
     public init(from decoder: any Decoder) throws {
@@ -63,6 +68,7 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         chromaKey = try c.decodeIfPresent(ChromaKey.self, forKey: .chromaKey)
         audio = try c.decodeIfPresent(AudioSettings.self, forKey: .audio) ?? .neutral
         lens = try c.decodeIfPresent(LensSettings.self, forKey: .lens) ?? .none
+        clips = try c.decodeIfPresent([MediaReference].self, forKey: .clips) ?? []
     }
 }
 

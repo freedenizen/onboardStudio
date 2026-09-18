@@ -42,6 +42,8 @@ struct ProjectInspector: View {
                 Text("60").tag(60.0)
             }
         }
+        CameraFramingSection(editor: editor)
+        GettingStartedSection(editor: editor)
         Section {
             Text(
                 "Select an input or a display object to edit it. Drag objects on the preview to move them; "
@@ -127,6 +129,36 @@ struct InputInspector: View {
             )
             NumberField("Offset in project (s)", value: binding(\.sync.offsetInProject, name: "Change Offset"))
             NumberField("Play speed", value: binding(\.sync.playSpeed, name: "Change Speed"))
+            if input.kind.isVideo {
+                HStack {
+                    Button("Start After Previous Video") { editor.chainAfterPreviousVideo(input.id) }
+                        .disabled(editor.previousVideo(before: input.id) == nil)
+                    Button("Start at 0") { editor.setOffset(of: input.id, to: 0, name: "Move Video to Start") }
+                        .disabled(input.sync.offsetInProject == 0)
+                }
+                if let end = editor.end(of: input) {
+                    Text("Plays from \(fmt(input.sync.offsetInProject)) s to \(fmt(end)) s of the project.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("Order").foregroundStyle(.secondary)
+                    Spacer()
+                    Button {
+                        editor.moveInput(input.id, by: -1)
+                    } label: {
+                        Image(systemName: "arrow.up")
+                    }
+                    .disabled(editor.project.inputs.first?.id == input.id)
+                    Button {
+                        editor.moveInput(input.id, by: 1)
+                    } label: {
+                        Image(systemName: "arrow.down")
+                    }
+                    .disabled(editor.project.inputs.last?.id == input.id)
+                }
+                Text("Drag the video bars in the timeline to move them; videos snap to each other's ends.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if !input.kind.isVideo {
                 Button("Synchronize with Video…") { editor.showSyncWizard = true }
                 if let suggestion = editor.suggestedSync(for: input.id) {

@@ -117,3 +117,76 @@ struct TimelineMediaTests {
                 == compiled.plans[0].plan.videoLayers[0].sourceTransform)
     }
 }
+
+@Suite("Clip sequences", .serialized)
+struct ClipSequenceTests {
+    static var rotated: URL {
+        get throws {
+            try #require(Bundle.module.url(forResource: "Fixtures", withExtension: nil)).appending(
+                path: "test-rot180.mp4")
+        }
+    }
+
+    @Test func clipsPlayBackToBackAsOneTrack() async throws {
+        let clip = try MediaFixtures.video
+        // The same 3 s clip twice: the second half of the sequence replays the first.
+        let compiled = try await CompositionBuilder.build(
+            videos: [VideoInputSpec(url: clip, clips: [clip])], overlays: [], outputWidth: 320, outputHeight: 180,
+            frameRate: 30)
+        #expect(abs(compiled.duration - 6) < 0.05, "duration \(compiled.duration)")
+        #expect(compiled.composition.tracks(withMediaType: .video).count == 1)
+        #expect(compiled.composition.tracks(withMediaType: .audio).count == 1)
+        let alone = try await CompositionBuilder.build(
+            videos: [VideoInputSpec(url: clip)], overlays: [], outputWidth: 320, outputHeight: 180, frameRate: 30)
+        let replay = try await MediaFixtures.renderFrame(of: compiled, at: 3.4)
+        let original = try await MediaFixtures.renderFrame(of: alone, at: 0.4)
+        let later = try await MediaFixtures.renderFrame(of: alone, at: 2.4)
+        func distance(_ a: CVPixelBuffer, _ b: CVPixelBuffer) -> Int {
+            var total = 0
+            for y in stride(from: 5, to: 180, by: 12) {
+                for x in stride(from: 5, to: 320, by: 12) {
+                    let p = PixelBuffers.pixel(in: a, x: x, y: y)
+                    let q = PixelBuffers.pixel(in: b, x: x, y: y)
+                    total += abs(Int(p.r) - Int(q.r)) + abs(Int(p.g) - Int(q.g)) + abs(Int(p.b) - Int(q.b))
+                }
+            }
+            return total
+        }
+        let same = distance(replay, original)
+        let different = distance(replay, later)
+        #expect(
+            same * 4 < different, "3.4 s of the sequence should look like 0.4 s of the clip (\(same) vs \(different))")
+    }
+
+    @Test func trimAndSpeedApplyToTheWholeSequence() async throws {
+        let first = try MediaFixtures.video
+        let second = try MediaFixtures.video
+        // Start 2 s into the sequence and stop 1.5 s later, played at double speed → 0.75 s.
+        let spec = VideoInputSpec(
+            url: first, clips: [second], sync: SyncSettings(offsetInProject: 1, playSpeed: 2),
+            trim: TrimRange(start: 2, end: 3.5))
+        let compiled = try await CompositionBuilder.build(
+            videos: [spec], overlays: [], outputWidth: 160, outputHeight: 90, frameRate: 30)
+        #expect(abs(compiled.duration - 1.75) < 0.05, "duration \(compiled.duration)")
+        let segments = (compiled.composition.tracks(withMediaType: .video).first?.segments ?? []).filter { !$0.isEmpty }
+        #expect(segments.count == 2, "one segment per clip inside the window, got \(segments.count)")
+    }
+}
+
+extension MediaFixtures {
+    /// Renders one frame of a compiled composition through the overlay compositor.
+    static func renderFrame(of compiled: CompiledComposition, at time: Double) async throws -> CVPixelBuffer {
+        let generator = AVAssetImageGenerator(asset: compiled.composition)
+        generator.videoComposition = compiled.videoComposition
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .zero
+        let image = try await generator.image(at: CMTime(seconds: time, preferredTimescale: 600)).image
+        let buffer = try PixelBuffers.makeBuffer(width: image.width, height: image.height)
+        try PixelBuffers.draw(into: buffer) { context, size in
+            context.translateBy(x: 0, y: size.height)
+            context.scaleBy(x: 1, y: -1)
+            context.draw(image, in: CGRect(origin: .zero, size: size))
+        }
+        return buffer
+    }
+}

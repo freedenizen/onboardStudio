@@ -6,12 +6,40 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     public var frameRate: Double
     /// Explicit project length in seconds; `nil` means "until the last video input ends".
     public var duration: Double?
+    /// Zoom, pan and crop applied to every video input (M15).
+    public var framing: CameraFraming
 
-    public init(outputWidth: Int = 1920, outputHeight: Int = 1080, frameRate: Double = 30, duration: Double? = nil) {
+    public init(
+        outputWidth: Int = 1920, outputHeight: Int = 1080, frameRate: Double = 30, duration: Double? = nil,
+        framing: CameraFraming = .none
+    ) {
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
         self.frameRate = frameRate
         self.duration = duration
+        self.framing = framing
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case outputWidth, outputHeight, frameRate, duration, framing
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = ProjectSettings()
+        outputWidth = try c.decodeIfPresent(Int.self, forKey: .outputWidth) ?? d.outputWidth
+        outputHeight = try c.decodeIfPresent(Int.self, forKey: .outputHeight) ?? d.outputHeight
+        frameRate = try c.decodeIfPresent(Double.self, forKey: .frameRate) ?? d.frameRate
+        duration = try c.decodeIfPresent(Double.self, forKey: .duration)
+        framing = try c.decodeIfPresent(CameraFraming.self, forKey: .framing) ?? .none
+    }
+
+    /// The same settings with the framing removed (framing is applied by the compositor, so it
+    /// never needs the media composition rebuilt).
+    public var withoutFraming: ProjectSettings {
+        var copy = self
+        copy.framing = .none
+        return copy
     }
 }
 

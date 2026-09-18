@@ -1,0 +1,225 @@
+{
+  "displayObjects": [
+    {
+      "frame": {
+        "height": 1,
+        "width": 0.5,
+        "x": 0,
+        "y": 0
+      },
+      "id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "inputID": "11111111-1111-1111-1111-111111111111",
+      "isVisible": true,
+      "kind": {
+        "video": {
+          "_0": {}
+        }
+      },
+      "label": "Camera",
+      "opacity": 1
+    },
+    {
+      "frame": {
+        "height": 0.5,
+        "width": 0.28,
+        "x": 0.52,
+        "y": 0.05
+      },
+      "id": "aaaaaaaa-0000-0000-0000-000000000002",
+      "inputID": "22222222-2222-2222-2222-222222222222",
+      "isVisible": true,
+      "kind": {
+        "speedometer": {
+          "_0": {
+            "channel": "speed",
+            "decimals": 0,
+            "faceColor": "#141419BF",
+            "majorTick": 20,
+            "maxValue": 80,
+            "minValue": 0,
+            "minorTick": 10,
+            "needleColor": "#FF9E1A",
+            "redlineColor": "#E62626",
+            "redlineFrom": null,
+            "rotation": 0,
+            "showValue": true,
+            "speedUnit": "mph",
+            "sweep": 270,
+            "textColor": "#FFFFFF",
+            "title": "SPEED",
+            "unitLabel": "",
+            "valueDivisor": 1
+          }
+        }
+      },
+      "label": "Speed",
+      "opacity": 1
+    },
+    {
+      "frame": {
+        "height": 0.3,
+        "width": 0.17,
+        "x": 0.81,
+        "y": 0.05
+      },
+      "id": "aaaaaaaa-0000-0000-0000-000000000003",
+      "inputID": "22222222-2222-2222-2222-222222222222",
+      "isVisible": true,
+      "kind": {
+        "trackMap": {
+          "_0": {
+            "backgroundColor": "#00000000",
+            "dotColor": "#FF9E1A",
+            "dotRadius": 7,
+            "lineColor": "#FFFFFF",
+            "lineWidth": 3,
+            "rotation": 0
+          }
+        }
+      },
+      "label": "Map",
+      "opacity": 1
+    },
+    {
+      "frame": {
+        "height": 0.3,
+        "width": 0.17,
+        "x": 0.81,
+        "y": 0.38
+      },
+      "id": "aaaaaaaa-0000-0000-0000-000000000004",
+      "inputID": "22222222-2222-2222-2222-222222222222",
+      "isVisible": true,
+      "kind": {
+        "gForce": {
+          "_0": {
+            "dotColor": "#FF9E1A",
+            "faceColor": "#141419BF",
+            "gridColor": "#FFFFFF80",
+            "maxG": 1,
+            "ringStep": 0.5,
+            "showValues": true,
+            "trailSeconds": 1
+          }
+        }
+      },
+      "label": "G",
+      "opacity": 1
+    },
+    {
+      "frame": {
+        "height": 0.12,
+        "width": 0.46,
+        "x": 0.52,
+        "y": 0.6
+      },
+      "id": "aaaaaaaa-0000-0000-0000-000000000005",
+      "inputID": "22222222-2222-2222-2222-222222222222",
+      "isVisible": true,
+      "kind": {
+        "timer": {
+          "_0": {
+            "backgroundColor": "#0000008C",
+            "label": null,
+            "mode": "currentLap",
+            "showLapNumber": true,
+            "textColor": "#FFFFFF"
+          }
+        }
+      },
+      "label": "Lap",
+      "opacity": 1
+    },
+    {
+      "frame": {
+        "height": 0.12,
+        "width": 0.46,
+        "x": 0.52,
+        "y": 0.75
+      },
+      "id": "aaaaaaaa-0000-0000-0000-000000000006",
+      "inputID": "22222222-2222-2222-2222-222222222222",
+      "isVisible": true,
+      "kind": {
+        "textData": {
+          "_0": {
+            "alignment": "trailing",
+            "backgroundColor": "#0000008C",
+            "channel": "rpm",
+            "decimals": 0,
+            "label": "RPM",
+            "speedUnit": "mph",
+            "textColor": "#FFFFFF",
+            "unitLabel": ""
+          }
+        }
+      },
+      "label": "RPM",
+      "opacity": 1
+    }
+  ],
+  "export": {
+    "audioBitrate": 96000,
+    "audioChannels": 2,
+    "audioSampleRate": 48000,
+    "codec": "h264",
+    "frameRate": 30,
+    "height": 360,
+    "videoBitrate": 2000000,
+    "width": 640
+  },
+  "inputs": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "kind": {
+        "video": {
+          "_0": {
+            "includeAudio": true,
+            "trim": {
+              "end": null,
+              "start": null
+            }
+          }
+        }
+      },
+      "label": "Sample lap (video)",
+      "source": {
+        "path": "sample-lap.mp4"
+      },
+      "sync": {
+        "offsetInProject": 0,
+        "playSpeed": 1,
+        "startPositionInInput": 0
+      }
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "kind": {
+        "data": {
+          "_0": {
+            "deriveHeadingFromPosition": true,
+            "deriveSpeedFromPosition": true,
+            "importerID": null,
+            "roleOverrides": {}
+          }
+        }
+      },
+      "label": "Sample lap (data)",
+      "source": {
+        "path": "sample-lap.csv"
+      },
+      "sync": {
+        "offsetInProject": 0,
+        "playSpeed": 1,
+        "startPositionInInput": 1.0
+      }
+    }
+  ],
+  "schemaVersion": 1,
+  "settings": {
+    "duration": null,
+    "frameRate": 30,
+    "outputHeight": 720,
+    "outputWidth": 1280
+  }
+}
