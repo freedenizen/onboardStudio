@@ -107,6 +107,7 @@ struct SidebarView: View {
         case .graph: "chart.xyaxis.line"
         case .gear: "g.square"
         case .lapCounter: "number.square"
+        case .scripted: "curlybraces"
         }
     }
 }

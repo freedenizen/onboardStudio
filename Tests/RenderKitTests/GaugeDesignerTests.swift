@@ -303,7 +303,9 @@ struct DesignerBehaviourTests {
         }
         let project = Project(inputs: [data], displayObjects: objects)
         let overlays = RenderPlanner.overlays(for: project, sessions: [data.id: SyntheticSession.withDistance])
-        #expect(overlays.count == objects.count)
+        // Scripted objects need the Scripting module's factory; without it they are skipped.
+        let scripted = objects.filter { if case .scripted = $0.kind { return true } else { return false } }.count
+        #expect(overlays.count == objects.count - scripted && scripted == 1)
         let plan = RenderPlan(outputWidth: 320, outputHeight: 180, frameRate: 30, videoLayers: [], overlays: overlays)
         #expect((try? FrameCompositor(plan: plan).renderFrame(sources: [:], time: 5)) != nil)
     }

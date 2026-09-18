@@ -109,7 +109,7 @@ public enum TextDrawing {
 
 extension CGContext {
     /// Fills a rounded rectangle.
-    func fillRoundedRect(_ rect: CGRect, radius: Double, color: CGColor) {
+    public func fillRoundedRect(_ rect: CGRect, radius: Double, color: CGColor) {
         let path = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
         setFillColor(color)
         addPath(path)

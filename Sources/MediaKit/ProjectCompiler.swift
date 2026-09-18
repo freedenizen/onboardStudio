@@ -4,6 +4,7 @@ import Foundation
 import Importers
 import ProjectModel
 import RenderKit
+import Scripting
 import TelemetryKit
 
 /// Loads a project's media and data files and compiles them into an AVFoundation composition
@@ -188,7 +189,8 @@ public enum ProjectCompiler {
         return project.timeline.cutPoints(duration: duration).map { start in
             let objects = project.displayObjects(at: start)
             let overlays = RenderPlanner.overlays(
-                for: project, objects: objects, sessions: loaded.sessions, images: loaded.images, cache: cache)
+                for: project, objects: objects, sessions: loaded.sessions, images: loaded.images, cache: cache,
+                scriptRenderer: { params, context in ScriptedRenderer(context: context, params: params) })
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
             let plan = RenderPlan(
