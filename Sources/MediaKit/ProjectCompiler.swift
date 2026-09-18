@@ -151,7 +151,9 @@ public enum ProjectCompiler {
         for (index, inputID) in specInputIDs.enumerated() where index < compiled.trackIDs.count {
             trackIDs[inputID] = compiled.trackIDs[index]
         }
-        let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs)
+        let sourceTransforms = Dictionary(
+            uniqueKeysWithValues: compiled.plan.videoLayers.map { ($0.trackID, $0.sourceTransform) })
+        let layers = RenderPlanner.videoLayers(for: project, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
         compiled = compiled.replacingPlan(videoLayers: layers)
         return compiled
     }

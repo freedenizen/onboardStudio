@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import ProjectModel
 import TelemetryKit
@@ -7,7 +8,9 @@ import TelemetryKit
 public enum RenderPlanner {
     /// Video layers in draw order, keyed by the composition track ID assigned to each video input.
     /// Input picture settings and object mirror/mask combine into the layer transform.
-    public static func videoLayers(for project: Project, trackIDs: [InputID: Int32]) -> [VideoLayer] {
+    public static func videoLayers(
+        for project: Project, trackIDs: [InputID: Int32], sourceTransforms: [Int32: CGAffineTransform] = [:]
+    ) -> [VideoLayer] {
         project.displayObjects.compactMap { object -> VideoLayer? in
             guard object.isVisible, case .video(let params) = object.kind, let inputID = object.inputID,
                 let trackID = trackIDs[inputID]
@@ -22,7 +25,9 @@ public enum RenderPlanner {
                 horizontal: transform.mirror.horizontal != params.mirror.horizontal,
                 vertical: transform.mirror.vertical != params.mirror.vertical)
             transform.channelMask = params.channelMask
-            return VideoLayer(trackID: trackID, frame: object.frame, opacity: object.opacity, transform: transform)
+            return VideoLayer(
+                trackID: trackID, frame: object.frame, opacity: object.opacity, transform: transform,
+                sourceTransform: sourceTransforms[trackID] ?? .identity)
         }
     }
 

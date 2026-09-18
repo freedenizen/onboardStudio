@@ -13,3 +13,4 @@ All fixtures are small and synthetic; none are copied from third-party files.
 | `test-1s.mts` | MPEG transport stream | 1 s, 320×180, 25 fps, no audio. AVFoundation cannot open it; exercises the ffmpeg remux fallback. |
 | `stereo-1s.mp4` | H.264/AAC | 1 s, 160×90; 440 Hz tone on the left channel only, 880 Hz on the right. Used to verify volume/balance/channel processing. |
 | `arrow.png` | PNG | 32×32 red up-arrow on transparency for image-object tests. |
+| `test-rot180.mp4` | H.264 | 1 s, 320×180 test pattern whose display matrix says rotate 180°, as an upside-down mounted camera records. Guards that the compositor honours the track's preferred transform. |

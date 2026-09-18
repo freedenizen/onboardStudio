@@ -32,7 +32,12 @@ public final class FrameCompositor: @unchecked Sendable {
         var image = CIImage(color: .black).cropped(to: CGRect(origin: .zero, size: plan.outputSize))
         for layer in plan.videoLayers {
             guard let buffer = sources[layer.trackID] else { continue }
-            let source = layer.transform.apply(to: CIImage(cvPixelBuffer: buffer))
+            var raw = CIImage(cvPixelBuffer: buffer)
+            if layer.sourceTransform != .identity {
+                raw = raw.transformed(by: layer.sourceTransform)
+                raw = raw.transformed(by: CGAffineTransform(translationX: -raw.extent.minX, y: -raw.extent.minY))
+            }
+            let source = layer.transform.apply(to: raw)
             image = place(source, layer: layer).composited(over: image)
         }
         if !plan.overlays.isEmpty {

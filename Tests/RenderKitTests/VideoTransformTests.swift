@@ -102,3 +102,30 @@ struct VideoTransformTests {
         #expect(grey.s == 0 && grey.v == 0.5)
     }
 }
+
+@Suite("Source orientation")
+struct SourceOrientationTests {
+    @Test func sourceTransformIsAppliedBeforeUserTransform() throws {
+        // A 180° display matrix: left/right halves swap and the top row moves to the bottom.
+        let rotate180 = CGAffineTransform(a: -1, b: 0, c: 0, d: -1, tx: 0, ty: 0)
+        let plan = RenderPlan(
+            outputWidth: 64, outputHeight: 32, frameRate: 30,
+            videoLayers: [VideoLayer(trackID: 1, sourceTransform: rotate180)], overlays: [])
+        let frame = try FrameCompositor(plan: plan).renderFrame(sources: [1: try QuadSource.make()], time: 0)
+        #expect(PixelBuffers.pixel(in: frame, x: 8, y: 16).b > 200)
+        #expect(PixelBuffers.pixel(in: frame, x: 56, y: 16).r > 200)
+        #expect(PixelBuffers.pixel(in: frame, x: 32, y: 30).g > 200)
+        #expect(PixelBuffers.pixel(in: frame, x: 32, y: 1).g < 60)
+        // Then the user's own mirror applies on top of the corrected picture.
+        let mirrored = RenderPlan(
+            outputWidth: 64, outputHeight: 32, frameRate: 30,
+            videoLayers: [
+                VideoLayer(
+                    trackID: 1, transform: VideoTransform(mirror: Mirror(horizontal: true)), sourceTransform: rotate180)
+            ],
+            overlays: [])
+        let frame2 = try FrameCompositor(plan: mirrored).renderFrame(sources: [1: try QuadSource.make()], time: 0)
+        #expect(PixelBuffers.pixel(in: frame2, x: 8, y: 16).r > 200)
+        #expect(PixelBuffers.pixel(in: frame2, x: 32, y: 30).g > 200)
+    }
+}
