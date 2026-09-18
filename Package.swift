@@ -16,6 +16,7 @@ let package = Package(
         .library(name: "RenderKit", targets: ["RenderKit"]),
         .library(name: "MediaKit", targets: ["MediaKit"]),
         .library(name: "Scripting", targets: ["Scripting"]),
+        .library(name: "YouTubeKit", targets: ["YouTubeKit"]),
         .executable(name: "overlaygen", targets: ["OverlayGenCLI"]),
         .executable(name: "OverlayGenApp", targets: ["OverlayGenApp"]),
     ],
@@ -35,12 +36,14 @@ let package = Package(
             swiftSettings: strict
         ),
         .target(name: "Scripting", dependencies: ["RenderKit", "TelemetryKit", "ProjectModel"], swiftSettings: strict),
+        .target(name: "YouTubeKit", swiftSettings: strict),
 
         // MARK: Executables
         .executableTarget(
             name: "OverlayGenCLI",
             dependencies: [
                 "ProjectModel", "TelemetryKit", "Importers", "GPMFKit", "RenderKit", "MediaKit", "Scripting",
+                "YouTubeKit",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ],
             swiftSettings: strict
@@ -51,6 +54,7 @@ let package = Package(
             name: "OverlayGenApp",
             dependencies: [
                 "ProjectModel", "TelemetryKit", "Importers", "GPMFKit", "RenderKit", "MediaKit", "Scripting",
+                "YouTubeKit",
             ],
             swiftSettings: strict + [.defaultIsolation(MainActor.self)]
         ),
@@ -73,5 +77,6 @@ let package = Package(
             swiftSettings: strict
         ),
         .testTarget(name: "ScriptingTests", dependencies: ["Scripting"], swiftSettings: strict),
+        .testTarget(name: "YouTubeKitTests", dependencies: ["YouTubeKit"], swiftSettings: strict),
     ]
 )

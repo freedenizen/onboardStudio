@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 @main
 struct OverlayGenApp: App {
     @State private var updater = UpdaterModel()
+    @State private var youtube = YouTubeModel()
 
     var body: some Scene {
         DocumentGroup(
@@ -12,6 +13,7 @@ struct OverlayGenApp: App {
             editor: { file in
                 EditorView(document: file.document, fileURL: file.fileURL)
                     .environment(updater)
+                    .environment(youtube)
             }
         )
         .defaultSize(width: 1280, height: 800)
@@ -39,7 +41,7 @@ struct OverlayGenApp: App {
             EditorCommands()
         }
         Settings {
-            SettingsView().environment(updater)
+            SettingsView().environment(updater).environment(youtube)
         }
     }
 
@@ -118,6 +120,9 @@ struct EditorCommands: Commands {
             Divider()
             Button("Synchronize Data…") { editor?.showSyncWizard = true }.keyboardShortcut("y", modifiers: [.command])
             Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
+            Button("Upload Video to YouTube…") {
+                if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
+            }
         }
         CommandMenu("Playback") {
             Button(editor?.isPlaying == true ? "Pause" : "Play") { editor?.togglePlayback() }.keyboardShortcut(

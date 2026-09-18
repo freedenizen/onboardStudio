@@ -20,6 +20,7 @@ public enum FormatDetector {
         VBOImporter(),
         FITImporter(),
         GoProImporter(),
+        DJISRTImporter(),
         GenericCSVImporter(),
     ]
 

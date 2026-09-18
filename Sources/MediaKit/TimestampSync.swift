@@ -1,5 +1,6 @@
 import Foundation
 import GPMFKit
+import Importers
 import ProjectModel
 import TelemetryKit
 
@@ -16,6 +17,13 @@ public enum TimestampSync {
     /// The instant (seconds since 1970) at which the video file's time 0 was recorded.
     public static func recordingStart(of url: URL, info: MediaInfo) -> (epoch: Double, source: String)? {
         if let gps = GoProTelemetry.recordingStartEpoch(of: url) { return (gps, "GoPro GPS clock") }
+        // A DJI SRT log is stamped per frame from the video's first frame, so its clock is the video's.
+        if let companion = info.companion, companion.importerID == DJISRTImporter.id,
+            let session = try? FormatDetector.importSession(at: companion.url), let created = session.info.createdAt
+        {
+            return (created.timeIntervalSince1970, "DJI SRT clock")
+        }
+        if let sony = info.sidecarCreationDate { return (sony.timeIntervalSince1970, "Sony XML sidecar") }
         if let created = info.creationDate { return (created.timeIntervalSince1970, "file creation time") }
         return nil
     }

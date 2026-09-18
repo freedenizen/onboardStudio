@@ -38,14 +38,68 @@ extension EditorModel {
     /// Adds the GoPro telemetry embedded in a video as a data input that follows the video.
     func useEmbeddedTelemetry(of videoID: InputID) {
         guard let video = project.input(videoID) else { return }
-        let input = Input(
-            label: "\(video.label) GPS", source: video.source,
-            kind: .data(DataInputSettings(importerID: GoProImporter.id)), sync: video.sync)
-        edit("Use Embedded GPS") { $0.inputs.append(input) }
+        let input: Input
+        if loaded?.mediaInfo[videoID]?.hasGPMF == true {
+            input = Input(
+                label: "\(video.label) GPS", source: video.source,
+                kind: .data(DataInputSettings(importerID: GoProImporter.id)), sync: video.sync)
+        } else if let companion = loaded?.mediaInfo[videoID]?.companion {
+            // Sidecar logs (DJI SRT, Garmin FIT) start with the video, so they share its sync.
+            input = Input(
+                label: "\(video.label) \(companion.displayName)",
+                source: MediaReference.make(for: companion.url, relativeTo: fileURL),
+                kind: .data(DataInputSettings(importerID: companion.importerID)), sync: video.sync)
+        } else {
+            return
+        }
+        edit("Use Camera Telemetry") { $0.inputs.append(input) }
         selectedInputID = input.id
         selectedObjectID = nil
-        statusMessage = "Added the telemetry embedded in \(video.label)."
+        statusMessage = "Added the telemetry recorded with \(video.label)."
     }
+
+    /// Lines `dataID` up with the first video by correlating the video's motion with the log's
+    /// speed. Runs in the background; the status line shows progress and the result.
+    func motionSync(_ dataID: InputID) {
+        guard motionSyncTask == nil, let session = sessions[dataID], let video = project.videoInputs.first,
+            let info = loaded?.mediaInfo[video.id]
+        else { return }
+        let url = loaded?.mediaURLs[video.id] ?? location.resolve(video.source)
+        let videoSync = video.sync
+        let duration = info.duration
+        statusMessage = "Analysing video motion…"
+        motionSyncProgress = 0
+        motionSyncTask = Task {
+            defer { motionSyncTask = nil }
+            do {
+                let suggestion = try await Task.detached(priority: .userInitiated) {
+                    try await MotionSync.suggest(
+                        video: url, videoSync: videoSync, videoDuration: duration, data: session,
+                        progress: { fraction in
+                            Task { @MainActor in self.motionSyncProgress = fraction }
+                        })
+                }.value
+                motionSyncProgress = nil
+                guard let suggestion else {
+                    errorMessage = "No motion pattern in the video matched the data."
+                    return
+                }
+                updateInput(dataID, name: "Auto-Sync by Motion") { $0.sync = suggestion.sync }
+                let quality = suggestion.isConvincing ? "good match" : "weak match, check the sync wizard"
+                statusMessage =
+                    "Synced \(suggestion.source) against the log's \(suggestion.channel) (\(quality), correlation "
+                    + String(format: "%.2f", suggestion.score) + ")."
+            } catch is CancellationError {
+                motionSyncProgress = nil
+                statusMessage = "Motion sync cancelled."
+            } catch {
+                motionSyncProgress = nil
+                errorMessage = "Motion sync failed: \(error)"
+            }
+        }
+    }
+
+    func cancelMotionSync() { motionSyncTask?.cancel() }
 
     /// The video's recording start on the wall clock, from its GPS clock or creation date.
     func recordingStart(of video: Input) -> (epoch: Double, source: String)? {

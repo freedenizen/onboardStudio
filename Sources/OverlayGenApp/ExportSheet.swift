@@ -137,6 +137,10 @@ struct ExportSheet: View {
                     Button("Close") { dismiss() }.keyboardShortcut(.cancelAction)
                     if let finishedURL {
                         Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([finishedURL]) }
+                        Button("Upload to YouTube…") {
+                            dismiss()
+                            editor.uploadURL = finishedURL
+                        }
                     }
                     Button("Export…") { start() }.keyboardShortcut(.defaultAction)
                 }

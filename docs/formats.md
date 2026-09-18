@@ -147,3 +147,37 @@ The GPS clock is preferred because container creation times are unreliable: on a
 `creation_time` of a clip was 32 s later than the GPS clock at its first frame, and only the GPS
 clock lines the clip up with a RaceChrono log recorded in the same car (median position
 disagreement about 6 m, versus hundreds of metres with the creation time).
+
+## DJI SRT (`dji-srt`)
+
+DJI drones, the Osmo Action and Avata write a `.SRT` subtitle file next to each video with one cue
+per frame. Both layouts are read: `[latitude: …] [longitude: …] [rel_alt: … abs_alt: …]` blocks
+(with `iso`, `shutter`, `fnum`) and the one-line `GPS (lon, lat, alt), D 12.3m, H 20.0m, H.S
+5.2m/s` form. Times are the cue times (seconds from the first frame); the date stamped in the
+first cue anchors the log to the clock, so timestamp auto-sync works and, because the log starts
+with the video, the video's own recording start is taken from it ("DJI SRT clock"). Channels:
+latitude, longitude, altitude, speed (horizontal, or derived from position), and `Height`,
+`Home distance`, `ISO`, `Shutter`, `Aperture` as aux channels.
+
+## Sidecar telemetry
+
+When a video is added, OverlayGen looks for a telemetry file with the same name next to it
+(`.srt`, `.fit`, `.gpx`, `.csv`, either case) and offers **Use Sidecar Data** in the video
+input's inspector; the new data input shares the video's sync since such logs start with the
+recording. Garmin VIRB cameras write a FIT file this way; DJI cameras an SRT. Sony cameras write a
+`C0001M01.XML` sidecar whose `CreationDate` is used as the video's clock for timestamp auto-sync.
+
+## Motion auto-sync
+
+**Auto-Sync by Motion** (data input inspector) and `overlaygen sync --video a.mp4 --data b.csv`
+need no clocks at all. The video's audio loudness (engine and wind noise, sampled at 10 Hz over
+the whole clip; it decodes in seconds) is correlated against the log's speed, or its g-force
+magnitude when there is no speed channel. When the clip is silent or the match is weak, the change
+between video frames (the fraction of a 64-pixel-wide thumbnail that moved, over the first three
+minutes after the video's start position) is tried as well and the better match wins. The best
+correlation gives the data start position; the status line reports which signals matched, the
+correlation and whether the match stands out clearly ("good match") or should be checked in the
+sync wizard. On the HERO13 + RaceChrono reference session the audio match lands within 2 s of the
+GPS-verified offset with a correlation of 0.9, whereas picture motion alone is unreliable on
+dash-cam footage (people walking past a parked car change as many pixels as driving does), which is
+why it is only the fallback. `overlaygen sync --dump signals.csv` writes the signals for inspection.
