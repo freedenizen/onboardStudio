@@ -31,10 +31,10 @@ let package = Package(
         .target(name: "RenderKit", dependencies: ["ProjectModel", "TelemetryKit"], swiftSettings: strict),
         .target(
             name: "MediaKit",
-            dependencies: ["ProjectModel", "TelemetryKit", "RenderKit", "Importers", "GPMFKit"],
+            dependencies: ["ProjectModel", "TelemetryKit", "RenderKit", "Importers", "GPMFKit", "Scripting"],
             swiftSettings: strict
         ),
-        .target(name: "Scripting", dependencies: ["RenderKit", "TelemetryKit"], swiftSettings: strict),
+        .target(name: "Scripting", dependencies: ["RenderKit", "TelemetryKit", "ProjectModel"], swiftSettings: strict),
 
         // MARK: Executables
         .executableTarget(

@@ -32,13 +32,18 @@ public enum RenderPlanner {
         }
     }
 
+    /// Builds the drawing for a scripted object; supplied by the Scripting module so RenderKit
+    /// stays free of JavaScriptCore.
+    public typealias ScriptRendererFactory = @Sendable (ScriptedParams, ObjectContext) -> any OverlayDrawing
+
     /// Overlay drawings in draw order for all visible non-video objects.
     public static func overlays(
         for project: Project,
         objects: [DisplayObject]? = nil,
         sessions: [InputID: TelemetrySession],
         images: [InputID: LoadedImage] = [:],
-        cache: RenderCache = RenderCache()
+        cache: RenderCache = RenderCache(),
+        scriptRenderer: ScriptRendererFactory? = nil
     ) -> [any OverlayDrawing] {
         (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
@@ -53,6 +58,7 @@ public enum RenderPlanner {
             let image =
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }
+            if case .scripted(let params) = object.kind { return scriptRenderer?(params, context) }
             return renderer(for: object.kind, context: context, image: image)
         }
     }
@@ -75,6 +81,7 @@ public enum RenderPlanner {
         case .graph(let params): GraphRenderer(context: context, params: params)
         case .gear(let params): GearRenderer(context: context, params: params)
         case .lapCounter(let params): LapCounterRenderer(context: context, params: params)
+        case .scripted: nil  // needs the Scripting module; see `overlays(scriptRenderer:)`
         }
     }
 }

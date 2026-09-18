@@ -209,6 +209,8 @@ struct ObjectInspector: View {
             GearInspector(editor: editor, object: object, params: params)
         case .lapCounter(let params):
             LapCounterInspector(editor: editor, object: object, params: params)
+        case .scripted(let params):
+            ScriptInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):
             Section("Track Map") {
                 NumberField(

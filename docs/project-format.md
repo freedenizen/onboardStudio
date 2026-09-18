@@ -73,6 +73,7 @@ output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first 
 | `graph` | `series` (`[{ "channel", "color", "lineWidth" }]`, up to 4), `axis` (`time` = last `window` seconds, `distance` = last `window` metres, `lap` = distance into the current lap), `window`, `minValue`/`maxValue` (null = fit the data), `speedUnit`, `label`, `backgroundColor`, `gridColor`, `textColor`, `gridLines`, `fillUnderLine`, `showCursor`, `showLabels`, `compareBestLap` + `ghostColor` (lap axis: the best lap's trace) |
 | `gear` | `channel` (0 = neutral, −1 = reverse, −99 = park), `label`, `showLabel`, `neutralText`, `reverseText`, `parkText`, `fontScale`, colours |
 | `lapCounter` | `label`, `showTotal`, `numberOffset`, colours |
+| `scripted` | `source`: JavaScript defining `background(canvas)` and/or `frame(canvas, data)`; see `docs/scripting.md` |
 | `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation`, `backgroundColor` |
 | `gForce` | `maxG`, `ringStep`, `trailSeconds`, `dotColor`, `gridColor`, `faceColor`, `showValues` |
 | `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`/`projectTime`/`timeOfDay`/`deltaToBest`), `showLapNumber`, `label`, `decimals` (1–3), colours, `aheadColor`/`behindColor` for the delta. `deltaToBest` compares the lap in progress with the best completed lap at the same distance into the lap (needs a distance channel; GPS files get one automatically). `timeOfDay` needs epoch timestamps (RaceChrono) or a recorded start time. |

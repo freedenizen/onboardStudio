@@ -110,6 +110,7 @@ extension DisplayObject {
             case .graph: UnitRect(x: 0.03 + stagger, y: 0.7 - stagger, width: 0.3, height: 0.2)
             case .gear: UnitRect(x: 0.6 - stagger, y: 0.05 + stagger, width: 0.08, height: 0.14)
             case .lapCounter: UnitRect(x: 0.03 + stagger, y: 0.35 + stagger, width: 0.14, height: 0.08)
+            case .scripted: UnitRect(x: 0.35 + stagger, y: 0.8 - stagger, width: 0.3, height: 0.12)
             }
         return DisplayObject(label: kind.typeName, inputID: inputID, frame: frame, kind: kind)
     }
@@ -133,6 +134,7 @@ extension DisplayObject {
         ("Lap Timer", .timer(TimerParams())),
         ("Lap Counter", .lapCounter(LapCounterParams())),
         ("Text Data", .textData(TextDataParams(channel: "rpm", label: "RPM"))),
+        ("Script", .scripted(ScriptedParams())),
         ("Shape", .shape(ShapeParams())),
         ("Text", .text(TextParams())),
     ]
