@@ -11,6 +11,16 @@ struct TimelineView: View {
     private let height: CGFloat = 34
 
     var body: some View {
+        VStack(spacing: 0) {
+            if editor.project.videoInputs.count > 1 || editor.project.videoInputs.first?.sync.offsetInProject != 0 {
+                VideoLaneView(editor: editor)
+                Divider()
+            }
+            segmentLane
+        }
+    }
+
+    var segmentLane: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let duration = max(editor.duration, 0.001)
@@ -88,5 +98,76 @@ struct TimelineView: View {
         }
         .frame(width: max(width - 2, 2), height: height - 8)
         .offset(x: x + 1, y: 4)
+    }
+}
+
+/// One bar per video input on the project axis; drag to move a video, snapping to the ends of
+/// the others. Click to select the input.
+struct VideoLaneView: View {
+    @Bindable var editor: EditorModel
+    @State private var dragging: (id: InputID, offset: Double)?
+
+    private let height: CGFloat = 26
+
+    var body: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let videos = editor.project.videoInputs
+            let ends = videos.compactMap { editor.end(of: $0) }
+            let duration = max(editor.duration, ends.max() ?? 0, 0.001)
+            ZStack(alignment: .topLeading) {
+                Rectangle().fill(Color(nsColor: .windowBackgroundColor))
+                ForEach(videos) { video in
+                    let offset = dragging?.id == video.id ? (dragging?.offset ?? 0) : video.sync.offsetInProject
+                    let length = (editor.end(of: video) ?? offset) - video.sync.offsetInProject
+                    let x = width * offset / duration
+                    let selected = editor.selectedInputID == video.id && editor.selectedObjectID == nil
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 4).fill(Color.purple.opacity(selected ? 0.6 : 0.3))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 4).stroke(
+                                    Color.purple.opacity(selected ? 1 : 0.5), lineWidth: 1))
+                        Text(video.label).font(.caption).lineLimit(1).padding(.horizontal, 6)
+                    }
+                    .frame(width: max(width * length / duration - 2, 6), height: height - 6)
+                    .offset(x: x + 1, y: 3)
+                    // One gesture handles both: a click selects, a drag moves (no tap/drag arbitration).
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                guard abs(value.translation.width) >= 2 else { return }
+                                let raw = video.sync.offsetInProject + value.translation.width / width * duration
+                                dragging = (video.id, snapped(max(0, raw), for: video, length: length))
+                            }
+                            .onEnded { value in
+                                if let dragging, dragging.id == video.id, abs(value.translation.width) >= 2 {
+                                    editor.setOffset(of: video.id, to: dragging.offset)
+                                }
+                                dragging = nil
+                                editor.selectedInputID = video.id
+                                editor.selectedObjectID = nil
+                                editor.selectedSegmentID = nil
+                            }
+                    )
+                }
+            }
+        }
+        .frame(height: height)
+    }
+
+    /// Snaps a candidate offset to another video's start or end (or 0) when within 2% of the span.
+    func snapped(_ offset: Double, for video: Input, length: Double) -> Double {
+        let duration = max(editor.duration, 0.001)
+        let tolerance = duration * 0.02
+        var targets: [Double] = [0]
+        for other in editor.project.videoInputs where other.id != video.id {
+            targets.append(other.sync.offsetInProject)
+            if let end = editor.end(of: other) {
+                targets.append(end)
+                targets.append(end - length)
+            }
+        }
+        if let hit = targets.first(where: { abs($0 - offset) < tolerance && $0 >= 0 }) { return hit }
+        return offset
     }
 }

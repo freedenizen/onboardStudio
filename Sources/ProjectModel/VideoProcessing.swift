@@ -14,6 +14,51 @@ public struct CropInsets: Hashable, Codable, Sendable {
 
     public static let none = CropInsets()
     public var isEmpty: Bool { top == 0 && left == 0 && bottom == 0 && right == 0 }
+
+    /// The crop that results from applying `self` and then `inner` to what remains.
+    public func composed(with inner: CropInsets) -> CropInsets {
+        let width = max(0, 1 - left - right)
+        let height = max(0, 1 - top - bottom)
+        return CropInsets(
+            top: top + height * inner.top, left: left + width * inner.left, bottom: bottom + height * inner.bottom,
+            right: right + width * inner.right)
+    }
+}
+
+/// A picture window shared by every video in the project (zoom and pan into the frame plus an
+/// outer crop), so clips from one camera stay framed identically and can be reframed together.
+public struct CameraFraming: Hashable, Codable, Sendable {
+    /// 1 = the whole picture; 2 shows the central half of each axis.
+    public var zoom: Double
+    /// Centre of the zoom window as fractions of the picture (0.5, 0.5 = middle).
+    public var centerX: Double
+    public var centerY: Double
+    /// Removed from every edge before zooming.
+    public var crop: CropInsets
+
+    public init(zoom: Double = 1, centerX: Double = 0.5, centerY: Double = 0.5, crop: CropInsets = .none) {
+        self.zoom = zoom
+        self.centerX = centerX
+        self.centerY = centerY
+        self.crop = crop
+    }
+
+    public static let none = CameraFraming()
+    public var isIdentity: Bool { self == .none }
+
+    /// The zoom window as a crop: a 1/zoom-sized box around the centre, kept inside the picture.
+    public var zoomCrop: CropInsets {
+        let z = min(max(zoom.isFinite ? zoom : 1, 1), 8)
+        let size = 1 / z
+        let x = min(max(centerX - size / 2, 0), 1 - size)
+        let y = min(max(centerY - size / 2, 0), 1 - size)
+        return CropInsets(top: y, left: x, bottom: 1 - y - size, right: 1 - x - size)
+    }
+
+    /// The whole framing as one crop applied on top of `inner` (an input's own crop).
+    public func effectiveCrop(over inner: CropInsets) -> CropInsets {
+        inner.composed(with: crop).composed(with: zoomCrop)
+    }
 }
 
 /// Picture adjustments. 1 (or 0 for hue) means "unchanged".

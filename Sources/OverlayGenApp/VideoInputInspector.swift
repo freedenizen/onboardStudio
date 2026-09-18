@@ -8,6 +8,22 @@ struct VideoInputInspector: View {
     let settings: VideoInputSettings
 
     var body: some View {
+        Section("Clips") {
+            ClipRow(name: input.source.path, index: nil, editor: editor, inputID: input.id, count: settings.clips.count)
+            ForEach(Array(settings.clips.enumerated()), id: \.offset) { index, clip in
+                ClipRow(name: clip.path, index: index, editor: editor, inputID: input.id, count: settings.clips.count)
+            }
+            HStack {
+                Button("Add Clips…") { editor.addClips(to: input.id) }
+                Button("Add Following Chapters") { editor.addFollowingChapters(to: input.id) }
+            }
+            Text(
+                settings.clips.isEmpty
+                    ? "Files listed here play back to back as one continuous video (camera chapters)."
+                    : "\(settings.clips.count + 1) files play as one video; trim, sync and picture cover them all."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+        }
         Section("Picture") {
             Picker("Rotation", selection: field(\.rotation, name: "Rotate Picture")) {
                 Text("0°").tag(0.0)
@@ -120,6 +136,45 @@ struct VideoInputInspector: View {
         var new = settings
         change(&new)
         editor.updateInput(input.id, name: name) { $0.kind = .video(new) }
+    }
+}
+
+/// One file of a clip sequence with reorder/remove controls.
+struct ClipRow: View {
+    let name: String
+    /// `nil` for the input's own (first) file.
+    let index: Int?
+    let editor: EditorModel
+    let inputID: InputID
+    let count: Int
+
+    var body: some View {
+        HStack {
+            Image(systemName: "film").foregroundStyle(.secondary)
+            Text((name as NSString).lastPathComponent).lineLimit(1).truncationMode(.middle)
+            Spacer()
+            if let index {
+                Button {
+                    editor.moveClip(index, by: -1, in: inputID)
+                } label: {
+                    Image(systemName: "arrow.up")
+                }
+                Button {
+                    editor.moveClip(index, by: 1, in: inputID)
+                } label: {
+                    Image(systemName: "arrow.down")
+                }
+                .disabled(index == count - 1)
+                Button(role: .destructive) {
+                    editor.removeClip(index, from: inputID)
+                } label: {
+                    Image(systemName: "minus.circle")
+                }
+            } else {
+                Text("first").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.borderless)
     }
 }
 

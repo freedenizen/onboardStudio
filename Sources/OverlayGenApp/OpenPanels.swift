@@ -11,6 +11,28 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
+    /// Asks whether a recording's following chapter files should be joined onto the first one.
+    static func confirmChapters(count: Int, first: URL) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "Add the following \(count) chapter\(count == 1 ? "" : "s")?"
+        alert.informativeText =
+            "\(first.lastPathComponent)\(count > 1 ? " and \(count - 1) more" : "") continue this recording. "
+            + "Adding them plays everything as one continuous video."
+        alert.addButton(withTitle: "Add Chapters")
+        alert.addButton(withTitle: "Just This File")
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    /// Several video files at once (clips to append to a sequence).
+    static func chooseVideos() -> [URL] {
+        let panel = NSOpenPanel()
+        panel.title = "Add Clips"
+        panel.message = "Choose the files to play after the current video, in order."
+        panel.allowedContentTypes = [.movie, .mpeg4Movie, .quickTimeMovie, .avi, .mpeg2TransportStream, .data]
+        panel.allowsMultipleSelection = true
+        return panel.runModal() == .OK ? panel.urls.sorted { $0.lastPathComponent < $1.lastPathComponent } : []
+    }
+
     static func chooseImage() -> URL? {
         let panel = NSOpenPanel()
         panel.title = "Add Image"

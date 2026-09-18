@@ -11,10 +11,7 @@ struct PreviewView: View {
         ZStack {
             Color.black
             if editor.project.videoInputs.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "video.badge.plus").font(.system(size: 48)).foregroundStyle(.secondary)
-                    Text("Add a video to start").foregroundStyle(.secondary)
-                }
+                WelcomeOverlay(editor: editor)
             } else {
                 PlayerAndGizmo(editor: editor)
             }

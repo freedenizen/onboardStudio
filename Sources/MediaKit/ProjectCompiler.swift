@@ -17,6 +17,8 @@ public enum ProjectCompiler {
         public var mediaInfo: [InputID: MediaInfo]
         /// Playable URL per video input (differs from the source when ffmpeg converted it).
         public var mediaURLs: [InputID: URL]
+        /// Playable URLs of the following clips of a sequence, per video input.
+        public var clipURLs: [InputID: [URL]] = [:]
         public var images: [InputID: LoadedImage]
         /// Inputs that could not be loaded (missing or unreadable files) with the reason; the
         /// rest of the project still renders so the user can relink them.
@@ -79,10 +81,17 @@ public enum ProjectCompiler {
                     if unchanged, let cached = previous?.mediaInfo[input.id] {
                         loaded.mediaInfo[input.id] = cached
                         loaded.mediaURLs[input.id] = previous?.mediaURLs[input.id]
+                        loaded.clipURLs[input.id] = previous?.clipURLs[input.id]
                     } else {
                         let playable = try await FFmpegBridge.prepare(url)
-                        loaded.mediaInfo[input.id] = try await MediaProbe.probe(playable)
+                        var info = try await MediaProbe.probe(playable)
                         if playable != url { loaded.mediaURLs[input.id] = playable }
+                        if case .video(let settings) = input.kind, !settings.clips.isEmpty {
+                            let clips = try await loadClips(settings.clips, location: location)
+                            info.duration += clips.duration
+                            loaded.clipURLs[input.id] = clips.urls
+                        }
+                        loaded.mediaInfo[input.id] = info
                     }
                 case .image:
                     if unchanged, let cached = previous?.images[input.id] {
@@ -105,6 +114,23 @@ public enum ProjectCompiler {
         return loaded
     }
 
+    /// Prepares and probes the following clips of a sequence: the summed duration is added to the
+    /// first file's info (everything else, orientation included, comes from the first file).
+    static func loadClips(_ clips: [MediaReference], location: ProjectLocation) async throws
+        -> (urls: [URL], duration: Double)
+    {
+        var urls: [URL] = []
+        var duration = 0.0
+        for clip in clips {
+            let clipURL = location.resolve(clip)
+            guard FileManager.default.fileExists(atPath: clipURL.path) else { throw LoadError.missingFile(clipURL) }
+            let playable = try await FFmpegBridge.prepare(clipURL)
+            duration += try await MediaProbe.probe(playable).duration
+            urls.append(playable)
+        }
+        return (urls, duration)
+    }
+
     public enum LoadError: Error, CustomStringConvertible {
         case missingFile(URL)
         case noPlayableVideo
@@ -117,56 +143,20 @@ public enum ProjectCompiler {
         }
     }
 
-    // MARK: - Export helpers
-
-    /// The project seconds to export for `range`, or `nil` for everything. Lap ranges use the
-    /// first data input that has laps, mapped through that input's sync settings.
-    public static func exportRange(_ range: ExportRange, in loaded: LoadedProject, duration: Double)
-        -> ClosedRange<Double>?
-    {
-        switch range {
-        case .whole:
-            return nil
-        case .span(let start, let end):
-            let s = min(max(start, 0), duration)
-            let e = min(max(end, s), duration)
-            return e > s ? s...e : nil
-        case .laps(let first, let last):
-            for input in loaded.project.dataInputs {
-                guard let session = loaded.sessions[input.id], !session.laps.isEmpty else { continue }
-                let laps = session.laps.filter { $0.number >= min(first, last) && $0.number <= max(first, last) }
-                guard let start = laps.map(\.start).min() else { return nil }
-                let end = laps.compactMap { $0.end ?? session.timeRange?.upperBound }.max() ?? start
-                let s = min(max(input.sync.projectTime(forInputTime: start), 0), duration)
-                let e = min(max(input.sync.projectTime(forInputTime: end), s), duration)
-                return e > s ? s...e : nil
-            }
-            return nil
-        }
-    }
-
-    /// The composition to hand to the exporter: overlay-only exports drop the video layers and
-    /// clear to the key colour or to transparent.
-    public static func prepareForExport(_ compiled: CompiledComposition, settings: ExportSettings)
-        -> CompiledComposition
-    {
-        switch settings.background {
-        case .video: return compiled
-        case .keyColor(let color): return compiled.overlayOnly(background: color)
-        case .transparent: return compiled.overlayOnly(background: RGBAColor(red: 0, green: 0, blue: 0, alpha: 0))
-        }
-    }
-
     /// Whether `compile` must rebuild the media composition (inputs or timing changed) rather than
     /// just swapping overlays and layer frames.
     public static func needsRecompile(from old: Project, to new: Project) -> Bool {
-        if old.settings != new.settings || old.inputs.count != new.inputs.count { return true }
+        if old.settings.withoutFraming != new.settings.withoutFraming || old.inputs.count != new.inputs.count {
+            return true
+        }
         for (a, b) in zip(old.inputs, new.inputs) {
             if a.id != b.id || a.source != b.source || a.sync != b.sync { return true }
             switch (a.kind, b.kind) {
             case (.video(let x), .video(let y)):
                 // Picture settings are applied by the compositor (replan); timing and audio are not.
-                if x.trim != y.trim || x.includeAudio != y.includeAudio || x.audio != y.audio { return true }
+                if x.trim != y.trim || x.includeAudio != y.includeAudio || x.audio != y.audio || x.clips != y.clips {
+                    return true
+                }
             case (.data, .data), (.image, .image), (.audio, .audio):
                 if a.kind != b.kind { return true }
             default:
@@ -251,8 +241,10 @@ public enum ProjectCompiler {
             guard case .video(let settings) = input.kind, loaded.problems[input.id] == nil else { continue }
             specs.append(
                 VideoInputSpec(
-                    url: loaded.mediaURLs[input.id] ?? loaded.location.resolve(input.source), sync: input.sync,
-                    trim: settings.trim, frame: .full, includeAudio: settings.includeAudio, audio: settings.audio))
+                    url: loaded.mediaURLs[input.id] ?? loaded.location.resolve(input.source),
+                    clips: loaded.clipURLs[input.id] ?? settings.clips.map { loaded.location.resolve($0) },
+                    sync: input.sync, trim: settings.trim, frame: .full, includeAudio: settings.includeAudio,
+                    audio: settings.audio))
             specInputIDs.append(input.id)
         }
         guard !specs.isEmpty else { throw LoadError.noPlayableVideo }
