@@ -72,6 +72,11 @@ struct ExportSheet: View {
                         }
                     }
                 }
+                Section("360°") {
+                    Toggle("Tag as 360° video (spherical metadata)", isOn: custom(\.spherical))
+                    Text("For full equirectangular frames (lens unwrap off); players and YouTube show a panorama.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Section("Background") {
                     Picker("Behind the overlays", selection: backgroundMode) {
                         Text("Video").tag("video")

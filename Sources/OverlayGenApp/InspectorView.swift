@@ -212,34 +212,7 @@ struct ObjectInspector: View {
         case .scripted(let params):
             ScriptInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):
-            Section("Track Map") {
-                NumberField(
-                    "Rotation (°)",
-                    value: Binding(
-                        get: { params.rotation },
-                        set: { v in
-                            set(
-                                .trackMap(
-                                    {
-                                        var p = params
-                                        p.rotation = v
-                                        return p
-                                    }()))
-                        }))
-                NumberField(
-                    "Line width",
-                    value: Binding(
-                        get: { params.lineWidth },
-                        set: { v in
-                            set(
-                                .trackMap(
-                                    {
-                                        var p = params
-                                        p.lineWidth = v
-                                        return p
-                                    }()))
-                        }))
-            }
+            TrackMapInspector(editor: editor, object: object, params: params)
         case .gForce(let params):
             Section("G-Force") {
                 NumberField(

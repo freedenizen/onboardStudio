@@ -23,6 +23,10 @@ public struct ProjectTemplate: Hashable, Codable, Sendable {
         displayObjects = project.displayObjects.map { object in
             var copy = object
             copy.inputID = nil
+            if case .trackMap(var params) = copy.kind {
+                params.secondInputID = nil
+                copy.kind = .trackMap(params)
+            }
             return copy
         }
         timeline = project.timeline

@@ -32,6 +32,39 @@ struct VideoInputInspector: View {
             PercentSlider("Sharpness", value: field(\.color.sharpness, name: "Adjust Colour"), range: 0...2)
             Button("Reset colour") { update("Reset Colour") { $0.color = .neutral } }.disabled(settings.color.isNeutral)
         }
+        Section("Lens") {
+            Picker("Unwrap", selection: field(\.lens.mode, name: "Change Lens")) {
+                ForEach(LensMode.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            if settings.lens.isActive {
+                if settings.lens.mode == .fisheye {
+                    Slider(value: field(\.lens.fov, name: "Change Lens FOV"), in: 100...250, step: 1) {
+                        Text("Source FOV \(Int(settings.lens.fov))°")
+                    }
+                }
+                Slider(value: field(\.lens.outputFov, name: "Change Lens Zoom"), in: 40...150, step: 1) {
+                    Text("View FOV \(Int(settings.lens.outputFov))°")
+                }
+                Slider(value: field(\.lens.yaw, name: "Pan Lens"), in: -180...180, step: 1) {
+                    Text("Yaw \(Int(settings.lens.yaw))°")
+                }
+                Slider(value: field(\.lens.pitch, name: "Tilt Lens"), in: -90...90, step: 1) {
+                    Text("Pitch \(Int(settings.lens.pitch))°")
+                }
+                Slider(value: field(\.lens.roll, name: "Roll Lens"), in: -180...180, step: 1) {
+                    Text("Roll \(Int(settings.lens.roll))°")
+                }
+                Button("Reset view") {
+                    update("Reset Lens") { $0.lens = LensSettings(mode: $0.lens.mode, fov: $0.lens.fov) }
+                }
+                Text(
+                    settings.lens.mode == .fisheye
+                        ? "Straightens a fisheye picture; set the source FOV to the lens's horizontal field of view."
+                        : "Shows a flat window into the 360° panorama; pan with yaw and pitch."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
+        }
         Section("Chroma Key") {
             Toggle(
                 "Make a colour transparent",

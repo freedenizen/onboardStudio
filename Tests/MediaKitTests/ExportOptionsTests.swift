@@ -131,3 +131,58 @@ struct ExportOptionsTests {
         #expect(PixelBuffers.pixel(in: frame, x: 240, y: 135).a > 240)
     }
 }
+
+@Suite("Spherical metadata", .serialized)
+struct SphericalMetadataTests {
+    func export(spherical: Bool, name: String) async throws -> URL {
+        let output = MediaFixtures.temporaryOutput(name)
+        let compiled = try await CompositionBuilder.build(
+            videos: [VideoInputSpec(url: try MediaFixtures.video)], overlays: [], outputWidth: 160, outputHeight: 80,
+            frameRate: 30)
+        var settings = ExportSettings(width: 160, height: 80, frameRate: 30, videoBitrate: 600_000)
+        settings.spherical = spherical
+        for try await _ in Exporter.export(compiled, settings: settings, to: output) {}
+        return output
+    }
+
+    @Test func exportWritesTheSphericalBoxAndStaysPlayable() async throws {
+        let output = try await export(spherical: true, name: "spherical")
+        defer { try? FileManager.default.removeItem(at: output) }
+        #expect(try SphericalMetadata.isSpherical(output))
+        // Chunk offsets must still point at the samples: the file probes and decodes late frames.
+        let info = try await MediaProbe.probe(output)
+        #expect(abs(info.duration - 3) < 0.1)
+        #expect(info.hasAudio)
+        let frame = try await MediaFixtures.frame(of: output, at: 2.5)
+        let pixel = PixelBuffers.pixel(in: frame, x: 80, y: 40)
+        #expect(pixel.a == 255)
+        // Tagging twice is a no-op.
+        #expect(try SphericalMetadata.inject(into: output) == false)
+        let plain = try await export(spherical: false, name: "plain")
+        defer { try? FileManager.default.removeItem(at: plain) }
+        #expect(try SphericalMetadata.isSpherical(plain) == false)
+    }
+
+    @Test func ffprobeSeesSphericalMappingWhenAvailable() async throws {
+        let ffprobe = ["/opt/homebrew/bin/ffprobe", "/usr/local/bin/ffprobe"].first {
+            FileManager.default.isExecutableFile(atPath: $0)
+        }
+        guard let ffprobe else { return }
+        let output = try await export(spherical: true, name: "spherical-ffprobe")
+        defer { try? FileManager.default.removeItem(at: output) }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: ffprobe)
+        process.arguments = [
+            "-v", "error", "-select_streams", "v:0", "-show_entries", "stream_side_data=side_data_type,projection",
+            "-of", "csv=p=0", output.path,
+        ]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        try process.run()
+        process.waitUntilExit()
+        let text = String(bytes: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        #expect(
+            text.lowercased().contains("spherical") && text.lowercased().contains("equirectangular"),
+            "ffprobe reported \(text)")
+    }
+}

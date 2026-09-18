@@ -62,11 +62,19 @@ struct Render: AsyncParsableCommand {
     @Flag(name: .long, help: "Drop the audio track.")
     var noAudio = false
 
+    @Flag(name: .long, help: "Tag the output as a 360° equirectangular video (spherical metadata).")
+    var spherical = false
+
     @Flag(name: .long, help: "Do not draw the timestamp overlay.")
     var noTimestamp = false
 
     @Flag(name: .long, help: "Print progress as JSON lines.")
     var json = false
+
+    func printInput(_ url: URL, info: MediaInfo) {
+        let inputSize = "\(info.width)x\(info.height) @ \(fmt(info.nominalFrameRate)) fps"
+        print("Input:    \(url.lastPathComponent)  \(inputSize), \(fmt(info.duration)) s")
+    }
 
     func run() async throws {
         let outputURL = URL(fileURLWithPath: out)
@@ -93,12 +101,10 @@ struct Render: AsyncParsableCommand {
             compiled = try await CompositionBuilder.build(
                 videos: [spec], overlays: overlays, outputWidth: settings.width, outputHeight: settings.height,
                 frameRate: settings.frameRate)
-            if !json {
-                let inputSize = "\(info.width)x\(info.height) @ \(fmt(info.nominalFrameRate)) fps"
-                print("Input:    \(inputURL.lastPathComponent)  \(inputSize), \(fmt(info.duration)) s")
-            }
+            if !json { printInput(inputURL, info: info) }
         }
 
+        settings.spherical = settings.spherical || spherical
         if let background {
             settings.background = try Self.parseBackground(background)
             settings = settings.reconciled

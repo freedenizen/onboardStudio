@@ -1,5 +1,22 @@
 import Foundation
 
+/// Map imagery drawn behind the track outline (fetched from Apple Maps and cached on disk).
+public enum MapBackgroundStyle: String, Codable, Sendable, CaseIterable {
+    case none
+    case standard
+    case satellite
+    case hybrid
+
+    public var displayName: String {
+        switch self {
+        case .none: "None"
+        case .standard: "Map"
+        case .satellite: "Satellite"
+        case .hybrid: "Satellite with labels"
+        }
+    }
+}
+
 public struct TrackMapParams: Hashable, Codable, Sendable {
     public var lineColor: RGBAColor
     public var lineWidth: Double
@@ -8,6 +25,11 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
     /// Rotate the map clockwise in degrees (0 = north up).
     public var rotation: Double
     public var backgroundColor: RGBAColor
+    /// Map imagery behind the outline.
+    public var background: MapBackgroundStyle
+    /// A second data input whose position is shown as another dot (two-vehicle map).
+    public var secondInputID: InputID?
+    public var secondDotColor: RGBAColor
 
     public init(
         lineColor: RGBAColor = .white,
@@ -15,7 +37,10 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         dotColor: RGBAColor = .accent,
         dotRadius: Double = 7,
         rotation: Double = 0,
-        backgroundColor: RGBAColor = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0)
+        backgroundColor: RGBAColor = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0),
+        background: MapBackgroundStyle = .none,
+        secondInputID: InputID? = nil,
+        secondDotColor: RGBAColor = RGBAColor(red: 0.25, green: 0.6, blue: 1)
     ) {
         self.lineColor = lineColor
         self.lineWidth = lineWidth
@@ -23,6 +48,28 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         self.dotRadius = dotRadius
         self.rotation = rotation
         self.backgroundColor = backgroundColor
+        self.background = background
+        self.secondInputID = secondInputID
+        self.secondDotColor = secondDotColor
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case lineColor, lineWidth, dotColor, dotRadius, rotation, backgroundColor
+        case background, secondInputID, secondDotColor
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = TrackMapParams()
+        lineColor = try c.decodeIfPresent(RGBAColor.self, forKey: .lineColor) ?? d.lineColor
+        lineWidth = try c.decodeIfPresent(Double.self, forKey: .lineWidth) ?? d.lineWidth
+        dotColor = try c.decodeIfPresent(RGBAColor.self, forKey: .dotColor) ?? d.dotColor
+        dotRadius = try c.decodeIfPresent(Double.self, forKey: .dotRadius) ?? d.dotRadius
+        rotation = try c.decodeIfPresent(Double.self, forKey: .rotation) ?? d.rotation
+        backgroundColor = try c.decodeIfPresent(RGBAColor.self, forKey: .backgroundColor) ?? d.backgroundColor
+        background = try c.decodeIfPresent(MapBackgroundStyle.self, forKey: .background) ?? .none
+        secondInputID = try c.decodeIfPresent(InputID.self, forKey: .secondInputID)
+        secondDotColor = try c.decodeIfPresent(RGBAColor.self, forKey: .secondDotColor) ?? d.secondDotColor
     }
 }
 

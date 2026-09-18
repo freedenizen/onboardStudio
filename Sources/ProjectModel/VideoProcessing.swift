@@ -117,3 +117,49 @@ public struct AudioSettings: Hashable, Codable, Sendable {
     /// Effective gain applied to the track.
     public var effectiveVolume: Double { isMuted ? 0 : volume }
 }
+
+/// How a wide-angle or 360° source is mapped to a flat (rectilinear) picture.
+public enum LensMode: String, Codable, Sendable, CaseIterable {
+    /// Use the picture as recorded.
+    case none
+    /// Equidistant fisheye with the optical axis at the picture centre and `fov` across its width.
+    case fisheye
+    /// A 360° equirectangular (2:1) panorama.
+    case equirectangular
+
+    public var displayName: String {
+        switch self {
+        case .none: "Off"
+        case .fisheye: "Fisheye"
+        case .equirectangular: "360° (equirectangular)"
+        }
+    }
+}
+
+/// Lens unwrap settings for a video input: a virtual rectilinear camera looking into the source.
+public struct LensSettings: Hashable, Codable, Sendable {
+    public var mode: LensMode
+    /// Horizontal field of view of a fisheye source in degrees (ignored for 360° sources).
+    public var fov: Double
+    /// Horizontal field of view of the unwrapped picture in degrees.
+    public var outputFov: Double
+    /// Camera direction in degrees: yaw turns right, pitch looks up, roll tilts clockwise.
+    public var yaw: Double
+    public var pitch: Double
+    public var roll: Double
+
+    public init(
+        mode: LensMode = .none, fov: Double = 180, outputFov: Double = 90, yaw: Double = 0, pitch: Double = 0,
+        roll: Double = 0
+    ) {
+        self.mode = mode
+        self.fov = fov
+        self.outputFov = outputFov
+        self.yaw = yaw
+        self.pitch = pitch
+        self.roll = roll
+    }
+
+    public static let none = LensSettings()
+    public var isActive: Bool { mode != .none }
+}

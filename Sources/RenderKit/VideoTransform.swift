@@ -12,8 +12,11 @@ public struct VideoTransform: Sendable, Hashable {
     public var color: ColorAdjustments
     public var chromaKey: ChromaKey?
     public var channelMask: RGBMask
+    /// Fisheye / 360° unwrap, applied before everything else.
+    public var lens: LensSettings
 
     public init(
+        lens: LensSettings = .none,
         crop: CropInsets = .none,
         rotation: Double = 0,
         mirror: Mirror = .none,
@@ -21,6 +24,7 @@ public struct VideoTransform: Sendable, Hashable {
         chromaKey: ChromaKey? = nil,
         channelMask: RGBMask = .all
     ) {
+        self.lens = lens
         self.crop = crop
         self.rotation = rotation
         self.mirror = mirror
@@ -34,7 +38,7 @@ public struct VideoTransform: Sendable, Hashable {
 
     /// Applies the transform. The result's extent starts at the origin.
     public func apply(to source: CIImage) -> CIImage {
-        var image = source
+        var image = LensUnwrap.apply(lens, to: source)
         if !crop.isEmpty {
             let e = image.extent
             let rect = CGRect(

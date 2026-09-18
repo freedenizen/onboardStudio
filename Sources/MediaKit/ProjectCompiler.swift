@@ -21,6 +21,8 @@ public enum ProjectCompiler {
         /// Inputs that could not be loaded (missing or unreadable files) with the reason; the
         /// rest of the project still renders so the user can relink them.
         public var problems: [InputID: String]
+        /// Map imagery for track maps with a background style, keyed by the window they cover.
+        public var mapBackgrounds: [MapBackgroundRequest: MapBackground]
 
         public init(
             project: Project,
@@ -29,7 +31,8 @@ public enum ProjectCompiler {
             mediaInfo: [InputID: MediaInfo],
             mediaURLs: [InputID: URL] = [:],
             images: [InputID: LoadedImage] = [:],
-            problems: [InputID: String] = [:]
+            problems: [InputID: String] = [:],
+            mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:]
         ) {
             self.project = project
             self.location = location
@@ -38,6 +41,7 @@ public enum ProjectCompiler {
             self.mediaURLs = mediaURLs
             self.images = images
             self.problems = problems
+            self.mapBackgrounds = mapBackgrounds
         }
     }
 
@@ -89,6 +93,13 @@ public enum ProjectCompiler {
                 }
             } catch {
                 loaded.problems[input.id] = "\(error)"
+            }
+        }
+        for request in RenderPlanner.mapBackgroundRequests(for: project, sessions: loaded.sessions) {
+            if let cached = previous?.mapBackgrounds[request] {
+                loaded.mapBackgrounds[request] = cached
+            } else if let fetched = await MapSnapshotService.background(for: request) {
+                loaded.mapBackgrounds[request] = fetched
             }
         }
         return loaded
@@ -190,7 +201,8 @@ public enum ProjectCompiler {
             let objects = project.displayObjects(at: start)
             let overlays = RenderPlanner.overlays(
                 for: project, objects: objects, sessions: loaded.sessions, images: loaded.images, cache: cache,
-                scriptRenderer: { params, context in ScriptedRenderer(context: context, params: params) })
+                scriptRenderer: { params, context in ScriptedRenderer(context: context, params: params) },
+                mapBackgrounds: loaded.mapBackgrounds)
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
             let plan = RenderPlan(

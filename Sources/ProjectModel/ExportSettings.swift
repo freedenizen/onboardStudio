@@ -60,6 +60,9 @@ public struct ExportSettings: Hashable, Codable, Sendable {
     public var audioChannels: Int
     public var background: ExportBackground
     public var range: ExportRange
+    /// Tag the output as a 360° equirectangular video (Google spherical metadata) so players and
+    /// YouTube show it as a panorama. Only meaningful when the picture is a full equirectangular frame.
+    public var spherical: Bool
 
     public init(
         codec: VideoCodec = .h264,
@@ -71,7 +74,8 @@ public struct ExportSettings: Hashable, Codable, Sendable {
         audioSampleRate: Double = 48000,
         audioChannels: Int = 2,
         background: ExportBackground = .video,
-        range: ExportRange = .whole
+        range: ExportRange = .whole,
+        spherical: Bool = false
     ) {
         self.codec = codec
         self.width = width
@@ -83,11 +87,12 @@ public struct ExportSettings: Hashable, Codable, Sendable {
         self.audioChannels = audioChannels
         self.background = background
         self.range = range
+        self.spherical = spherical
     }
 
     private enum CodingKeys: String, CodingKey {
         case codec, width, height, frameRate, videoBitrate, audioBitrate, audioSampleRate, audioChannels
-        case background, range
+        case background, range, spherical
     }
 
     public init(from decoder: any Decoder) throws {
@@ -103,6 +108,7 @@ public struct ExportSettings: Hashable, Codable, Sendable {
         audioChannels = try c.decodeIfPresent(Int.self, forKey: .audioChannels) ?? d.audioChannels
         background = try c.decodeIfPresent(ExportBackground.self, forKey: .background) ?? .video
         range = try c.decodeIfPresent(ExportRange.self, forKey: .range) ?? .whole
+        spherical = try c.decodeIfPresent(Bool.self, forKey: .spherical) ?? false
     }
 
     /// The file extension the container needs.
