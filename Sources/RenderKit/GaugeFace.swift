@@ -105,7 +105,8 @@ extension GaugeRenderer {
         // Decide which major labels fit: skip every k-th when neighbours would overlap.
         var labelSkip = 1
         if ticks.showLabels, ticks.declutter {
-            let majorCount = Int((span / major).rounded(.down))
+            // A silly tick spacing must not turn into a billion labels (or an Int() trap).
+            let majorCount = Int(min((span / major).rounded(.down), 2000))
             let sweep = min(max(params.sweep, 1), 360) * .pi / 180
             let stepAngle = sweep * major / span
             let chord = 2 * r * ticks.labelRadius * sin(min(stepAngle / 2, .pi / 2))
@@ -115,7 +116,7 @@ extension GaugeRenderer {
                 widest = max(widest, TextDrawing.size(of: label(for: value), style: labelStyle).width)
             }
             if chord > 0, widest * 1.15 > chord {
-                labelSkip = Int((widest * 1.15 / chord).rounded(.up))
+                labelSkip = Int(min((widest * 1.15 / chord).rounded(.up), 1000))
             }
         }
 
@@ -139,7 +140,7 @@ extension GaugeRenderer {
             // On a full circle the last label would sit on top of the first.
             let duplicatesFirst = params.sweep >= 360 && value >= params.maxValue - minor * 0.01
             if isMajor, ticks.showLabels, !duplicatesFirst {
-                let majorIndex = Int(((value - params.minValue) / major).rounded())
+                let majorIndex = Int(min(((value - params.minValue) / major).rounded(), 1_000_000))
                 if majorIndex % labelSkip == 0 {
                     var style = labelStyle
                     style.color = color

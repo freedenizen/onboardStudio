@@ -96,7 +96,8 @@ public struct BarRenderer: OverlayDrawing {
 
     func drawFill(in cg: CGContext, bar: CGRect, radius: Double, value: Double?) {
         let horizontal = params.orientation == .horizontal
-        let fraction = value.map { min(max(($0 - params.minValue) / span, 0), 1) } ?? 0
+        // NaN from a corrupt file must not reach Int() below.
+        let fraction = value.map { $0.isFinite ? min(max(($0 - params.minValue) / span, 0), 1) : 0 } ?? 0
         var fill = params.fillColor
         if params.zoneColorsFill, let value, let zone = params.zones.zone(containing: value) {
             fill = zone.color

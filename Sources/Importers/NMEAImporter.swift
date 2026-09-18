@@ -42,7 +42,7 @@ public struct NMEAImporter: TelemetryImporter {
             let fields = body.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
             guard let type = fields.first, type.count >= 6 else { continue }
             let sentence = String(type.suffix(3))
-            guard ["RMC", "GGA", "GLL"].contains(sentence), fields.count > 1 else { continue }
+            guard ["RMC", "GGA", "GLL"].contains(sentence), fields.count > (sentence == "GLL" ? 5 : 1) else { continue }
             let timeField = sentence == "GLL" ? fields[5] : fields[1]
             guard var seconds = Self.utcSeconds(timeField) else { continue }
             // Midnight rollover.

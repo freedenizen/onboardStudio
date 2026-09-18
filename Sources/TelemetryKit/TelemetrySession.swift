@@ -64,7 +64,9 @@ public struct TelemetrySession: Sendable {
     public var timeRange: ClosedRange<Double>? {
         let starts = channels.values.compactMap(\.firstTime)
         let ends = channels.values.compactMap(\.lastTime)
-        guard let start = starts.min(), let end = ends.max() else { return nil }
+        guard let start = starts.min(), let end = ends.max(), start.isFinite, end.isFinite, start <= end else {
+            return nil
+        }
         return start...end
     }
 

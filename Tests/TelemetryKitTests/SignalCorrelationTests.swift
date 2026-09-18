@@ -59,3 +59,30 @@ struct SignalCorrelationTests {
         #expect(values[0] == 0 && values[1] == 5 && values[2] == 10 && values[4] == 20 && values[6] == 30)
     }
 }
+
+@Suite("Session builder hardening")
+struct SessionBuilderHardeningTests {
+    @Test func dropsNonFiniteAndNonIncreasingTimes() {
+        let table = RawTable(
+            info: SessionInfo(sourceFormat: "test"), times: [0, 1, .nan, 2, 1.5, 3, .infinity, 4],
+            columns: [
+                RawColumn(
+                    name: "Speed", unit: .metersPerSecond, suggestedRole: .speed,
+                    values: [10, 11, 12, 13, 14, 15, 16, 17])
+            ])
+        let session = SessionBuilder.build(table)
+        let speed = session[.speed]
+        #expect(speed?.times == [0, 1, 2, 3, 4])
+        #expect(speed?.values == [10, 11, 13, 15, 17])
+        #expect(session.timeRange == 0...4)
+    }
+
+    @Test func timeRangeIsNilWhenChannelsDisagree() {
+        let session = TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [Channel(role: .speed, name: "s", unit: .metersPerSecond, times: [.nan], values: [1])], laps: [])
+        #expect(session.timeRange == nil)
+        #expect(TimeParsing.lapTimeString(.infinity) == "0:00.00")
+        #expect(TimeParsing.lapTimeString(1e300).hasPrefix("99:59:59"))
+    }
+}

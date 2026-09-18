@@ -29,6 +29,12 @@ public final class FrameCompositor: @unchecked Sendable {
     public func render(sources: [Int32: CVPixelBuffer], time: Double, into output: CVPixelBuffer) throws {
         lock.lock()
         defer { lock.unlock() }
+        // Core Image and CoreVideo objects are autoreleased; callers may render thousands of
+        // frames without returning to a run loop.
+        try autoreleasepool { try renderLocked(sources: sources, time: time, into: output) }
+    }
+
+    private func renderLocked(sources: [Int32: CVPixelBuffer], time: Double, into output: CVPixelBuffer) throws {
         let clear =
             CIColor(
                 red: plan.background.red, green: plan.background.green, blue: plan.background.blue,

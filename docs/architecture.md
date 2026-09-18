@@ -33,6 +33,19 @@ two thin executables.
 - **Timeline as overrides.** Segments hold JSON fragments per display object; a property is
   inherited unless its key is present. Resolution is a deep merge of all segments up to time *t*.
 
+## Performance notes (M14)
+
+- Every frame's Core Image and CoreVideo objects are autoreleased; `FrameCompositor.render` and
+  the export pump drain a pool per frame so long exports and headless renders stay flat (without
+  it a 1080p render grows by one 8 MB buffer per frame).
+- Static parts of every object (gauge faces, ticks, track outlines, map imagery, script
+  backgrounds) are drawn once into `RenderCache` keyed by parameters and size; only needles, dots
+  and text are drawn per frame. Fonts are resolved once and cached under a lock.
+- Telemetry lookups are binary searches over contiguous `[Double]` channels, so a two-hour 20 Hz
+  session costs the same per frame as a two-minute one (`LongSessionTests`).
+- `overlaygen bench` measures overlay drawing, export throughput against real time and resident
+  memory; `docs/parity.md` records the current numbers. CI runs it on the fixture project.
+
 ## Build and release
 
 - `swift build` / `swift test` build every library, the CLI and the app executable.
