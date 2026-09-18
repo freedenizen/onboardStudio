@@ -1,7 +1,12 @@
 import Foundation
 import TelemetryKit
 
-/// Reads RaceChrono / RaceChrono Pro CSV exports (format 3, with best-effort support for 2).
+/// Reads RaceChrono / RaceChrono Pro CSV exports, format 3 and format 2.
+///
+/// Format 2 has the same preamble but a single header row of display names such as
+/// `Time (s),Session fragment #,Lap #,…,Speed (m/s) *calc,RPM (rpm) *canbus`; units live in the
+/// parentheses and the ` *source` suffix names the device. Those are mapped onto the format 3 keys
+/// so both formats share one channel mapping.
 ///
 /// Layout of a v3 file:
 /// ```
@@ -42,10 +47,16 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
 
         let preamble = Self.parsePreamble(lines, reader: reader, fileName: url.lastPathComponent)
         guard let headerLine = preamble.headerLine else { throw ImportError.missingHeader("timestamp row") }
-        let header = reader.fields(of: lines[headerLine]).map { $0.trimmingCharacters(in: .whitespaces) }
+        let rawHeader = reader.fields(of: lines[headerLine]).map { $0.trimmingCharacters(in: .whitespaces) }
+        let columns2 = rawHeader.map(Self.parseV2Header)
+        let header = preamble.format >= 3 ? rawHeader : columns2.map(\.key)
         guard let timeIndex = header.firstIndex(of: "timestamp") else { throw ImportError.missingColumn("timestamp") }
 
-        let layout = Self.parseLayoutRows(lines, after: headerLine, format: preamble.format, reader: reader)
+        var layout = Self.parseLayoutRows(lines, after: headerLine, format: preamble.format, reader: reader)
+        if preamble.format < 3 {
+            layout.units = columns2.map(\.unit)
+            layout.sources = columns2.map(\.source)
+        }
         let (times, rows) = Self.dataRows(lines[layout.firstDataLine...], reader: reader, timeIndex: timeIndex)
         guard !times.isEmpty else { throw ImportError.noData }
 
@@ -81,7 +92,7 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
     static func parsePreamble(_ lines: [Substring], reader: CSVReader, fileName: String) -> Preamble {
         var preamble = Preamble(info: SessionInfo(sourceFormat: displayName, sourceFileName: fileName))
         for (index, line) in lines.enumerated() {
-            if line.hasPrefix("timestamp") {
+            if line.hasPrefix("timestamp") || line.hasPrefix("Time (s)") {
                 preamble.headerLine = index
                 break
             }
@@ -142,6 +153,60 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
 
     // MARK: - Helpers
 
+    struct V2Column {
+        let key: String
+        let unit: String
+        let source: String
+    }
+
+    /// Format 2 headers look like `Lateral acceleration (G) *calc`. Returns the v3-style key
+    /// (`lateral_acc`), the unit text and the source suffix.
+    static func parseV2Header(_ text: String) -> V2Column {
+        var name = text
+        var source = ""
+        if let star = name.range(of: " *", options: .backwards) {
+            source = String(name[star.upperBound...]).trimmingCharacters(in: .whitespaces)
+            name = String(name[..<star.lowerBound])
+        }
+        var unit = ""
+        if let open = name.range(of: "(", options: .backwards), name.hasSuffix(")") {
+            unit = String(name[open.upperBound..<name.index(before: name.endIndex)])
+            name = String(name[..<open.lowerBound])
+        }
+        name = name.trimmingCharacters(in: .whitespaces)
+        let key = v2Names[name.lowercased()] ?? snakeCase(name)
+        return V2Column(key: key, unit: unit, source: source)
+    }
+
+    /// Format 2 display names whose snake_case does not match the format 3 key.
+    static let v2Names: [String: String] = [
+        "time": "timestamp",
+        "session fragment #": "fragment_id",
+        "lap #": "lap_number",
+        "distance": "distance_traveled",
+        "lateral acceleration": "lateral_acc",
+        "longitudinal acceleration": "longitudinal_acc",
+        "combined acceleration": "combined_acc",
+        "throttle position": "throttle_pos",
+        "brake position": "brake_pos",
+        "coolant temperature": "coolant_temp",
+        "air temperature": "air_temp",
+        "engine oil temperature": "engine_oil_temp",
+        "brake pressure front": "brake_pressure_front",
+        "brake pressure rear": "brake_pressure_rear",
+        "x acceleration": "x_acc",
+        "y acceleration": "y_acc",
+        "z acceleration": "z_acc",
+        "x rate of rotation": "x_gyro",
+        "y rate of rotation": "y_gyro",
+        "z rate of rotation": "z_gyro",
+    ]
+
+    static func snakeCase(_ name: String) -> String {
+        let cleaned = name.lowercased().map { $0.isLetter || $0.isNumber ? String($0) : "_" }.joined()
+        return cleaned.split(separator: "_", omittingEmptySubsequences: true).joined(separator: "_")
+    }
+
     static func looksNumericRow(_ line: Substring) -> Bool {
         guard let first = line.split(separator: ",", omittingEmptySubsequences: false).first else { return false }
         return Double(first.trimmingCharacters(in: .whitespaces)) != nil
@@ -168,7 +233,8 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
 
     static func mapping(for name: String, unitText: String, source: String) -> Mapping {
         let unit = TelemetryUnit(parsing: unitText)
-        let isOBD = source.lowercased().contains("obd")
+        let lowered = source.lowercased()
+        let isOBD = lowered.contains("obd") || lowered.contains("canbus")
         switch name.lowercased() {
         case "lap_number": return Mapping(role: .lap, unit: .count, interpolation: .step)
         case "elapsed_time": return Mapping(role: .aux("elapsed_time"), unit: .seconds)
@@ -184,7 +250,8 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
         case "throttle_pos", "throttle": return Mapping(role: .throttle, unit: .percent)
         case "brake_pos", "brake": return Mapping(role: .brake, unit: .percent)
         case "gear": return Mapping(role: .gear, unit: .count, interpolation: .step)
-        case "coordinate_precision": return Mapping(role: .accuracy, unit: .custom("DOP"))
+        case "accuracy": return Mapping(role: .accuracy, unit: unit == .none ? .meters : unit)
+        case "coordinate_precision": return Mapping(role: .aux(name), unit: .custom("DOP"))
         case "fragment_id", "fix_type", "satellites":
             return Mapping(role: .aux(name), unit: unit, interpolation: .step)
         default: return Mapping(role: isOBD ? .obd(name) : .aux(name), unit: unit)

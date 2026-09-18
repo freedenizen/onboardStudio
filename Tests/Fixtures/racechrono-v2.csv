@@ -1,0 +1,19 @@
+This file is created using RaceChrono Pro v10.2.4 ( http://racechrono.com/ ).
+Format,2,"Format 1 = static columns","Format 2 = new format with dynamic columns; only channel header string is fixed, number of columns and channels' column numbers are variable."
+Session title,"Test Circuit"
+Session type,Lap timing
+Track name,"Test Circuit"
+Driver name,
+Export scope,Session start
+Created,23/08/2026,23:35
+Note,
+
+Time (s),Session fragment #,Lap #,Trap name,X-position (m),Y-position (m),Distance (m),Speed (m/s),Altitude (m),Bearing (deg),Elapsed time (s),Latitude (deg),Longitude (deg),Accuracy (m),Speed (m/s) *calc,Lateral acceleration (G) *calc,Longitudinal acceleration (G) *calc,Speed (m/s) *canbus,Steering angle (deg) *canbus,Brake position (%) *canbus,Gear *canbus,RPM (rpm) *canbus,Throttle position (%) *canbus,Coolant temperature (.C) *canbus,X acceleration (G) *acc,X rate of rotation (deg/s) *gyro
+1787528164.60,0,,,0.000,0.000,0.0,20.0,12.0,0.0,0.00,45.0000000,-122.0000000,1.3,20.1,0.10,0.49,19.9,0.0,0,2,3500,60.0,85.0,0.005,0.7
+1787528164.80,0,,,0.000,4.000,4.0,21.0,12.0,0.0,0.20,45.0000360,-122.0000000,1.3,21.1,0.11,0.50,20.9,0.5,0,2,3600,62.0,85.0,0.006,0.7
+1787528165.00,0,1,,0.000,8.000,8.2,22.0,12.0,0.0,0.40,45.0000720,-122.0000000,1.3,22.1,0.12,0.51,21.9,1.0,0,3,3700,64.0,85.0,0.007,0.7
+1787528165.20,0,1,,4.400,8.000,12.6,23.0,12.0,90.0,0.60,45.0000720,-122.0000560,1.3,23.1,0.55,0.20,22.9,12.0,10,3,3800,66.0,86.0,0.008,0.7
+1787528165.40,0,1,,8.800,8.000,17.2,24.0,12.0,90.0,0.80,45.0000720,-122.0001120,1.3,24.1,0.56,0.21,23.9,14.0,10,3,3900,68.0,86.0,0.009,0.7
+1787528165.60,0,2,,13.200,8.000,22.0,25.0,12.0,90.0,1.00,45.0000720,-122.0001680,1.3,25.1,0.57,0.22,24.9,15.0,,3,,70.0,86.0,0.010,0.7
+1787528165.80,0,2,,13.200,4.000,27.0,26.0,12.0,180.0,1.20,45.0000360,-122.0001680,1.3,26.1,0.58,0.23,25.9,-10.0,30,4,4100,72.0,87.0,0.011,0.7
+1787528166.00,0,2,,13.200,0.000,32.2,27.0,12.0,180.0,1.40,45.0000000,-122.0001680,1.3,27.1,0.59,0.24,26.9,-12.0,30,4,4200,74.0,87.0,0.012,0.7
