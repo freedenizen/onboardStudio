@@ -200,7 +200,10 @@ struct ScriptedRendererTests {
         #expect(renderer.engine.error == nil)
         let average = renderer.engine.averageFrameSeconds
         print("script frame average: \(average * 1000) ms")
-        #expect(average < 0.004, "average \(average * 1000) ms per frame")
+        // Shared CI runners have no GPU and run this 2-3x slower than a laptop; keep the local
+        // budget tight and give CI a proportionally looser one.
+        let budget = ProcessInfo.processInfo.environment["CI"] == nil ? 0.004 : 0.012
+        #expect(average < budget, "average \(average * 1000) ms per frame")
     }
 }
 
