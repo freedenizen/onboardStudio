@@ -30,11 +30,13 @@ class OverlayGenUITestCase: XCTestCase {
         app.launchArguments = [
             "-ApplePersistenceIgnoreState", "YES", "-NSShowAppCentricOpenPanelInsteadOfUntitledFile", "NO",
             "-tourSeen", tourSeen ? "YES" : "NO", "-uiTesting", "YES", "-showGettingStarted", "YES",
+            // Sparkle's first-launch "Check for updates automatically?" prompt would take key status.
+            "-SUEnableAutomaticChecks", "NO", "-SUHasLaunchedBefore", "YES",
         ]
         app.launchArguments += extraArguments
         app.launchEnvironment["OVERLAYGEN_FIXTURES"] = Self.fixtures.path
         app.launchEnvironment["OVERLAYGEN_TEST_EXPORT_DIR"] = Self.exportDirectory.path
-        app.launch()
+        app.launch()  // the app activates itself when the editor appears (UITestSupport.editorAppeared)
         XCTAssertTrue(
             app.windows.firstMatch.waitForExistence(timeout: Self.timeout), "No window: \(app.debugDescription)")
         launched = app

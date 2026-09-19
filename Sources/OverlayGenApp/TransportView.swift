@@ -5,7 +5,7 @@ struct TransportView: View {
     @Bindable var editor: EditorModel
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             Button {
                 editor.seek(to: 0)
             } label: {
@@ -31,14 +31,15 @@ struct TransportView: View {
                 Image(systemName: "forward.frame.fill")
             }
             .accessibilityIdentifier("transport.stepForward").accessibilityLabel("Step forward one frame")
-            Text(TimeParsing.lapTimeString(editor.currentTime)).monospacedDigit().frame(width: 80, alignment: .trailing)
+            Text(TimeParsing.lapTimeString(editor.currentTime)).monospacedDigit().frame(width: 66, alignment: .trailing)
                 .accessibilityIdentifier("transport.time")
             Slider(
                 value: Binding(get: { editor.currentTime }, set: { editor.seek(to: $0) }),
                 in: 0...max(editor.duration, 0.001)
             )
+            .frame(minWidth: 60)
             Text(TimeParsing.lapTimeString(editor.duration)).monospacedDigit().foregroundStyle(.secondary).frame(
-                width: 80, alignment: .leading)
+                width: 66, alignment: .leading)
             Divider().frame(height: 16)
             Button {
                 editor.snappingEnabled.toggle()
@@ -59,7 +60,7 @@ struct TransportView: View {
             Slider(
                 value: Binding(get: { log2(editor.timelineZoom) }, set: { editor.timelineZoom = pow(2, $0) }), in: 0...6
             )
-            .frame(width: 90)
+            .frame(width: 70)
             .help("Timeline zoom")
             Button {
                 editor.zoomTimeline(by: 1.5)

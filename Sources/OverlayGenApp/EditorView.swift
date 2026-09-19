@@ -12,24 +12,28 @@ struct EditorView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            SidebarView(editor: editor)
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240)
-        } detail: {
-            VStack(spacing: 0) {
-                PreviewView(editor: editor)
-                Divider()
-                TransportView(editor: editor)
-                TimelineView(editor: editor)
-                StatusLineView(editor: editor)
+        // A plain split view holds the inspector: SwiftUI's `.inspector` adds twice its ideal width to
+        // the window's minimum, which kept the window from fitting 1024-point displays.
+        HSplitView {
+            NavigationSplitView {
+                SidebarView(editor: editor)
+                    .navigationSplitViewColumnWidth(min: 180, ideal: 240)
+            } detail: {
+                VStack(spacing: 0) {
+                    PreviewView(editor: editor)
+                    Divider()
+                    TransportView(editor: editor)
+                    TimelineView(editor: editor)
+                    StatusLineView(editor: editor)
+                }
             }
-        }
-        .inspector(isPresented: .constant(true)) {
+            .frame(minWidth: 700)
+            .layoutPriority(1)
             InspectorView(editor: editor)
-                .inspectorColumnWidth(min: 260, ideal: 300)
+                .frame(minWidth: 280, idealWidth: 300, maxWidth: 460)
         }
-        .overlay { TourOverlay(editor: editor) }
         .toolbar { EditorToolbar(editor: editor) }
+        .overlay { TourOverlay(editor: editor) }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             Task { @MainActor in
                 var urls: [URL] = []
@@ -61,6 +65,7 @@ struct EditorView: View {
         }
         .onAppear {
             editor.undoManager = undoManager
+            UITestSupport.editorAppeared(editor)
             if !tourSeen {
                 tourSeen = true
                 editor.tourStep = 0

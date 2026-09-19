@@ -14,7 +14,7 @@ xcodegen generate --quiet
 
 echo "Exports: $export_dir"
 set +e
-OVERLAYGEN_TEST_EXPORT_DIR="$export_dir" xcodebuild test \
+OVERLAYGEN_TEST_EXPORT_DIR="$export_dir" caffeinate -dis xcodebuild test \
   -project OverlayGen.xcodeproj -scheme OverlayGen -destination 'platform=macOS' \
   -only-testing:"$only" -derivedDataPath build/DerivedData -resultBundlePath "$result" \
   CODE_SIGN_IDENTITY="-" 2>&1 | grep -E "error:|Test Case|Executed|TEST |warning: .*UITests"

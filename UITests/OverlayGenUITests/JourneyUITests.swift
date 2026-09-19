@@ -34,11 +34,13 @@ final class JourneyUITests: OverlayGenUITestCase {
         let bound = app.popUpButtons.matching(NSPredicate(format: "value == 'racerender-basic'")).firstMatch
         XCTAssertTrue(bound.exists, "The speedometer is bound to the data file")
 
-        // 4. Play, pause, step, go to start.
+        // 4. Play, pause, step, go to start. Playback can take a few seconds to start on a slow
+        // runner, so wait for the playhead to move rather than for a fixed time.
         app.buttons["transport.play"].click()
-        sleep(1)
+        let moved = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value != %@", "0:00.00"), object: transportTime)
+        XCTAssertEqual(XCTWaiter().wait(for: [moved], timeout: 30), .completed, "Playback advanced the playhead")
         app.buttons["transport.play"].click()
-        XCTAssertNotEqual(text(of: transportTime), "0:00.00", "Playback advanced the playhead")
         app.buttons["transport.start"].click()
         expect(transportTime, toRead: "0:00.00")
         app.buttons["transport.stepForward"].click()
