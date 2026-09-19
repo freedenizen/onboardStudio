@@ -131,7 +131,8 @@ struct ClipSequenceTests {
         let clip = try MediaFixtures.video
         // The same 3 s clip twice: the second half of the sequence replays the first.
         let compiled = try await CompositionBuilder.build(
-            videos: [VideoInputSpec(url: clip, clips: [clip])], overlays: [], outputWidth: 320, outputHeight: 180,
+            videos: [VideoInputSpec(url: clip, clips: [ClipSpec(url: clip)])], overlays: [], outputWidth: 320,
+            outputHeight: 180,
             frameRate: 30)
         #expect(abs(compiled.duration - 6) < 0.05, "duration \(compiled.duration)")
         #expect(compiled.composition.tracks(withMediaType: .video).count == 1)
@@ -163,7 +164,7 @@ struct ClipSequenceTests {
         let second = try MediaFixtures.video
         // Start 2 s into the sequence and stop 1.5 s later, played at double speed → 0.75 s.
         let spec = VideoInputSpec(
-            url: first, clips: [second], sync: SyncSettings(offsetInProject: 1, playSpeed: 2),
+            url: first, clips: [ClipSpec(url: second)], sync: SyncSettings(offsetInProject: 1, playSpeed: 2),
             trim: TrimRange(start: 2, end: 3.5))
         let compiled = try await CompositionBuilder.build(
             videos: [spec], overlays: [], outputWidth: 160, outputHeight: 90, frameRate: 30)
@@ -188,5 +189,90 @@ extension MediaFixtures {
             context.draw(image, in: CGRect(origin: .zero, size: size))
         }
         return buffer
+    }
+}
+
+@Suite("Clip trims, gaps and orientation", .serialized)
+struct ClipEditingTests {
+    @Test func perClipTrimAndGapShapeTheSequence() async throws {
+        let clip = try MediaFixtures.video
+        // 3 s + (1 s gap + 1.5 s of the second file, seconds 1…2.5) = 5.5 s.
+        let spec = VideoInputSpec(
+            url: clip, clips: [ClipSpec(url: clip, trim: TrimRange(start: 1, end: 2.5), gapBefore: 1)])
+        let compiled = try await CompositionBuilder.build(
+            videos: [spec], overlays: [], outputWidth: 160, outputHeight: 90, frameRate: 30)
+        #expect(abs(compiled.duration - 5.5) < 0.05, "duration \(compiled.duration)")
+        let segments = compiled.composition.tracks(withMediaType: .video).first?.segments ?? []
+        let filled = segments.filter { !$0.isEmpty }
+        #expect(filled.count == 2)
+        // The second file's played part starts at project 4 s and plays its second 1…2.5.
+        let second = try #require(filled.last)
+        #expect(abs(second.timeMapping.target.start.seconds - 4) < 0.02)
+        #expect(abs(second.timeMapping.source.start.seconds - 1) < 0.02)
+        #expect(abs(second.timeMapping.source.duration.seconds - 1.5) < 0.02)
+        // The gap renders black.
+        let gap = try await MediaFixtures.renderFrame(of: compiled, at: 3.5)
+        let p = PixelBuffers.pixel(in: gap, x: 80, y: 45)
+        #expect(p.r < 10 && p.g < 10 && p.b < 10, "gap pixel \(p)")
+    }
+
+    @Test func clipsWithDifferentOrientationsEachKeepTheirs() async throws {
+        let upright = try MediaFixtures.video
+        let rotated = try ClipSequenceTests.rotated
+        let compiled = try await CompositionBuilder.build(
+            videos: [VideoInputSpec(url: upright, clips: [ClipSpec(url: rotated)])], overlays: [], outputWidth: 320,
+            outputHeight: 180, frameRate: 30)
+        let track = compiled.trackIDs[0]
+        #expect(compiled.orientationSpans[track]?.count == 2)
+        #expect(compiled.orientationChangeTimes.count == 1)
+        #expect(abs((compiled.orientationChangeTimes.first ?? 0) - 3) < 0.05)
+        #expect(compiled.sourceTransforms(at: 1)[track] == .identity)
+        #expect(compiled.sourceTransforms(at: 3.5)[track] != .identity)
+        // Through the project compiler the second clip is drawn upright like the rotated clip alone.
+        let loaded = ProjectCompiler.LoadedProject(
+            project: Project(
+                inputs: [], displayObjects: [], export: ExportSettings()),
+            location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj")),
+            sessions: [:], mediaInfo: [:])
+        _ = loaded
+        let plans = ProjectCompiler.timedPlans(
+            for: try await ClipEditingTests.project(upright: upright, rotated: rotated), trackIDs: [:],
+            sourceTransforms: { compiled.sourceTransforms(at: $0) },
+            orientationChanges: compiled.orientationChangeTimes,
+            duration: compiled.duration)
+        #expect(plans.count == 2 && abs(plans[1].start - 3) < 0.05)
+    }
+
+    static func project(upright: URL, rotated: URL) async throws -> ProjectCompiler.LoadedProject {
+        var settings = VideoInputSettings()
+        settings.clips = [VideoClip(source: MediaReference(path: rotated.path))]
+        let video = Input(label: "v", source: MediaReference(path: upright.path), kind: .video(settings))
+        let project = Project(
+            inputs: [video],
+            displayObjects: [
+                DisplayObject(label: "v", inputID: video.id, frame: .full, kind: .video(VideoObjectParams()))
+            ])
+        return try await ProjectCompiler.load(
+            project, location: ProjectLocation(URL(fileURLWithPath: "/tmp/y.overlayproj")))
+    }
+
+    @Test func rotatedSecondClipRendersUprightEndToEnd() async throws {
+        let upright = try MediaFixtures.video
+        let rotated = try ClipSequenceTests.rotated
+        let loaded = try await Self.project(upright: upright, rotated: rotated)
+        let compiled = try await ProjectCompiler.compile(loaded)
+        let alone = try await CompositionBuilder.build(
+            videos: [VideoInputSpec(url: rotated)], overlays: [], outputWidth: 1920, outputHeight: 1080, frameRate: 30)
+        let sequenceFrame = try await MediaFixtures.renderFrame(of: compiled, at: 3.4)
+        let aloneFrame = try await MediaFixtures.renderFrame(of: alone, at: 0.4)
+        var agree = 0
+        for (x, y) in [(200, 200), (960, 540), (1700, 900), (600, 300), (1300, 700)] {
+            let a = PixelBuffers.pixel(in: sequenceFrame, x: x, y: y)
+            let b = PixelBuffers.pixel(in: aloneFrame, x: x, y: y)
+            if abs(Int(a.r) - Int(b.r)) < 40, abs(Int(a.g) - Int(b.g)) < 40, abs(Int(a.b) - Int(b.b)) < 40 {
+                agree += 1
+            }
+        }
+        #expect(agree >= 4, "\(agree) of 5 probes match the rotated clip played alone")
     }
 }

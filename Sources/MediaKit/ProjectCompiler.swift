@@ -116,16 +116,18 @@ public enum ProjectCompiler {
 
     /// Prepares and probes the following clips of a sequence: the summed duration is added to the
     /// first file's info (everything else, orientation included, comes from the first file).
-    static func loadClips(_ clips: [MediaReference], location: ProjectLocation) async throws
+    static func loadClips(_ clips: [VideoClip], location: ProjectLocation) async throws
         -> (urls: [URL], duration: Double)
     {
         var urls: [URL] = []
         var duration = 0.0
         for clip in clips {
-            let clipURL = location.resolve(clip)
+            let clipURL = location.resolve(clip.source)
             guard FileManager.default.fileExists(atPath: clipURL.path) else { throw LoadError.missingFile(clipURL) }
             let playable = try await FFmpegBridge.prepare(clipURL)
-            duration += try await MediaProbe.probe(playable).duration
+            let full = try await MediaProbe.probe(playable).duration
+            let played = min(clip.trim.end ?? full, full) - min(max(clip.trim.start ?? 0, 0), full)
+            duration += max(0, clip.gapBefore) + max(0, played)
             urls.append(playable)
         }
         return (urls, duration)
@@ -176,19 +178,23 @@ public enum ProjectCompiler {
         }
         return compiled.replacingPlans(
             timedPlans(
-                for: loaded, trackIDs: trackIDs, sourceTransforms: compiled.sourceTransforms,
-                duration: compiled.duration))
+                for: loaded, trackIDs: trackIDs, sourceTransforms: { compiled.sourceTransforms(at: $0) },
+                orientationChanges: compiled.orientationChangeTimes, duration: compiled.duration))
     }
 
     /// One plan per timeline cut point, with the objects resolved for that segment.
     static func timedPlans(
-        for loaded: LoadedProject, trackIDs: [InputID: Int32], sourceTransforms: [Int32: CGAffineTransform],
+        for loaded: LoadedProject, trackIDs: [InputID: Int32],
+        sourceTransforms: @escaping (Double) -> [Int32: CGAffineTransform], orientationChanges: [Double] = [],
         duration: Double
     ) -> [TimedPlan] {
         let project = loaded.project
         let cache = RenderCache()
-        return project.timeline.cutPoints(duration: duration).map { start in
+        // A plan per timeline cut and per orientation change (a chapter shot the other way up).
+        let cuts = Set(project.timeline.cutPoints(duration: duration) + orientationChanges.filter { $0 < duration })
+        return cuts.sorted().map { start in
             let objects = project.displayObjects(at: start)
+            let sourceTransforms = sourceTransforms(start)
             let overlays = RenderPlanner.overlays(
                 for: project, objects: objects, sessions: loaded.sessions, images: loaded.images, cache: cache,
                 scriptRenderer: { params, context in ScriptedRenderer(context: context, params: params) },
@@ -242,7 +248,11 @@ public enum ProjectCompiler {
             specs.append(
                 VideoInputSpec(
                     url: loaded.mediaURLs[input.id] ?? loaded.location.resolve(input.source),
-                    clips: loaded.clipURLs[input.id] ?? settings.clips.map { loaded.location.resolve($0) },
+                    clips: settings.clips.enumerated().map { index, clip in
+                        ClipSpec(
+                            url: loaded.clipURLs[input.id]?[index] ?? loaded.location.resolve(clip.source),
+                            trim: clip.trim, gapBefore: clip.gapBefore)
+                    },
                     sync: input.sync, trim: settings.trim, frame: .full, includeAudio: settings.includeAudio,
                     audio: settings.audio))
             specInputIDs.append(input.id)
@@ -259,7 +269,7 @@ public enum ProjectCompiler {
         }
         return compiled.replacingPlans(
             timedPlans(
-                for: loaded, trackIDs: trackIDs, sourceTransforms: compiled.sourceTransforms,
-                duration: compiled.duration))
+                for: loaded, trackIDs: trackIDs, sourceTransforms: { compiled.sourceTransforms(at: $0) },
+                orientationChanges: compiled.orientationChangeTimes, duration: compiled.duration))
     }
 }

@@ -7,7 +7,8 @@ and, ideally, a data log.
 
 ## 1. Your first overlay in five minutes
 
-1. **Launch OverlayGen.** A new, empty project opens with a welcome panel. (**File ▸ New from
+1. **Launch OverlayGen.** A new, empty project opens with a welcome panel and, the first time, a
+   three-step tour (**Help ▸ Take the Tour** repeats it). Files can be dropped anywhere in the window. (**File ▸ New from
    Template** starts with gauges already laid out; **Help ▸ Open the Sample Project** opens a
    short clip with a synthetic log if you just want to poke around.)
 2. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
@@ -39,9 +40,12 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   is drawn first. Click to select and edit; the eye toggles an object; right-click to remove.
 - **Preview (centre)**: the composed frame at the playhead, exactly as it will export. Selected
   objects show handles; arrow keys nudge them (⇧ for bigger steps).
-- **Transport and timeline (below the preview)**: play, step, scrub. When a project has more than
-  one video, a lane above the segments shows each video as a bar you can drag to move it in time;
-  bars snap to each other's ends. The segment strip below holds timeline segments (§6).
+- **Transport and timeline (below the preview)**: play, step, scrub. The timeline has a time
+  ruler (click or drag it to scrub), a lane with one bar per video and the segment strip (§6).
+  Drag a video bar to move it, drag its left or right edge to trim it (the head trim keeps the
+  picture where it was), click it to select the video. The magnet button (N) snaps drags to other
+  videos' edges and the playhead; zoom with ⌘= / ⌘− / ⇧Z, the slider next to the transport, or
+  scroll sideways.
 - **Inspector (right)**: settings for the selected input or object. With nothing selected it shows
   the project's output size and frame rate, the camera framing and the Getting Started checklist.
 - **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export.
@@ -54,19 +58,21 @@ speed* slows or speeds it up. **Start After Previous Video** chains a clip onto 
 the list; **Start at 0** resets its offset; the arrow buttons reorder inputs.
 
 **Clip sequences.** The *Clips* section lists the files that make up one continuous video: the
-recording's chapters, or any files you want played back to back. **Add Clips…** appends files,
-**Add Following Chapters** finds the camera's numbered continuations, and the arrows reorder.
-Trim, sync, picture settings and the data alignment all treat the sequence as a single video.
-Clips in a sequence should come from the same camera orientation (the first file's orientation is
-used for all).
+recording's chapters, or any files you want played back to back. Chapters are joined silently
+when you add or drop the first one (the status line says so; undo or remove a clip to split it),
+**Add Clips…** appends files, **Add Following Chapters** finds the camera's numbered
+continuations, and the arrows reorder. Each clip has its own *In* and *Out* trim (seconds inside
+that file; 0 = whole file) and a *Gap before* it (black). Trim, sync, picture settings and the
+data alignment all treat the sequence as a single video, and clips may have different orientations.
 
-**Picture**: rotation, mirror, crop, colour, sharpness, chroma key, and **Lens** for fisheye or
+**Transform and Cropping** (this video): rotation, flip, crop per edge. Then colour, sharpness, chroma key, and **Lens** for fisheye or
 360° footage (unwrap into a flat, pannable view). **Audio**: include, mute, volume, balance,
 channel selection.
 
-**Camera framing (all videos)**, in the project inspector, zooms, pans and crops every video at
-once. Use it to reframe a recording without touching each chapter or each camera separately; it
-applies on top of each input's own crop.
+**Transform and Cropping (all videos)**, in the project inspector, zoom, position and crop every
+video at once, in the same terms an editor uses (zoom factor, position as a percentage offset from
+the centre). Use it to reframe a recording without touching each chapter or each camera
+separately; it applies on top of each input's own crop.
 
 **Multiple cameras.** Add each camera as its own video input, line them up in the video lane (or
 with the sync fields), then arrange them with **Layout** (picture-in-picture, split, quad) and

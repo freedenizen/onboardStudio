@@ -36,7 +36,7 @@ struct VideoEditingModelTests {
         let video = try JSONDecoder().decode(VideoInputSettings.self, from: Data("{}".utf8))
         #expect(video.clips.isEmpty)
         var with = video
-        with.clips = [MediaReference(path: "GX020037.MP4")]
+        with.clips = [VideoClip(source: MediaReference(path: "GX020037.MP4"))]
         let round = try JSONDecoder().decode(VideoInputSettings.self, from: JSONEncoder().encode(with))
         #expect(round.clips == with.clips)
     }
@@ -59,5 +59,67 @@ struct VideoEditingModelTests {
                 == ["clip_2.mov"])
         #expect(CameraChapters.following(dir.appending(path: "holiday.mp4"), fileExists: exists).isEmpty)
         #expect(CameraChapters.next(after: dir.appending(path: "GX990037.MP4"))?.lastPathComponent == "GX1000037.MP4")
+    }
+}
+
+@Suite("Clips, chapter groups and snapping")
+struct ClipModelTests {
+    @Test func clipsDecodeFromBothForms() throws {
+        let json = """
+            {"clips": [{"path": "GX020037.MP4"},
+                       {"source": {"path": "GX030037.MP4"}, "trim": {"start": 5}, "gapBefore": 2}]}
+            """
+        let settings = try JSONDecoder().decode(VideoInputSettings.self, from: Data(json.utf8))
+        #expect(settings.clips.count == 2)
+        #expect(settings.clips[0] == VideoClip(source: MediaReference(path: "GX020037.MP4")))
+        #expect(settings.clips[1].trim.start == 5 && settings.clips[1].gapBefore == 2)
+        let round = try JSONDecoder().decode(VideoInputSettings.self, from: JSONEncoder().encode(settings))
+        #expect(round.clips == settings.clips)
+    }
+
+    @Test func selectionsGroupIntoRecordings() {
+        let dir = URL(fileURLWithPath: "/cam")
+        let urls = ["GX020037.MP4", "GX010037.MP4", "holiday.mp4", "GX010099.MP4", "GX030037.MP4", "clip_2.mov"].map {
+            dir.appending(path: $0)
+        }
+        let groups = CameraChapters.group(urls).map { $0.map(\.lastPathComponent) }
+        #expect(
+            groups == [
+                ["GX010037.MP4", "GX020037.MP4", "GX030037.MP4"], ["holiday.mp4"], ["GX010099.MP4"], ["clip_2.mov"],
+            ])
+    }
+
+    @Test func snappingPrefersTheNearestTargetWithinTolerance() {
+        let snapping = TimelineSnapping(targets: [0, 10, 25.5], tolerance: 1)
+        #expect(snapping.snap(9.4) == 10)
+        #expect(snapping.snap(24.9) == 25.5)
+        #expect(snapping.snap(12) == 12)
+        // A 4 s clip whose end lands near 25.5 moves so its end snaps.
+        #expect(snapping.snapSpan(start: 21.2, length: 4) == 21.5)
+        #expect(snapping.snapSpan(start: 9.6, length: 4) == 10)
+    }
+}
+
+@Suite("Timeline trimming arithmetic")
+struct VideoTrimmingTests {
+    @Test func headTrimKeepsThePictureInPlace() {
+        // A video at project 10 s showing file second 5 at double speed; dragging its head to 14 s
+        // must show file second 5 + 4 × 2 = 13 there.
+        let sync = SyncSettings(startPositionInInput: 5, offsetInProject: 10, playSpeed: 2)
+        let trimmed = VideoTrimming.headTrimmed(sync, toProjectTime: 14)
+        #expect(trimmed.offsetInProject == 14 && trimmed.startPositionInInput == 13 && trimmed.playSpeed == 2)
+        // Dragging left of zero clamps and never rewinds the file before its start.
+        let early = VideoTrimming.headTrimmed(
+            SyncSettings(startPositionInInput: 1, offsetInProject: 3), toProjectTime: -5)
+        #expect(early.offsetInProject == 0 && early.startPositionInInput == 0)
+    }
+
+    @Test func tailTrimMapsProjectTimeToFileSeconds() {
+        let sync = SyncSettings(startPositionInInput: 5, offsetInProject: 10, playSpeed: 2)
+        #expect(VideoTrimming.tailTrimmed(sync, trim: .none, toProjectTime: 20, fullDuration: 100) == 25)
+        // Beyond the file's end means "no trim".
+        #expect(VideoTrimming.tailTrimmed(sync, trim: .none, toProjectTime: 60, fullDuration: 100) == nil)
+        // A tail can never be dragged before the head.
+        #expect(VideoTrimming.tailTrimmed(sync, trim: .none, toProjectTime: 9, fullDuration: 100) == 5.2)
     }
 }

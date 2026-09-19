@@ -6,7 +6,6 @@ import UniformTypeIdentifiers
 struct OverlayGenApp: App {
     @State private var updater = UpdaterModel()
     @State private var youtube = YouTubeModel()
-    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         DocumentGroup(
@@ -38,18 +37,6 @@ struct OverlayGenApp: App {
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { updater.checkForUpdates() }
                     .disabled(!updater.canCheckForUpdates)
-            }
-            CommandGroup(replacing: .help) {
-                Button("OverlayGen User Guide") { HelpLinks.open(.userGuide) }
-                Button("Supported Data Formats") { HelpLinks.open(.formats) }
-                Button("Scripting Reference") { HelpLinks.open(.scripting) }
-                Button("YouTube Upload Setup") { HelpLinks.open(.youtube) }
-                Button("Project File Format") { HelpLinks.open(.projectFormat) }
-                Divider()
-                Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
-                Button("Show Getting Started") { UserDefaults.standard.set(true, forKey: "showGettingStarted") }
-                Divider()
-                Button("Open the Sample Project") { SampleProject.open() }.disabled(!SampleProject.isAvailable)
             }
             EditorCommands()
         }
@@ -85,8 +72,22 @@ extension UTType {
 /// Menu commands that act on the focused editor.
 struct EditorCommands: Commands {
     @FocusedValue(\.editor) private var editor
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Commands {
+        CommandGroup(replacing: .help) {
+            Button("OverlayGen User Guide") { HelpLinks.open(.userGuide) }
+            Button("Supported Data Formats") { HelpLinks.open(.formats) }
+            Button("Scripting Reference") { HelpLinks.open(.scripting) }
+            Button("YouTube Upload Setup") { HelpLinks.open(.youtube) }
+            Button("Project File Format") { HelpLinks.open(.projectFormat) }
+            Divider()
+            Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
+            Button("Take the Tour") { editor?.tourStep = 0 }.disabled(editor == nil)
+            Button("Show Getting Started") { UserDefaults.standard.set(true, forKey: "showGettingStarted") }
+            Divider()
+            Button("Open the Sample Project") { SampleProject.open() }.disabled(!SampleProject.isAvailable)
+        }
         CommandMenu("Project") {
             Button("Add Video…") { editor?.addVideo() }.keyboardShortcut("i", modifiers: [.command])
             Button("Add Data File…") { editor?.addData() }.keyboardShortcut("d", modifiers: [.command, .shift])
@@ -140,6 +141,16 @@ struct EditorCommands: Commands {
             Button("Upload Video to YouTube…") {
                 if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
             }
+        }
+        CommandGroup(after: .toolbar) {
+            Divider()
+            Button("Zoom In Timeline") { editor?.zoomTimeline(by: 1.5) }.keyboardShortcut("=", modifiers: [.command])
+            Button("Zoom Out Timeline") { editor?.zoomTimeline(by: 1 / 1.5) }.keyboardShortcut(
+                "-", modifiers: [.command])
+            Button("Zoom to Fit") { editor?.fitTimeline() }.keyboardShortcut("z", modifiers: [.shift])
+            Toggle(
+                "Snapping",
+                isOn: Binding(get: { editor?.snappingEnabled ?? true }, set: { editor?.snappingEnabled = $0 }))
         }
         CommandMenu("Playback") {
             Button(editor?.isPlaying == true ? "Pause" : "Play") { editor?.togglePlayback() }.keyboardShortcut(

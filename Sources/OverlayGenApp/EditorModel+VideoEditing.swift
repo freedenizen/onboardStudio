@@ -9,7 +9,7 @@ extension EditorModel {
     func addClips(to inputID: InputID) {
         let urls = OpenPanels.chooseVideos()
         guard !urls.isEmpty else { return }
-        let references = urls.map { MediaReference.make(for: $0, relativeTo: fileURL) }
+        let references = urls.map { VideoClip(source: MediaReference.make(for: $0, relativeTo: fileURL)) }
         updateInput(inputID, name: "Add Clips") { input in
             guard case .video(var settings) = input.kind else { return }
             settings.clips.append(contentsOf: references)
@@ -21,13 +21,13 @@ extension EditorModel {
     /// Appends the camera's following chapter files, if any exist next to the first file.
     func addFollowingChapters(to inputID: InputID) {
         guard let input = project.input(inputID), case .video(let settings) = input.kind else { return }
-        let last = settings.clips.last.map { location.resolve($0) } ?? location.resolve(input.source)
+        let last = settings.clips.last.map { location.resolve($0.source) } ?? location.resolve(input.source)
         let chapters = CameraChapters.following(last)
         guard !chapters.isEmpty else {
             statusMessage = "No further chapters found next to \(last.lastPathComponent)."
             return
         }
-        let references = chapters.map { MediaReference.make(for: $0, relativeTo: fileURL) }
+        let references = chapters.map { VideoClip(source: MediaReference.make(for: $0, relativeTo: fileURL)) }
         updateInput(inputID, name: "Add Chapters") { input in
             guard case .video(var settings) = input.kind else { return }
             settings.clips.append(contentsOf: references)
@@ -53,8 +53,8 @@ extension EditorModel {
             if index == 0, target < 0 {
                 // Swap the primary file with the first clip.
                 let first = settings.clips.removeFirst()
-                settings.clips.insert(input.source, at: 0)
-                input.source = first
+                settings.clips.insert(VideoClip(source: input.source), at: 0)
+                input.source = first.source
             } else if settings.clips.indices.contains(index), settings.clips.indices.contains(target) {
                 settings.clips.swapAt(index, target)
             } else {
@@ -149,4 +149,72 @@ struct GettingStartedStep: Identifiable {
     let detail: String
     let action: Action
     var id: String { title }
+}
+
+// MARK: - Timeline view state, snapping and trimming
+
+extension EditorModel {
+    /// The span the timeline draws: the project, or further if a video has been dragged past it.
+    var timelineDuration: Double {
+        max(duration, project.videoInputs.compactMap { end(of: $0) }.max() ?? 0, 0.001)
+    }
+
+    /// Targets the magnet snaps to: zero, the playhead and every other video's start and end.
+    func snapTargets(excluding inputID: InputID? = nil) -> [Double] {
+        var targets: [Double] = [0, currentTime]
+        for video in project.videoInputs where video.id != inputID {
+            targets.append(video.sync.offsetInProject)
+            if let end = end(of: video) { targets.append(end) }
+        }
+        return targets
+    }
+
+    private var snapTolerance: Double { timelineDuration * 0.015 / timelineZoom }
+
+    func snapped(_ time: Double, excluding inputID: InputID? = nil) -> Double {
+        guard snappingEnabled else { return time }
+        return TimelineSnapping(targets: snapTargets(excluding: inputID), tolerance: snapTolerance).snap(time)
+    }
+
+    func snappedSpan(start: Double, length: Double, excluding inputID: InputID? = nil) -> Double {
+        guard snappingEnabled else { return start }
+        return TimelineSnapping(targets: snapTargets(excluding: inputID), tolerance: snapTolerance)
+            .snapSpan(start: start, length: length)
+    }
+
+    /// Moves the head of a video to project time `time`, keeping the picture where it was.
+    func trimHead(of inputID: InputID, toProjectTime time: Double) {
+        guard let video = project.input(inputID), case .video = video.kind else { return }
+        let sync = VideoTrimming.headTrimmed(video.sync, toProjectTime: time)
+        updateInput(inputID, name: "Trim Video Start") { $0.sync = sync }
+    }
+
+    /// Ends a video at project time `time` by setting its trim end (in file seconds).
+    func trimTail(of inputID: InputID, toProjectTime time: Double) {
+        guard let video = project.input(inputID), case .video(let settings) = video.kind else { return }
+        let end = VideoTrimming.tailTrimmed(
+            video.sync, trim: settings.trim, toProjectTime: time, fullDuration: loaded?.mediaInfo[inputID]?.duration)
+        updateInput(inputID, name: "Trim Video End") { input in
+            guard case .video(var s) = input.kind else { return }
+            s.trim.end = end
+            input.kind = .video(s)
+        }
+    }
+
+    func zoomTimeline(by factor: Double) {
+        timelineZoom = min(max(timelineZoom * factor, 1), 64)
+    }
+
+    func fitTimeline() { timelineZoom = 1 }
+}
+
+extension EditorModel {
+    /// Edits one clip of a sequence (trim or gap).
+    func updateClip(_ index: Int, in inputID: InputID, name: String, _ change: (inout VideoClip) -> Void) {
+        updateInput(inputID, name: name) { input in
+            guard case .video(var settings) = input.kind, settings.clips.indices.contains(index) else { return }
+            change(&settings.clips[index])
+            input.kind = .video(settings)
+        }
+    }
 }

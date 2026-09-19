@@ -12,6 +12,39 @@ public struct MediaReference: Hashable, Codable, Sendable {
     }
 }
 
+/// One file of a clip sequence: where it comes from, which part of it plays, and how much
+/// (black) gap precedes it.
+public struct VideoClip: Hashable, Codable, Sendable {
+    public var source: MediaReference
+    /// Seconds inside this file; `nil` ends mean the whole file.
+    public var trim: TrimRange
+    /// Seconds of black before the clip starts (0 = back to back with the previous one).
+    public var gapBefore: Double
+
+    public init(source: MediaReference, trim: TrimRange = .none, gapBefore: Double = 0) {
+        self.source = source
+        self.trim = trim
+        self.gapBefore = gapBefore
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case source, trim, gapBefore
+    }
+
+    /// Accepts both the M15 form (`{ "path": … }`) and the full form.
+    public init(from decoder: any Decoder) throws {
+        if let c = try? decoder.container(keyedBy: CodingKeys.self), c.contains(.source) {
+            source = try c.decode(MediaReference.self, forKey: .source)
+            trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
+            gapBefore = try c.decodeIfPresent(Double.self, forKey: .gapBefore) ?? 0
+        } else {
+            source = try MediaReference(from: decoder)
+            trim = .none
+            gapBefore = 0
+        }
+    }
+}
+
 public struct VideoInputSettings: Hashable, Codable, Sendable {
     public var trim: TrimRange
     public var includeAudio: Bool
@@ -25,8 +58,9 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
     /// Fisheye / 360° unwrap (M12); `.none` leaves the picture as recorded.
     public var lens: LensSettings
     /// Further files played back to back after `source` as one continuous video (camera
-    /// chapters); trim, sync and picture settings apply to the whole sequence.
-    public var clips: [MediaReference]
+    /// chapters); trim, sync and picture settings apply to the whole sequence. Each clip can be
+    /// trimmed on its own and preceded by a gap.
+    public var clips: [VideoClip]
 
     public init(
         trim: TrimRange = .none,
@@ -38,7 +72,7 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         chromaKey: ChromaKey? = nil,
         audio: AudioSettings = .neutral,
         lens: LensSettings = .none,
-        clips: [MediaReference] = []
+        clips: [VideoClip] = []
     ) {
         self.trim = trim
         self.includeAudio = includeAudio
@@ -68,7 +102,7 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         chromaKey = try c.decodeIfPresent(ChromaKey.self, forKey: .chromaKey)
         audio = try c.decodeIfPresent(AudioSettings.self, forKey: .audio) ?? .neutral
         lens = try c.decodeIfPresent(LensSettings.self, forKey: .lens) ?? .none
-        clips = try c.decodeIfPresent([MediaReference].self, forKey: .clips) ?? []
+        clips = try c.decodeIfPresent([VideoClip].self, forKey: .clips) ?? []
     }
 }
 
