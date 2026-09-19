@@ -8,20 +8,24 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     public var duration: Double?
     /// Zoom, pan and crop applied to every video input (M15).
     public var framing: CameraFraming
+    /// Opacity of the whole overlay layer (every object except videos), on top of each object's
+    /// own opacity: one knob for a more see-through dashboard.
+    public var overlayOpacity: Double
 
     public init(
         outputWidth: Int = 1920, outputHeight: Int = 1080, frameRate: Double = 30, duration: Double? = nil,
-        framing: CameraFraming = .none
+        framing: CameraFraming = .none, overlayOpacity: Double = 1
     ) {
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
         self.frameRate = frameRate
         self.duration = duration
         self.framing = framing
+        self.overlayOpacity = overlayOpacity
     }
 
     private enum CodingKeys: String, CodingKey {
-        case outputWidth, outputHeight, frameRate, duration, framing
+        case outputWidth, outputHeight, frameRate, duration, framing, overlayOpacity
     }
 
     public init(from decoder: any Decoder) throws {
@@ -32,6 +36,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         frameRate = try c.decodeIfPresent(Double.self, forKey: .frameRate) ?? d.frameRate
         duration = try c.decodeIfPresent(Double.self, forKey: .duration)
         framing = try c.decodeIfPresent(CameraFraming.self, forKey: .framing) ?? .none
+        overlayOpacity = try c.decodeIfPresent(Double.self, forKey: .overlayOpacity) ?? 1
     }
 
     /// The same settings with the framing removed (framing is applied by the compositor, so it
@@ -39,6 +44,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     public var withoutFraming: ProjectSettings {
         var copy = self
         copy.framing = .none
+        copy.overlayOpacity = 1
         return copy
     }
 }

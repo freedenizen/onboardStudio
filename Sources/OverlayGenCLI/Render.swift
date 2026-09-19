@@ -47,7 +47,10 @@ struct Render: AsyncParsableCommand {
         name: .long, help: "Behind the overlays: video (default), key:#RRGGBB or transparent (both drop the video).")
     var background: String?
 
-    @Option(name: .long, help: "Apply an .overlaytemplate to the project before rendering (project only).")
+    @Option(
+        name: .long,
+        help:
+            "Apply a template before rendering: an .overlaytemplate file or a built-in name such as \"Glass Cockpit\".")
     var template: String?
 
     @Option(name: .long, help: "Video bitrate in kbit/s.")
@@ -150,9 +153,13 @@ struct Render: AsyncParsableCommand {
     private func loadProject(_ path: String, range: ClosedRange<Double>?) async throws -> LoadedForRender {
         var loaded = try await ProjectCompiler.load(URL(fileURLWithPath: path))
         if let template {
-            let file = try ProjectTemplate(data: Data(contentsOf: URL(fileURLWithPath: template)))
-            file.apply(to: &loaded.project)
+            let chosen =
+                try ProjectTemplate.builtIn.first { $0.name.caseInsensitiveCompare(template) == .orderedSame }
+                ?? ProjectTemplate(data: Data(contentsOf: URL(fileURLWithPath: template)))
+            chosen.apply(to: &loaded.project)
         }
+        // Lights and steering wheels without a channel take the one this logger offers.
+        loaded.project.bindEmptyChannels(loaded.channelSummaries)
         for (id, problem) in loaded.problems {
             let label = loaded.project.input(id)?.label ?? "\(id)"
             FileHandle.standardError.write(Data("warning: \(label): \(problem)\n".utf8))

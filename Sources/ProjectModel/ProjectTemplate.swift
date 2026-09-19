@@ -140,7 +140,7 @@ public enum ProjectTemplateError: Error, CustomStringConvertible {
 
 extension ProjectTemplate {
     /// Templates shipped with the app.
-    public static let builtIn: [ProjectTemplate] = [classicDash, minimal, dataWall]
+    public static let builtIn: [ProjectTemplate] = [classicDash, glassCockpit, minimal, dataWall]
 
     private static func make(_ name: String, _ objects: [DisplayObject]) -> ProjectTemplate {
         let camera = DisplayObject(label: "Camera", inputID: nil, frame: .full, kind: .video(VideoObjectParams()))
@@ -163,6 +163,81 @@ extension ProjectTemplate {
             object("Best", .timer(TimerParams(mode: .bestLap)), UnitRect(x: 0.3, y: 0.13, width: 0.4, height: 0.06)),
             object("Gear", .gear(GearParams()), UnitRect(x: 0.66, y: 0.05, width: 0.07, height: 0.12)),
         ])
+
+    /// See-through instruments over the bottom of the picture, in the manner of manufacturer
+    /// track apps: a fade band, a translucent steering-wheel rim with a turning marker, ring gauges
+    /// with glass faces, a g-force trail, and plain lap text with no boxes.
+    public static let glassCockpit: ProjectTemplate = {
+        let clear = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0)
+        let glass = RGBAColor(red: 0.04, green: 0.04, blue: 0.05, alpha: 0.35)
+        let track = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.22)
+        var speed = GaugeParams.speedometer()
+        speed.style = .arc
+        speed.title = ""
+        speed.faceColor = glass
+        speed.arcTrackColor = track
+        speed.arcWidth = 0.1
+        speed.needleColor = .white
+        speed.ticks.showLabels = false
+        speed.ticks.showMinor = false
+        var rpm = GaugeParams.tachometer()
+        rpm.style = .arc
+        rpm.title = ""
+        rpm.faceColor = glass
+        rpm.arcTrackColor = track
+        rpm.arcWidth = 0.12
+        rpm.needleColor = .white
+        rpm.showValue = false
+        rpm.ticks.showMinor = false
+        rpm.ticks.labelScale = 0.1
+        rpm.zoneTargets = ZoneTargets(face: true, marks: true, needle: true, gradient: false)
+        return make(
+            "Glass Cockpit",
+            [
+                object(
+                    "Fade",
+                    .shape(
+                        ShapeParams(
+                            shape: .rectangle, fillColor: clear,
+                            gradientEndColor: RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.7))),
+                    UnitRect(x: 0, y: 0.68, width: 1, height: 0.32)),
+                object(
+                    "Wheel", .steeringWheel(SteeringWheelParams()),
+                    UnitRect(x: 0.2, y: 0.5, width: 0.6, height: 0.6 * 16 / 9)),
+                object("Speed", .speedometer(speed), UnitRect(x: 0.16, y: 0.74, width: 0.13, height: 0.23)),
+                object("RPM", .tachometer(rpm), UnitRect(x: 0.415, y: 0.68, width: 0.17, height: 0.3)),
+                object(
+                    "Gear",
+                    .gear(GearParams(showLabel: false, backgroundColor: clear, fontScale: 0.9)),
+                    UnitRect(x: 0.47, y: 0.76, width: 0.06, height: 0.13)),
+                object(
+                    "G",
+                    .gForce(
+                        GForceParams(
+                            maxG: 1.5, trailSeconds: 3, gridColor: RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.35),
+                            faceColor: glass)),
+                    UnitRect(x: 0.74, y: 0.7, width: 0.15, height: 0.27)),
+                object(
+                    "Delta",
+                    .bar(
+                        BarParams(
+                            channel: "lapDelta", label: "", minValue: -2, maxValue: 2,
+                            trackColor: RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.18),
+                            zones: [
+                                GaugeZone(from: -2, to: 0, color: RGBAColor(red: 0.13, green: 0.75, blue: 0.25)),
+                                GaugeZone(from: 0, to: nil, color: RGBAColor(red: 0.88, green: 0.19, blue: 0.19)),
+                            ], decimals: 2, unitLabel: "s", fillFromZero: true)),
+                    UnitRect(x: 0.36, y: 0.04, width: 0.28, height: 0.035)),
+                object(
+                    "Lap", .timer(TimerParams(showLapNumber: true, label: "Lap", backgroundColor: clear)),
+                    UnitRect(x: 0.03, y: 0.05, width: 0.17, height: 0.055)),
+                object(
+                    "Best",
+                    .timer(TimerParams(mode: .bestLap, showLapNumber: false, label: "Best", backgroundColor: clear)),
+                    UnitRect(x: 0.03, y: 0.11, width: 0.17, height: 0.045)),
+                object("Map", .trackMap(TrackMapParams()), UnitRect(x: 0.8, y: 0.03, width: 0.17, height: 0.26)),
+            ])
+    }()
 
     /// Just the numbers: speed and lap readouts with a small map.
     public static let minimal = make(

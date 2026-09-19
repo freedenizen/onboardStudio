@@ -59,7 +59,14 @@ public final class FrameCompositor: @unchecked Sendable {
                     cgContext.restoreGState()
                 }
             }
-            image = CIImage(cvPixelBuffer: overlayBuffer).composited(over: image)
+            var overlay = CIImage(cvPixelBuffer: overlayBuffer)
+            if plan.overlayOpacity < 1 {
+                // Core Image applies colour matrices to unpremultiplied colour, so only alpha scales.
+                overlay = overlay.applyingFilter(
+                    "CIColorMatrix",
+                    parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: CGFloat(plan.overlayOpacity))])
+            }
+            image = overlay.composited(over: image)
         }
         context.render(
             image, to: output, bounds: CGRect(origin: .zero, size: plan.outputSize),

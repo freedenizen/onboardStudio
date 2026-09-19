@@ -27,7 +27,21 @@ public struct ShapeRenderer: OverlayDrawing {
                     cornerHeight: min(rect.width, rect.height) * params.cornerRadius, transform: nil)
             case .ellipse: CGPath(ellipseIn: rect, transform: nil)
             }
-        if params.fillColor.alpha > 0 {
+        if let end = params.gradientEndColor,
+            let gradient = CGGradient(
+                colorsSpace: PixelBuffers.colorSpace, colors: [params.fillColor.cgColor, end.cgColor] as CFArray,
+                locations: [0, 1])
+        {
+            cg.saveGState()
+            cg.addPath(path)
+            cg.clip()
+            let horizontal = params.gradientHorizontal
+            cg.drawLinearGradient(
+                gradient, start: CGPoint(x: rect.minX, y: rect.minY),
+                end: horizontal ? CGPoint(x: rect.maxX, y: rect.minY) : CGPoint(x: rect.minX, y: rect.maxY),
+                options: [])
+            cg.restoreGState()
+        } else if params.fillColor.alpha > 0 {
             cg.setFillColor(params.fillColor.cgColor)
             cg.addPath(path)
             cg.fillPath()

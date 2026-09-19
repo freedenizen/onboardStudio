@@ -86,6 +86,9 @@ extension EditorModel {
             // Templates carry no logger-specific channel; bind the light to whatever this input has.
             kind = .indicator(params.adapted(to: channelSummaries(for: dataInput)))
         }
+        if case .steeringWheel(let params) = kind {
+            kind = .steeringWheel(params.adapted(to: channelSummaries(for: dataInput)))
+        }
         let object = DisplayObject.makeDefault(
             kind: kind, inputID: kind.needsData ? dataInput : videoInput, index: project.displayObjects.count)
         edit("Add \(kind.typeName)") { $0.displayObjects.append(object) }
@@ -109,9 +112,18 @@ extension EditorModel {
 extension EditorModel {
     /// Identifier, name and value range of every channel in a data input (empty until it loads).
     func channelSummaries(for inputID: InputID?) -> [ChannelSummary] {
-        guard let inputID, let session = sessions[inputID] else { return [] }
-        return session.orderedChannels.map {
-            ChannelSummary(identifier: $0.role.identifier, name: $0.name, minValue: $0.minValue, maxValue: $0.maxValue)
-        }
+        guard let inputID else { return [] }
+        return loaded?.channelSummaries[inputID] ?? []
+    }
+
+    /// After data loads: template objects that name no channel take the one this logger offers.
+    func bindEmptyChannels() {
+        guard let summaries = loaded?.channelSummaries, !summaries.isEmpty else { return }
+        var copy = project
+        let bound = copy.bindEmptyChannels(summaries)
+        guard !bound.isEmpty else { return }
+        edit("Bind Channels") { $0 = copy }
+        statusMessage =
+            "Bound \(bound.joined(separator: ", ")) to the matching channel\(bound.count == 1 ? "" : "s") of the data."
     }
 }

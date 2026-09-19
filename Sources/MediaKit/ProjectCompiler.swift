@@ -203,7 +203,8 @@ public enum ProjectCompiler {
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
             let plan = RenderPlan(
                 outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
-                frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays)
+                frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays,
+                overlayOpacity: project.settings.overlayOpacity)
             return TimedPlan(start: start, plan: plan)
         }
     }
@@ -271,5 +272,17 @@ public enum ProjectCompiler {
             timedPlans(
                 for: loaded, trackIDs: trackIDs, sourceTransforms: { compiled.sourceTransforms(at: $0) },
                 orientationChanges: compiled.orientationChangeTimes, duration: compiled.duration))
+    }
+}
+
+extension ProjectCompiler.LoadedProject {
+    /// Identifier, name and value range of every channel of every loaded data input.
+    public var channelSummaries: [InputID: [ChannelSummary]] {
+        sessions.mapValues { session in
+            session.orderedChannels.map {
+                ChannelSummary(
+                    identifier: $0.role.identifier, name: $0.name, minValue: $0.minValue, maxValue: $0.maxValue)
+            }
+        }
     }
 }

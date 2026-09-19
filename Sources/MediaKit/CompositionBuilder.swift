@@ -117,7 +117,8 @@ public struct CompiledComposition {
         replacingPlan(
             RenderPlan(
                 outputWidth: plan.outputWidth, outputHeight: plan.outputHeight, frameRate: plan.frameRate,
-                videoLayers: videoLayers, overlays: plan.overlays))
+                videoLayers: videoLayers, overlays: plan.overlays, background: plan.background,
+                overlayOpacity: plan.overlayOpacity))
     }
 
     /// Returns a copy with a new plan (layers and overlays) and a freshly built video composition,

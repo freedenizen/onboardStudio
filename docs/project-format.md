@@ -12,13 +12,16 @@ files are referenced by path; relative paths resolve against the package directo
 {
   "schemaVersion": 1,
   "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null,
-                "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } } },
+                "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } },
+                "overlayOpacity": 1 },
   "export": { "codec": "h264", "width": 1920, "height": 1080, "frameRate": 30, "videoBitrate": 16000000,
               "audioBitrate": 192000, "audioSampleRate": 48000, "audioChannels": 2 },
   "inputs": [ … ],
   "displayObjects": [ … ]
 }
 ```
+
+`settings.overlayOpacity` (0…1, default 1) fades the whole overlay layer (everything but the videos) over the picture, on top of each object's own `opacity`.
 
 ## Inputs
 
@@ -83,7 +86,8 @@ output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first 
 | `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours; formatting: `multiplier`, `offset` (shown = value × multiplier + offset), `prefix`, `thousandsSeparator`, `showPlusSign`, `minimumIntegerDigits`, `absoluteValue`, `fontScale`, `labelScale`, `fontName` (empty = monospaced); `zones` (`[{ "from", "to", "color" }]`, recolour the shown value) |
 | `indicator` | `channel` (empty = not bound yet; the ABS/Traction templates fill it from the data input when a channel name mentions ABS, DSC, TCS, ESC, ESP, traction or stability), `condition` (`atLeast`/`atMost`/`equal`/`notEqual`), `threshold`, `glyph` (`abs`/`traction`/`warning`/`light`/`text`), `label`, `onColor`, `offColor`, `showWhenOff`, `glow`, `holdSeconds`, `flashHertz`, `outline` |
 | `lapPanel` | `showBest`, `showPrevious`, `showCurrent`, `bestLabel`, `previousLabel`, `currentLabel` (headings), `showLapNumbers`, `reference` (`sessionBest` (default) / `bestLap` = best so far / `previousLap`, what the lanes compare with), `showSpeedDelta`, `showTimeDelta`, `speedDeltaRange` (± display units), `timeDeltaRange` (± s), `speedUnit`, `decimals`, `textColor`, `labelColor`, `aheadColor`, `behindColor`, `backgroundColor`, `outline` |
-| `shape` | `shape` (`rectangle`/`roundedRectangle`/`ellipse`), `fillColor`, `strokeColor`, `strokeWidth` (fraction of output height), `cornerRadius` |
+| `steeringWheel` | `channel` (empty = bound to the logger's steering channel when data loads), `degreesPerUnit` (1 = degrees, 57.3 = radians, the lock angle for a −1…1 channel), `invert`, `maxDegrees` (0 = no limit), `rimColor`, `edgeColor`, `rimWidth`, `markerColor`, `markerWidth`, `showSpokes`, `spokeColor`. The frame may extend past the picture so only the upper arc shows |
+| `shape` | `shape` (`rectangle`/`roundedRectangle`/`ellipse`), `fillColor`, `gradientEndColor` (optional: fades from `fillColor` at the top/left to this colour at the bottom/right), `gradientHorizontal`, `strokeColor`, `strokeWidth` (fraction of output height), `cornerRadius` |
 | `text` | `text`, `fontScale` (fraction of object height), `fontName`, `bold`, `color`, `backgroundColor`, `alignment`, `outlineWidth`, `outlineColor` |
 | `image` | `inputID` → an image input; `rotation`, `keepAspect`; data-driven: `rotationChannel` + `degreesPerUnit`, `opacityChannel` + `opacityScale`, `flashChannel` + `flashThreshold` + `flashHertz` (data comes from the first data input) |
 

@@ -42,7 +42,13 @@ public enum ShapeKind: String, Codable, Sendable, CaseIterable {
 
 public struct ShapeParams: Hashable, Codable, Sendable {
     public var shape: ShapeKind
+    /// The fill, or the start of the gradient (top or left) when `gradientEndColor` is set.
     public var fillColor: RGBAColor
+    /// The colour at the bottom (or right) edge; `nil` = a plain fill. A clear start fading to a
+    /// dark end makes the band track-day apps put behind their gauges.
+    public var gradientEndColor: RGBAColor?
+    /// Left to right instead of top to bottom.
+    public var gradientHorizontal: Bool
     public var strokeColor: RGBAColor
     /// Stroke width as a fraction of the output height (0 = none).
     public var strokeWidth: Double
@@ -54,13 +60,33 @@ public struct ShapeParams: Hashable, Codable, Sendable {
         fillColor: RGBAColor = .translucentBlack,
         strokeColor: RGBAColor = .white,
         strokeWidth: Double = 0,
-        cornerRadius: Double = 0.15
+        cornerRadius: Double = 0.15,
+        gradientEndColor: RGBAColor? = nil,
+        gradientHorizontal: Bool = false
     ) {
         self.shape = shape
         self.fillColor = fillColor
+        self.gradientEndColor = gradientEndColor
+        self.gradientHorizontal = gradientHorizontal
         self.strokeColor = strokeColor
         self.strokeWidth = strokeWidth
         self.cornerRadius = cornerRadius
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case shape, fillColor, strokeColor, strokeWidth, cornerRadius, gradientEndColor, gradientHorizontal
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = ShapeParams()
+        shape = try c.decodeIfPresent(ShapeKind.self, forKey: .shape) ?? d.shape
+        fillColor = try c.decodeIfPresent(RGBAColor.self, forKey: .fillColor) ?? d.fillColor
+        strokeColor = try c.decodeIfPresent(RGBAColor.self, forKey: .strokeColor) ?? d.strokeColor
+        strokeWidth = try c.decodeIfPresent(Double.self, forKey: .strokeWidth) ?? d.strokeWidth
+        cornerRadius = try c.decodeIfPresent(Double.self, forKey: .cornerRadius) ?? d.cornerRadius
+        gradientEndColor = try c.decodeIfPresent(RGBAColor.self, forKey: .gradientEndColor)
+        gradientHorizontal = try c.decodeIfPresent(Bool.self, forKey: .gradientHorizontal) ?? false
     }
 }
 
@@ -362,6 +388,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
     case scripted(ScriptedParams)
     case indicator(IndicatorParams)
     case lapPanel(LapPanelParams)
+    case steeringWheel(SteeringWheelParams)
 
     public var typeName: String {
         switch self {
@@ -383,6 +410,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .scripted: "Script"
         case .indicator: "Indicator"
         case .lapPanel: "Timing Panel"
+        case .steeringWheel: "Steering Wheel"
         }
     }
 

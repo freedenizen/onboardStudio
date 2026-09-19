@@ -42,6 +42,7 @@ struct ProjectInspector: View {
                 Text("60").tag(60.0)
             }
         }
+        OverlayOpacitySection(editor: editor)
         CameraFramingSection(editor: editor)
         GettingStartedSection(editor: editor)
         Section {
@@ -269,6 +270,8 @@ struct ObjectInspector: View {
             ScriptInspector(editor: editor, object: object, params: params)
         case .indicator(let params):
             IndicatorInspector(editor: editor, object: object, params: params)
+        case .steeringWheel(let params):
+            SteeringWheelInspector(editor: editor, object: object, params: params)
         case .lapPanel(let params):
             LapPanelInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):

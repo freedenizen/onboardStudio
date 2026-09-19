@@ -113,6 +113,8 @@ extension DisplayObject {
             case .scripted: UnitRect(x: 0.35 + stagger, y: 0.8 - stagger, width: 0.3, height: 0.12)
             case .indicator: UnitRect(x: 0.45 + stagger, y: 0.05 + stagger, width: 0.07, height: 0.1)
             case .lapPanel: UnitRect(x: 0.2, y: 0.03 + stagger, width: 0.6, height: 0.1)
+            // A wide wheel whose upper arc rises out of the bottom of a 16:9 frame.
+            case .steeringWheel: UnitRect(x: 0.22, y: 0.5, width: 0.56, height: 0.56 * 16 / 9)
             }
         return DisplayObject(label: kind.typeName, inputID: inputID, frame: frame, kind: kind)
     }
@@ -136,6 +138,7 @@ extension DisplayObject {
         ("Lap Timer", .timer(TimerParams())),
         ("Lap Counter", .lapCounter(LapCounterParams())),
         ("Timing Panel", .lapPanel(LapPanelParams())),
+        ("Steering Wheel", .steeringWheel(SteeringWheelParams())),
         (
             "Delta Bar (time)",
             .bar(

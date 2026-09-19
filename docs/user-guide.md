@@ -103,7 +103,7 @@ and column names are in [formats.md](formats.md).
 
 Speedometer, tachometer, custom gauge (the *Gauge Designer*: needle styles, sweep, ticks, colour
 zones, face images), bar/level, 2D graph (against time, distance or lap with a best-lap ghost),
-g-force plot, track map (with a second vehicle and Apple Maps imagery), gear, lap counter, timers
+g-force plot, track map (with a second vehicle and Apple Maps imagery), steering wheel, gear, lap counter, timers
 (current/last/best lap, session, project time, time of day, delta to best), a **timing panel** (best,
 previous and current lap with lap numbers plus speed-vs-best and time-vs-best lanes), **indicator
 lights** (ABS, traction/stability, brake, warning triangle or text, lit when a channel crosses a
@@ -114,6 +114,19 @@ Every object has a position and size in percent of the frame, opacity, mirror an
 Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save it as an
 `.overlaystyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse
 it on the next session.
+
+### See-through overlays
+
+Every colour in the inspectors has an opacity, every object has its own **Opacity**, and the
+project inspector's **Overlay opacity** fades all gauges, maps and readouts together. For the look
+of manufacturer track apps start from **Project ▸ Apply Template ▸ Glass Cockpit**: a band that
+fades from clear to dark behind the instruments (any **Shape** can take a *Gradient fill*), ring
+gauges with glass faces, a g-force trail, plain lap text without boxes, and a **Steering Wheel**:
+a translucent rim whose yellow top-centre marker turns with the steering angle. The wheel is meant
+to be wide and to hang below the frame so only its upper arc shows. It binds itself to your
+logger's steering channel (any channel whose name starts with "steer", or `SWA`) and picks the
+scale from its values: degrees, radians, or a −1…1 channel; **Invert direction** covers loggers
+that count a right turn as negative.
 
 ### Deltas to your best lap
 

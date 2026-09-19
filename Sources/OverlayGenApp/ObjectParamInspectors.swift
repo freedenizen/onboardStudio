@@ -49,6 +49,24 @@ struct ShapeInspector: View {
                 "Fill",
                 selection: Binding(
                     get: { Color(params.fillColor) }, set: { c in update { $0.fillColor = RGBAColor(c) } }))
+            Toggle(
+                "Gradient fill",
+                isOn: Binding(
+                    get: { params.gradientEndColor != nil },
+                    set: { on in
+                        update { $0.gradientEndColor = on ? RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.75) : nil }
+                    }))
+            if let end = params.gradientEndColor {
+                ColorPicker(
+                    "Fades to",
+                    selection: Binding(get: { Color(end) }, set: { c in update { $0.gradientEndColor = RGBAColor(c) } })
+                )
+                Toggle(
+                    "Left to right",
+                    isOn: Binding(
+                        get: { params.gradientHorizontal }, set: { v in update { $0.gradientHorizontal = v } })
+                )
+            }
             ColorPicker(
                 "Stroke",
                 selection: Binding(

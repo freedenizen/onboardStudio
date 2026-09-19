@@ -114,6 +114,7 @@ struct SidebarView: View {
         case .scripted: "curlybraces"
         case .indicator: "exclamationmark.triangle"
         case .lapPanel: "timer"
+        case .steeringWheel: "steeringwheel"
         }
     }
 }

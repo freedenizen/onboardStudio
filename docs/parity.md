@@ -41,6 +41,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Gear, Lap Counter, Timer (all modes), Text Data (formatting) | ✅ | Timer: current/last/best/session/project/time-of-day/delta-to-best |
 | Enhanced (scripted) object | ✅ | JavaScript instead of RaceRender's C-like language; RaceRender-style names shimmed |
 | Warning lights (brake / ABS / DSC "Enhanced Display" styles) | ✅ | Native **Indicator** object: ISO ABS and traction glyphs, warning triangle, round light or text; any channel + condition + threshold (templates bind to the logger's channel by name, with a suggested threshold from its range), hold time, flash, glow |
+| Translucent steering wheel and glass instruments (manufacturer track-app look) | ✅ | Native **Steering Wheel** object, gradient-filled shapes, project-wide overlay opacity, **Glass Cockpit** template |
 | Delta columns added by an external script (`speed_delta_vs_best`, `time_delta_vs_best`) | ✅ | Derived natively as `lapDelta` / `speedDelta` channels for every object, against the session's best full lap; ± **Delta Bar** templates; verified sample by sample against the user's Python script |
 | "Timing and deltas" strip (script in the user's project) | ✅ | Native **Timing Panel**: best/previous/current with editable headings and optional lap numbers, speed and time lanes against the best or the previous lap |
 | Threshold colours on readouts (water/oil script) | ✅ | Text Data warning zones |
