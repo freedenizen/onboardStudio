@@ -93,3 +93,46 @@ struct SpeedDeltaTests {
         #expect(LapComparison.speedDeltaToBest(at: 3, session: first) == nil)
     }
 }
+
+@Suite("Deltas to a reference lap")
+struct ReferenceLapTests {
+    /// 100 m laps at 10, 20 and 10 m/s, then a fourth at 15 m/s: lap 2 is the best, lap 3 the previous.
+    static func session() -> TelemetrySession {
+        let times = Array(stride(from: 0.0, through: 32.0, by: 0.5))
+        func speedAt(_ t: Double) -> Double { t < 10 ? 10 : t < 15 ? 20 : t < 25 ? 10 : 15 }
+        var distance: [Double] = []
+        var travelled = 0.0
+        for (index, t) in times.enumerated() {
+            if index > 0 { travelled += speedAt(t - 0.25) * 0.5 }
+            distance.append(travelled)
+        }
+        let laps = [
+            Lap(number: 1, start: 0, end: 10, isComplete: true), Lap(number: 2, start: 10, end: 15, isComplete: true),
+            Lap(number: 3, start: 15, end: 25, isComplete: true),
+            Lap(number: 4, start: 25, end: nil, isComplete: false),
+        ]
+        return TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [
+                Channel(role: .distance, name: "d", unit: .meters, times: times, values: distance),
+                Channel(role: .speed, name: "s", unit: .metersPerSecond, times: times, values: times.map(speedAt)),
+            ], laps: laps)
+    }
+
+    @Test func bestAndPreviousLapsAreDifferentReferences() {
+        let session = Self.session()
+        #expect(LapComparison.referenceLap(at: 27, session: session, reference: .best)?.number == 2)
+        #expect(LapComparison.referenceLap(at: 27, session: session, reference: .previous)?.number == 3)
+        // 2 s into lap 4 = 30 m. Lap 2 got there in 1.5 s (behind by 0.5), lap 3 in 3 s (ahead by 1).
+        let best = LapComparison.delta(at: 27, session: session, reference: .best)
+        let previous = LapComparison.delta(at: 27, session: session, reference: .previous)
+        #expect(best != nil && abs((best ?? 0) - 0.5) < 0.01, "best \(String(describing: best))")
+        #expect(previous != nil && abs((previous ?? 0) + 1) < 0.01, "previous \(String(describing: previous))")
+        // Speed: 15 m/s now against 20 (best) and 10 (previous) at the same spot.
+        #expect(abs((LapComparison.speedDelta(at: 27, session: session, reference: .best) ?? 0) + 5) < 0.01)
+        #expect(abs((LapComparison.speedDelta(at: 27, session: session, reference: .previous) ?? 0) - 5) < 0.01)
+        // In lap 1 there is nothing to compare with either way.
+        #expect(LapComparison.delta(at: 3, session: session, reference: .previous) == nil)
+        #expect(LapComparison.deltaToBest(at: 3, session: session) == nil)
+    }
+}

@@ -81,6 +81,11 @@ extension EditorModel {
     func addObject(_ kind: DisplayObjectKind) {
         let dataInput = project.dataInputs.first?.id
         let videoInput = project.videoInputs.first?.id
+        var kind = kind
+        if case .indicator(let params) = kind {
+            // Templates carry no logger-specific channel; bind the light to whatever this input has.
+            kind = .indicator(params.adapted(to: channelSummaries(for: dataInput)))
+        }
         let object = DisplayObject.makeDefault(
             kind: kind, inputID: kind.needsData ? dataInput : videoInput, index: project.displayObjects.count)
         edit("Add \(kind.typeName)") { $0.displayObjects.append(object) }
@@ -98,5 +103,15 @@ extension EditorModel {
 
     func moveObject(_ id: DisplayObjectID, frame: UnitRect) {
         setOverridable(id, name: "Move Object") { $0.frame = frame }
+    }
+}
+
+extension EditorModel {
+    /// Identifier, name and value range of every channel in a data input (empty until it loads).
+    func channelSummaries(for inputID: InputID?) -> [ChannelSummary] {
+        guard let inputID, let session = sessions[inputID] else { return [] }
+        return session.orderedChannels.map {
+            ChannelSummary(identifier: $0.role.identifier, name: $0.name, minValue: $0.minValue, maxValue: $0.maxValue)
+        }
     }
 }

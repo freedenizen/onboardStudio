@@ -17,6 +17,16 @@ struct IndicatorInspector: View {
                 ForEach(IndicatorCondition.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
             NumberField("Threshold", value: field(\.threshold))
+            if let summary, let low = summary.minValue, let high = summary.maxValue {
+                HStack {
+                    Text("In this file: \(fmt(low)) … \(fmt(high))").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    if let suggested = params.suggestedThreshold(for: summary) {
+                        Button("Suggest \(fmt(suggested))") { update { $0.threshold = suggested } }
+                            .font(.caption)
+                    }
+                }
+            }
             NumberField("Hold on (s)", value: field(\.holdSeconds), fractionDigits: 0...2)
             NumberField("Flash (Hz, 0 = steady)", value: field(\.flashHertz), fractionDigits: 0...1)
         }
@@ -27,11 +37,20 @@ struct IndicatorInspector: View {
             Toggle("Glow when lit", isOn: field(\.glow))
             Toggle("Black outline", isOn: field(\.outline))
             Text(
-                "ABS, traction/stability and brake lights need no script: pick the channel the logger "
-                    + "records the event on and the level that means \"active\"."
+                "ABS, traction/stability and brake lights need no script: pick the channel your logger "
+                    + "records the event on (names differ between loggers) and the level that means \"active\"."
             )
             .font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    /// What the loaded data says about the chosen channel.
+    var summary: ChannelSummary? {
+        editor.channelSummaries(for: object.inputID).first { $0.identifier == params.channel }
+    }
+
+    func fmt(_ value: Double) -> String {
+        value == value.rounded() ? String(format: "%.0f", value) : String(format: "%.2f", value)
     }
 
     func field<T>(_ keyPath: WritableKeyPath<IndicatorParams, T>) -> Binding<T> {
@@ -57,11 +76,18 @@ struct LapPanelInspector: View {
     var body: some View {
         Section("Timing Panel") {
             Toggle("Best lap", isOn: field(\.showBest))
+            if params.showBest { TextField("Heading", text: field(\.bestLabel)) }
             Toggle("Previous lap", isOn: field(\.showPrevious))
+            if params.showPrevious { TextField("Heading", text: field(\.previousLabel)) }
             Toggle("Current lap", isOn: field(\.showCurrent))
+            if params.showCurrent { TextField("Heading", text: field(\.currentLabel)) }
+            Toggle("Lap numbers", isOn: field(\.showLapNumbers))
             Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 1...3)
         }
-        Section("Deltas to the best lap") {
+        Section("Deltas") {
+            Picker("Compare with", selection: field(\.reference)) {
+                ForEach(LapReference.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
             Toggle("Speed lane", isOn: field(\.showSpeedDelta))
             if params.showSpeedDelta {
                 SpeedUnitPicker(selection: field(\.speedUnit))
@@ -72,7 +98,7 @@ struct LapPanelInspector: View {
                 NumberField("Time scale (± s)", value: field(\.timeDeltaRange), fractionDigits: 0...2)
             }
             Text(
-                "Both compare with the best completed lap at the same distance into the lap "
+                "Both lanes compare with the chosen lap at the same distance into the lap "
                     + "(needs a distance channel; GPS files get one)."
             )
             .font(.caption).foregroundStyle(.secondary)

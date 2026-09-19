@@ -108,6 +108,20 @@ Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save i
 `.overlaystyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse
 it on the next session.
 
+### Indicator lights and your logger
+
+Every logger names its ABS / stability / brake channels differently (a RaceChrono CAN export may
+put them in `analog_1` / `analog_2`, an AiM or MoTeC file in `ABS Active` or `DSC`, a switch in
+`brake_switch`). The ABS and Traction templates therefore start unbound and look through the data
+input for a channel whose name mentions ABS, DSC, TCS, ESC, ESP, traction or stability; the Brake
+template uses the `brake` channel when the file has one. When nothing matches the inspector says
+so: pick the channel yourself. Under **Threshold** the inspector shows the channel's range in this
+file ("In this file: 512 … 2800") and **Suggest** puts the threshold half way for on/off flags or
+a tenth of the way up for analogue levels behind a plain light. Any channel and any level work; the
+condition can be ≥, ≤, = or ≠.
+
+The timing panel's headings, lap numbers and comparison lap (best or previous) are settings too.
+
 ## 6. Timeline segments
 
 A segment starts at a project time and changes any object's visibility, position, size or opacity

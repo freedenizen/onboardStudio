@@ -41,22 +41,58 @@ public enum LapComparison {
         return max(0, endValue - startValue)
     }
 
-    /// Seconds the lap in progress is behind (positive) or ahead of (negative) the best completed
-    /// lap at the same distance into the lap. `nil` when there is no best lap, no distance channel,
-    /// or the car is further into the lap than the best lap went.
-    public static func deltaToBest(at time: Double, session: TelemetrySession) -> Double? {
+    /// Which completed lap a delta is measured against.
+    public enum Reference: Sendable, Equatable {
+        /// The fastest lap completed before now.
+        case best
+        /// The lap completed just before the one in progress.
+        case previous
+    }
+
+    /// The completed lap `reference` names at `time`, or `nil` when there is none yet.
+    public static func referenceLap(at time: Double, session: TelemetrySession, reference: Reference) -> Lap? {
+        let timing = LapTiming.resolve(at: time, laps: session.laps)
+        switch reference {
+        case .best:
+            return timing.bestLapNumber.flatMap { number in session.laps.first { $0.number == number } }
+        case .previous:
+            guard let current = timing.currentLap else { return nil }
+            return session.laps.last { $0.isComplete && ($0.end ?? .infinity) <= current.start }
+        }
+    }
+
+    /// The moment in the reference lap when the car was as far into it as it is into the current
+    /// lap now, with the current lap. `nil` without a distance channel, a current lap, a reference
+    /// lap, or when the car is further into the lap than the reference lap went.
+    struct Match {
+        let current: Lap
+        let reference: Lap
+        let referenceTime: Double
+    }
+
+    static func matchingMoment(at time: Double, session: TelemetrySession, reference: Reference) -> Match? {
         guard let distance = session[.distance] else { return nil }
         let timing = LapTiming.resolve(at: time, laps: session.laps)
-        guard let current = timing.currentLap, let bestNumber = timing.bestLapNumber,
-            let best = session.laps.first(where: { $0.number == bestNumber }), let bestEnd = best.end,
+        guard let current = timing.currentLap,
+            let lap = referenceLap(at: time, session: session, reference: reference), let end = lap.end,
             let into = distanceIntoLap(at: time, lap: current, distance: distance),
-            let bestStartDistance = distance.value(at: best.start)
+            let startDistance = distance.value(at: lap.start),
+            let then = Self.time(atDistance: startDistance + into, in: distance, between: lap.start, and: end)
         else { return nil }
-        guard
-            let bestTime = Self.time(
-                atDistance: bestStartDistance + into, in: distance, between: best.start, and: bestEnd)
-        else { return nil }
-        return (time - current.start) - (bestTime - best.start)
+        return Match(current: current, reference: lap, referenceTime: then)
+    }
+
+    /// Seconds the lap in progress is behind (positive) or ahead of (negative) the reference lap at
+    /// the same distance into the lap. `nil` when there is no such lap, no distance channel, or
+    /// the car is further into the lap than the reference lap went.
+    public static func delta(at time: Double, session: TelemetrySession, reference: Reference) -> Double? {
+        guard let match = matchingMoment(at: time, session: session, reference: reference) else { return nil }
+        return (time - match.current.start) - (match.referenceTime - match.reference.start)
+    }
+
+    /// `delta(at:session:reference: .best)`.
+    public static func deltaToBest(at time: Double, session: TelemetrySession) -> Double? {
+        delta(at: time, session: session, reference: .best)
     }
 }
 
@@ -90,15 +126,13 @@ extension LapComparison {
     /// Speed now minus the best completed lap's speed at the same distance into the lap (m/s;
     /// positive = faster than the best lap here). `nil` under the same conditions as `deltaToBest`.
     public static func speedDeltaToBest(at time: Double, session: TelemetrySession) -> Double? {
-        guard let distance = session[.distance], let speed = session[.speed] else { return nil }
-        let timing = LapTiming.resolve(at: time, laps: session.laps)
-        guard let current = timing.currentLap, let bestNumber = timing.bestLapNumber,
-            let best = session.laps.first(where: { $0.number == bestNumber }), let bestEnd = best.end,
-            let into = distanceIntoLap(at: time, lap: current, distance: distance),
-            let bestStartDistance = distance.value(at: best.start),
-            let bestTime = Self.time(
-                atDistance: bestStartDistance + into, in: distance, between: best.start, and: bestEnd),
-            let now = speed.value(at: time), let then = speed.value(at: bestTime)
+        speedDelta(at: time, session: session, reference: .best)
+    }
+
+    /// Speed now minus the reference lap's speed at the same distance into the lap (m/s).
+    public static func speedDelta(at time: Double, session: TelemetrySession, reference: Reference) -> Double? {
+        guard let speed = session[.speed], let match = matchingMoment(at: time, session: session, reference: reference),
+            let now = speed.value(at: time), let then = speed.value(at: match.referenceTime)
         else { return nil }
         return now - then
     }

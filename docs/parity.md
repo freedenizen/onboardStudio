@@ -40,8 +40,8 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Bar / Level, 2D Graph (vs time/distance/channel), G-Force Plot | ◐ | Graph vs time, distance and lap; no "vs arbitrary channel" x-axis |
 | Gear, Lap Counter, Timer (all modes), Text Data (formatting) | ✅ | Timer: current/last/best/session/project/time-of-day/delta-to-best |
 | Enhanced (scripted) object | ✅ | JavaScript instead of RaceRender's C-like language; RaceRender-style names shimmed |
-| Warning lights (brake / ABS / DSC "Enhanced Display" styles) | ✅ | Native **Indicator** object: ISO ABS and traction glyphs, warning triangle, round light or text; channel + threshold, hold time, flash, glow |
-| "Timing and deltas" strip (script in the user's project) | ✅ | Native **Timing Panel**: best/previous/current with lap numbers, speed-vs-best and time-vs-best lanes |
+| Warning lights (brake / ABS / DSC "Enhanced Display" styles) | ✅ | Native **Indicator** object: ISO ABS and traction glyphs, warning triangle, round light or text; any channel + condition + threshold (templates bind to the logger's channel by name, with a suggested threshold from its range), hold time, flash, glow |
+| "Timing and deltas" strip (script in the user's project) | ✅ | Native **Timing Panel**: best/previous/current with editable headings and optional lap numbers, speed and time lanes against the best or the previous lap |
 | Threshold colours on readouts (water/oil script) | ✅ | Text Data warning zones |
 
 ## Gauge Designer
