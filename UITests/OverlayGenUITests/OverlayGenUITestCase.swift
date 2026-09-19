@@ -36,8 +36,7 @@ class OverlayGenUITestCase: XCTestCase {
         app.launchArguments += extraArguments
         app.launchEnvironment["OVERLAYGEN_FIXTURES"] = Self.fixtures.path
         app.launchEnvironment["OVERLAYGEN_TEST_EXPORT_DIR"] = Self.exportDirectory.path
-        app.launch()
-        app.activate()
+        app.launch()  // the app activates itself when the editor appears (UITestSupport.editorAppeared)
         XCTAssertTrue(
             app.windows.firstMatch.waitForExistence(timeout: Self.timeout), "No window: \(app.debugDescription)")
         launched = app
