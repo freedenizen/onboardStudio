@@ -11,7 +11,10 @@ struct VideoInputInspector: View {
         Section("Clips") {
             ClipRow(name: input.source.path, index: nil, editor: editor, inputID: input.id, count: settings.clips.count)
             ForEach(Array(settings.clips.enumerated()), id: \.offset) { index, clip in
-                ClipRow(name: clip.path, index: index, editor: editor, inputID: input.id, count: settings.clips.count)
+                ClipRow(
+                    name: clip.source.path, index: index, editor: editor, inputID: input.id, count: settings.clips.count
+                )
+                ClipTrimRow(clip: clip, index: index, editor: editor, inputID: input.id)
             }
             HStack {
                 Button("Add Clips…") { editor.addClips(to: input.id) }
@@ -24,19 +27,28 @@ struct VideoInputInspector: View {
             )
             .font(.caption).foregroundStyle(.secondary)
         }
-        Section("Picture") {
+        Section("Transform") {
             Picker("Rotation", selection: field(\.rotation, name: "Rotate Picture")) {
                 Text("0°").tag(0.0)
                 Text("90°").tag(90.0)
                 Text("180°").tag(180.0)
                 Text("270°").tag(270.0)
             }
-            Toggle("Mirror horizontally", isOn: field(\.mirror.horizontal, name: "Mirror Picture"))
-            Toggle("Mirror vertically", isOn: field(\.mirror.vertical, name: "Mirror Picture"))
+            HStack {
+                Text("Flip")
+                Spacer()
+                Toggle("Horizontal", isOn: field(\.mirror.horizontal, name: "Mirror Picture")).toggleStyle(.button)
+                Toggle("Vertical", isOn: field(\.mirror.vertical, name: "Mirror Picture")).toggleStyle(.button)
+            }
+        }
+        Section("Cropping") {
             PercentSlider("Crop top", value: field(\.crop.top, name: "Crop Picture"), range: 0...0.45)
             PercentSlider("Crop bottom", value: field(\.crop.bottom, name: "Crop Picture"), range: 0...0.45)
             PercentSlider("Crop left", value: field(\.crop.left, name: "Crop Picture"), range: 0...0.45)
             PercentSlider("Crop right", value: field(\.crop.right, name: "Crop Picture"), range: 0...0.45)
+            Button("Reset crop") { update("Reset Crop") { $0.crop = .none } }.disabled(settings.crop.isEmpty)
+            Text("This video only. Zoom, position and a crop for every video are in the project settings.")
+                .font(.caption).foregroundStyle(.secondary)
         }
         Section("Colour") {
             PercentSlider("Brightness", value: field(\.color.brightness, name: "Adjust Colour"), range: 0...2)
@@ -175,6 +187,46 @@ struct ClipRow: View {
             }
         }
         .buttonStyle(.borderless)
+    }
+}
+
+/// Start/end inside one clip's file and the gap before it.
+struct ClipTrimRow: View {
+    let clip: VideoClip
+    let index: Int
+    let editor: EditorModel
+    let inputID: InputID
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("").frame(width: 14)
+            NumberField(
+                "In (s)",
+                value: Binding(
+                    get: { clip.trim.start ?? 0 },
+                    set: { v in
+                        editor.updateClip(index, in: inputID, name: "Trim Clip") { $0.trim.start = v > 0 ? v : nil }
+                    }),
+                fractionDigits: 0...2)
+            NumberField(
+                "Out (s)",
+                value: Binding(
+                    get: { clip.trim.end ?? 0 },
+                    set: { v in
+                        editor.updateClip(index, in: inputID, name: "Trim Clip") { $0.trim.end = v > 0 ? v : nil }
+                    }),
+                fractionDigits: 0...2)
+            NumberField(
+                "Gap before (s)",
+                value: Binding(
+                    get: { clip.gapBefore },
+                    set: { v in
+                        editor.updateClip(index, in: inputID, name: "Change Clip Gap") { $0.gapBefore = max(0, v) }
+                    }),
+                fractionDigits: 0...2)
+        }
+        .font(.caption)
+        .help("In/Out trim this file (0 = whole file); the gap is black before it plays.")
     }
 }
 

@@ -1,9 +1,11 @@
 import ProjectModel
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct EditorView: View {
     @State private var editor: EditorModel
     @Environment(\.undoManager) private var undoManager
+    @AppStorage("tourSeen") private var tourSeen = false
 
     init(document: ProjectDocument, fileURL: URL?) {
         _editor = State(initialValue: EditorModel(document: document, fileURL: fileURL))
@@ -25,7 +27,25 @@ struct EditorView: View {
             InspectorView(editor: editor)
                 .inspectorColumnWidth(min: 260, ideal: 300)
         }
+        .overlay { TourOverlay(editor: editor) }
         .toolbar { EditorToolbar(editor: editor) }
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            Task { @MainActor in
+                var urls: [URL] = []
+                for provider in providers {
+                    if let url = try? await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) as? URL {
+                        urls.append(url)
+                    } else if let data = try? await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier)
+                        as? Data,
+                        let url = URL(dataRepresentation: data, relativeTo: nil)
+                    {
+                        urls.append(url)
+                    }
+                }
+                editor.addDroppedFiles(urls.sorted { $0.lastPathComponent < $1.lastPathComponent })
+            }
+            return true
+        }
         .focusedSceneValue(\.editor, editor)
         .sheet(isPresented: $editor.showSyncWizard) { SyncWizardView(editor: editor) }
         .sheet(isPresented: $editor.showExport) { ExportSheet(editor: editor) }
@@ -40,6 +60,10 @@ struct EditorView: View {
         }
         .onAppear {
             editor.undoManager = undoManager
+            if !tourSeen {
+                tourSeen = true
+                editor.tourStep = 0
+            }
             if let template = PendingTemplate.shared.template, editor.project.displayObjects.isEmpty {
                 PendingTemplate.shared.template = nil
                 editor.apply(template)

@@ -34,6 +34,38 @@ struct TransportView: View {
             )
             Text(TimeParsing.lapTimeString(editor.duration)).monospacedDigit().foregroundStyle(.secondary).frame(
                 width: 80, alignment: .leading)
+            Divider().frame(height: 16)
+            Button {
+                editor.snappingEnabled.toggle()
+            } label: {
+                Image(systemName: "line.diagonal.arrow").symbolVariant(editor.snappingEnabled ? .fill : .none)
+                    .foregroundStyle(editor.snappingEnabled ? Color.accentColor : Color.secondary)
+            }
+            .help("Snapping (N): drags stick to clip edges and the playhead")
+            .keyboardShortcut("n", modifiers: [])
+            Button {
+                editor.zoomTimeline(by: 1 / 1.5)
+            } label: {
+                Image(systemName: "minus.magnifyingglass")
+            }
+            .help("Zoom out (⌘−)")
+            Slider(
+                value: Binding(get: { log2(editor.timelineZoom) }, set: { editor.timelineZoom = pow(2, $0) }), in: 0...6
+            )
+            .frame(width: 90)
+            .help("Timeline zoom")
+            Button {
+                editor.zoomTimeline(by: 1.5)
+            } label: {
+                Image(systemName: "plus.magnifyingglass")
+            }
+            .help("Zoom in (⌘=)")
+            Button {
+                editor.fitTimeline()
+            } label: {
+                Image(systemName: "arrow.left.and.right.square")
+            }
+            .help("Zoom to fit (⇧Z)").disabled(editor.timelineZoom == 1)
         }
         .buttonStyle(.borderless)
         .padding(.horizontal, 12)

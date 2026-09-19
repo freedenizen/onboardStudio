@@ -8,14 +8,25 @@ struct CameraFramingSection: View {
 
     var body: some View {
         let framing = editor.project.settings.framing
-        Section("Camera Framing (all videos)") {
-            Slider(value: binding(\.zoom), in: 1...4, step: 0.05) {
-                Text("Zoom \(String(format: "%.2f", framing.zoom))×")
+        Section("Transform (all videos)") {
+            HStack {
+                Slider(value: binding(\.zoom), in: 1...4, step: 0.05) { Text("Zoom") }
+                NumberField("", value: binding(\.zoom), fractionDigits: 2...2).frame(width: 60)
             }
-            if framing.zoom > 1 {
-                Slider(value: binding(\.centerX), in: 0...1) { Text("Pan ←→") }
-                Slider(value: binding(\.centerY), in: 0...1) { Text("Pan ↑↓") }
+            HStack {
+                Slider(value: offset(\.centerX), in: -100...100, step: 1) { Text("Position X") }
+                    .disabled(framing.zoom <= 1)
+                NumberField("", value: offset(\.centerX), fractionDigits: 0...0).frame(width: 60)
             }
+            HStack {
+                Slider(value: offset(\.centerY), in: -100...100, step: 1) { Text("Position Y") }
+                    .disabled(framing.zoom <= 1)
+                NumberField("", value: offset(\.centerY), fractionDigits: 0...0).frame(width: 60)
+            }
+            Text("Position is the offset of the zoomed window from the centre, as a percentage of the frame.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        Section("Cropping (all videos)") {
             PercentSlider("Crop top", value: binding(\.crop.top), range: 0...0.45)
             PercentSlider("Crop bottom", value: binding(\.crop.bottom), range: 0...0.45)
             PercentSlider("Crop left", value: binding(\.crop.left), range: 0...0.45)
@@ -25,6 +36,13 @@ struct CameraFramingSection: View {
             Text("Applies on top of each video's own crop, so chapters and cameras stay framed together.")
                 .font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    /// Centre 0…1 shown as −100…100 (0 = centred), like an editor's position control.
+    func offset(_ keyPath: WritableKeyPath<CameraFraming, Double>) -> Binding<Double> {
+        Binding(
+            get: { (editor.project.settings.framing[keyPath: keyPath] - 0.5) * 200 },
+            set: { value in editor.setFraming { $0[keyPath: keyPath] = min(max(value / 200 + 0.5, 0), 1) } })
     }
 
     func binding<T>(_ keyPath: WritableKeyPath<CameraFraming, T>) -> Binding<T> {

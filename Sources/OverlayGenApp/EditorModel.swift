@@ -25,6 +25,12 @@ final class EditorModel {
     var uploadURL: URL?
     var motionSyncTask: Task<Void, Never>?
     var motionSyncProgress: Double?
+    /// Timeline magnification: 1 fits the whole project, larger values scroll.
+    var timelineZoom: Double = 1
+    /// Whether drags snap to clip edges and the playhead (the magnet).
+    var snappingEnabled = true
+    /// The first-run tour's current step, `nil` when it is not showing.
+    var tourStep: Int?
     var errorMessage: String?
     var statusMessage: String?
 
@@ -86,43 +92,15 @@ final class EditorModel {
     }
 
     func addVideo() {
-        guard let url = OpenPanels.chooseVideo() else { return }
-        addVideo(at: url)
-    }
-
-    /// Adds a video input; when the file is the first chapter of a camera recording, offers to
-    /// append the following chapters as one continuous video.
-    func addVideo(at url: URL) {
-        var settings = VideoInputSettings()
-        let chapters = CameraChapters.following(url)
-        if !chapters.isEmpty, OpenPanels.confirmChapters(count: chapters.count, first: chapters[0]) {
-            settings.clips = chapters.map { MediaReference.make(for: $0, relativeTo: fileURL) }
-        }
-        let input = Input(
-            label: url.deletingPathExtension().lastPathComponent,
-            source: MediaReference.make(for: url, relativeTo: fileURL),
-            kind: .video(settings))
-        edit("Add Video") { project in
-            project.inputs.append(input)
-            if !project.displayObjects.contains(where: {
-                if case .video = $0.kind { return true } else { return false }
-            }) {
-                project.displayObjects.insert(
-                    DisplayObject.makeDefault(kind: .video(VideoObjectParams()), inputID: input.id, index: 0), at: 0)
-            }
-        }
-        selectedInputID = input.id
+        let urls = OpenPanels.chooseVideos(
+            title: "Add Video", message: "Chapters of one recording are joined into one video.")
+        guard !urls.isEmpty else { return }
+        addVideos(at: urls)
     }
 
     func addData() {
         guard let url = OpenPanels.chooseData() else { return }
-        let input = Input(
-            label: url.deletingPathExtension().lastPathComponent,
-            source: MediaReference.make(for: url, relativeTo: fileURL),
-            kind: .data(DataInputSettings()))
-        edit("Add Data") { $0.inputs.append(input) }
-        selectedInputID = input.id
-        pendingAutoSync = input.id
+        addData(at: url)
     }
 
     /// A data input added by the user that should be synced from timestamps once it has loaded.
