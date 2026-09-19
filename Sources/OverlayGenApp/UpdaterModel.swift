@@ -15,8 +15,9 @@ final class UpdaterModel {
         private let controller: SPUStandardUpdaterController
 
         init() {
+            // Under the UI tests the updater stays idle: its first-launch prompt would take key status.
             controller = SPUStandardUpdaterController(
-                startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+                startingUpdater: !UITestSupport.isActive, updaterDelegate: nil, userDriverDelegate: nil)
             canCheckForUpdates = controller.updater.canCheckForUpdates
             observeCanCheck()
         }

@@ -61,6 +61,7 @@ struct EditorView: View {
         }
         .onAppear {
             editor.undoManager = undoManager
+            UITestSupport.editorAppeared(editor)
             if !tourSeen {
                 tourSeen = true
                 editor.tourStep = 0
