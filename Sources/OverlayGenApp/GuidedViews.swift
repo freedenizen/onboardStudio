@@ -198,7 +198,8 @@ enum SampleProject {
 /// The keyboard shortcuts sheet (Help ▸ Keyboard Shortcuts).
 struct ShortcutsView: View {
     static let rows: [(String, String)] = [
-        ("⌘N / ⌘O / ⌘S", "New, open, save project"), ("⌘I", "Add video"), ("⇧⌘D", "Add data file"),
+        ("⌘N / ⌘O / ⌘S", "New, open, save project"), ("⌘I", "Add video"), ("⇧⌘I", "Add camera (new lane)"),
+        ("⇧⌘D", "Add data file"),
         ("⌘Y", "Synchronize data (wizard)"), ("⌘E", "Export video"), ("⌘K", "Add timeline segment at playhead"),
         ("Space", "Play / pause"), ("← →", "Step one frame"), ("Home", "Go to start"),
         ("Arrow keys (object selected)", "Nudge the object; ⇧ for larger steps"),

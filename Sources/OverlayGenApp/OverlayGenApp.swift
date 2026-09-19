@@ -51,9 +51,10 @@ struct OverlayGenApp: App {
 
     /// Opens a new untitled document showing the template's objects.
     func newDocument(from template: ProjectTemplate) {
-        NSDocumentController.shared.newDocument(nil)
-        // The new window's editor picks the pending template up when it appears.
+        // The new window's editor picks the pending template up when it appears, which can happen
+        // inside newDocument, so hand it over first.
         PendingTemplate.shared.template = template
+        NSDocumentController.shared.newDocument(nil)
     }
 }
 
@@ -90,6 +91,7 @@ struct EditorCommands: Commands {
         }
         CommandMenu("Project") {
             Button("Add Video…") { editor?.addVideo() }.keyboardShortcut("i", modifiers: [.command])
+            Button("Add Camera…") { editor?.addCamera() }.keyboardShortcut("i", modifiers: [.command, .shift])
             Button("Add Data File…") { editor?.addData() }.keyboardShortcut("d", modifiers: [.command, .shift])
             Divider()
             Menu("Add Display Object") {

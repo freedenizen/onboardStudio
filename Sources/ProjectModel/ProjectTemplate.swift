@@ -91,7 +91,8 @@ public struct ProjectTemplate: Hashable, Codable, Sendable {
 
     /// Replaces the project's objects, timeline, output settings and export settings with the
     /// template's, binding video objects to the project's video inputs in order and data objects
-    /// to its first data input. Video objects with no matching input are dropped.
+    /// to its first data input. Objects with no matching input yet stay unbound and pick up the
+    /// next input added (`Project.bindOrphanObjects`).
     public func apply(to project: inout Project) {
         let videoInputs = project.videoInputs.map(\.id)
         let dataInput = project.dataInputs.first?.id
@@ -101,8 +102,7 @@ public struct ProjectTemplate: Hashable, Codable, Sendable {
             if case .video = object.kind {
                 let ordinal = videoOrdinals[object.id] ?? nextVideo
                 nextVideo = max(nextVideo, ordinal + 1)
-                guard ordinal < videoInputs.count else { continue }
-                object.inputID = videoInputs[ordinal]
+                object.inputID = ordinal < videoInputs.count ? videoInputs[ordinal] : nil
             } else if object.kind.needsData {
                 object.inputID = dataInput
             } else {

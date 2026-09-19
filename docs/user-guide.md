@@ -9,11 +9,16 @@ and, ideally, a data log.
 
 1. **Launch OverlayGen.** A new, empty project opens with a welcome panel and, the first time, a
    three-step tour (**Help ▸ Take the Tour** repeats it). Files can be dropped anywhere in the window. (**File ▸ New from
-   Template** starts with gauges already laid out; **Help ▸ Open the Sample Project** opens a
+   Template** starts with gauges already laid out, which attach themselves to the video and data
+   files you add next; **Help ▸ Open the Sample Project** opens a
    short clip with a synthetic log if you just want to poke around.)
 2. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
-   a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) OverlayGen offers to add the following
-   chapters so they play as one continuous video.
+   a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) OverlayGen joins the following chapters
+   so they play as one continuous video. Add a second recording the same way and it follows the
+   first on the same lane, with the pause between the two recordings kept as a gap (read from the
+   camera's clock) so one data log stays lined up across both. A file that is already in the
+   project is not added twice. For a second camera to show picture-in-picture use **Project ▸ Add
+   Camera…** (**⇧⌘I**), which opens a new lane.
 3. **Add the data.** Either **Add Data File…** (**⇧⌘D**) with a RaceChrono export, GPX, FIT, CSV
    or similar, or, for a GoPro clip, select the video and press **Use Embedded GPS** to use the
    GPS, accelerometer and gyro the camera recorded. A DJI or Garmin log next to the clip appears as
@@ -60,7 +65,8 @@ the list; **Start at 0** resets its offset; the arrow buttons reorder inputs.
 
 **Clip sequences.** The *Clips* section lists the files that make up one continuous video: the
 recording's chapters, or any files you want played back to back. Chapters are joined silently
-when you add or drop the first one (the status line says so; undo or remove a clip to split it),
+when you add or drop the first one, and further recordings added with **Add Video** join the
+sequence too (the status line says so; undo or remove a clip to split it),
 **Add Clips…** appends files, **Add Following Chapters** finds the camera's numbered
 continuations, and the arrows reorder. Each clip has its own *In* and *Out* trim (seconds inside
 that file; 0 = whole file), a *Gap before* it (black) and a *Speed* (2 = twice as fast, on top of

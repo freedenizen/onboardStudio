@@ -5,6 +5,15 @@ import ProjectModel
 // MARK: - Clip sequences, arrangement and framing (M15)
 
 extension EditorModel {
+    /// A new camera on its own lane, whatever the project already holds.
+    func addCamera() {
+        let urls = OpenPanels.chooseVideos(
+            title: "Add Camera",
+            message: "Choose the recording of another camera; it gets its own lane and a picture-in-picture window.")
+        guard !urls.isEmpty else { return }
+        addVideos(at: urls, asCamera: true)
+    }
+
     /// Appends files to a video input's clip sequence.
     func addClips(to inputID: InputID) {
         let urls = OpenPanels.chooseVideos()
