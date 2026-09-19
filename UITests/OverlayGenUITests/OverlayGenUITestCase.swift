@@ -25,13 +25,15 @@ class OverlayGenUITestCase: XCTestCase {
 
     /// Launches the app on an empty document. `tourSeen: false` shows the first-run tour.
     @discardableResult
-    func launch(tourSeen: Bool = true, extraArguments: [String] = []) -> XCUIApplication {
+    func launch(tourSeen: Bool = true, launcher: Bool = false, extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
             "-ApplePersistenceIgnoreState", "YES", "-NSShowAppCentricOpenPanelInsteadOfUntitledFile", "NO",
             "-tourSeen", tourSeen ? "YES" : "NO", "-uiTesting", "YES", "-showGettingStarted", "YES",
             // Sparkle's first-launch "Check for updates automatically?" prompt would take key status.
             "-SUEnableAutomaticChecks", "NO", "-SUHasLaunchedBefore", "YES",
+            // Most journeys start on a blank project; the launcher tests ask for the welcome window.
+            "-skipLauncher", launcher ? "NO" : "YES", "-showLauncherAtLaunch", "YES",
         ]
         app.launchArguments += extraArguments
         app.launchEnvironment["OVERLAYGEN_FIXTURES"] = Self.fixtures.path

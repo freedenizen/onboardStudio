@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct EditorView: View {
     @State private var editor: EditorModel
     @Environment(\.undoManager) private var undoManager
+    @Environment(\.dismissWindow) private var dismissWindow
     @AppStorage("tourSeen") private var tourSeen = false
 
     init(document: ProjectDocument, fileURL: URL?) {
@@ -65,6 +66,7 @@ struct EditorView: View {
         }
         .onAppear {
             editor.undoManager = undoManager
+            dismissWindow(id: "launcher")  // a project is open; the welcome window has done its job
             UITestSupport.editorAppeared(editor)
             if !tourSeen {
                 tourSeen = true
