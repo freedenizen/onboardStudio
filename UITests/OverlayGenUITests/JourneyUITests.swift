@@ -45,7 +45,17 @@ final class JourneyUITests: OverlayGenUITestCase {
             moved = XCTWaiter().wait(for: [advanced], timeout: 6) == .completed
         }
         XCTAssertTrue(moved, "Playback advanced the playhead")
-        if play.label == "Pause" { play.click() }
+        // Pausing cannot trust the button's label: the 3 s clip can run out while XCTest reads it, and
+        // clicking a stale “Pause” restarts playback from the start rather than stopping it. Click only
+        // while the playhead is seen to move, which converges on a genuinely stopped transport.
+        var stopped = false
+        for _ in 0..<6 where !stopped {
+            let showing = (transportTime.value as? String) ?? ""
+            let moving = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "value != %@", showing), object: transportTime)
+            if XCTWaiter().wait(for: [moving], timeout: 1) == .completed { play.click() } else { stopped = true }
+        }
+        XCTAssertTrue(stopped, "Playback stopped")
         app.buttons["transport.start"].click()
         expect(transportTime, toRead: "0:00.00")
         app.buttons["transport.stepForward"].click()
