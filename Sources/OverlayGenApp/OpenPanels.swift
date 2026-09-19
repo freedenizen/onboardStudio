@@ -85,6 +85,9 @@ enum OpenPanels {
     }
 
     static func chooseExportDestination(suggestedName: String, fileExtension: String = "mp4") -> URL? {
+        if let directory = UITestSupport.exportDirectory {
+            return directory.appending(path: suggestedName).appendingPathExtension(fileExtension)
+        }
         let panel = NSSavePanel()
         panel.title = "Export Video"
         panel.allowedContentTypes = [fileExtension == "mov" ? .quickTimeMovie : .mpeg4Movie]

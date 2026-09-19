@@ -8,7 +8,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.16.2"
+    MARKETING_VERSION: "0.16.3"
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
@@ -96,12 +96,32 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+  OverlayGenUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: UITests/OverlayGenUITests
+    dependencies:
+      - target: OverlayGen
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.freedenizen.overlaygen.uitests
+        TEST_TARGET_NAME: OverlayGen
+        GENERATE_INFOPLIST_FILE: YES
+        ENABLE_HARDENED_RUNTIME: NO
 schemes:
   OverlayGen:
     build:
       targets:
         OverlayGen: all
+        OverlayGenUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - OverlayGenUITests
+      environmentVariables:
+        OVERLAYGEN_FIXTURES: $(SRCROOT)/Tests/Fixtures
     archive:
       config: Release

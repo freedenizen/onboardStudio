@@ -38,7 +38,8 @@ struct SyncWizardView: View {
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("Apply") { apply() }.keyboardShortcut(.defaultAction).disabled(dataInputID == nil)
+                Button("Apply") { apply() }.keyboardShortcut(.defaultAction).accessibilityIdentifier("sync.apply")
+                    .disabled(dataInputID == nil)
             }
         }
         .padding(24)

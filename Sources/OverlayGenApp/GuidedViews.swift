@@ -124,6 +124,7 @@ struct WelcomeOverlay: View {
         VStack(spacing: 18) {
             Image(systemName: "gauge.with.dots.needle.67percent").font(.system(size: 56)).foregroundStyle(.secondary)
             Text("Turn a lap video and its data into an overlay video").font(.title2)
+                .accessibilityIdentifier("welcome.title")
             Text(
                 "Add the video, add the data log (or use the GoPro's own GPS), then place gauges and export."
             )
@@ -135,6 +136,7 @@ struct WelcomeOverlay: View {
                     Label("Add Video…", systemImage: "video.badge.plus")
                 }
                 .buttonStyle(.borderedProminent).controlSize(.large)
+                .accessibilityIdentifier("welcome.addVideo")
                 Button {
                     SampleProject.open()
                 } label: {
