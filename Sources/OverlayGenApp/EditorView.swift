@@ -64,7 +64,9 @@ struct EditorView: View {
                 tourSeen = true
                 editor.tourStep = 0
             }
-            if let template = PendingTemplate.shared.template, editor.project.displayObjects.isEmpty {
+            if let template = PendingTemplate.shared.template, editor.project.displayObjects.isEmpty,
+                editor.project.inputs.isEmpty
+            {
                 PendingTemplate.shared.template = nil
                 editor.apply(template)
             }

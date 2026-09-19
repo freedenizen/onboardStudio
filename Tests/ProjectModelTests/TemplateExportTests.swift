@@ -54,17 +54,22 @@ struct TemplateExportTests {
         #expect(decoded == template)
         #expect(decoded.videoOrdinals.count == 2)
 
-        // Applying to a project with one camera and one data file: PiP is dropped, the rest rebinds.
+        // Applying to a project with one camera and one data file: PiP waits unbound, the rest rebinds.
         let newCam = Input(label: "X", source: MediaReference(path: "x.mp4"), kind: .video(VideoInputSettings()))
         let newData = Input(label: "Y", source: MediaReference(path: "y.csv"), kind: .data(DataInputSettings()))
         var target = Project(inputs: [newData, newCam])
         decoded.apply(to: &target)
-        #expect(target.displayObjects.map(\.label) == ["Main", "Speed", "Logo"])
+        #expect(target.displayObjects.map(\.label) == ["Main", "PiP", "Speed", "Logo"])
         #expect(target.displayObjects[0].inputID == newCam.id)
-        #expect(target.displayObjects[1].inputID == newData.id)
-        #expect(target.displayObjects[2].inputID == nil)
+        #expect(target.displayObjects[1].inputID == nil)
+        #expect(target.displayObjects[2].inputID == newData.id)
+        #expect(target.displayObjects[3].inputID == nil)
         #expect(target.settings.outputWidth == 1280 && target.export == .hd720)
-        #expect(target.timeline.segments.count == 1 && target.timeline.segments[0].overrides.isEmpty)
+        #expect(target.timeline.segments.count == 1 && target.timeline.segments[0].overrides.count == 1)
+        // The PiP binds as soon as a second camera arrives.
+        target.inputs.append(camB)
+        target.bindOrphanObjects()
+        #expect(target.displayObjects[1].inputID == camB.id)
 
         // With two cameras the PiP comes back on the second one.
         var two = Project(inputs: [newCam, newData, camB])
@@ -91,7 +96,8 @@ struct TemplateExportTests {
             for object in project.displayObjects where object.kind.needsData {
                 #expect(object.inputID == data.id, "\(template.name): \(object.label)")
             }
-            #expect(template.makeProject().videoObjects.isEmpty)  // no inputs to bind to
+            let unbound = template.makeProject().videoObjects  // no inputs to bind to yet
+            #expect(unbound.count == 1 && unbound[0].inputID == nil, Comment(rawValue: template.name))
         }
         #expect(Set(ProjectTemplate.builtIn.map(\.name)).count == ProjectTemplate.builtIn.count)
     }

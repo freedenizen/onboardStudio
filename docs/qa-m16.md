@@ -22,3 +22,20 @@
 - **Chapters and drops**: GX020037 loads as a clip of GX010037 (summed 1427.95 s). Drag-and-drop from the Finder and the silent join on Add Video go through system drag/open panels the scripted QA cannot drive; they are covered by `CameraChapters.group` tests and code review.
 - **Per-clip fields**: In/Out/Gap appear under each clip in *Clips*; `ClipEditingTests` verify the composition (gap renders black, trims map to the right file seconds) and that a rotated chapter keeps its own orientation.
 - **Transform (all videos)**: Zoom with a number field, Position X/Y as −100…100 offsets (disabled at zoom 1), Cropping in its own section with Reset, mirroring Resolve's Inspector layout.
+
+## 0.16.2 follow-up: New from Template, then two videos and the data
+
+| # | Step | Expected |
+|---|---|---|
+| A | **File ▸ New from Template ▸ Classic Dash** | The new window lists Camera, Speed, RPM, Map, G, Lap, Best, Gear (unbound until inputs arrive; nothing renders yet) |
+| B | **Add Video…** with the first chapter of a recording, then **Add Video…** with its second chapter | The second add is refused with "…is already part of…" in the status line; the lane shows one bar with both chapters |
+| C | **Add Video…** with the next recording of the same camera | It joins the same lane after the first (the status line says so); a moment later the status line reports the gap set from the camera clock and the Clips section shows it in *Gap before* |
+| D | **Add Data File…** | The template's gauges bind to the log and render; the timing sync runs as usual |
+| E | **Project ▸ Add Camera…** with a file from another camera | A new lane and a picture-in-picture window bottom-right |
+
+Results (0.16.2): step A verified in the app (File ▸ New from Template ▸ Classic Dash lists Camera, Speed, RPM, Map,
+G, Lap, Best and Gear on the new Untitled document; before the fix the template was handed over after the window had
+already appeared). Steps B–E go through open panels, which the scripted run cannot drive; `InputPlanningTests` and
+`RecordingGapsTests` cover their model logic, and on the Sonoma files
+`GX010030 → GX020030` (chapters) measured a pause under 2 s and `GX010030 → GX010031` (separate recordings) a
+pause of minutes, so the lane gets a gap only between recordings.

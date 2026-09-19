@@ -52,7 +52,10 @@ extension EditorModel {
         } else {
             return
         }
-        edit("Use Camera Telemetry") { $0.inputs.append(input) }
+        edit("Use Camera Telemetry") { project in
+            project.inputs.append(input)
+            project.bindOrphanObjects()
+        }
         selectedInputID = input.id
         selectedObjectID = nil
         statusMessage = "Added the telemetry recorded with \(video.label)."

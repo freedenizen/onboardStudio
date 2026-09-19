@@ -49,7 +49,7 @@ public enum CameraChapters {
     }
 
     /// The chapter file that would precede `url`, when the name says it is not the first.
-    static func previousChapter(of url: URL) -> URL? {
+    public static func previousChapter(of url: URL) -> URL? {
         let name = url.deletingPathExtension().lastPathComponent
         let ext = url.pathExtension
         let directory = url.deletingLastPathComponent()
