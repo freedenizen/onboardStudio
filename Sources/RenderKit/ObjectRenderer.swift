@@ -48,9 +48,15 @@ enum ChannelValue {
         ChannelRole(identifier: identifier)
     }
 
+    /// Speeds and speed differences are stored in m/s and shown in the object's speed unit.
+    static func isSpeed(_ identifier: String) -> Bool {
+        let role = role(identifier)
+        return role == .speed || role == .speedDelta
+    }
+
     /// Value of `identifier` in the sample, converted for display when it is a speed.
     static func display(_ identifier: String, in sample: TelemetrySample?, speedUnit: SpeedDisplayUnit) -> Double? {
         guard let role = role(identifier), let value = sample?[role] else { return nil }
-        return role == .speed ? value * speedUnit.factorFromMetersPerSecond : value
+        return isSpeed(identifier) ? value * speedUnit.factorFromMetersPerSecond : value
     }
 }

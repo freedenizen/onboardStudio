@@ -100,6 +100,9 @@ public enum SessionBuilder {
         } else {
             session.laps = deriveLaps(table: table, session: session)
         }
+        // Pit-lane fragments cannot be the best lap, and every object can read the deltas to it.
+        session.laps = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
+        for channel in LapDeltas.channels(for: session) { session.add(channel) }
         return session
     }
 

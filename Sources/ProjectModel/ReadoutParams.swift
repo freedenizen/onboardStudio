@@ -28,6 +28,9 @@ public struct BarParams: Hashable, Codable, Sendable {
     public var unitLabel: String
     /// Corner radius as a fraction of the bar thickness.
     public var cornerRadius: Double
+    /// Fill from zero towards the value instead of from the minimum: a ± bar for deltas, steering
+    /// or lateral g. Needs a range that spans zero.
+    public var fillFromZero: Bool
 
     public init(
         channel: String,
@@ -45,7 +48,8 @@ public struct BarParams: Hashable, Codable, Sendable {
         decimals: Int = 0,
         speedUnit: SpeedDisplayUnit = .mph,
         unitLabel: String = "",
-        cornerRadius: Double = 0.25
+        cornerRadius: Double = 0.25,
+        fillFromZero: Bool = false
     ) {
         self.channel = channel
         self.label = label
@@ -63,6 +67,7 @@ public struct BarParams: Hashable, Codable, Sendable {
         self.speedUnit = speedUnit
         self.unitLabel = unitLabel
         self.cornerRadius = cornerRadius
+        self.fillFromZero = fillFromZero
     }
 
     public init(from decoder: any Decoder) throws {
@@ -84,6 +89,7 @@ public struct BarParams: Hashable, Codable, Sendable {
         speedUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .speedUnit) ?? d.speedUnit
         unitLabel = try c.decodeIfPresent(String.self, forKey: .unitLabel) ?? d.unitLabel
         cornerRadius = try c.decodeIfPresent(Double.self, forKey: .cornerRadius) ?? d.cornerRadius
+        fillFromZero = try c.decodeIfPresent(Bool.self, forKey: .fillFromZero) ?? d.fillFromZero
     }
 }
 

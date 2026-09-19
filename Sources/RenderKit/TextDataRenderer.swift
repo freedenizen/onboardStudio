@@ -32,7 +32,7 @@ public struct TextDataRenderer: OverlayDrawing {
             cg.fillRoundedRect(rect, radius: rect.height * 0.15, color: params.backgroundColor.cgColor)
         }
         let raw = ChannelValue.display(params.channel, in: context.sample(at: time), speedUnit: params.speedUnit)
-        let unit = ChannelValue.role(params.channel) == .speed ? params.speedUnit.rawValue : params.unitLabel
+        let unit = ChannelValue.isSpeed(params.channel) ? params.speedUnit.rawValue : params.unitLabel
         let text = valueText(for: raw)
         let padding = rect.height * 0.12
         let labelStyle = TextDrawing.Style(pointSize: rect.height * params.labelScale, color: params.textColor)

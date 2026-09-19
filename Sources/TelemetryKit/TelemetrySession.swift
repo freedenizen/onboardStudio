@@ -76,7 +76,8 @@ public struct TelemetrySession: Sendable {
 
     private static let standardOrder: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .speed, .heading, .distance, .lap,
-        .longitudinalG, .lateralG, .rpm, .gear, .throttle, .brake, .accuracy, .gpsUpdate, .gpsDelay,
+        .longitudinalG, .lateralG, .rpm, .gear, .throttle, .brake, .lapDelta, .speedDelta, .accuracy, .gpsUpdate,
+        .gpsDelay,
     ]
 
     private static func sortKey(_ role: ChannelRole) -> String {

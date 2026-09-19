@@ -136,3 +136,58 @@ struct ReferenceLapTests {
         #expect(LapComparison.deltaToBest(at: 3, session: session) == nil)
     }
 }
+
+@Suite("Lap delta channels")
+struct LapDeltaChannelTests {
+    @Test func channelsCompareEveryLapWithTheSessionBest() throws {
+        // 100 m laps at 10, 20 (the best), 10 and then 15 m/s.
+        let session = ReferenceLapTests.session()
+        #expect(LapDeltas.sessionBest(in: session)?.number == 2)
+        let channels = LapDeltas.channels(for: session)
+        let delta = try #require(channels.first { $0.role == .lapDelta })
+        let speed = try #require(channels.first { $0.role == .speedDelta })
+        // Lap 1 already has a delta: 50 m in took 5 s, the best lap needed 2.5 s.
+        #expect(abs((delta.value(at: 5) ?? 0) - 2.5) < 0.01)
+        #expect(abs((speed.value(at: 5) ?? 0) + 10) < 0.01)
+        // The best lap reads zero against itself.
+        #expect(abs(delta.value(at: 12) ?? 1) < 0.001)
+        #expect(abs(speed.value(at: 12) ?? 1) < 0.001)
+        // Lap 4 (in progress, 15 m/s): 30 m in after 2 s, the best lap needed 1.5 s.
+        #expect(abs((delta.value(at: 27) ?? 0) - 0.5) < 0.01)
+        #expect(abs((speed.value(at: 27) ?? 0) + 5) < 0.01)
+        // The timer's session-best reference agrees with the channel.
+        let viaComparison = LapComparison.delta(at: 27, session: session, reference: .sessionBest)
+        #expect(abs((viaComparison ?? 0) - 0.5) < 0.01)
+        // In lap 1 "best so far" has nothing to compare with, the session best does.
+        #expect(LapComparison.delta(at: 5, session: session, reference: .best) == nil)
+        #expect(LapComparison.delta(at: 5, session: session, reference: .sessionBest) != nil)
+    }
+
+    @Test func aShortFragmentCannotBeTheBestLap() {
+        // A 3 s "lap" of 30 m (pit-lane crossing) between two 100 m laps.
+        let times = Array(stride(from: 0.0, through: 30.0, by: 0.5))
+        let distance = times.map { $0 * 10 }
+        let laps = [
+            Lap(number: 1, start: 0, end: 10, isComplete: true), Lap(number: 2, start: 10, end: 13, isComplete: true),
+            Lap(number: 3, start: 13, end: 23, isComplete: true),
+            Lap(number: 4, start: 23, end: nil, isComplete: false),
+        ]
+        let session = TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [Channel(role: .distance, name: "d", unit: .meters, times: times, values: distance)], laps: laps)
+        let demoted = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
+        #expect(demoted.map(\.isComplete) == [true, false, true, false])
+        #expect(LapDeltas.sessionBest(in: session)?.number == 1)
+        // Without a distance channel nothing can be judged, so nothing changes.
+        #expect(LapDeltas.demotingShortLaps(laps, distance: nil) == laps)
+        // No speed channel: only the time delta is produced.
+        #expect(LapDeltas.channels(for: session).map(\.role) == [.lapDelta])
+    }
+
+    @Test func sessionsWithoutLapsOrDistanceProduceNoChannels() {
+        let empty = TelemetrySession(info: SessionInfo(sourceFormat: "test"), channels: [])
+        #expect(LapDeltas.channels(for: empty).isEmpty)
+        #expect(ChannelRole(identifier: "lapDelta") == .lapDelta)
+        #expect(ChannelRole(identifier: "speedDelta") == .speedDelta)
+    }
+}

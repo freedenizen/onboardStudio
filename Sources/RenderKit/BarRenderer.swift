@@ -41,11 +41,15 @@ public struct BarRenderer: OverlayDrawing {
     /// Caption and value share the object with the bar: on the leading edge of a horizontal bar,
     /// below a vertical one. The font shrinks so the text always fits.
     func layout(in rect: CGRect, value: Double?) -> (bar: CGRect, caption: Caption?) {
-        let unit = ChannelValue.role(params.channel) == .speed ? params.speedUnit.rawValue : params.unitLabel
+        let unit = ChannelValue.isSpeed(params.channel) ? params.speedUnit.rawValue : params.unitLabel
         var pieces: [String] = []
         if !params.label.isEmpty { pieces.append(params.label) }
         if params.showValue {
-            let valueText = value.map { ValueFormatting.format($0, decimals: params.decimals) } ?? "--"
+            var valueText = value.map { ValueFormatting.format($0, decimals: params.decimals) } ?? "--"
+            // A ± bar reads as a difference, so positive values carry their sign too.
+            if params.fillFromZero, let value, value > 0, !valueText.hasPrefix("+"), Double(valueText) != 0 {
+                valueText = "+" + valueText
+            }
             pieces.append(unit.isEmpty ? valueText : "\(valueText) \(unit)")
         }
         let text = pieces.joined(separator: " ")
@@ -98,6 +102,11 @@ public struct BarRenderer: OverlayDrawing {
         let horizontal = params.orientation == .horizontal
         // NaN from a corrupt file must not reach Int() below.
         let fraction = value.map { $0.isFinite ? min(max(($0 - params.minValue) / span, 0), 1) : 0 } ?? 0
+        // A ± bar grows from where zero sits on the scale, in either direction.
+        let bipolar = params.fillFromZero && params.minValue < 0 && params.maxValue > 0
+        let zero = bipolar ? min(max(-params.minValue / span, 0), 1) : 0
+        let from = min(zero, fraction)
+        let to = max(zero, fraction)
         var fill = params.fillColor
         if params.zoneColorsFill, let value, let zone = params.zones.zone(containing: value) {
             fill = zone.color
@@ -106,26 +115,37 @@ public struct BarRenderer: OverlayDrawing {
             let thickness = horizontal ? bar.height : bar.width
             let gap = thickness * 0.15
             let count = params.segments
-            let lit = Int((fraction * Double(count)).rounded(.down))
+            let firstLit = Int((from * Double(count)).rounded(bipolar ? .toNearestOrAwayFromZero : .down))
+            let lit = Int((to * Double(count)).rounded(bipolar ? .toNearestOrAwayFromZero : .down))
             for index in 0..<count {
                 var segment = subrect(
                     of: bar, from: Double(index) / Double(count), to: Double(index + 1) / Double(count),
                     horizontal: horizontal)
                 segment = horizontal ? segment.insetBy(dx: gap / 2, dy: 0) : segment.insetBy(dx: 0, dy: gap / 2)
                 var color = fill
-                if index >= lit { color.alpha *= 0.2 }
+                if index >= lit || index < firstLit { color.alpha *= 0.2 }
                 cg.setFillColor(color.cgColor)
                 cg.addPath(
                     CGPath(roundedRect: segment, cornerWidth: radius / 2, cornerHeight: radius / 2, transform: nil))
                 cg.fillPath()
             }
-        } else if fraction > 0 {
+        } else if to > from {
             cg.setFillColor(fill.cgColor)
             cg.saveGState()
             cg.addPath(CGPath(roundedRect: bar, cornerWidth: radius, cornerHeight: radius, transform: nil))
             cg.clip()
-            cg.fill(subrect(of: bar, from: 0, to: fraction, horizontal: horizontal))
+            cg.fill(subrect(of: bar, from: from, to: to, horizontal: horizontal))
             cg.restoreGState()
+        }
+        if bipolar {
+            // The zero mark, so a small delta still reads as ahead or behind.
+            cg.setFillColor(params.textColor.cgColor)
+            let mark = subrect(of: bar, from: zero, to: zero, horizontal: horizontal)
+            let thickness = max(1, (horizontal ? bar.height : bar.width) * 0.06)
+            cg.fill(
+                horizontal
+                    ? CGRect(x: mark.minX - thickness / 2, y: bar.minY, width: thickness, height: bar.height)
+                    : CGRect(x: bar.minX, y: mark.minY - thickness / 2, width: bar.width, height: thickness))
         }
     }
 

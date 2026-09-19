@@ -43,7 +43,9 @@ public enum LapComparison {
 
     /// Which completed lap a delta is measured against.
     public enum Reference: Sendable, Equatable {
-        /// The fastest lap completed before now.
+        /// The fastest full lap of the whole session, known from the first lap on.
+        case sessionBest
+        /// The fastest lap completed before now (what a live lap timer shows).
         case best
         /// The lap completed just before the one in progress.
         case previous
@@ -53,6 +55,8 @@ public enum LapComparison {
     public static func referenceLap(at time: Double, session: TelemetrySession, reference: Reference) -> Lap? {
         let timing = LapTiming.resolve(at: time, laps: session.laps)
         switch reference {
+        case .sessionBest:
+            return LapDeltas.sessionBest(in: session)
         case .best:
             return timing.bestLapNumber.flatMap { number in session.laps.first { $0.number == number } }
         case .previous:
