@@ -74,6 +74,7 @@ before tagging a release.
 | M14 performance/hardening | `overlaygen bench [--export]`; `LongSessionTests` (two-hour 20 Hz session, memory flat, frames quick), fuzz suites (`ImporterFuzzTests`, `GPMFFuzzTests`, `ExpressionFuzzTests`, `SphericalFuzzTests`) with fixed seeds; `docs/parity.md` | 4K HEVC export faster than real time on Apple silicon; resident memory flat over a long export; no importer crashes on mutated files |
 | M15 guided experience / video editing | `docs/qa-m15.md`; `VideoEditingModelTests` (crop composition, zoom window, decoding defaults, chapter naming), `ClipSequenceTests` (clips play back to back in one track; trim and speed cover the sequence) | A new project explains itself; GoPro chapters join as one video; the video lane moves and chains clips; camera framing reframes every video at once |
 | M16 timeline editing | `docs/qa-m16.md`; `ClipModelTests` (both clip forms decode, chapter grouping, snapping), `ClipEditingTests` (per-clip trim and gap shape the track and render black gaps; a rotated chapter keeps its orientation end to end) | Dragging a bar's edge trims it; the magnet snaps to edges and the playhead; ⌘= zooms the timeline; dropped GoPro chapters become one input |
+| M17 viewer pan / clip speed / overview | `docs/qa-m17.md`; `ClipSpeedTests` (a double-speed clip takes half the sequence and shows the right frame; speed decodes) | Dragging the zoomed picture pans it; a clip's Speed field shortens the bar; the overview strip scrolls the zoomed timeline |
 
 ## Release smoke test
 

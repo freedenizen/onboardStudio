@@ -127,7 +127,7 @@ public enum ProjectCompiler {
             let playable = try await FFmpegBridge.prepare(clipURL)
             let full = try await MediaProbe.probe(playable).duration
             let played = min(clip.trim.end ?? full, full) - min(max(clip.trim.start ?? 0, 0), full)
-            duration += max(0, clip.gapBefore) + max(0, played)
+            duration += max(0, clip.gapBefore) + clip.sequenceDuration(played: played)
             urls.append(playable)
         }
         return (urls, duration)
@@ -251,7 +251,7 @@ public enum ProjectCompiler {
                     clips: settings.clips.enumerated().map { index, clip in
                         ClipSpec(
                             url: loaded.clipURLs[input.id]?[index] ?? loaded.location.resolve(clip.source),
-                            trim: clip.trim, gapBefore: clip.gapBefore)
+                            trim: clip.trim, gapBefore: clip.gapBefore, speed: clip.speed)
                     },
                     sync: input.sync, trim: settings.trim, frame: .full, includeAudio: settings.includeAudio,
                     audio: settings.audio))

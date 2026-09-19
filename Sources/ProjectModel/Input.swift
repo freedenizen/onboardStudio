@@ -20,15 +20,22 @@ public struct VideoClip: Hashable, Codable, Sendable {
     public var trim: TrimRange
     /// Seconds of black before the clip starts (0 = back to back with the previous one).
     public var gapBefore: Double
+    /// Playback speed of this clip alone (1 = as recorded; 2 = twice as fast), multiplied with
+    /// the input's own play speed.
+    public var speed: Double
 
-    public init(source: MediaReference, trim: TrimRange = .none, gapBefore: Double = 0) {
+    public init(source: MediaReference, trim: TrimRange = .none, gapBefore: Double = 0, speed: Double = 1) {
         self.source = source
         self.trim = trim
         self.gapBefore = gapBefore
+        self.speed = speed
     }
 
+    /// Seconds this clip occupies on the sequence axis when its file plays `played` seconds.
+    public func sequenceDuration(played: Double) -> Double { max(0, played) / max(speed, 0.01) }
+
     private enum CodingKeys: String, CodingKey {
-        case source, trim, gapBefore
+        case source, trim, gapBefore, speed
     }
 
     /// Accepts both the M15 form (`{ "path": … }`) and the full form.
@@ -37,10 +44,12 @@ public struct VideoClip: Hashable, Codable, Sendable {
             source = try c.decode(MediaReference.self, forKey: .source)
             trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
             gapBefore = try c.decodeIfPresent(Double.self, forKey: .gapBefore) ?? 0
+            speed = try c.decodeIfPresent(Double.self, forKey: .speed) ?? 1
         } else {
             source = try MediaReference(from: decoder)
             trim = .none
             gapBefore = 0
+            speed = 1
         }
     }
 }

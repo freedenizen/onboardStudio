@@ -276,3 +276,46 @@ struct ClipEditingTests {
         #expect(agree >= 4, "\(agree) of 5 probes match the rotated clip played alone")
     }
 }
+
+@Suite("Clip speed", .serialized)
+struct ClipSpeedTests {
+    @Test func aFastClipTakesLessOfTheSequence() async throws {
+        let clip = try MediaFixtures.video
+        // 3 s at normal speed, then the same 3 s file at double speed → 1.5 s more = 4.5 s.
+        let spec = VideoInputSpec(url: clip, clips: [ClipSpec(url: clip, speed: 2)])
+        let compiled = try await CompositionBuilder.build(
+            videos: [spec], overlays: [], outputWidth: 160, outputHeight: 90, frameRate: 30)
+        #expect(abs(compiled.duration - 4.5) < 0.05, "duration \(compiled.duration)")
+        let segments = (compiled.composition.tracks(withMediaType: .video).first?.segments ?? []).filter { !$0.isEmpty }
+        #expect(segments.count == 2)
+        let fast = try #require(segments.last)
+        #expect(abs(fast.timeMapping.source.duration.seconds - 3) < 0.02)
+        #expect(abs(fast.timeMapping.target.duration.seconds - 1.5) < 0.02)
+        // The picture 1 s into the fast clip (project 4 s) is the file's 2 s frame.
+        let sequenceFrame = try await MediaFixtures.renderFrame(of: compiled, at: 4.0)
+        let alone = try await CompositionBuilder.build(
+            videos: [VideoInputSpec(url: clip)], overlays: [], outputWidth: 160, outputHeight: 90, frameRate: 30)
+        let expected = try await MediaFixtures.renderFrame(of: alone, at: 2.0)
+        let wrong = try await MediaFixtures.renderFrame(of: alone, at: 1.0)
+        func distance(_ a: CVPixelBuffer, _ b: CVPixelBuffer) -> Int {
+            var total = 0
+            for y in stride(from: 3, to: 90, by: 6) {
+                for x in stride(from: 3, to: 160, by: 6) {
+                    let p = PixelBuffers.pixel(in: a, x: x, y: y)
+                    let q = PixelBuffers.pixel(in: b, x: x, y: y)
+                    total += abs(Int(p.r) - Int(q.r)) + abs(Int(p.g) - Int(q.g)) + abs(Int(p.b) - Int(q.b))
+                }
+            }
+            return total
+        }
+        #expect(distance(sequenceFrame, expected) * 2 < distance(sequenceFrame, wrong))
+    }
+
+    @Test func speedDecodesAndCountsInTheLoadedDuration() throws {
+        let clip = try JSONDecoder().decode(
+            VideoClip.self, from: Data(#"{"source": {"path": "a.mp4"}, "speed": 4}"#.utf8))
+        #expect(clip.speed == 4 && clip.sequenceDuration(played: 8) == 2)
+        let legacy = try JSONDecoder().decode(VideoClip.self, from: Data(#"{"path": "a.mp4"}"#.utf8))
+        #expect(legacy.speed == 1)
+    }
+}

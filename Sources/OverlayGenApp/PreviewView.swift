@@ -81,6 +81,14 @@ final class GizmoView: NSView {
     }
 
     private var drag: DragState?
+    /// A drag on empty picture while the camera framing is zoomed pans the framing (as dragging
+    /// the viewer in an editor's transform mode does).
+    private struct PanState {
+        let start: CGPoint
+        let center: CGPoint
+    }
+
+    private var pan: PanState?
 
     init(editor: EditorModel) {
         self.editor = editor
@@ -154,19 +162,41 @@ final class GizmoView: NSView {
             drag = DragState(id: id, handle: handle, original: object.frame, start: unit)
             return
         }
+        let framing = editor.project.settings.framing
         for object in objects.reversed() where object.isVisible {
             if let handle = ObjectGeometry.handle(at: unit, in: object.frame, handleSize: handleSize) {
                 editor.selectedObjectID = object.id
-                drag = DragState(id: object.id, handle: handle, original: object.frame, start: unit)
                 needsDisplay = true
+                // Inside a zoomed video's picture, dragging pans the camera framing (as dragging
+                // the viewer does in an editor); the video object's edges still resize it.
+                if handle == .body, framing.zoom > 1, case .video = object.kind {
+                    pan = PanState(start: unit, center: CGPoint(x: framing.centerX, y: framing.centerY))
+                    NSCursor.closedHand.push()
+                    return
+                }
+                drag = DragState(id: object.id, handle: handle, original: object.frame, start: unit)
                 return
             }
         }
         editor.selectedObjectID = nil
         needsDisplay = true
+        if framing.zoom > 1, videoRect.contains(point) {
+            pan = PanState(start: unit, center: CGPoint(x: framing.centerX, y: framing.centerY))
+            NSCursor.closedHand.push()
+        }
     }
 
     override func mouseDragged(with event: NSEvent) {
+        if let pan {
+            let unit = unitPoint(convert(event.locationInWindow, from: nil))
+            // Moving the pointer right must move the picture right, i.e. the window left; one
+            // full drag across the view pans one window width.
+            let zoom = max(editor.project.settings.framing.zoom, 1)
+            let x = pan.center.x - (unit.x - pan.start.x) / zoom
+            let y = pan.center.y - (unit.y - pan.start.y) / zoom
+            editor.previewFraming(centerX: x, centerY: y)
+            return
+        }
         guard let drag else { return }
         let unit = unitPoint(convert(event.locationInWindow, from: nil))
         let delta = CGSize(width: unit.x - drag.start.x, height: unit.y - drag.start.y)
@@ -177,11 +207,23 @@ final class GizmoView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        if let pan {
+            self.pan = nil
+            NSCursor.pop()
+            let framing = editor.project.settings.framing
+            editor.commitFraming(centerX: framing.centerX, centerY: framing.centerY, from: pan.center)
+            return
+        }
         guard let drag else { return }
         self.drag = nil
         if let object = objects.first(where: { $0.id == drag.id }), object.frame != drag.original {
             editor.moveObject(drag.id, frame: object.frame)
         }
+    }
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        if editor.project.settings.framing.zoom > 1 { addCursorRect(videoRect, cursor: .openHand) }
     }
 
     override func keyDown(with event: NSEvent) {
