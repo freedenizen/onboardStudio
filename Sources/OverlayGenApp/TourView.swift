@@ -42,13 +42,15 @@ struct TourOverlay: View {
                     .onTapGesture { advance() }
                 VStack(alignment: .leading, spacing: 10) {
                     Text("\(index + 1) of \(Self.steps.count)").font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("tour.step")
                     Text(current.title).font(.title3).bold()
                     Text(current.text).fixedSize(horizontal: false, vertical: true)
                     HStack {
-                        Button("Skip") { step = nil }
+                        Button("Skip") { step = nil }.accessibilityIdentifier("tour.skip")
                         Spacer()
                         Button(index + 1 == Self.steps.count ? "Done" : "Next") { advance() }
                             .buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
+                            .accessibilityIdentifier("tour.next")
                     }
                 }
                 .padding(20)

@@ -16,14 +16,14 @@ struct IndicatorInspector: View {
             Picker("On when", selection: field(\.condition)) {
                 ForEach(IndicatorCondition.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            NumberField("Threshold", value: field(\.threshold))
+            NumberField("Threshold", value: field(\.threshold)).accessibilityIdentifier("indicator.threshold")
             if let summary, let low = summary.minValue, let high = summary.maxValue {
                 HStack {
                     Text("In this file: \(fmt(low)) … \(fmt(high))").font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     if let suggested = params.suggestedThreshold(for: summary) {
                         Button("Suggest \(fmt(suggested))") { update { $0.threshold = suggested } }
-                            .font(.caption)
+                            .font(.caption).accessibilityIdentifier("indicator.suggest")
                     }
                 }
             }

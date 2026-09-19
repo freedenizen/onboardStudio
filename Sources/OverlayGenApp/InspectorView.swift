@@ -99,7 +99,7 @@ struct InputInspector: View {
                 Label(problem, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.yellow).font(.callout)
                 Button("Relink…") { editor.relink(input.id) }
             }
-            TextField("Label", text: binding(\.label, name: "Rename Input"))
+            TextField("Label", text: binding(\.label, name: "Rename Input")).accessibilityIdentifier("input.label")
             if let session = editor.sessions[input.id] {
                 LabeledContent("Format", value: session.info.sourceFormat)
                 LabeledContent("Channels", value: "\(session.channels.count)")
@@ -127,8 +127,11 @@ struct InputInspector: View {
             NumberField(
                 "Start position in file (s)", value: binding(\.sync.startPositionInInput, name: "Change Start Position")
             )
+            .accessibilityIdentifier("sync.startPosition")
             NumberField("Offset in project (s)", value: binding(\.sync.offsetInProject, name: "Change Offset"))
+                .accessibilityIdentifier("sync.offset")
             NumberField("Play speed", value: binding(\.sync.playSpeed, name: "Change Speed"))
+                .accessibilityIdentifier("sync.speed")
             if input.kind.isVideo {
                 HStack {
                     Button("Start After Previous Video") { editor.chainAfterPreviousVideo(input.id) }
@@ -211,7 +214,7 @@ struct ObjectInspector: View {
 
     var body: some View {
         Section(object.kind.typeName) {
-            TextField("Label", text: binding(\.label, name: "Rename Object"))
+            TextField("Label", text: binding(\.label, name: "Rename Object")).accessibilityIdentifier("object.label")
             if object.kind.needsData {
                 Picker("Data", selection: inputBinding) {
                     Text("None").tag(InputID?.none)

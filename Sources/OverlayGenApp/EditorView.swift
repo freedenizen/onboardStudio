@@ -21,6 +21,7 @@ struct EditorView: View {
                 Divider()
                 TransportView(editor: editor)
                 TimelineView(editor: editor)
+                StatusLineView(editor: editor)
             }
         }
         .inspector(isPresented: .constant(true)) {
@@ -86,11 +87,13 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Add Video", systemImage: "video.badge.plus")
             }
+            .accessibilityIdentifier("toolbar.addVideo")
             Button {
                 editor.addData()
             } label: {
                 Label("Add Data", systemImage: "doc.badge.plus")
             }
+            .accessibilityIdentifier("toolbar.addData")
             Menu {
                 ForEach(DisplayObject.templates, id: \.name) { template in
                     Button(template.name) { editor.addObject(template.kind) }
@@ -101,6 +104,7 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Add Object", systemImage: "gauge.with.dots.needle.33percent")
             }
+            .accessibilityIdentifier("toolbar.addObject")
             Menu {
                 ForEach(LayoutPreset.allCases, id: \.self) { preset in
                     Button(preset.displayName) { editor.applyLayout(preset) }
@@ -110,18 +114,21 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Layout", systemImage: "rectangle.3.group")
             }
+            .accessibilityIdentifier("toolbar.layout")
             .disabled(editor.project.videoInputs.isEmpty)
             Button {
                 editor.showSyncWizard = true
             } label: {
                 Label("Sync", systemImage: "arrow.left.arrow.right")
             }
+            .accessibilityIdentifier("toolbar.sync")
             .disabled(editor.project.dataInputs.isEmpty || editor.project.videoInputs.isEmpty)
             Button {
                 editor.showExport = true
             } label: {
                 Label("Export", systemImage: "square.and.arrow.up")
             }
+            .accessibilityIdentifier("toolbar.export")
             .disabled(editor.project.videoInputs.isEmpty)
         }
     }
@@ -129,4 +136,30 @@ struct EditorToolbar: ToolbarContent {
 
 extension URL: @retroactive Identifiable {
     public var id: String { absoluteString }
+}
+
+/// What the app last did on the user's behalf (chapters joined, sync applied, a file refused…).
+/// Stays until replaced or dismissed.
+struct StatusLineView: View {
+    @Bindable var editor: EditorModel
+
+    var body: some View {
+        if let message = editor.statusMessage {
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle").foregroundStyle(.secondary)
+                Text(message).font(.callout).lineLimit(2).textSelection(.enabled)
+                    .accessibilityIdentifier("status.message")
+                Spacer()
+                Button {
+                    editor.statusMessage = nil
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain).accessibilityLabel("Dismiss").accessibilityIdentifier("status.dismiss")
+            }
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(.bar)
+            .transition(.move(edge: .bottom))
+        }
+    }
 }

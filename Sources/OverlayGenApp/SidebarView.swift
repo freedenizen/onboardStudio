@@ -26,6 +26,8 @@ struct SidebarView: View {
                         }
                     }
                     .contentShape(Rectangle())
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("input.\(input.label)")
                     .onTapGesture {
                         editor.selectedInputID = input.id
                         editor.selectedObjectID = nil
@@ -42,7 +44,7 @@ struct SidebarView: View {
                 ForEach(editor.project.displayObjects.reversed()) { object in
                     HStack {
                         Image(systemName: icon(for: object.kind))
-                        Text(object.label)
+                        Text(object.label).accessibilityIdentifier("object.\(object.label)")
                         Spacer()
                         let visible = editor.resolvedObject(object.id)?.isVisible ?? object.isVisible
                         Button {
@@ -53,6 +55,8 @@ struct SidebarView: View {
                             Image(systemName: visible ? "eye" : "eye.slash").foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("object.\(object.label).visibility")
+                        .accessibilityLabel(visible ? "Hide \(object.label)" : "Show \(object.label)")
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {

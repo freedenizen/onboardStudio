@@ -134,15 +134,18 @@ struct ExportSheet: View {
                 if exportTask != nil {
                     Button("Cancel") { exportTask?.cancel() }
                 } else {
-                    Button("Close") { dismiss() }.keyboardShortcut(.cancelAction)
+                    Button("Close") { dismiss() }.keyboardShortcut(.cancelAction).accessibilityIdentifier(
+                        "export.close")
                     if let finishedURL {
                         Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([finishedURL]) }
+                            .accessibilityIdentifier("export.reveal")
                         Button("Upload to YouTube…") {
                             dismiss()
                             editor.uploadURL = finishedURL
                         }
                     }
-                    Button("Export…") { start() }.keyboardShortcut(.defaultAction)
+                    Button("Export…") { start() }.keyboardShortcut(.defaultAction).accessibilityIdentifier(
+                        "export.start")
                 }
             }
         }

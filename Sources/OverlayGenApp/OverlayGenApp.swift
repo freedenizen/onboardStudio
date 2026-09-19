@@ -39,6 +39,7 @@ struct OverlayGenApp: App {
                     .disabled(!updater.canCheckForUpdates)
             }
             EditorCommands()
+            if UITestSupport.isActive { UITestCommands() }
         }
         Window("Keyboard Shortcuts", id: "shortcuts") {
             ShortcutsView()

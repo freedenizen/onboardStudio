@@ -28,6 +28,17 @@ fixed seed and feed them to every importer, the GPMF/MP4 readers, the expression
 spherical-metadata reader; throwing is fine, crashing or hanging is the failure. Raise the
 iteration counts locally when hunting a bug; CI runs the committed counts.
 
+### UI tests (XCUITest)
+
+`UITests/OverlayGenUITests` drives the real app through its windows, menus, inspectors and sheets,
+one class per user journey in [user-journeys.md](user-journeys.md). Run them with
+`Scripts/ui-tests.sh` (or `Scripts/ui-tests.sh JourneyUITests` for one class); CI runs them in the
+**UI tests** job and keeps the `.xcresult` on failure. The app is launched with `-uiTesting YES`,
+which adds a **Testing** menu that adds the fixture files (open panels cannot be scripted) and with
+`OVERLAYGEN_TEST_EXPORT_DIR` so exports skip the save panel. Icon-only controls carry accessibility
+identifiers (`toolbar.*`, `transport.*`, `object.<label>`, `input.<label>`, `tour.*`, `export.*`,
+`sync.*`, `status.message`); text controls are found by their titles.
+
 ## 2. Headless checks with the CLI
 
 The `overlaygen` tool exercises the same libraries the app uses, without the GUI:
