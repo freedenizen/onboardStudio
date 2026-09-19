@@ -443,9 +443,22 @@ struct ChannelPicker: View {
     var body: some View {
         let session = object.inputID.flatMap { editor.sessions[$0] }
         let available = session?.orderedChannels.map(\.role.identifier) ?? []
-        let options = available.contains(selection) || selection.isEmpty ? available : [selection] + available
+        let missing = !selection.isEmpty && !available.isEmpty && !available.contains(selection)
+        let options = (selection.isEmpty ? [""] : missing ? [selection] : []) + available
         Picker("Channel", selection: $selection) {
-            ForEach(options, id: \.self) { Text($0).tag($0) }
+            ForEach(options, id: \.self) { option in
+                Text(option.isEmpty ? "Choose a channel…" : option).tag(option)
+            }
+        }
+        if missing {
+            Label(
+                "\"\(selection)\" is not in this data input; pick one of its channels.",
+                systemImage: "exclamationmark.triangle.fill"
+            )
+            .foregroundStyle(.yellow).font(.caption)
+        } else if selection.isEmpty, !available.isEmpty {
+            Label("This object needs a channel.", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow).font(.caption)
         }
     }
 }

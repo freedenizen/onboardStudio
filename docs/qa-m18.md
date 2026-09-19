@@ -8,6 +8,9 @@
 | 4 | **Add Object ▸ Timing Panel** across the top of the frame | Best / Previous / Current with small lap numbers and `m:ss.d` times; left lane: speed with a marker on a ±10 mph scale and the signed difference to the best lap; right lane: a green/red bar on a ±2 s scale with the signed time delta |
 | 5 | Text Data for coolant temperature: multiplier 1.8, offset 32, zones amber from 220 and red from 235 | The number turns amber then red as the value rises |
 | 6 | Compare with the RaceRender project's ABS / DSC / "Timing and Deltas" objects | Same information and layout, no script |
+| 7 | Add **ABS Light** to a project whose data has an `ABS…` channel, then to one with only anonymous columns | Bound automatically in the first case; in the second the inspector shows "This object needs a channel" and the light stays dim until one is chosen |
+| 8 | In the Indicator inspector pick a channel and press **Suggest** | The threshold becomes the midpoint of the channel's range shown in "In this file: …" (a tenth of the way up for a plain light) |
+| 9 | Timing Panel: set **Compare with** to Previous lap and change a heading | Lanes compare with the lap before the current one; the heading text changes |
 
 ## Results (0.16.0)
 
@@ -23,6 +26,11 @@ uses the same compositor as the preview) plus a window capture of the app with t
 | 4 | Pass. At 10:00 (lap 3): Best ²1:56.9, Previous ²1:56.9, Current ³1:12.7; speed lane 90 mph, +3, green marker right of centre; time lane −0.55 with a green bar, agreeing with the existing Delta timer (−0.55). In lap 1 the times read `-:--.-` with no lap number and no delta (nothing to compare with yet). |
 | 5 | Pass. WATER readout (°C × 1.8 + 32, °F) shows 192 in amber (zone 190–200) and 203 / 214 in red (zone from 200). |
 | 6 | Pass by inspection. Same lanes, scales (±10 mph, ±2.0 s), colours (amber 0xFFB000, green 0x20C040 / red 0xE03030) and ISO ABS geometry as the RaceRender scripts, rendered natively; the RaceRender project's three scripted objects are not needed. |
+
+Steps 7–9 (0.16.1, flexibility): covered by `IndicatorParamsTests` (suggestions, thresholds, adaptation, decode
+defaults) and `ReferenceLapTests` (best vs previous references); a headless render of the Sonoma project with
+`"reference": "previousLap"`, heading "Last" and lap numbers off rendered as configured (`m18-600-previous.png`);
+in that lap the previous lap is also the best one, so the reference switch itself is proven by `ReferenceLapTests`.
 
 Captures: `m18-354.5.png` (ABS + brake on), `m18-346.5.png` (traction on), `m18-600.png` (timing panel with deltas),
 `m18-app-d.png` (the app with the five new objects at 0:00). The scripted scrub and inspector edits were not

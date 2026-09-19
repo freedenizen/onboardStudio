@@ -50,34 +50,35 @@ public struct LapPanelRenderer: OverlayDrawing {
                 in: cg, layout: layout, from: rect.minX + rect.width * 0.02, to: rect.minX + rect.width * 0.2,
                 sample: sample, session: session, inputTime: inputTime)
         }
-        let laps = session?.laps ?? []
         let current = timing?.currentLap
-        let previous = current.flatMap { lap in laps.last { ($0.end ?? .infinity) <= lap.start && $0.isComplete } }
+        let previous = session.flatMap { LapComparison.referenceLap(at: inputTime, session: $0, reference: .previous) }
         if params.showBest, let x = lanes["best"] {
             drawLap(
-                label: "Best", number: timing?.bestLapNumber, seconds: timing?.bestLapTime,
+                label: params.bestLabel, number: timing?.bestLapNumber, seconds: timing?.bestLapTime,
                 at: rect.minX + rect.width * x,
                 layout: layout, in: cg)
         }
         if params.showPrevious, let x = lanes["previous"] {
             drawLap(
-                label: "Previous", number: previous?.number, seconds: previous?.duration,
+                label: params.previousLabel, number: previous?.number, seconds: previous?.duration,
                 at: rect.minX + rect.width * x,
                 layout: layout, in: cg)
         }
         if params.showCurrent, let x = lanes["current"] {
             drawLap(
-                label: "Current", number: current?.number, seconds: timing?.elapsedInLap,
+                label: params.currentLabel, number: current?.number, seconds: timing?.elapsedInLap,
                 at: rect.minX + rect.width * x,
                 layout: layout, in: cg)
         }
         if params.showTimeDelta {
-            let delta = session.flatMap { LapComparison.deltaToBest(at: inputTime, session: $0) }
+            let delta = session.flatMap { LapComparison.delta(at: inputTime, session: $0, reference: reference) }
             drawTimeLane(
                 in: cg, layout: layout, from: rect.minX + rect.width * 0.82, to: rect.minX + rect.width * 0.98,
                 delta: delta)
         }
     }
+
+    var reference: LapComparison.Reference { params.reference == .bestLap ? .best : .previous }
 
     /// Where each lap block starts (fraction of the width), packing the enabled ones.
     func laneOrigins() -> [String: Double] {
@@ -120,14 +121,15 @@ public struct LapPanelRenderer: OverlayDrawing {
         text(
             label, at: CGPoint(x: x, y: layout.labelY), alignment: .leading, size: layout.label,
             color: params.labelColor, in: cg)
-        let numberText = number.map(String.init) ?? ""
+        let numberText = params.showLapNumbers ? number.map(String.init) ?? "" : ""
         text(
             numberText, at: CGPoint(x: x, y: layout.rowY), alignment: .leading, size: layout.small,
             color: params.textColor, in: cg)
         let timeText =
             seconds.map { TimeParsing.lapTimeString($0, decimals: max(1, min(3, params.decimals))) } ?? "-:--.-"
+        let indent = params.showLapNumbers ? layout.small * 0.9 : 0
         text(
-            timeText, at: CGPoint(x: x + layout.small * 0.9, y: layout.rowY), alignment: .leading, size: layout.big,
+            timeText, at: CGPoint(x: x + indent, y: layout.rowY), alignment: .leading, size: layout.big,
             color: params.textColor, in: cg)
     }
 
@@ -167,7 +169,8 @@ public struct LapPanelRenderer: OverlayDrawing {
         drawScale(in: cg, layout: layout, from: a, to: b)
         let factor = params.speedUnit.factorFromMetersPerSecond
         let speed = sample?[.speed].map { $0 * factor }
-        let delta = session.flatMap { LapComparison.speedDeltaToBest(at: inputTime, session: $0) }.map { $0 * factor }
+        let delta = session.flatMap { LapComparison.speedDelta(at: inputTime, session: $0, reference: reference) }
+            .map { $0 * factor }
         let centre = (a + b) / 2
         if let delta {
             let f = max(-1, min(1, delta / max(params.speedDeltaRange, 0.001)))
