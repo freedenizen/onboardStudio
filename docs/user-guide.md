@@ -97,8 +97,10 @@ and column names are in [formats.md](formats.md).
 Speedometer, tachometer, custom gauge (the *Gauge Designer*: needle styles, sweep, ticks, colour
 zones, face images), bar/level, 2D graph (against time, distance or lap with a best-lap ghost),
 g-force plot, track map (with a second vehicle and Apple Maps imagery), gear, lap counter, timers
-(current/last/best lap, session, project time, time of day, delta to best), text data with
-formatting, shapes, text, images (data-driven rotation, opacity, flashing) and **Script** objects
+(current/last/best lap, session, project time, time of day, delta to best), a **timing panel** (best,
+previous and current lap with lap numbers plus speed-vs-best and time-vs-best lanes), **indicator
+lights** (ABS, traction/stability, brake, warning triangle or text, lit when a channel crosses a
+threshold, with hold time, flash and glow), text data with formatting and warning zones, shapes, text, images (data-driven rotation, opacity, flashing) and **Script** objects
 that draw with JavaScript ([scripting.md](scripting.md)).
 
 Every object has a position and size in percent of the frame, opacity, mirror and an RGB mask.

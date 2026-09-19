@@ -110,6 +110,8 @@ public enum RenderPlanner {
         case .graph(let params): GraphRenderer(context: context, params: params)
         case .gear(let params): GearRenderer(context: context, params: params)
         case .lapCounter(let params): LapCounterRenderer(context: context, params: params)
+        case .indicator(let params): IndicatorRenderer(context: context, params: params)
+        case .lapPanel(let params): LapPanelRenderer(context: context, params: params)
         case .scripted: nil  // needs the Scripting module; see `overlays(scriptRenderer:)`
         }
     }

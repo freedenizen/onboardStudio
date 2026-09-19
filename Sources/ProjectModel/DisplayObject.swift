@@ -360,6 +360,8 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
     case gear(GearParams)
     case lapCounter(LapCounterParams)
     case scripted(ScriptedParams)
+    case indicator(IndicatorParams)
+    case lapPanel(LapPanelParams)
 
     public var typeName: String {
         switch self {
@@ -379,6 +381,8 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .gear: "Gear"
         case .lapCounter: "Lap Counter"
         case .scripted: "Script"
+        case .indicator: "Indicator"
+        case .lapPanel: "Timing Panel"
         }
     }
 

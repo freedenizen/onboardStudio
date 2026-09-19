@@ -264,6 +264,10 @@ struct ObjectInspector: View {
             LapCounterInspector(editor: editor, object: object, params: params)
         case .scripted(let params):
             ScriptInspector(editor: editor, object: object, params: params)
+        case .indicator(let params):
+            IndicatorInspector(editor: editor, object: object, params: params)
+        case .lapPanel(let params):
+            LapPanelInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):
             TrackMapInspector(editor: editor, object: object, params: params)
         case .gForce(let params):

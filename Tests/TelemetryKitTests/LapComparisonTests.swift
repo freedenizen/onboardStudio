@@ -58,3 +58,38 @@ struct LapComparisonTests {
         #expect(TimeParsing.deltaString(-0.001, decimals: 2) == "0.00")
     }
 }
+
+@Suite("Speed delta to best")
+struct SpeedDeltaTests {
+    /// Three laps over 100 m each: 10 m/s, then 20 m/s (the best), then 15 m/s.
+    static func session(laps: [Lap]) -> TelemetrySession {
+        let times = Array(stride(from: 0.0, through: 22.0, by: 0.5))
+        func speedAt(_ t: Double) -> Double { t < 10 ? 10 : t < 15 ? 20 : 15 }
+        var distance: [Double] = []
+        var travelled = 0.0
+        for (index, t) in times.enumerated() {
+            if index > 0 { travelled += speedAt(t - 0.25) * 0.5 }
+            distance.append(travelled)
+        }
+        return TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [
+                Channel(role: .distance, name: "d", unit: .meters, times: times, values: distance),
+                Channel(role: .speed, name: "s", unit: .metersPerSecond, times: times, values: times.map(speedAt)),
+            ], laps: laps)
+    }
+
+    @Test func compareSpeedAtTheSameDistance() {
+        let laps = [
+            Lap(number: 1, start: 0, end: 10, isComplete: true), Lap(number: 2, start: 10, end: 15, isComplete: true),
+            Lap(number: 3, start: 15, end: nil, isComplete: false),
+        ]
+        let session = Self.session(laps: laps)
+        // In lap 3 (15 m/s) the best lap (lap 2) ran 20 m/s at the same distance → −5 m/s.
+        let delta = LapComparison.speedDeltaToBest(at: 17, session: session)
+        #expect(delta != nil && abs((delta ?? 0) + 5) < 0.01, "delta \(String(describing: delta))")
+        // With no completed best lap there is nothing to compare with.
+        let first = Self.session(laps: [Lap(number: 1, start: 0, end: nil, isComplete: false)])
+        #expect(LapComparison.speedDeltaToBest(at: 3, session: first) == nil)
+    }
+}
