@@ -52,8 +52,9 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   videos' edges and the playhead; zoom with ⌘= / ⌘− / ⇧Z, the slider next to the transport, or
   scroll sideways. The thin strip above the ruler shows the whole project with a window for the
   visible part; drag it to scroll.
-- **Inspector (right)**: settings for the selected input or object. With nothing selected it shows
-  the project's output size and frame rate, the camera framing and the Getting Started checklist.
+- **Inspector (right)**: settings for the selected input or object; drag its left edge to widen it.
+  With nothing selected it shows the project's output size and frame rate, the camera framing and
+  the Getting Started checklist. The window fits displays 1024 points wide.
 - **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export.
 
 ## 3. Videos
