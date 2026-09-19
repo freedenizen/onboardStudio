@@ -191,6 +191,7 @@ final class EditorModel {
                     lastCompiledProject = project
                     errorMessage = nil
                     applyPendingAutoSync()
+                    bindEmptyChannels()
                 } else {
                     compilePending = true  // superseded by a newer edit
                 }

@@ -1,0 +1,77 @@
+import Foundation
+import Testing
+
+@testable import ProjectModel
+
+@Suite("Steering wheel, gradients and overlay opacity")
+struct GlassCockpitModelTests {
+    static let degrees = ChannelSummary(
+        identifier: "obd:steering_angle", name: "steering_angle", minValue: -173, maxValue: 160)
+    static let radians = ChannelSummary(identifier: "aux:SWA", name: "SWA", minValue: -2.9, maxValue: 3.0)
+    static let normalised = ChannelSummary(identifier: "aux:Steering", name: "Steering", minValue: -1, maxValue: 1)
+    static let speed = ChannelSummary(identifier: "speed", name: "speed", minValue: 0, maxValue: 60)
+
+    @Test func rotationFollowsScaleSignAndLimit() {
+        var wheel = SteeringWheelParams(channel: "x")
+        #expect(wheel.rotation(for: 90) == 90)
+        wheel.invert = true
+        #expect(wheel.rotation(for: 90) == -90)
+        wheel.degreesPerUnit = 2
+        wheel.maxDegrees = 120
+        #expect(wheel.rotation(for: 90) == -120)
+        #expect(wheel.rotation(for: .nan) == 0)
+    }
+
+    @Test func bindsToTheLoggersSteeringChannelWithAFittingScale() {
+        let wheel = SteeringWheelParams()
+        #expect(wheel.channel.isEmpty, "templates name no channel")
+        let inDegrees = wheel.adapted(to: [Self.speed, Self.degrees])
+        #expect(inDegrees.channel == "obd:steering_angle" && inDegrees.degreesPerUnit == 1)
+        let inRadians = wheel.adapted(to: [Self.speed, Self.radians])
+        #expect(inRadians.channel == "aux:SWA" && abs(inRadians.degreesPerUnit - 57.2958) < 0.001)
+        #expect(wheel.adapted(to: [Self.normalised]).degreesPerUnit == 450)
+        #expect(wheel.adapted(to: [Self.speed]).channel.isEmpty, "nothing to guess from")
+        // A channel the user chose is kept, scale included.
+        var custom = SteeringWheelParams(channel: "speed", degreesPerUnit: 3)
+        custom.invert = true
+        #expect(custom.adapted(to: [Self.speed, Self.degrees]) == custom)
+    }
+
+    @Test func templateObjectsBindWhenTheDataArrives() {
+        var project = ProjectTemplate.glassCockpit.makeProject()
+        let data = Input(label: "log", source: MediaReference(path: "/log.csv"), kind: .data(DataInputSettings()))
+        project.inputs.append(data)
+        project.bindOrphanObjects()
+        let bound = project.bindEmptyChannels([data.id: [Self.speed, Self.degrees]])
+        #expect(bound == ["Wheel"])
+        let wheel = project.displayObjects.first { $0.label == "Wheel" }
+        guard case .steeringWheel(let params)? = wheel?.kind else {
+            Issue.record("no wheel in the template")
+            return
+        }
+        #expect(params.channel == "obd:steering_angle")
+        // A second pass has nothing left to do.
+        #expect(project.bindEmptyChannels([data.id: [Self.speed, Self.degrees]]).isEmpty)
+        // The band behind the gauges fades from clear to dark, and the wheel hangs below the frame.
+        guard case .shape(let fade)? = project.displayObjects.first(where: { $0.label == "Fade" })?.kind else {
+            Issue.record("no fade band")
+            return
+        }
+        #expect(fade.fillColor.alpha == 0 && (fade.gradientEndColor?.alpha ?? 0) > 0.5)
+        #expect((wheel?.frame.y ?? 0) + (wheel?.frame.height ?? 0) > 1)
+    }
+
+    @Test func oldFilesDecodeWithPlainFillsAndFullOpacity() throws {
+        let json = ##"{"shape":"rectangle","fillColor":"#00000080","strokeColor":"#FFFFFFFF","strokeWidth":0}"##
+        let shape = try JSONDecoder().decode(ShapeParams.self, from: Data(json.utf8))
+        #expect(shape.gradientEndColor == nil && !shape.gradientHorizontal && shape.cornerRadius == 0.15)
+        let settings = try JSONDecoder().decode(ProjectSettings.self, from: Data("{}".utf8))
+        #expect(settings.overlayOpacity == 1)
+        // The overlay opacity only needs a replan, like the camera framing.
+        var faded = settings
+        faded.overlayOpacity = 0.5
+        #expect(faded.withoutFraming == settings.withoutFraming)
+        let wheel = try JSONDecoder().decode(SteeringWheelParams.self, from: Data("{}".utf8))
+        #expect(wheel == SteeringWheelParams())
+    }
+}

@@ -55,11 +55,14 @@ public struct RenderPlan: Sendable {
     /// What the frame is cleared to before any layer draws (opaque black for normal output;
     /// a key colour or transparent for overlay-only exports).
     public let background: RGBAColor
+    /// Opacity of the whole overlay layer over the video (1 = as drawn).
+    public let overlayOpacity: Double
 
     public init(
         outputWidth: Int, outputHeight: Int, frameRate: Double, videoLayers: [VideoLayer],
-        overlays: [any OverlayDrawing], background: RGBAColor = .black
+        overlays: [any OverlayDrawing], background: RGBAColor = .black, overlayOpacity: Double = 1
     ) {
+        self.overlayOpacity = min(max(overlayOpacity.isFinite ? overlayOpacity : 1, 0), 1)
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
         self.frameRate = frameRate
@@ -72,7 +75,7 @@ public struct RenderPlan: Sendable {
     public func overlayOnly(background: RGBAColor) -> RenderPlan {
         RenderPlan(
             outputWidth: outputWidth, outputHeight: outputHeight, frameRate: frameRate, videoLayers: [],
-            overlays: overlays, background: background)
+            overlays: overlays, background: background, overlayOpacity: overlayOpacity)
     }
 
     public var outputSize: CGSize { CGSize(width: outputWidth, height: outputHeight) }

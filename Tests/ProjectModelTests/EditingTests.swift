@@ -94,7 +94,13 @@ struct ObjectGeometryTests {
         for (index, template) in DisplayObject.templates.enumerated() {
             let object = DisplayObject.makeDefault(kind: template.kind, inputID: nil, index: index)
             #expect(object.frame.width > 0 && object.frame.height > 0)
-            #expect(object.frame.x + object.frame.width <= 1.0001 && object.frame.y + object.frame.height <= 1.0001)
+            #expect(object.frame.x + object.frame.width <= 1.0001)
+            if case .steeringWheel = template.kind {
+                // The wheel deliberately hangs below the picture so only its upper arc shows.
+                #expect(object.frame.y < 1 && object.frame.y + object.frame.height > 1)
+            } else {
+                #expect(object.frame.y + object.frame.height <= 1.0001)
+            }
             #expect(object.label == template.kind.typeName)
         }
     }

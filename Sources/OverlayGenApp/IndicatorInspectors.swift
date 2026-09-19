@@ -127,3 +127,65 @@ struct LapPanelInspector: View {
         editor.updateObject(object.id, name: "Edit Timing Panel") { $0.kind = .lapPanel(new) }
     }
 }
+
+struct SteeringWheelInspector: View {
+    @Bindable var editor: EditorModel
+    let object: DisplayObject
+    let params: SteeringWheelParams
+
+    var body: some View {
+        Section("Steering Wheel") {
+            ChannelPicker(editor: editor, object: object, selection: field(\.channel))
+            NumberField("Degrees per unit", value: field(\.degreesPerUnit))
+                .help("1 for a channel in degrees, 57.3 for radians, the lock angle for a −1…1 channel")
+            Toggle("Invert direction", isOn: field(\.invert))
+            NumberField("Limit (°, 0 = none)", value: field(\.maxDegrees), fractionDigits: 0...0)
+        }
+        Section("Look") {
+            ColorPicker("Rim", selection: color(\.rimColor), supportsOpacity: true)
+            ColorPicker("Rim edge", selection: color(\.edgeColor), supportsOpacity: true)
+            PercentSlider("Rim thickness", value: field(\.rimWidth), range: 0.04...0.4)
+            ColorPicker("Marker", selection: color(\.markerColor), supportsOpacity: true)
+            PercentSlider("Marker width", value: field(\.markerWidth), range: 0.01...0.15)
+            Toggle("Spokes", isOn: field(\.showSpokes))
+            if params.showSpokes { ColorPicker("Spokes", selection: color(\.spokeColor), supportsOpacity: true) }
+            Text(
+                "Make the object wide and let it hang below the frame so only the upper arc shows. "
+                    + "The rim's colour carries its own transparency."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    func field<T>(_ keyPath: WritableKeyPath<SteeringWheelParams, T>) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    }
+
+    func color(_ keyPath: WritableKeyPath<SteeringWheelParams, RGBAColor>) -> Binding<Color> {
+        Binding(get: { Color(params[keyPath: keyPath]) }, set: { v in update { $0[keyPath: keyPath] = RGBAColor(v) } })
+    }
+
+    func update(_ change: (inout SteeringWheelParams) -> Void) {
+        var new = params
+        change(&new)
+        editor.updateObject(object.id, name: "Edit Steering Wheel") { $0.kind = .steeringWheel(new) }
+    }
+}
+
+/// One knob for a more see-through dashboard: fades the whole overlay layer over the video.
+struct OverlayOpacitySection: View {
+    @Bindable var editor: EditorModel
+
+    var body: some View {
+        Section("Overlay") {
+            PercentSlider(
+                "Overlay opacity",
+                value: Binding(
+                    get: { editor.project.settings.overlayOpacity },
+                    set: { value in editor.edit("Change Overlay Opacity") { $0.settings.overlayOpacity = value } }),
+                range: 0.1...1)
+            Text("Fades every gauge, map and readout together, on top of each object's own opacity.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+}

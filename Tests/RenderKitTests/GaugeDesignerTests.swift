@@ -141,6 +141,63 @@ struct GaugeDesignerGoldenTests {
         #expect(PixelBuffers.pixel(in: fromMinimum, x: 50, y: 200).g > 200)
     }
 
+    @Test func steeringWheelMarkerTurnsWithTheAngle() throws {
+        // 0° until 2 s, then 90° to the right from 8 s.
+        let session = TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [
+                Channel(
+                    role: .aux("steer"), name: "steer", unit: .degrees, times: [0, 2, 8, 10], values: [0, 0, 90, 90])
+            ])
+        let yellow = RGBAColor(red: 1, green: 1, blue: 0)
+        let params = SteeringWheelParams(
+            channel: "aux:steer", rimColor: RGBAColor(red: 0, green: 0, blue: 1, alpha: 0.5),
+            edgeColor: RGBAColor(red: 0, green: 0, blue: 0, alpha: 0), rimWidth: 0.2, markerColor: yellow,
+            markerWidth: 0.1)
+        let frame = UnitRect(x: 0.1, y: 0.1, width: 0.8, height: 0.8)  // rim between 128 and 160 px from (200, 200)
+        let straight = try render(.steeringWheel(params), frame: frame, time: 1, session: session)
+        try GoldenImage.assertMatches(straight, named: "steering-wheel-straight")
+        let top = PixelBuffers.pixel(in: straight, x: 200, y: 56)
+        #expect(top.r > 200 && top.g > 200 && top.b < 80, "marker at twelve o'clock: \(top)")
+        // The rim is drawn half transparent over the black frame.
+        let rim = PixelBuffers.pixel(in: straight, x: 56, y: 200)
+        #expect(rim.b > 90 && rim.b < 170 && rim.r < 40, "see-through rim: \(rim)")
+        let turned = try render(.steeringWheel(params), frame: frame, time: 9, session: session)
+        let right = PixelBuffers.pixel(in: turned, x: 344, y: 200)
+        #expect(right.r > 200 && right.g > 200 && right.b < 80, "marker at three o'clock: \(right)")
+        #expect(PixelBuffers.pixel(in: turned, x: 200, y: 56).r < 60, "no marker left at the top")
+        // Inverted, the same angle turns the marker to nine o'clock.
+        var inverted = params
+        inverted.invert = true
+        let left = PixelBuffers.pixel(
+            in: try render(.steeringWheel(inverted), frame: frame, time: 9, session: session), x: 56, y: 200)
+        #expect(left.r > 200 && left.g > 200)
+    }
+
+    @Test func gradientShapeFadesAndTheOverlayLayerCanFade() throws {
+        let shape = ShapeParams(
+            shape: .rectangle, fillColor: RGBAColor(red: 1, green: 1, blue: 1, alpha: 0),
+            gradientEndColor: RGBAColor(red: 1, green: 1, blue: 1, alpha: 1))
+        let image = try render(.shape(shape), frame: .full, time: 0)
+        let top = PixelBuffers.pixel(in: image, x: 200, y: 8)
+        let middle = PixelBuffers.pixel(in: image, x: 200, y: 200)
+        let bottom = PixelBuffers.pixel(in: image, x: 200, y: 392)
+        #expect(top.r < 20 && middle.r > 100 && middle.r < 160 && bottom.r > 235, "\(top.r) \(middle.r) \(bottom.r)")
+        // Half overlay opacity halves a solid white overlay over black.
+        let solid = ShapeParams(shape: .rectangle, fillColor: .white)
+        let context = ObjectContext(
+            objectID: DisplayObjectID(UUID()), frame: .full, opacity: 1, sampler: nil, sync: .identity,
+            cache: RenderCache())
+        let renderer = try #require(RenderPlanner.renderer(for: .shape(solid), context: context, image: nil))
+        let plan = RenderPlan(
+            outputWidth: 64, outputHeight: 64, frameRate: 30, videoLayers: [], overlays: [renderer],
+            overlayOpacity: 0.5)
+        let faded = PixelBuffers.pixel(
+            in: try FrameCompositor(plan: plan).renderFrame(sources: [:], time: 0), x: 32, y: 32)
+        #expect(faded.r > 110 && faded.r < 145, "half opacity: \(faded.r)")
+        #expect(plan.overlayOnly(background: .black).overlayOpacity == 0.5)
+    }
+
     @Test func graphs() throws {
         let frame = UnitRect(x: 0.05, y: 0.2, width: 0.9, height: 0.6)
         let time = GraphParams(series: [GraphSeries(channel: "speed")], axis: .time, window: 5, label: "SPEED")

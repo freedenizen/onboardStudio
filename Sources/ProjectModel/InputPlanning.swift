@@ -88,3 +88,32 @@ extension Project {
         }
     }
 }
+
+extension Project {
+    /// Gives lights and steering wheels that have no channel yet the one their data input offers
+    /// (templates and object presets name none, because every logger names them differently).
+    /// Returns the labels of the objects it bound.
+    @discardableResult
+    public mutating func bindEmptyChannels(_ channels: [InputID: [ChannelSummary]]) -> [String] {
+        var bound: [String] = []
+        for index in displayObjects.indices {
+            let object = displayObjects[index]
+            guard let inputID = object.inputID, let available = channels[inputID], !available.isEmpty else { continue }
+            switch object.kind {
+            case .indicator(let params) where params.channel.isEmpty:
+                let adapted = params.adapted(to: available)
+                guard !adapted.channel.isEmpty else { continue }
+                displayObjects[index].kind = .indicator(adapted)
+                bound.append(object.label)
+            case .steeringWheel(let params) where params.channel.isEmpty:
+                let adapted = params.adapted(to: available)
+                guard !adapted.channel.isEmpty else { continue }
+                displayObjects[index].kind = .steeringWheel(adapted)
+                bound.append(object.label)
+            default:
+                continue
+            }
+        }
+        return bound
+    }
+}
