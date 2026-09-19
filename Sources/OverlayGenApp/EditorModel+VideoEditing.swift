@@ -218,3 +218,35 @@ extension EditorModel {
         }
     }
 }
+
+// MARK: - Viewer panning
+
+extension EditorModel {
+    /// Live update while dragging the picture (no undo entry per mouse move).
+    func previewFraming(centerX: Double, centerY: Double) {
+        var framing = project.settings.framing
+        framing.centerX = min(max(centerX, 0), 1)
+        framing.centerY = min(max(centerY, 0), 1)
+        setFramingLive(framing)
+    }
+
+    /// One undoable step for the whole drag, registered against where it started.
+    func commitFraming(centerX: Double, centerY: Double, from original: CGPoint) {
+        var before = project.settings.framing
+        before.centerX = original.x
+        before.centerY = original.y
+        var after = before
+        after.centerX = min(max(centerX, 0), 1)
+        after.centerY = min(max(centerY, 0), 1)
+        setFramingLive(before)
+        setFraming({ $0 = after }, name: "Pan Camera")
+    }
+}
+
+extension EditorModel {
+    /// Applies a framing without an undo entry (used while a drag is in progress).
+    func setFramingLive(_ framing: CameraFraming) {
+        document.apply(nil, name: "") { $0.settings.framing = framing }
+        syncFromDocument()
+    }
+}

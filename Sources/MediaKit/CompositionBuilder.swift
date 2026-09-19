@@ -9,11 +9,14 @@ public struct ClipSpec: Sendable {
     public var url: URL
     public var trim: TrimRange
     public var gapBefore: Double
+    /// This clip's own playback speed (1 = as recorded).
+    public var speed: Double
 
-    public init(url: URL, trim: TrimRange = .none, gapBefore: Double = 0) {
+    public init(url: URL, trim: TrimRange = .none, gapBefore: Double = 0, speed: Double = 1) {
         self.url = url
         self.trim = trim
         self.gapBefore = gapBefore
+        self.speed = max(speed, 0.01)
     }
 }
 
@@ -265,13 +268,21 @@ public enum CompositionBuilder {
             let to = min(inputEnd, clip.start + clip.duration)
             guard to > from else { continue }
             let range = CMTimeRange(
-                start: CMTime(seconds: clip.fileStart + (from - clip.start), preferredTimescale: timescale),
-                end: CMTime(seconds: clip.fileStart + (to - clip.start), preferredTimescale: timescale))
+                start: CMTime(
+                    seconds: clip.fileStart + (from - clip.start) * clip.speed, preferredTimescale: timescale),
+                end: CMTime(seconds: clip.fileStart + (to - clip.start) * clip.speed, preferredTimescale: timescale))
             let at = CMTime(seconds: spec.sync.offsetInProject + (from - inputStart), preferredTimescale: timescale)
             try videoTrack.insertTimeRange(range, of: clip.video, at: at)
             if spec.includeAudio {
                 audioTrack = try await insertAudio(
                     from: clip.asset, range: range, at: at, into: composition, track: audioTrack)
+            }
+            if clip.speed != 1 {
+                // Squeeze (or stretch) just this clip so it occupies its sequence-axis length.
+                let inserted = CMTimeRange(start: at, duration: range.duration)
+                let target = CMTime(seconds: to - from, preferredTimescale: timescale)
+                videoTrack.scaleTimeRange(inserted, toDuration: target)
+                audioTrack?.scaleTimeRange(inserted, toDuration: target)
             }
             let transform = Self.ciTransform(clip.transform)
             if transform != spans.last?.transform ?? .identity || spans.isEmpty {
@@ -300,10 +311,12 @@ public enum CompositionBuilder {
         let transform: CGAffineTransform
         /// Sequence second at which the played part begins (after any gap).
         let start: Double
-        /// Played length in seconds (the file's trim).
+        /// Length on the sequence axis (the file's trimmed length divided by the clip's speed).
         let duration: Double
         /// File second at which the played part begins.
         let fileStart: Double
+        /// File seconds per sequence second (the clip's own speed).
+        let speed: Double
     }
 
     /// Loads every clip of the sequence; the sequence's time axis runs across the played parts in
@@ -320,12 +333,12 @@ public enum CompositionBuilder {
             let transform = try await sourceVideo.load(.preferredTransform)
             let fileStart = min(max(clip.trim.start ?? 0, 0), assetDuration)
             let fileEnd = min(clip.trim.end ?? assetDuration, assetDuration)
-            let played = max(0, fileEnd - fileStart)
+            let played = max(0, fileEnd - fileStart) / clip.speed
             let start = cursor + max(0, clip.gapBefore)
             clips.append(
                 LoadedClip(
                     asset: asset, video: sourceVideo, transform: transform, start: start, duration: played,
-                    fileStart: fileStart))
+                    fileStart: fileStart, speed: clip.speed))
             cursor = start + played
         }
         return (clips, cursor)

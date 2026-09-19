@@ -8,25 +8,38 @@ import TelemetryKit
 /// playhead, as in DaVinci Resolve.
 struct TimelineView: View {
     @Bindable var editor: EditorModel
+    @State private var scrollPosition = ScrollPosition(edge: .leading)
 
     var body: some View {
         GeometryReader { geometry in
             let viewWidth = max(geometry.size.width, 1)
             let contentWidth = viewWidth * editor.timelineZoom
-            ScrollView(.horizontal, showsIndicators: true) {
-                VStack(spacing: 0) {
-                    TimelineRuler(editor: editor, width: contentWidth)
-                    Divider()
-                    if !editor.project.videoInputs.isEmpty {
-                        VideoLaneView(editor: editor, width: contentWidth)
+            VStack(spacing: 0) {
+                TimelineOverview(
+                    editor: editor, visibleFraction: 1 / editor.timelineZoom,
+                    scrollTo: { fraction in scrollPosition.scrollTo(x: fraction * contentWidth) })
+                Divider()
+                ScrollView(.horizontal, showsIndicators: true) {
+                    VStack(spacing: 0) {
+                        TimelineRuler(editor: editor, width: contentWidth)
                         Divider()
+                        if !editor.project.videoInputs.isEmpty {
+                            VideoLaneView(editor: editor, width: contentWidth)
+                            Divider()
+                        }
+                        SegmentLaneView(editor: editor, width: contentWidth)
                     }
-                    SegmentLaneView(editor: editor, width: contentWidth)
+                    .frame(width: contentWidth)
                 }
-                .frame(width: contentWidth)
+                .scrollPosition($scrollPosition)
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    geometry.contentOffset.x / max(geometry.contentSize.width, 1)
+                } action: { _, fraction in
+                    editor.timelineScrollFraction = min(max(fraction, 0), 1)
+                }
             }
         }
-        .frame(height: editor.project.videoInputs.isEmpty ? 18 + 34 + 2 : 18 + 26 + 34 + 3)
+        .frame(height: editor.project.videoInputs.isEmpty ? 12 + 18 + 34 + 3 : 12 + 18 + 26 + 34 + 4)
     }
 }
 

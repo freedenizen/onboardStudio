@@ -27,6 +27,8 @@ final class EditorModel {
     var motionSyncProgress: Double?
     /// Timeline magnification: 1 fits the whole project, larger values scroll.
     var timelineZoom: Double = 1
+    /// Where the zoomed timeline is scrolled to, as a fraction of the whole (0 = start).
+    var timelineScrollFraction: Double = 0
     /// Whether drags snap to clip edges and the playhead (the magnet).
     var snappingEnabled = true
     /// The first-run tour's current step, `nil` when it is not showing.
@@ -61,7 +63,7 @@ final class EditorModel {
             }
     }
 
-    private func syncFromDocument() {
+    func syncFromDocument() {
         guard document.project != project else { return }
         project = document.project
         scheduleCompile()

@@ -45,7 +45,8 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   Drag a video bar to move it, drag its left or right edge to trim it (the head trim keeps the
   picture where it was), click it to select the video. The magnet button (N) snaps drags to other
   videos' edges and the playhead; zoom with ⌘= / ⌘− / ⇧Z, the slider next to the transport, or
-  scroll sideways.
+  scroll sideways. The thin strip above the ruler shows the whole project with a window for the
+  visible part; drag it to scroll.
 - **Inspector (right)**: settings for the selected input or object. With nothing selected it shows
   the project's output size and frame rate, the camera framing and the Getting Started checklist.
 - **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export.
@@ -62,7 +63,8 @@ recording's chapters, or any files you want played back to back. Chapters are jo
 when you add or drop the first one (the status line says so; undo or remove a clip to split it),
 **Add Clips…** appends files, **Add Following Chapters** finds the camera's numbered
 continuations, and the arrows reorder. Each clip has its own *In* and *Out* trim (seconds inside
-that file; 0 = whole file) and a *Gap before* it (black). Trim, sync, picture settings and the
+that file; 0 = whole file), a *Gap before* it (black) and a *Speed* (2 = twice as fast, on top of
+the input's own play speed). Trim, sync, picture settings and the
 data alignment all treat the sequence as a single video, and clips may have different orientations.
 
 **Transform and Cropping** (this video): rotation, flip, crop per edge. Then colour, sharpness, chroma key, and **Lens** for fisheye or
@@ -72,7 +74,8 @@ channel selection.
 **Transform and Cropping (all videos)**, in the project inspector, zoom, position and crop every
 video at once, in the same terms an editor uses (zoom factor, position as a percentage offset from
 the centre). Use it to reframe a recording without touching each chapter or each camera
-separately; it applies on top of each input's own crop.
+separately; it applies on top of each input's own crop. When zoomed in, drag the picture itself in
+the preview to pan (the cursor becomes a hand); the video object's edge handles still resize it.
 
 **Multiple cameras.** Add each camera as its own video input, line them up in the video lane (or
 with the sync fields), then arrange them with **Layout** (picture-in-picture, split, quad) and

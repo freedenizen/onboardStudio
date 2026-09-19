@@ -224,9 +224,19 @@ struct ClipTrimRow: View {
                         editor.updateClip(index, in: inputID, name: "Change Clip Gap") { $0.gapBefore = max(0, v) }
                     }),
                 fractionDigits: 0...2)
+            NumberField(
+                "Speed",
+                value: Binding(
+                    get: { clip.speed },
+                    set: { v in
+                        editor.updateClip(index, in: inputID, name: "Change Clip Speed") {
+                            $0.speed = min(max(v, 0.1), 16)
+                        }
+                    }),
+                fractionDigits: 0...2)
         }
         .font(.caption)
-        .help("In/Out trim this file (0 = whole file); the gap is black before it plays.")
+        .help("In/Out trim this file (0 = whole file); the gap is black before it; speed 2 plays it twice as fast.")
     }
 }
 
