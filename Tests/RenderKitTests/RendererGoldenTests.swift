@@ -306,3 +306,92 @@ struct TrackMapExtrasTests {
         #expect(RenderPlanner.mapBackgroundRequests(for: project, sessions: [:]).isEmpty)
     }
 }
+
+@Suite("Indicator and timing panel")
+struct IndicatorPanelTests {
+    static let size = CGSize(width: 400, height: 400)
+
+    func context(frame: UnitRect, sync: SyncSettings = .identity) -> ObjectContext {
+        ObjectContext(
+            objectID: DisplayObjectID(UUID(uuidString: "00000000-0000-0000-0000-000000000003") ?? UUID()), frame: frame,
+            opacity: 1, sampler: TelemetrySampler(session: SyntheticSession.session), sync: sync, cache: RenderCache())
+    }
+
+    func render(_ kind: DisplayObjectKind, frame: UnitRect, time: Double) throws -> CVPixelBuffer {
+        let renderer = try #require(RenderPlanner.renderer(for: kind, context: context(frame: frame)))
+        let plan = RenderPlan(
+            outputWidth: Int(Self.size.width), outputHeight: Int(Self.size.height), frameRate: 30, videoLayers: [],
+            overlays: [renderer])
+        return try FrameCompositor(plan: plan).renderFrame(sources: [:], time: time)
+    }
+
+    @Test func absLightIsDimBelowAndAmberAboveTheThreshold() throws {
+        // The synthetic speed ramps 10…35 m/s; "on" above 30 m/s means from 8 s.
+        let params = IndicatorParams(channel: "speed", condition: .atLeast, threshold: 30, glyph: .abs, holdSeconds: 0)
+        let frame = UnitRect(x: 0.2, y: 0.2, width: 0.6, height: 0.6)
+        let off = try render(.indicator(params), frame: frame, time: 2)
+        let on = try render(.indicator(params), frame: frame, time: 9)
+        try GoldenImage.assertMatches(off, named: "indicator-abs-off")
+        try GoldenImage.assertMatches(on, named: "indicator-abs-on")
+        func amberPixels(_ buffer: CVPixelBuffer) -> Int {
+            var count = 0
+            for y in stride(from: 0, to: 400, by: 3) {
+                for x in stride(from: 0, to: 400, by: 3) {
+                    let p = PixelBuffers.pixel(in: buffer, x: x, y: y)
+                    if p.r > 200, p.g > 120, p.g < 210, p.b < 80 { count += 1 }
+                }
+            }
+            return count
+        }
+        #expect(amberPixels(off) == 0)
+        #expect(amberPixels(on) > 30)
+    }
+
+    @Test func holdKeepsTheLightOnAfterTheConditionEnds() throws {
+        // Speed is above 30 from 8 s; with the condition "at most 12" (true only until 0.8 s),
+        // a 2 s hold keeps it lit at 2 s but not at 4 s.
+        var params = IndicatorParams(channel: "speed", condition: .atMost, threshold: 12, glyph: .light, label: "")
+        params.holdSeconds = 2
+        let renderer = IndicatorRenderer(context: context(frame: .full), params: params)
+        #expect(renderer.isOn(at: 0.5))
+        #expect(renderer.isOn(at: 2))
+        #expect(!renderer.isOn(at: 4))
+        params.holdSeconds = 0
+        #expect(!IndicatorRenderer(context: context(frame: .full), params: params).isOn(at: 2))
+    }
+
+    @Test func timingPanelShowsLapsAndDeltas() throws {
+        let frame = UnitRect(x: 0.02, y: 0.4, width: 0.96, height: 0.18)
+        let panel = try render(.lapPanel(LapPanelParams()), frame: frame, time: 6)
+        try GoldenImage.assertMatches(panel, named: "lap-panel-6s")
+        // Something was drawn across the strip: text/scales are white-ish.
+        var bright = 0
+        for x in stride(from: 10, to: 390, by: 4) {
+            for y in stride(from: 165, to: 230, by: 4) {
+                let p = PixelBuffers.pixel(in: panel, x: x, y: y)
+                if p.r > 180, p.g > 180, p.b > 180 { bright += 1 }
+            }
+        }
+        #expect(bright > 40, "\(bright) bright pixels")
+    }
+
+    @Test func textDataZonesRecolourTheValue() throws {
+        var params = TextDataParams(channel: "rpm", label: "RPM")
+        params.zones = [GaugeZone(from: 4000, to: nil, color: .red)]
+        let frame = UnitRect(x: 0.05, y: 0.4, width: 0.9, height: 0.2)
+        let cool = try render(.textData(params), frame: frame, time: 1)  // 2500 rpm
+        let hot = try render(.textData(params), frame: frame, time: 8)  // 6000 rpm
+        func redPixels(_ buffer: CVPixelBuffer) -> Int {
+            var count = 0
+            for y in stride(from: 160, to: 240, by: 2) {
+                for x in stride(from: 20, to: 380, by: 2) {
+                    let p = PixelBuffers.pixel(in: buffer, x: x, y: y)
+                    if p.r > 180, p.g < 90, p.b < 90 { count += 1 }
+                }
+            }
+            return count
+        }
+        #expect(redPixels(cool) == 0)
+        #expect(redPixels(hot) > 20)
+    }
+}

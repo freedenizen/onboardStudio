@@ -280,6 +280,11 @@ struct TextDataInspector: View {
             ColorPicker("Text", selection: color(\.textColor))
             ColorPicker("Background", selection: color(\.backgroundColor))
         }
+        Section("Warning Zones") {
+            ZoneListEditor(zones: field(\.zones), maximum: 1000)
+            Text("Recolour the number when the shown value falls in a zone (e.g. amber above 220, red above 235).")
+                .font(.caption).foregroundStyle(.secondary)
+        }
         Section("Number Format") {
             Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 0...3)
             NumberField("Multiply by", value: field(\.multiplier))

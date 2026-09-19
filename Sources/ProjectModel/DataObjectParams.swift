@@ -213,6 +213,8 @@ public struct TextDataParams: Hashable, Codable, Sendable {
     public var labelScale: Double
     /// Font for the value; empty = monospaced digits (Menlo).
     public var fontName: String
+    /// Value ranges that recolour the number (warning thresholds); empty = always `textColor`.
+    public var zones: [GaugeZone]
 
     public init(
         channel: String,
@@ -232,7 +234,8 @@ public struct TextDataParams: Hashable, Codable, Sendable {
         absoluteValue: Bool = false,
         fontScale: Double = 0.5,
         labelScale: Double = 0.3,
-        fontName: String = ""
+        fontName: String = "",
+        zones: [GaugeZone] = []
     ) {
         self.channel = channel
         self.label = label
@@ -252,12 +255,13 @@ public struct TextDataParams: Hashable, Codable, Sendable {
         self.fontScale = fontScale
         self.labelScale = labelScale
         self.fontName = fontName
+        self.zones = zones
     }
 
     private enum CodingKeys: String, CodingKey {
         case channel, label, decimals, speedUnit, unitLabel, alignment, textColor, backgroundColor
         case multiplier, offset, prefix, thousandsSeparator, showPlusSign, minimumIntegerDigits, absoluteValue
-        case fontScale, labelScale, fontName
+        case fontScale, labelScale, fontName, zones
     }
 
     public init(from decoder: any Decoder) throws {
@@ -281,6 +285,7 @@ public struct TextDataParams: Hashable, Codable, Sendable {
         fontScale = try c.decodeIfPresent(Double.self, forKey: .fontScale) ?? d.fontScale
         labelScale = try c.decodeIfPresent(Double.self, forKey: .labelScale) ?? d.labelScale
         fontName = try c.decodeIfPresent(String.self, forKey: .fontName) ?? d.fontName
+        zones = try c.decodeIfPresent([GaugeZone].self, forKey: .zones) ?? []
     }
 }
 

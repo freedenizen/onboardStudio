@@ -108,6 +108,8 @@ struct SidebarView: View {
         case .gear: "g.square"
         case .lapCounter: "number.square"
         case .scripted: "curlybraces"
+        case .indicator: "exclamationmark.triangle"
+        case .lapPanel: "timer"
         }
     }
 }

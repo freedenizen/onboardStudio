@@ -36,11 +36,14 @@ public struct TextDataRenderer: OverlayDrawing {
         let text = valueText(for: raw)
         let padding = rect.height * 0.12
         let labelStyle = TextDrawing.Style(pointSize: rect.height * params.labelScale, color: params.textColor)
+        // Warning zones recolour the number (water/oil temperature style) without a script.
+        let shown = raw.map { $0 * params.multiplier + params.offset }
+        let valueColor = shown.flatMap { params.zones.zone(containing: $0)?.color } ?? params.textColor
         let valueStyle =
             params.fontName.isEmpty
-            ? TextDrawing.Style.mono(rect.height * params.fontScale, color: params.textColor)
+            ? TextDrawing.Style.mono(rect.height * params.fontScale, color: valueColor)
             : TextDrawing.Style(
-                fontName: params.fontName, pointSize: rect.height * params.fontScale, color: params.textColor)
+                fontName: params.fontName, pointSize: rect.height * params.fontScale, color: valueColor)
         let unitStyle = TextDrawing.Style(
             pointSize: rect.height * params.fontScale * 0.5, color: params.textColor, weightBold: false)
 

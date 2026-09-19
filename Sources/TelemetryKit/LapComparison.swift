@@ -85,3 +85,21 @@ extension TimeParsing {
         return (seconds < 0 ? "−" : "+") + magnitude
     }
 }
+
+extension LapComparison {
+    /// Speed now minus the best completed lap's speed at the same distance into the lap (m/s;
+    /// positive = faster than the best lap here). `nil` under the same conditions as `deltaToBest`.
+    public static func speedDeltaToBest(at time: Double, session: TelemetrySession) -> Double? {
+        guard let distance = session[.distance], let speed = session[.speed] else { return nil }
+        let timing = LapTiming.resolve(at: time, laps: session.laps)
+        guard let current = timing.currentLap, let bestNumber = timing.bestLapNumber,
+            let best = session.laps.first(where: { $0.number == bestNumber }), let bestEnd = best.end,
+            let into = distanceIntoLap(at: time, lap: current, distance: distance),
+            let bestStartDistance = distance.value(at: best.start),
+            let bestTime = Self.time(
+                atDistance: bestStartDistance + into, in: distance, between: best.start, and: bestEnd),
+            let now = speed.value(at: time), let then = speed.value(at: bestTime)
+        else { return nil }
+        return now - then
+    }
+}
