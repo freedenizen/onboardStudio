@@ -78,7 +78,7 @@ public struct LapPanelRenderer: OverlayDrawing {
         }
     }
 
-    var reference: LapComparison.Reference { params.reference == .bestLap ? .best : .previous }
+    var reference: LapComparison.Reference { params.reference.comparison }
 
     /// Where each lap block starts (fraction of the width), packing the enabled ones.
     func laneOrigins() -> [String: Double] {
@@ -227,5 +227,16 @@ public struct LapPanelRenderer: OverlayDrawing {
         text(
             signed, at: CGPoint(x: b, y: layout.rowY), alignment: .trailing, size: layout.big, color: params.textColor,
             in: cg)
+    }
+}
+
+extension LapReference {
+    /// The telemetry-side reference this setting names.
+    var comparison: LapComparison.Reference {
+        switch self {
+        case .sessionBest: .sessionBest
+        case .bestLap: .best
+        case .previousLap: .previous
+        }
     }
 }

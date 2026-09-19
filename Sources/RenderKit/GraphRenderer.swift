@@ -165,7 +165,7 @@ public struct GraphRenderer: OverlayDrawing {
     func decimals(for span: Double) -> Int { span < 5 ? 2 : span < 50 ? 1 : 0 }
 
     func unitText(for channel: String) -> String {
-        ChannelValue.role(channel) == .speed ? params.speedUnit.rawValue : ""
+        ChannelValue.isSpeed(channel) ? params.speedUnit.rawValue : ""
     }
 
     // MARK: - Data
@@ -264,7 +264,7 @@ public struct GraphRenderer: OverlayDrawing {
         guard let role = ChannelValue.role(series.channel) else {
             return Trace(points: [], color: series.color, lineWidth: series.lineWidth, isGhost: ghost)
         }
-        let factor = role == .speed ? params.speedUnit.factorFromMetersPerSecond : 1
+        let factor = role == .speed || role == .speedDelta ? params.speedUnit.factorFromMetersPerSecond : 1
         var points: [CGPoint] = []
         points.reserveCapacity(times.count)
         for t in times {

@@ -102,6 +102,45 @@ struct GaugeDesignerGoldenTests {
             named: "bar-vertical-5s")
     }
 
+    @Test func deltaBarGrowsEitherSideOfZero() throws {
+        // −1 s at 2 s (ahead), +1 s at 8 s (behind), on a ±2 s bar with no caption.
+        let session = TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [
+                Channel(role: .lapDelta, name: "d", unit: .seconds, times: [0, 2, 8, 10], values: [-1, -1, 1, 1]),
+                Channel(role: .speedDelta, name: "s", unit: .metersPerSecond, times: [0, 10], values: [10, 10]),
+            ])
+        let green = RGBAColor(red: 0, green: 1, blue: 0)
+        let red = RGBAColor(red: 1, green: 0, blue: 0)
+        let params = BarParams(
+            channel: "lapDelta", minValue: -2, maxValue: 2, trackColor: .black,
+            zones: [GaugeZone(from: -2, to: 0, color: green), GaugeZone(from: 0, to: nil, color: red)],
+            showValue: false, cornerRadius: 0, fillFromZero: true)
+        let frame = UnitRect(x: 0, y: 0.4, width: 1, height: 0.2)
+        let ahead = try render(.bar(params), frame: frame, time: 2, session: session)
+        let behind = try render(.bar(params), frame: frame, time: 8, session: session)
+        // Ahead: green between 25 % and 50 % of the width, nothing right of the centre.
+        let aheadFill = PixelBuffers.pixel(in: ahead, x: 150, y: 200)
+        #expect(aheadFill.g > 200 && aheadFill.r < 60, "green left of centre: \(aheadFill)")
+        #expect(PixelBuffers.pixel(in: ahead, x: 50, y: 200).g < 60, "empty beyond the value")
+        #expect(PixelBuffers.pixel(in: ahead, x: 300, y: 200).r < 60, "empty right of centre")
+        // Behind: red between 50 % and 75 %.
+        let behindFill = PixelBuffers.pixel(in: behind, x: 250, y: 200)
+        #expect(behindFill.r > 200 && behindFill.g < 60, "red right of centre: \(behindFill)")
+        #expect(PixelBuffers.pixel(in: behind, x: 100, y: 200).g < 60, "empty left of centre")
+        #expect(PixelBuffers.pixel(in: behind, x: 350, y: 200).r < 60, "empty beyond the value")
+        // A speed difference is shown in the object's speed unit like a speed.
+        let sample = TelemetrySampler(session: session).sample(at: 5)
+        let mph = ChannelValue.display("speedDelta", in: sample, speedUnit: .mph)
+        #expect(abs((mph ?? 0) - 22.369) < 0.01)
+        #expect(ChannelValue.isSpeed("speedDelta") && !ChannelValue.isSpeed("lapDelta"))
+        // Without the option the same bar fills from its minimum.
+        var plain = params
+        plain.fillFromZero = false
+        let fromMinimum = try render(.bar(plain), frame: frame, time: 2, session: session)
+        #expect(PixelBuffers.pixel(in: fromMinimum, x: 50, y: 200).g > 200)
+    }
+
     @Test func graphs() throws {
         let frame = UnitRect(x: 0.05, y: 0.2, width: 0.9, height: 0.6)
         let time = GraphParams(series: [GraphSeries(channel: "speed")], axis: .time, window: 5, label: "SPEED")

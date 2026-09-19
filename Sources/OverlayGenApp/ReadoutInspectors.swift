@@ -28,6 +28,10 @@ struct BarInspector: View {
         Section("Zones") {
             ZoneListEditor(zones: field(\.zones), maximum: params.maxValue)
             Toggle("Zone colours the fill (else the track)", isOn: field(\.zoneColorsFill))
+            Toggle("Fill from zero (± bar)", isOn: field(\.fillFromZero))
+                .help(
+                    "For deltas, steering or lateral g: the bar grows left or right of zero. Needs a range across zero."
+                )
         }
         Section("Readout") {
             Toggle("Show value", isOn: field(\.showValue))
@@ -236,6 +240,9 @@ struct TimerInspector: View {
             ColorPicker("Text", selection: color(\.textColor))
             ColorPicker("Background", selection: color(\.backgroundColor))
             if params.mode == .deltaToBest {
+                Picker("Compare with", selection: field(\.deltaReference)) {
+                    ForEach(LapReference.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                }
                 ColorPicker("Ahead colour", selection: color(\.aheadColor))
                 ColorPicker("Behind colour", selection: color(\.behindColor))
                 Text("Needs a distance channel and a completed best lap.").font(.caption).foregroundStyle(.secondary)

@@ -115,6 +115,19 @@ Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save i
 `.overlaystyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse
 it on the next session.
 
+### Deltas to your best lap
+
+No script or pre-processing is needed for delta readouts. Whenever the data has laps, OverlayGen
+adds two channels that any object can use (bars, graphs, text, gauges, indicator lights, scripts):
+**`lapDelta`**, the seconds you are behind (+) or ahead of (−) the session's best lap at the same
+spot on the track, and **`speedDelta`**, your speed minus the best lap's speed there. Both compare
+by distance travelled since the start of the lap, and the best lap is the quickest full lap of the
+whole session, so the first lap already has a delta and the best lap reads zero. **Add Object ▸
+Delta Bar (time)** and **Delta Bar (speed)** are ± bars that grow left or right of a zero mark in
+green or red; any bar becomes one with **Fill from zero**. The Delta timer and the Timing Panel
+can compare with the *session best lap* (the default), the *best lap so far* (what a live lap
+timer shows) or the *previous lap*.
+
 ### Indicator lights and your logger
 
 Every logger names its ABS / stability / brake channels differently (a RaceChrono CAN export may

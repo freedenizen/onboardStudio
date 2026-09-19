@@ -142,6 +142,8 @@ public struct TimerParams: Hashable, Codable, Sendable {
     /// Colours for a delta readout: ahead of / behind the best lap.
     public var aheadColor: RGBAColor
     public var behindColor: RGBAColor
+    /// The lap a delta readout compares with. Files from before 0.17 used the best lap so far.
+    public var deltaReference: LapReference
 
     public init(
         mode: TimerMode = .currentLap,
@@ -151,7 +153,8 @@ public struct TimerParams: Hashable, Codable, Sendable {
         backgroundColor: RGBAColor = .translucentBlack,
         decimals: Int = 2,
         aheadColor: RGBAColor = RGBAColor(red: 0.25, green: 0.85, blue: 0.35),
-        behindColor: RGBAColor = .red
+        behindColor: RGBAColor = .red,
+        deltaReference: LapReference = .sessionBest
     ) {
         self.mode = mode
         self.showLapNumber = showLapNumber
@@ -161,10 +164,12 @@ public struct TimerParams: Hashable, Codable, Sendable {
         self.decimals = decimals
         self.aheadColor = aheadColor
         self.behindColor = behindColor
+        self.deltaReference = deltaReference
     }
 
     private enum CodingKeys: String, CodingKey {
         case mode, showLapNumber, label, textColor, backgroundColor, decimals, aheadColor, behindColor
+        case deltaReference
     }
 
     public init(from decoder: any Decoder) throws {
@@ -178,6 +183,7 @@ public struct TimerParams: Hashable, Codable, Sendable {
         decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? d.decimals
         aheadColor = try c.decodeIfPresent(RGBAColor.self, forKey: .aheadColor) ?? d.aheadColor
         behindColor = try c.decodeIfPresent(RGBAColor.self, forKey: .behindColor) ?? d.behindColor
+        deltaReference = try c.decodeIfPresent(LapReference.self, forKey: .deltaReference) ?? .bestLap
     }
 }
 

@@ -136,6 +136,26 @@ extension DisplayObject {
         ("Lap Timer", .timer(TimerParams())),
         ("Lap Counter", .lapCounter(LapCounterParams())),
         ("Timing Panel", .lapPanel(LapPanelParams())),
+        (
+            "Delta Bar (time)",
+            .bar(
+                BarParams(
+                    channel: "lapDelta", label: "Δ", minValue: -2, maxValue: 2,
+                    zones: [
+                        GaugeZone(from: -2, to: 0, color: RGBAColor(red: 0.13, green: 0.75, blue: 0.25)),
+                        GaugeZone(from: 0, to: nil, color: RGBAColor(red: 0.88, green: 0.19, blue: 0.19)),
+                    ], decimals: 2, unitLabel: "s", fillFromZero: true))
+        ),
+        (
+            "Delta Bar (speed)",
+            .bar(
+                BarParams(
+                    channel: "speedDelta", label: "Δ", minValue: -10, maxValue: 10,
+                    zones: [
+                        GaugeZone(from: -10, to: 0, color: RGBAColor(red: 0.88, green: 0.19, blue: 0.19)),
+                        GaugeZone(from: 0, to: nil, color: RGBAColor(red: 0.13, green: 0.75, blue: 0.25)),
+                    ], decimals: 0, fillFromZero: true))
+        ),
         ("ABS Light", .indicator(.abs)),
         ("Traction Light", .indicator(.traction)),
         ("Brake Light", .indicator(.brake)),

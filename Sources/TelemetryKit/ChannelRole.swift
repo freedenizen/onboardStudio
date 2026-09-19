@@ -20,6 +20,10 @@ public enum ChannelRole: Hashable, Sendable, Codable {
     case longitudinalG
     /// Lateral acceleration (positive = right turn by RaceRender convention).
     case lateralG
+    /// Seconds behind (+) or ahead of (−) the session's best lap at the same distance into the lap.
+    case lapDelta
+    /// Speed minus the best lap's speed at the same distance into the lap (m/s; + = faster).
+    case speedDelta
     /// A channel from an OBD-II source that may update at a different rate than GPS.
     case obd(String)
     /// Any other named channel.
@@ -45,6 +49,8 @@ public enum ChannelRole: Hashable, Sendable, Codable {
         case .brake: "brake"
         case .longitudinalG: "longitudinalG"
         case .lateralG: "lateralG"
+        case .lapDelta: "lapDelta"
+        case .speedDelta: "speedDelta"
         case .obd(let name): "obd:\(name)"
         case .aux(let name): "aux:\(name)"
         }
@@ -81,6 +87,6 @@ extension ChannelRole {
 
     public static let standardRoles: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .speed, .heading, .lap, .distance,
-        .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG,
+        .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG, .lapDelta, .speedDelta,
     ]
 }

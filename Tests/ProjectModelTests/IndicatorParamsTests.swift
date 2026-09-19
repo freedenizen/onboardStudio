@@ -66,9 +66,33 @@ struct IndicatorParamsTests {
     @Test func lapPanelDefaultsFillMissingKeys() throws {
         let decoded = try JSONDecoder().decode(LapPanelParams.self, from: Data("{}".utf8))
         #expect(decoded == LapPanelParams())
-        #expect(decoded.bestLabel == "Best" && decoded.reference == .bestLap && decoded.showLapNumbers)
+        #expect(decoded.bestLabel == "Best" && decoded.reference == .sessionBest && decoded.showLapNumbers)
         let custom = try JSONDecoder().decode(
             LapPanelParams.self, from: Data(#"{"reference":"previousLap","currentLabel":"Now"}"#.utf8))
         #expect(custom.reference == .previousLap && custom.currentLabel == "Now")
+    }
+
+    @Test func deltaSettingsKeepOldFilesUnchanged() throws {
+        // New delta timers compare with the session's best lap; files saved before 0.17 have no
+        // key and keep comparing with the best lap so far.
+        #expect(TimerParams(mode: .deltaToBest).deltaReference == .sessionBest)
+        let old = try JSONDecoder().decode(TimerParams.self, from: Data(#"{"mode":"deltaToBest"}"#.utf8))
+        #expect(old.deltaReference == .bestLap)
+        let round = try JSONDecoder().decode(
+            TimerParams.self, from: JSONEncoder().encode(TimerParams(mode: .deltaToBest, deltaReference: .previousLap)))
+        #expect(round.deltaReference == .previousLap)
+        // Bars fill from the minimum unless asked otherwise; the delta bar templates ask.
+        let bar = try JSONDecoder().decode(BarParams.self, from: Data(#"{"channel":"rpm"}"#.utf8))
+        #expect(!bar.fillFromZero)
+        let templates = DisplayObject.templates.filter { $0.name.hasPrefix("Delta Bar") }
+        #expect(templates.count == 2)
+        for template in templates {
+            guard case .bar(let params) = template.kind else {
+                Issue.record("\(template.name) is not a bar")
+                continue
+            }
+            #expect(params.fillFromZero && params.minValue < 0 && params.maxValue > 0)
+            #expect(["lapDelta", "speedDelta"].contains(params.channel))
+        }
     }
 }

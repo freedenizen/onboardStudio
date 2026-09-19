@@ -60,7 +60,8 @@ public struct TimerRenderer: OverlayDrawing {
             return Readout(text: timeOfDay(sample: sample) ?? "--:--:--", color: nil)
         case .deltaToBest:
             guard let sample, let session = context.sampler?.session,
-                let delta = LapComparison.deltaToBest(at: sample.time, session: session)
+                let delta = LapComparison.delta(
+                    at: sample.time, session: session, reference: params.deltaReference.comparison)
             else { return Readout(text: "--.--", color: nil) }
             let text = TimeParsing.deltaString(delta, decimals: decimals)
             let color = text.hasPrefix("−") ? params.aheadColor : (text.hasPrefix("+") ? params.behindColor : nil)

@@ -235,7 +235,7 @@ public struct LapPanelParams: Hashable, Codable, Sendable {
     public init(
         showBest: Bool = true, showPrevious: Bool = true, showCurrent: Bool = true,
         bestLabel: String = "Best", previousLabel: String = "Previous", currentLabel: String = "Current",
-        showLapNumbers: Bool = true, reference: LapReference = .bestLap, showSpeedDelta: Bool = true,
+        showLapNumbers: Bool = true, reference: LapReference = .sessionBest, showSpeedDelta: Bool = true,
         showTimeDelta: Bool = true, speedDeltaRange: Double = 10, timeDeltaRange: Double = 2,
         speedUnit: SpeedDisplayUnit = .mph,
         decimals: Int = 1, textColor: RGBAColor = .white,
@@ -300,12 +300,16 @@ public struct LapPanelParams: Hashable, Codable, Sendable {
 
 /// The completed lap a delta is measured against.
 public enum LapReference: String, Codable, Sendable, CaseIterable {
+    /// The quickest full lap of the whole session: deltas exist from the first lap on.
+    case sessionBest
+    /// The quickest lap completed so far, as a live lap timer would show.
     case bestLap
     case previousLap
 
     public var displayName: String {
         switch self {
-        case .bestLap: "Best lap"
+        case .sessionBest: "Session best lap"
+        case .bestLap: "Best lap so far"
         case .previousLap: "Previous lap"
         }
     }
