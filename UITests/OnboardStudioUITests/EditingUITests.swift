@@ -1,7 +1,7 @@
 import XCTest
 
 /// J3: start from a template, then add the media; files are never added twice.
-final class TemplateUITests: OverlayGenUITestCase {
+final class TemplateUITests: OnboardStudioUITestCase {
     @MainActor
     func testNewFromTemplateThenMedia() throws {
         launch()
@@ -44,7 +44,7 @@ final class TemplateUITests: OverlayGenUITestCase {
 }
 
 /// J4: the manual sync wizard.
-final class SyncUITests: OverlayGenUITestCase {
+final class SyncUITests: OnboardStudioUITestCase {
     @MainActor
     func testWizardNudgesAndAppliesTheOffset() throws {
         launch()
@@ -67,7 +67,7 @@ final class SyncUITests: OverlayGenUITestCase {
 }
 
 /// J5 and J6: objects and their inspectors.
-final class ObjectEditingUITests: OverlayGenUITestCase {
+final class ObjectEditingUITests: OnboardStudioUITestCase {
     @MainActor
     func testAddRenameRetuneHideDeleteUndo() throws {
         launch()
@@ -124,7 +124,7 @@ final class ObjectEditingUITests: OverlayGenUITestCase {
 }
 
 /// J7: a second camera, layouts and segments.
-final class MultiCameraUITests: OverlayGenUITestCase {
+final class MultiCameraUITests: OnboardStudioUITestCase {
     @MainActor
     func testSecondCameraLayoutsAndSegments() throws {
         launch()
@@ -153,12 +153,12 @@ final class MultiCameraUITests: OverlayGenUITestCase {
 }
 
 /// J9: open, edit, save and reopen a project.
-final class ProjectUITests: OverlayGenUITestCase {
+final class ProjectUITests: OnboardStudioUITestCase {
     @MainActor
     func testOpenEditSaveReopen() throws {
         launch()
         testing("Open Fixture Project")
-        let window = app.windows["slice.overlayproj"]
+        let window = app.windows["slice.onboardproj"]
         XCTAssertTrue(window.waitForExistence(timeout: Self.timeout), "Fixture project window")
         XCTAssertTrue(sidebarInput("Camera").waitForExistence(timeout: Self.timeout))
         XCTAssertTrue(sidebarObject("Speed").waitForExistence(timeout: Self.timeout))

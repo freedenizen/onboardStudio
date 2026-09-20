@@ -29,7 +29,7 @@ struct TimelineMediaTests {
 
     @Test func compileMakesOneInstructionPerSegment() async throws {
         let project = try project()
-        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj"))
+        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj"))
         let compiled = try await ProjectCompiler.compile(try await ProjectCompiler.load(project, location: location))
         #expect(compiled.plans.map(\.start) == [0, 1.5])
         #expect(compiled.plans[0].plan.videoLayers.count == 1)
@@ -49,7 +49,7 @@ struct TimelineMediaTests {
         let output = MediaFixtures.temporaryOutput("switch")
         defer { try? FileManager.default.removeItem(at: output) }
         let project = try project()
-        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj"))
+        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj"))
         let compiled = try await ProjectCompiler.compile(try await ProjectCompiler.load(project, location: location))
         var settings = ExportSettings(width: 320, height: 180, frameRate: 30, videoBitrate: 1_000_000)
         settings.audioBitrate = nil
@@ -89,7 +89,7 @@ struct TimelineMediaTests {
             ])
         project.settings.outputWidth = 320
         project.settings.outputHeight = 180
-        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj"))
+        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj"))
         let loaded = try await ProjectCompiler.load(project, location: location)
         let compiled = try await ProjectCompiler.compile(loaded)
         #expect(compiled.plan.videoLayers.count == 1)
@@ -103,7 +103,7 @@ struct TimelineMediaTests {
 
     @Test func replanFollowsTimelineEdits() async throws {
         var project = try project()
-        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj"))
+        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj"))
         let loaded = try await ProjectCompiler.load(project, location: location)
         let compiled = try await ProjectCompiler.compile(loaded)
         project.timeline.shiftSegment(project.timeline.segments[0].id, to: 2.25)
@@ -232,7 +232,7 @@ struct ClipEditingTests {
         let loaded = ProjectCompiler.LoadedProject(
             project: Project(
                 inputs: [], displayObjects: [], export: ExportSettings()),
-            location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj")),
+            location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj")),
             sessions: [:], mediaInfo: [:])
         _ = loaded
         let plans = ProjectCompiler.timedPlans(
@@ -253,7 +253,7 @@ struct ClipEditingTests {
                 DisplayObject(label: "v", inputID: video.id, frame: .full, kind: .video(VideoObjectParams()))
             ])
         return try await ProjectCompiler.load(
-            project, location: ProjectLocation(URL(fileURLWithPath: "/tmp/y.overlayproj")))
+            project, location: ProjectLocation(URL(fileURLWithPath: "/tmp/y.onboardproj")))
     }
 
     @Test func rotatedSecondClipRendersUprightEndToEnd() async throws {

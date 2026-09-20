@@ -5,7 +5,7 @@ for a file from a cheap sniff of its first 8 KB, and produces a `RawTable` whose
 suggested channel roles. `SessionBuilder` turns that into a `TelemetrySession` (canonical units,
 derived speed/heading/distance from GPS when absent, laps).
 
-Run `overlaygen probe <file>` to see how a file is interpreted.
+Run `onboard probe <file>` to see how a file is interpreted.
 
 ## RaceRender CSV (`racerender-csv`)
 
@@ -131,7 +131,7 @@ position. The accelerometer and gyro (`ACCL`, `GYRO`, 200 Hz) become `aux:accel_
 Times are seconds from the start of the video, so a data input made from the video itself needs
 no sync (the app's **Use Embedded GPS** button creates one with the video's sync). The first GPS
 fix gives the recording's wall-clock start (`createdAt`), which other loggers can be synced to.
-CLI: `overlaygen probe GX010037.MP4`; importer id `gopro-gpmf`.
+CLI: `onboard probe GX010037.MP4`; importer id `gopro-gpmf`.
 
 ## Garmin FIT
 
@@ -168,7 +168,7 @@ latitude, longitude, altitude, speed (horizontal, or derived from position), and
 
 ## Sidecar telemetry
 
-When a video is added, OverlayGen looks for a telemetry file with the same name next to it
+When a video is added, Onboard Studio looks for a telemetry file with the same name next to it
 (`.srt`, `.fit`, `.gpx`, `.csv`, either case) and offers **Use Sidecar Data** in the video
 input's inspector; the new data input shares the video's sync since such logs start with the
 recording. Garmin VIRB cameras write a FIT file this way; DJI cameras an SRT. Sony cameras write a
@@ -176,7 +176,7 @@ recording. Garmin VIRB cameras write a FIT file this way; DJI cameras an SRT. So
 
 ## Motion auto-sync
 
-**Auto-Sync by Motion** (data input inspector) and `overlaygen sync --video a.mp4 --data b.csv`
+**Auto-Sync by Motion** (data input inspector) and `onboard sync --video a.mp4 --data b.csv`
 need no clocks at all. The video's audio loudness (engine and wind noise, sampled at 10 Hz over
 the whole clip; it decodes in seconds) is correlated against the log's speed, or its g-force
 magnitude when there is no speed channel. When the clip is silent or the match is weak, the change
@@ -187,4 +187,4 @@ correlation and whether the match stands out clearly ("good match") or should be
 sync wizard. On the HERO13 + RaceChrono reference session the audio match lands within 2 s of the
 GPS-verified offset with a correlation of 0.9, whereas picture motion alone is unreliable on
 dash-cam footage (people walking past a parked car change as many pixels as driving does), which is
-why it is only the fallback. `overlaygen sync --dump signals.csv` writes the signals for inspection.
+why it is only the fallback. `onboard sync --dump signals.csv` writes the signals for inspection.

@@ -1,8 +1,10 @@
 import Foundation
 
-/// Reads and writes the `.overlayproj` package as `FileWrapper`s, for use by document-based apps.
+/// Reads and writes the `.onboardproj` package as `FileWrapper`s, for use by document-based apps.
 public enum ProjectPackage {
-    public static let contentTypeIdentifier = "com.freedenizen.overlaygen.project"
+    public static let contentTypeIdentifier = "com.freedenizen.onboardstudio.project"
+    /// The identifier used before the app was renamed from OverlayGen. Still read, never written.
+    public static let legacyContentTypeIdentifier = "com.freedenizen.overlaygen.project"
 
     public static func read(_ wrapper: FileWrapper) throws -> Project {
         if wrapper.isDirectory {

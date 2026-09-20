@@ -26,7 +26,7 @@ struct ExportOptionsTests {
             ])
         project.settings.outputWidth = 320
         project.settings.outputHeight = 180
-        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj"))
+        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj"))
         var loaded = try await ProjectCompiler.load(project, location: location)
         // The CSV does not exist; substitute a synthetic session as if it had loaded.
         loaded.problems[data.id] = nil

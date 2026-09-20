@@ -1,14 +1,14 @@
 import Foundation
 import ProjectModel
 
-/// User templates live as `.overlaytemplate` files in Application Support; built-in ones ship in
+/// User templates live as `.onboardtemplate` files in Application Support; built-in ones ship in
 /// code.
 enum TemplateStore {
     static var directory: URL {
         let base =
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Application Support")
-        return base.appending(path: "OverlayGen/Templates")
+        return base.appending(path: "OnboardStudio/Templates")
     }
 
     struct Entry: Identifiable, Hashable {
@@ -25,7 +25,10 @@ enum TemplateStore {
         else { return [] }
         return
             urls
-            .filter { $0.pathExtension == ProjectTemplate.fileExtension }
+            .filter {
+                $0.pathExtension == ProjectTemplate.fileExtension
+                    || $0.pathExtension == ProjectTemplate.legacyFileExtension
+            }
             .map { Entry(name: $0.deletingPathExtension().lastPathComponent, url: $0) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }

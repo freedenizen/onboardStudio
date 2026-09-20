@@ -26,7 +26,7 @@ public final class ScriptEngine: @unchecked Sendable {
 
     public init(source: String) {
         context = JSContext()
-        context.name = "OverlayGen script"
+        context.name = "Onboard Studio script"
         setUp(source: source)
     }
 

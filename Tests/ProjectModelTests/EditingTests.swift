@@ -30,9 +30,9 @@ struct ProjectPackageTests {
     }
 
     @Test func mediaReferencesAreRelativeInsideTheBase() {
-        let base = URL(fileURLWithPath: "/Users/me/Race.overlayproj", isDirectory: true)
+        let base = URL(fileURLWithPath: "/Users/me/Race.onboardproj", isDirectory: true)
         #expect(
-            MediaReference.make(for: URL(fileURLWithPath: "/Users/me/Race.overlayproj/clip.mp4"), relativeTo: base).path
+            MediaReference.make(for: URL(fileURLWithPath: "/Users/me/Race.onboardproj/clip.mp4"), relativeTo: base).path
                 == "clip.mp4")
         #expect(
             MediaReference.make(for: URL(fileURLWithPath: "/Users/me/other/clip.mp4"), relativeTo: base).path

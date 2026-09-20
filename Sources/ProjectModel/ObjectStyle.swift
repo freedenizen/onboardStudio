@@ -5,8 +5,11 @@ import Foundation
 /// part of a style.
 public struct ObjectStyle: Hashable, Codable, Sendable {
     public static let formatVersion = 1
-    public static let fileExtension = "overlaystyle"
-    public static let pasteboardType = "com.freedenizen.overlaygen.style"
+    public static let fileExtension = "onboardstyle"
+    /// The extension used before the app was renamed from OverlayGen. Still opened, never written.
+    public static let legacyFileExtension = "overlaystyle"
+    public static let pasteboardType = "com.freedenizen.onboardstudio.style"
+    public static let legacyPasteboardType = "com.freedenizen.overlaygen.style"
 
     public var formatVersion: Int
     public var kind: DisplayObjectKind
@@ -52,7 +55,7 @@ public enum ObjectStyleError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .newerFormat(let version):
-            "This style was saved by a newer version of OverlayGen (format \(version))."
+            "This style was saved by a newer version of Onboard Studio (format \(version))."
         }
     }
 }

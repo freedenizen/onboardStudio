@@ -54,7 +54,7 @@ public enum SphericalMetadata {
     /// Inserts the spherical box into the first video track of `url` in place. Returns `false`
     /// (and leaves the file alone) when it is already tagged.
     @discardableResult
-    public static func inject(into url: URL, software: String = "OverlayGen") throws -> Bool {
+    public static func inject(into url: URL, software: String = "Onboard Studio") throws -> Bool {
         let file = try TopLevel.read(url)
         guard let trak = try videoTrack(in: file.moov) else { throw InjectError.noVideoTrack(url) }
         if hasSphericalBox(in: file.moov, trak: trak) { return false }

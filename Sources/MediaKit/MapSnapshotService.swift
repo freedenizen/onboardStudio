@@ -6,7 +6,7 @@ import RenderKit
 import UniformTypeIdentifiers
 
 /// Fetches Apple Maps imagery for a track map background with `MKMapSnapshotter` and caches
-/// the result (image + geographic mapping) under `~/Library/Caches/OverlayGen/maps`.
+/// the result (image + geographic mapping) under `~/Library/Caches/OnboardStudio/maps`.
 public enum MapSnapshotService {
     public static let snapshotSize = 1024
     nonisolated(unsafe) private static var memory: [MapBackgroundRequest: MapBackground] = [:]
@@ -16,7 +16,7 @@ public enum MapSnapshotService {
         let base =
             FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
-        return base.appending(path: "OverlayGen/maps")
+        return base.appending(path: "OnboardStudio/maps")
     }
 
     /// The background for `request`, from memory, disk, or Apple Maps; `nil` when offline.

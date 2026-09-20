@@ -28,8 +28,8 @@ ls -la Tests/Fixtures/test-3s.mp4 Tests/Fixtures/test-1s.mts Tests/Fixtures/ster
 ffmpeg -y -hide_banner -loglevel error \
   -f lavfi -i "testsrc2=size=320x180:rate=25" -t 1 \
   -c:v libx264 -pix_fmt yuv420p -preset veryfast -crf 30 -an \
-  "$TMPDIR/overlaygen-rot-src.mp4"
-ffmpeg -y -hide_banner -loglevel error -display_rotation 180 -i "$TMPDIR/overlaygen-rot-src.mp4" -c copy \
+  "$TMPDIR/onboard-rot-src.mp4"
+ffmpeg -y -hide_banner -loglevel error -display_rotation 180 -i "$TMPDIR/onboard-rot-src.mp4" -c copy \
   Tests/Fixtures/test-rot180.mp4
-rm -f "$TMPDIR/overlaygen-rot-src.mp4"
+rm -f "$TMPDIR/onboard-rot-src.mp4"
 ls -la Tests/Fixtures/test-rot180.mp4

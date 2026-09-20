@@ -1,6 +1,6 @@
 # Project file format
 
-A project is a package directory `Name.overlayproj/` containing `project.json`. Media and data
+A project is a package directory `Name.onboardproj/` containing `project.json`. Media and data
 files are referenced by path; relative paths resolve against the package directory. A bare
 `project.json` elsewhere works too (paths resolve against its directory).
 
@@ -61,8 +61,8 @@ Video input settings (all optional; older files decode as neutral):
 | `lens` | `{ "mode": "none" / "fisheye" / "equirectangular", "fov": 180, "outputFov": 90, "yaw": 0, "pitch": 0, "roll": 0 }`: unwraps a fisheye (equidistant, `fov` across the picture width) or a 360° equirectangular source into a flat view. `outputFov` is the horizontal field of view of the result; `yaw` turns right, `pitch` looks up, `roll` tilts. A 360° source becomes a 16:9 picture half the source width. Applied on the GPU with a Metal kernel compiled at run time (CPU fallback when Core Image renders in software). |
 
 Containers macOS cannot open (MTS/M2TS, MKV, some AVI) are converted with `ffmpeg` if it is
-installed (`brew install ffmpeg`, or set `OVERLAYGEN_FFMPEG`); the converted copy lives in
-`~/Library/Caches/OverlayGen/remux` and the project keeps the original path.
+installed (`brew install ffmpeg`, or set `ONBOARD_FFMPEG`); the converted copy lives in
+`~/Library/Caches/OnboardStudio/remux` and the project keeps the original path.
 
 Image inputs: `{ "image": { "_0": {} } }` with `source.path` pointing at a PNG/JPEG/HEIC/TIFF.
 
@@ -80,7 +80,7 @@ output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first 
 | `gear` | `channel` (0 = neutral, −1 = reverse, −99 = park), `label`, `showLabel`, `neutralText`, `reverseText`, `parkText`, `fontScale`, colours |
 | `lapCounter` | `label`, `showTotal`, `numberOffset`, colours |
 | `scripted` | `source`: JavaScript defining `background(canvas)` and/or `frame(canvas, data)`; see `docs/scripting.md` |
-| `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation` (degrees clockwise), `backgroundColor`; `background` (`none`/`standard`/`satellite`/`hybrid`: Apple Maps imagery behind the outline, fetched once for the session's area and cached in `~/Library/Caches/OverlayGen/maps`); `secondInputID` + `secondDotColor` (another data input drawn as a second dot, positioned through that input's own sync) |
+| `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation` (degrees clockwise), `backgroundColor`; `background` (`none`/`standard`/`satellite`/`hybrid`: Apple Maps imagery behind the outline, fetched once for the session's area and cached in `~/Library/Caches/OnboardStudio/maps`); `secondInputID` + `secondDotColor` (another data input drawn as a second dot, positioned through that input's own sync) |
 | `gForce` | `maxG`, `ringStep`, `trailSeconds`, `dotColor`, `gridColor`, `faceColor`, `showValues` |
 | `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`/`projectTime`/`timeOfDay`/`deltaToBest`), `showLapNumber`, `label`, `decimals` (1–3), colours, `aheadColor`/`behindColor` for the delta. `deltaToBest` compares the lap in progress with the best completed lap at the same distance into the lap (needs a distance channel; GPS files get one automatically). `timeOfDay` needs epoch timestamps (RaceChrono) or a recorded start time.; `deltaReference` (`sessionBest` / `bestLap` = best so far / `previousLap`; files without the key use `bestLap`) |
 | `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours; formatting: `multiplier`, `offset` (shown = value × multiplier + offset), `prefix`, `thousandsSeparator`, `showPlusSign`, `minimumIntegerDigits`, `absoluteValue`, `fontScale`, `labelScale`, `fontName` (empty = monospaced); `zones` (`[{ "from", "to", "color" }]`, recolour the shown value) |
@@ -94,15 +94,15 @@ output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first 
 Colours are `#RRGGBB` or `#RRGGBBAA`. Speed channels are stored in m/s and converted for display
 by `speedUnit`; other channels are shown as stored.
 
-See `Tests/Fixtures/slice.overlayproj/project.json` for a complete example, and render it with:
+See `Tests/Fixtures/slice.onboardproj/project.json` for a complete example, and render it with:
 
 ```sh
-swift run overlaygen render --project Tests/Fixtures/slice.overlayproj --out slice.mp4
+swift run onboard render --project Tests/Fixtures/slice.onboardproj --out slice.mp4
 ```
 
 ## Export settings
 
-`export` holds the last export configuration and is what `overlaygen render --project` uses:
+`export` holds the last export configuration and is what `onboard render --project` uses:
 
 | Field | Meaning |
 |---|---|
@@ -115,16 +115,16 @@ swift run overlaygen render --project Tests/Fixtures/slice.overlayproj --out sli
 
 Presets (`--preset` on the CLI, the Preset menu in the app): `720p`, `1080p`, `1440p`, `4k`, `vertical` (1080 × 1920),
 `overlay-alpha` (transparent ProRes 4444) and `overlay-key` (blue key, H.264). The CLI also takes
-`--laps first:last`, `--background video|transparent|key:#RRGGBB`, `--spherical` and `--template file.overlaytemplate`.
+`--laps first:last`, `--background video|transparent|key:#RRGGBB`, `--spherical` and `--template file.onboardtemplate`.
 
 ## Templates
 
-A `.overlaytemplate` file is a project without its inputs: `settings`, `export`, `displayObjects`
+A `.onboardtemplate` file is a project without its inputs: `settings`, `export`, `displayObjects`
 (with `inputID` cleared), `timeline`, and `videoOrdinals` (which video input, by order, each video
 object used). Applying a template keeps the project's inputs and rebinds: video objects to the
 video inputs in order (extra ones are dropped), data-driven objects to the first data input. Three
 templates are built in (Classic Dash, Minimal, Data Wall); user templates live in
-`~/Library/Application Support/OverlayGen/Templates/`. **File ▸ New from Template**, **Project ▸
+`~/Library/Application Support/OnboardStudio/Templates/`. **File ▸ New from Template**, **Project ▸
 Apply Template** and **Save as Template…** use them.
 
 ## Missing media
@@ -158,7 +158,7 @@ exact frames in both the preview and the export.
 ## Object styles
 
 **Project ▸ Export Object Style…** writes the selected object's `kind`, `opacity`, `width` and `height` to a
-`.overlaystyle` JSON file (`{ "formatVersion": 1, "kind": …, "opacity": 1, "width": 0.22, "height": 0.38 }`).
+`.onboardstyle` JSON file (`{ "formatVersion": 1, "kind": …, "opacity": 1, "width": 0.22, "height": 0.38 }`).
 **Import Object Style…** applies a file to the selected object (keeping its position, label and data source)
 or adds a new object when nothing is selected. **Copy / Paste Object Style** (⌥⌘C / ⌥⌘V) do the same through
 the clipboard.

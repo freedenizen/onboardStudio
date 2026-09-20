@@ -11,7 +11,7 @@ height
 lapnumber
 
 [comments]
-Synthetic OverlayGen fixture
+Synthetic OnboardStudio fixture
 
 [column names]
 sats time lat long velocity heading height lapnumber

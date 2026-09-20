@@ -3,11 +3,11 @@
 The journeys below are the ways people actually use a telemetry-overlay editor. They come from
 this app's own guide, from the manuals of the tools it replaces or sits next to, and from the
 community guides written for those tools. Each journey lists what the user does, what they expect,
-and which automated test covers it: an XCUITest in `UITests/OverlayGenUITests` that drives the
+and which automated test covers it: an XCUITest in `UITests/OnboardStudioUITests` that drives the
 real app through its windows, menus and inspectors, a unit test on the model, or a manual QA script
 under `docs/qa-*.md` for the steps no automation can reach (file panels, drag-and-drop from Finder).
 
-Sources: the OverlayGen [user guide](user-guide.md); RaceRender 3's
+Sources: the Onboard Studio [user guide](user-guide.md); RaceRender 3's
 [Basics](https://racerender.com/RR3/docs/Basics.html),
 [How To: Data Overlay](https://racerender.com/RR3/docs/HowTo-Datalogger.html),
 [Sync Tool](https://racerender.com/RR3/docs/InputFileSync.html) and
@@ -29,7 +29,7 @@ Scripts/ui-tests.sh Journeys   # one test class
 
 The app is launched with `-uiTesting YES`, which adds a **Testing** menu whose items add the
 fixture files from `Tests/Fixtures` (the open panels cannot be driven), and with
-`OVERLAYGEN_TEST_EXPORT_DIR` so the export sheet writes without a save panel. Everything else is
+`ONBOARD_TEST_EXPORT_DIR` so the export sheet writes without a save panel. Everything else is
 the ordinary UI: toolbar, sidebar, inspector, transport, timeline, menus and sheets. Controls that
 have no text carry accessibility identifiers (`toolbar.addVideo`, `transport.play`,
 `object.Speed`, `tour.next`, `export.start`…); text controls are found by their titles, so a
@@ -70,7 +70,7 @@ tutorial.*
    **Reveal in Finder**. The file exists and has the expected size and duration.
 
 Tests: `JourneyUITests.testTrackDayFromVideoToExport`. Model: `ClipSequenceTests`,
-`ExportOptionsTests`; the CLI renders the same fixture project in CI (`overlaygen render`).
+`ExportOptionsTests`; the CLI renders the same fixture project in CI (`onboard render`).
 
 ### J3 Start from a template, then add the media
 *Source: RaceRender templates; Telemetry Overlay activity presets; regression for the 0.16.2 bug.*

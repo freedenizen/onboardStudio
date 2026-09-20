@@ -14,7 +14,7 @@ enum MediaFixtures {
     }
 
     static func temporaryOutput(_ name: String = "out") -> URL {
-        FileManager.default.temporaryDirectory.appending(path: "overlaygen-\(name)-\(UUID().uuidString).mp4")
+        FileManager.default.temporaryDirectory.appending(path: "onboard-\(name)-\(UUID().uuidString).mp4")
     }
 
     /// Decodes one frame of `url` at `time` as BGRA.
@@ -198,7 +198,7 @@ struct ProjectCompilerTests {
     static var sliceURL: URL {
         get throws {
             try #require(Bundle.module.url(forResource: "Fixtures", withExtension: nil)).appending(
-                path: "slice.overlayproj")
+                path: "slice.onboardproj")
         }
     }
 

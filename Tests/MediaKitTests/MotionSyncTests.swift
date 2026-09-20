@@ -120,7 +120,7 @@ struct RealMotionSyncTests {
     /// The HERO13 clip against the RaceChrono log recorded in the same car; the GPS cross-check
     /// in M10 established data time 1787528146.8 at video time 0.
     @Test func audioLoudnessFindsTheGPSVerifiedOffset() async throws {
-        guard let dir = ProcessInfo.processInfo.environment["OVERLAYGEN_SAMPLES_DIR"] else { return }
+        guard let dir = ProcessInfo.processInfo.environment["ONBOARD_SAMPLES_DIR"] else { return }
         let video = URL(fileURLWithPath: dir).appending(path: "GX010037.MP4")
         let data = URL(fileURLWithPath: dir).appending(path: "session_20260823_163604_sonoma_v3.csv")
         guard FileManager.default.fileExists(atPath: video.path), FileManager.default.fileExists(atPath: data.path)

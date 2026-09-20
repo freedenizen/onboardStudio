@@ -58,20 +58,20 @@ The converged model across Resolve and Premiere:
 **Do not copy** Final Cut's marker *types* (standard / chapter / to-do / completed). They are
 Final Cut-specific, and a Resolve or Premiere user will not expect them.
 
-For OverlayGen this maps cleanly: lap boundaries, incidents and sectors are all colour + name +
+For Onboard Studio this maps cleanly: lap boundaries, incidents and sectors are all colour + name +
 optional range, and a marker scoped to a data input is the clip-marker case.
 
 ## Navigation
 
 - **J-K-L shuttle** is universal and predates all three apps — it comes from tape-deck logging.
   `J` plays backward, `L` forward, `K` stops; repeated taps increase speed, and holding `K` while
-  tapping `J`/`L` steps a frame at a time. OverlayGen has no equivalent today.
+  tapping `J`/`L` steps a frame at a time. Onboard Studio has no equivalent today.
 - **`I` and `O`** set in and out points, used both to choose a portion of a source clip and to mark
-  a range on the timeline for playback, render or a lift/extract. OverlayGen has no equivalent;
+  a range on the timeline for playback, render or a lift/extract. Onboard Studio has no equivalent;
   its trim range is the closest thing, but that is a property of the input, not a scratch selection.
 - `Home` / `End` go to start and end.
 
-## Where OverlayGen deliberately differs
+## Where Onboard Studio deliberately differs
 
 **Arrow keys nudge the selected object; `,` and `.` step frames.**
 
@@ -79,7 +79,7 @@ This is the reverse of Resolve and Final Cut, where `,`/`.` nudge the selected c
 keys belong to the timeline — left/right step a frame, up/down move the selection between edits.
 The divergence is deliberate, not an oversight:
 
-OverlayGen's display objects are positioned in the **picture** — `x`/`y` as fractions of the frame —
+Onboard Studio's display objects are positioned in the **picture** — `x`/`y` as fractions of the frame —
 not along the timeline. Nudging one with the arrow keys is the *inspector* gesture, which is what
 arrows do in every app when a graphic is selected, rather than the *timeline* gesture. Issue #50
 asks for exactly this. Premiere also nudges the selected clip with arrows, so the three references
@@ -89,12 +89,12 @@ Two consequences worth keeping:
 
 - **`,`/`.` still step frames here**, which is the one place the key is reused for a different job
   than Resolve gives it. Accept it: the alternative is leaving frame stepping unbound.
-- **Resolve's fast nudge is 5 frames and is a preference**, not a fixed 10. OverlayGen's existing
+- **Resolve's fast nudge is 5 frames and is a preference**, not a fixed 10. Onboard Studio's existing
   ⇧ multiplier was already 5×; #50 moves it to 10 px because that is what the issue asks for, which
   is a defensible product choice rather than a convention. Keeping it configurable would match
   Resolve more closely than either number.
 
-If OverlayGen ever gains clips that move along the timeline, revisit all of this.
+If Onboard Studio ever gains clips that move along the timeline, revisit all of this.
 
 ## Resolve shortcuts, from the shipped manual
 

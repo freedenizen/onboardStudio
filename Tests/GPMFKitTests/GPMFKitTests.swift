@@ -148,7 +148,7 @@ enum GPMFFixture {
     }
 
     static func write(_ data: Data, name: String = "gpmf") throws -> URL {
-        let url = FileManager.default.temporaryDirectory.appending(path: "overlaygen-\(name)-\(UUID().uuidString).mp4")
+        let url = FileManager.default.temporaryDirectory.appending(path: "onboard-\(name)-\(UUID().uuidString).mp4")
         try data.write(to: url)
         return url
     }
@@ -280,7 +280,7 @@ struct GoProTelemetryTests {
 
     /// Runs only when a real GoPro clip is available locally (never committed).
     @Test func realClipWhenAvailable() throws {
-        guard let dir = ProcessInfo.processInfo.environment["OVERLAYGEN_SAMPLES_DIR"] else { return }
+        guard let dir = ProcessInfo.processInfo.environment["ONBOARD_SAMPLES_DIR"] else { return }
         let url = URL(fileURLWithPath: dir).appending(path: "GX010037.MP4")
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         let start = Date()

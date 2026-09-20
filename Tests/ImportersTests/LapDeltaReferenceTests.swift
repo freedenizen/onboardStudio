@@ -6,13 +6,13 @@ import Testing
 
 /// Compares the native delta channels with the output of the user's `racechrono_add_deltas.py`
 /// (run with the same reference lap) sample by sample. Local files only: set
-/// `OVERLAYGEN_SAMPLES_DIR` and `OVERLAYGEN_DELTA_REFERENCE_CSV`.
+/// `ONBOARD_SAMPLES_DIR` and `ONBOARD_DELTA_REFERENCE_CSV`.
 @Suite("Lap deltas against the reference script")
 struct LapDeltaReferenceTests {
     @Test func nativeChannelsMatchTheScriptOutput() throws {
         let environment = ProcessInfo.processInfo.environment
-        guard let samples = environment["OVERLAYGEN_SAMPLES_DIR"],
-            let reference = environment["OVERLAYGEN_DELTA_REFERENCE_CSV"]
+        guard let samples = environment["ONBOARD_SAMPLES_DIR"],
+            let reference = environment["ONBOARD_DELTA_REFERENCE_CSV"]
         else { return }
         let source = URL(fileURLWithPath: samples).appending(path: "session_20260823_163604_sonoma_v3.csv")
         let session = try FormatDetector.importSession(at: source)

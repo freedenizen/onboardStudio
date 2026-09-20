@@ -53,7 +53,7 @@ jobs:
       - name: Coverage report
         run: |
           PROFDATA=$(find .build -name 'default.profdata' | head -1)
-          BIN=$(find .build -name 'OverlayGenPackageTests.xctest' -type d | head -1)/Contents/MacOS/OverlayGenPackageTests
+          BIN=$(find .build -name 'OnboardStudioPackageTests.xctest' -type d | head -1)/Contents/MacOS/OnboardStudioPackageTests
           xcrun llvm-cov report "$BIN" -instr-profile "$PROFDATA" -ignore-filename-regex='(\.build|Tests)/' | tee coverage.txt
           xcrun llvm-cov export "$BIN" -instr-profile "$PROFDATA" -format=lcov -ignore-filename-regex='(\.build|Tests)/' > coverage.lcov
           { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
@@ -64,10 +64,10 @@ jobs:
             coverage.txt
             coverage.lcov
       - name: CLI smoke
-        run: swift run overlaygen --version
+        run: swift run onboard --version
       - name: Render benchmark (fixture project)
         run: |
-          swift run overlaygen bench --frames 90 --json | tee bench.json
+          swift run onboard bench --frames 90 --json | tee bench.json
           { echo '### Bench (fixture slice, debug build)'; echo '```'; cat bench.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   build-app:
@@ -83,7 +83,7 @@ jobs:
       - name: Build app (unsigned)
         run: |
           set -o pipefail
-          xcodebuild -project OverlayGen.xcodeproj -scheme OverlayGen -configuration Debug \
+          xcodebuild -project OnboardStudio.xcodeproj -scheme OnboardStudio -configuration Debug \
             -destination 'generic/platform=macOS' CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual \
             -derivedDataPath build/DerivedData build | tail -20
 
@@ -100,10 +100,10 @@ jobs:
       - name: Run XCUITests
         run: |
           set -o pipefail
-          export OVERLAYGEN_TEST_EXPORT_DIR="$RUNNER_TEMP/exports"
-          mkdir -p "$OVERLAYGEN_TEST_EXPORT_DIR"
-          xcodebuild test -project OverlayGen.xcodeproj -scheme OverlayGen -destination 'platform=macOS' \
-            -only-testing:OverlayGenUITests -derivedDataPath build/DerivedData \
+          export ONBOARD_TEST_EXPORT_DIR="$RUNNER_TEMP/exports"
+          mkdir -p "$ONBOARD_TEST_EXPORT_DIR"
+          xcodebuild test -project OnboardStudio.xcodeproj -scheme OnboardStudio -destination 'platform=macOS' \
+            -only-testing:OnboardStudioUITests -derivedDataPath build/DerivedData \
             -resultBundlePath build/UITests.xcresult CODE_SIGN_IDENTITY="-" \
             | grep -E "error:|Test Case|Executed|TEST "
       - name: Keep the result bundle

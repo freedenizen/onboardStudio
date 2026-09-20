@@ -57,7 +57,7 @@ enum FITFixture {
     }
 
     static func write(_ data: Data) throws -> URL {
-        let url = FileManager.default.temporaryDirectory.appending(path: "overlaygen-\(UUID().uuidString).fit")
+        let url = FileManager.default.temporaryDirectory.appending(path: "onboard-\(UUID().uuidString).fit")
         try data.write(to: url)
         return url
     }

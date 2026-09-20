@@ -12,8 +12,10 @@ import UniformTypeIdentifiers
 final class ProjectDocument: ReferenceFileDocument, @unchecked Sendable {
     typealias Snapshot = Project
 
-    nonisolated static let readableContentTypes: [UTType] = [.overlayProject]
-    nonisolated static let writableContentTypes: [UTType] = [.overlayProject]
+    /// Pre-rename projects stay readable; saving always writes the current type, so opening an
+    /// old project and saving it migrates the document in place.
+    nonisolated static let readableContentTypes: [UTType] = [.onboardProject, .legacyOverlayProject]
+    nonisolated static let writableContentTypes: [UTType] = [.onboardProject]
 
     nonisolated(unsafe) let objectWillChange = ObservableObjectPublisher()
     nonisolated(unsafe) private var storage: Project

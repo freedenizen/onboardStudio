@@ -41,12 +41,14 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    static let styleType = UTType(exportedAs: "com.freedenizen.overlaygen.style", conformingTo: .json)
+    static let styleType = UTType(exportedAs: "com.freedenizen.onboardstudio.style", conformingTo: .json)
+    /// Styles exported under the app's former name, OverlayGen.
+    static let legacyStyleType = UTType(importedAs: ObjectStyle.legacyPasteboardType, conformingTo: .json)
 
     static func chooseStyle() -> URL? {
         let panel = NSOpenPanel()
         panel.title = "Import Object Style"
-        panel.allowedContentTypes = [styleType, .json]
+        panel.allowedContentTypes = [styleType, legacyStyleType, .json]
         panel.allowsMultipleSelection = false
         return panel.runModal() == .OK ? panel.url : nil
     }
@@ -60,12 +62,15 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    static let templateType = UTType(exportedAs: "com.freedenizen.overlaygen.template", conformingTo: .json)
+    static let templateType = UTType(exportedAs: "com.freedenizen.onboardstudio.template", conformingTo: .json)
+    /// Templates exported under the app's former name, OverlayGen.
+    static let legacyTemplateType = UTType(
+        importedAs: "com.freedenizen.overlaygen.template", conformingTo: .json)
 
     static func chooseTemplate() -> URL? {
         let panel = NSOpenPanel()
         panel.title = "Import Template"
-        panel.allowedContentTypes = [templateType, .json]
+        panel.allowedContentTypes = [templateType, legacyTemplateType, .json]
         panel.allowsMultipleSelection = false
         return panel.runModal() == .OK ? panel.url : nil
     }

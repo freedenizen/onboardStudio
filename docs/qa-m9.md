@@ -12,12 +12,12 @@
 | 8 | Move a data file away, reopen the project | The sidebar shows a warning on that input, the inspector explains and offers **Relink…**; the video still plays |
 | 9 | **Relink…** to the file | Warning clears, gauges come back |
 | 10 | Select an object, press arrow keys (⇧ for larger steps) | The object nudges by the step set in Preferences |
-| 11 | **OverlayGen ▸ Settings…** | Default export preset, nudge step, ffmpeg path and automatic update checks are editable and persist |
+| 11 | **Onboard Studio ▸ Settings…** | Default export preset, nudge step, ffmpeg path and automatic update checks are editable and persist |
 
 ## Results (0.7.0, real Sonoma project)
 
 - A camera pointed at a missing file shows the warning in the sidebar and the reason plus **Relink…** in the inspector while the other camera and the data keep rendering (the open panel itself cannot be driven by script, so the relink click was verified by hand-inspection of the code path and the loader tests).
-- **Save as Template…** wrote `QA Dash.overlaytemplate`; **Apply Template ▸ Classic Dash** replaced the dash and dropped the second camera and segment; applying **QA Dash** brought them back.
+- **Save as Template…** wrote `QA Dash.onboardtemplate`; **Apply Template ▸ Classic Dash** replaced the dash and dropped the second camera and segment; applying **QA Dash** brought them back.
 - The export sheet opens on *Project size* with the project's audio bitrate; presets, background and range controls render.
 - Preferences window shows the default preset, nudge step, ffmpeg path and update toggle.
 - Fixes on the way: `ProjectCompiler.load` never populated converted media URLs or loaded images (image inputs and MTS conversion did not reach the compositor); number fields committing on focus marked the preset Custom.

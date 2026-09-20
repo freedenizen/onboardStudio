@@ -7,7 +7,7 @@ import ProjectModel
 extension EditorModel {
     // MARK: - Styles
 
-    /// Writes the selected object's look to an `.overlaystyle` file.
+    /// Writes the selected object's look to an `.onboardstyle` file.
     func exportStyle() {
         guard let object = selectedObject else { return }
         guard let url = OpenPanels.chooseStyleDestination(suggestedName: object.label) else { return }
@@ -19,7 +19,7 @@ extension EditorModel {
         }
     }
 
-    /// Applies an `.overlaystyle` file to the selected object, or adds a new object from it.
+    /// Applies an `.onboardstyle` file to the selected object, or adds a new object from it.
     func importStyle() {
         guard let url = OpenPanels.chooseStyle() else { return }
         do {

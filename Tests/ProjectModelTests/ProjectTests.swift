@@ -59,9 +59,9 @@ struct ProjectTests {
     }
 
     @Test func locationHandlesPackagesAndBareFiles() throws {
-        let package = ProjectLocation(URL(fileURLWithPath: "/tmp/Race.overlayproj"))
+        let package = ProjectLocation(URL(fileURLWithPath: "/tmp/Race.onboardproj"))
         #expect(package.jsonURL.lastPathComponent == "project.json")
-        #expect(package.baseDirectory.path == "/tmp/Race.overlayproj")
+        #expect(package.baseDirectory.path == "/tmp/Race.onboardproj")
         #expect(package.resolve(MediaReference(path: "../clip.mp4")).standardizedFileURL.path == "/tmp/clip.mp4")
         #expect(package.resolve(MediaReference(path: "/abs/clip.mp4")).path == "/abs/clip.mp4")
         let bare = ProjectLocation(URL(fileURLWithPath: "/tmp/x/project.json"))
@@ -69,15 +69,53 @@ struct ProjectTests {
     }
 
     @Test func savesAndLoadsAPackage() throws {
-        let dir = FileManager.default.temporaryDirectory.appending(path: "og-\(UUID().uuidString).overlayproj")
+        let dir = FileManager.default.temporaryDirectory.appending(path: "og-\(UUID().uuidString).onboardproj")
         defer { try? FileManager.default.removeItem(at: dir) }
         let location = ProjectLocation(dir)
         let project = Self.sampleProject()
         try location.save(project)
         #expect(try location.load() == project)
         #expect(throws: ProjectError.self) {
-            try ProjectLocation(URL(fileURLWithPath: "/nonexistent.overlayproj")).load()
+            try ProjectLocation(URL(fileURLWithPath: "/nonexistent.onboardproj")).load()
         }
+    }
+
+    /// The app was renamed from OverlayGen, which changed the document extension. Projects saved
+    /// before the rename must still open, so the pre-rename extension stays recognised as a package
+    /// rather than being treated as a bare JSON file.
+    @Test func opensPackagesSavedUnderTheFormerName() throws {
+        let legacy = ProjectLocation(URL(fileURLWithPath: "/tmp/Race.overlayproj"))
+        #expect(legacy.jsonURL.lastPathComponent == "project.json")
+        #expect(legacy.baseDirectory.path == "/tmp/Race.overlayproj")
+        #expect(legacy.resolve(MediaReference(path: "clip.mp4")).path == "/tmp/Race.overlayproj/clip.mp4")
+
+        #expect(ProjectLocation.isPackageExtension("onboardproj"))
+        #expect(ProjectLocation.isPackageExtension("overlayproj"))
+        #expect(!ProjectLocation.isPackageExtension("json"))
+    }
+
+    /// A project written under the old extension round-trips, so opening one and saving it in place
+    /// keeps working rather than writing a stray `project.json` next to the package.
+    @Test func loadsAProjectSavedUnderTheFormerExtension() throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "og-\(UUID().uuidString).overlayproj")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let location = ProjectLocation(dir)
+        let project = Self.sampleProject()
+        try location.save(project)
+        #expect(FileManager.default.fileExists(atPath: dir.appending(path: "project.json").path))
+        #expect(try location.load() == project)
+    }
+
+    /// New files are written under the current names; the pre-rename identifiers are read-only.
+    @Test func writesCurrentNamesAndKeepsTheFormerOnesForReading() {
+        #expect(ProjectLocation.packageExtension == "onboardproj")
+        #expect(ProjectLocation.legacyPackageExtension == "overlayproj")
+        #expect(ProjectTemplate.fileExtension == "onboardtemplate")
+        #expect(ProjectTemplate.legacyFileExtension == "overlaytemplate")
+        #expect(ObjectStyle.fileExtension == "onboardstyle")
+        #expect(ObjectStyle.legacyFileExtension == "overlaystyle")
+        #expect(ProjectPackage.contentTypeIdentifier == "com.freedenizen.onboardstudio.project")
+        #expect(ProjectPackage.legacyContentTypeIdentifier == "com.freedenizen.overlaygen.project")
     }
 
     @Test func colourHexParsing() {
