@@ -45,24 +45,49 @@ final class TemplateUITests: OnboardStudioUITestCase {
 
 /// J4: the manual sync wizard.
 final class SyncUITests: OnboardStudioUITestCase {
+    /// #76: manual sync is a panel under the preview, not a sheet over it. Each nudge applies
+    /// straight away, and the rest of the window stays live so the picture can be judged while
+    /// nudging — the loop the modal sheet made impossible.
     @MainActor
-    func testWizardNudgesAndAppliesTheOffset() throws {
+    func testSyncPanelNudgesLiveAndLeavesTheWindowUsable() throws {
         launch()
         addFixtureVideo()
         addFixtureData()
         app.buttons["toolbar.sync"].click()
-        XCTAssertTrue(app.staticTexts["Data time: 0:00.00"].waitForExistence(timeout: Self.timeout))
-        app.buttons["+1 s"].click()
-        XCTAssertTrue(app.staticTexts["Data time: 0:01.00"].waitForExistence(timeout: Self.timeout))
-        app.buttons["+0.1 s"].click()
-        XCTAssertTrue(app.staticTexts["Data time: 0:01.10"].waitForExistence(timeout: Self.timeout))
-        app.buttons["sync.apply"].click()
+        XCTAssertTrue(app.buttons["sync.done"].waitForExistence(timeout: Self.timeout), "No sync panel")
+
+        // A whole second, then a single frame: at the project's 30 fps that is 1 + 1/30.
+        app.buttons["sync.data+1s"].click()
+        app.buttons["sync.data+1f"].click()
+
+        // Clicking the sidebar with the panel open is the point: a sheet would have blocked it.
         sidebarInput("racerender-basic").click()
-        let start = app.textFields["sync.startPosition"]
-        XCTAssertTrue(start.waitForExistence(timeout: Self.timeout))
-        expect(start, toRead: "1.1")
+        let offset = app.textFields["sync.offset"]
+        XCTAssertTrue(offset.waitForExistence(timeout: Self.timeout), "The panel is still modal")
+        expect(offset, toRead: "1.033")
+
+        // Every nudge is its own undo step, so a wrong move costs one ⌘Z rather than the lot.
         app.typeKey("z", modifierFlags: .command)
-        expect(start, toRead: "0")
+        expect(offset, toRead: "1")
+        app.typeKey("z", modifierFlags: .command)
+        expect(offset, toRead: "0")
+    }
+
+    /// The video moves against the data as well, which is the right way round when the data is
+    /// trustworthy and the camera started late.
+    @MainActor
+    func testSyncPanelAlsoMovesTheVideo() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        app.buttons["toolbar.sync"].click()
+        XCTAssertTrue(app.buttons["sync.done"].waitForExistence(timeout: Self.timeout))
+        app.buttons["sync.video+1s"].click()
+
+        sidebarInput("test-3s").click()
+        let offset = app.textFields["sync.offset"]
+        XCTAssertTrue(offset.waitForExistence(timeout: Self.timeout))
+        expect(offset, toRead: "1")
     }
 }
 

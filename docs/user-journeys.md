@@ -89,13 +89,16 @@ Model: `InputPlanningTests`, `TemplateExportTests`.
 "Adjusting video synchronisation".*
 
 1. With a video and a data file, open **Sync** from the toolbar.
-2. The wizard shows the data file, a data time with −1 s / −0.1 s / +0.1 s / +1 s buttons and
-   **Apply**.
-3. Nudge by +1 s and apply. The data input's Synchronization section shows the new start position.
-4. **Undo** returns it.
+2. A panel appears **under the preview**, not over it: the data file, live readouts of what the
+   data says at the moment on screen, and nudge buttons for the data and for the video
+   (−1s / −.1 / −1f / +1f / +.1 / +1s, where a frame comes from the project's rate).
+3. Each nudge applies immediately and is its own undo step, so the loop is nudge, look at the
+   picture, nudge again. The rest of the window stays usable throughout.
+4. Nudge the data by +1s then +1f; the data input's Synchronization section shows the new offset.
+   **Undo** steps back one nudge at a time.
 
-Tests: `SyncUITests.testWizardNudgesAndAppliesTheOffset`. Model: `TimestampSyncTests`,
-`MotionSyncTests`.
+Tests: `SyncUITests.testSyncPanelNudgesLiveAndLeavesTheWindowUsable`,
+`SyncUITests.testSyncPanelAlsoMovesTheVideo`. Model: `TimestampSyncTests`, `MotionSyncTests`.
 
 ### J5 Edit the overlay: add, select, tune, hide, delete, undo
 *Source: guide §5; RaceRender display objects and properties; Telemetry Overlay gauge editing.*

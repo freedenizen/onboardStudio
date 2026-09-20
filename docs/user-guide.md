@@ -30,13 +30,14 @@ and, ideally, a data log.
 4. **Line the data up with the video.** When the log has a clock (RaceChrono, GPX, FIT, DJI…)
    this happens automatically the moment the file is added; the status line says which clock was
    used. Otherwise select the data input and press **Auto-Sync by Motion** (matches the video's
-   sound and motion against the log's speed) or **Synchronize with Video…** for the manual wizard.
+   sound and motion against the log's speed) or **Synchronize with Video…** for the manual panel.
 5. **Add gauges.** **Project ▸ Apply Template ▸ Classic Dash** gives a speedometer, tachometer,
    track map, g-force plot and lap timer at once; **Add Object** adds them one by one. Drag objects
    on the preview to move them, drag the handles to resize, and tune them in the inspector on the
    right.
-6. **Play** (space) and scrub the timeline to check that the gauges follow the picture. Nudge the
-   data with the ±0.1 s buttons in the sync wizard if they lead or lag.
+6. **Play** (space) and scrub the timeline to check that the gauges follow the picture. If they
+   lead or lag, open **Sync** and nudge — the panel sits under the preview, so the picture stays
+   visible and scrubbable while you work.
 7. **Export** (**⌘E**). Pick a preset (1080p, 4K, vertical…), a range (whole project, a time
    span or a lap range) and press Export. **Upload to YouTube…** appears when it is done.
 
@@ -189,8 +190,11 @@ a project, `sync` finds the data/video offset from motion, `upload` sends a file
 
 ## 9. Troubleshooting
 
-- **The gauges lead or lag the picture.** Open the sync wizard and step with the ±0.1 s buttons
-  while watching a braking point; or run Auto-Sync by Motion. GoPro creation times can be tens of
+- **The gauges lead or lag the picture.** Open **Sync** and nudge while watching a braking point.
+  The panel stays out of the way under the preview, so you can scrub, look and nudge in a loop;
+  the **−1f / +1f** buttons move by a single frame, which is finer than a tenth of a second at
+  every normal frame rate. You can move the video against the data as well as the data against
+  the video. Or run Auto-Sync by Motion. GoPro creation times can be tens of
   seconds off, which is why the GPS clock is preferred when the clip has one.
 - **A GoPro clip appears upside down.** Onboard Studio honours the camera's orientation flag; use
   Rotation 180° in the Picture section if the camera was mounted inverted without setting it.
