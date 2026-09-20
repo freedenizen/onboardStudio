@@ -3,6 +3,11 @@ import XCTest
 /// Shared launch and navigation helpers for the journey tests. The app runs with the Testing menu
 /// (fixture files instead of open panels) and with state restoration off, so every test starts
 /// from a fresh Untitled document.
+/// Base class for the XCUITest journeys.
+///
+/// CI shards these across three runners **by test class** (`.github/workflows/ci.yml`), balanced
+/// by measured time, so a new class needs adding to one of the shards or it will never run there.
+/// `Scripts/ui-tests.sh` runs the lot locally and is unaffected.
 class OnboardStudioUITestCase: XCTestCase {
     private var launched: XCUIApplication?
     /// The app under test; `launch()` must have run.
