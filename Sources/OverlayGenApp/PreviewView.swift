@@ -243,9 +243,7 @@ final class GizmoView: NSView {
             case 125: frame.y += amount
             default: frame.y -= amount
             }
-            frame.x = min(max(frame.x, 0), 1 - frame.width)
-            frame.y = min(max(frame.y, 0), 1 - frame.height)
-            editor.moveObject(id, frame: frame)
+            editor.moveObject(id, frame: ObjectGeometry.clamped(frame))
         default:
             super.keyDown(with: event)
         }

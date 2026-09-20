@@ -68,11 +68,40 @@ struct ObjectGeometryTests {
         #expect(ObjectGeometry.handle(at: CGPoint(x: 0.9, y: 0.9), in: frame, handleSize: 0.01) == nil)
     }
 
-    @Test func draggingBodyMovesAndClamps() {
+    @Test func draggingBodyMovesAndKeepsAGrabbableEdgeOnScreen() {
         let moved = ObjectGeometry.drag(frame, handle: .body, delta: CGSize(width: 0.1, height: -0.1))
         #expect(abs(moved.x - 0.3) < 1e-9 && abs(moved.y - 0.1) < 1e-9 && moved.width == 0.4 && moved.height == 0.3)
-        let clamped = ObjectGeometry.drag(frame, handle: .body, delta: CGSize(width: 1, height: 1))
-        #expect(clamped.x == 0.6 && clamped.y == 0.7)
+
+        // Dragged far off the bottom-right: a sliver stays on screen, the rest hangs off.
+        let far = ObjectGeometry.drag(frame, handle: .body, delta: CGSize(width: 1, height: 1))
+        #expect(abs(far.x - (1 - ObjectGeometry.minimumVisible)) < 1e-9)
+        #expect(abs(far.y - (1 - ObjectGeometry.minimumVisible)) < 1e-9)
+        #expect(far.width == 0.4 && far.height == 0.3, "the size survives a drag past the edge")
+
+        // And off the top-left the same way, so nothing can be lost entirely.
+        let back = ObjectGeometry.drag(frame, handle: .body, delta: CGSize(width: -1, height: -1))
+        #expect(abs(back.x - (ObjectGeometry.minimumVisible - 0.4)) < 1e-9)
+        #expect(abs(back.y - (ObjectGeometry.minimumVisible - 0.3)) < 1e-9)
+    }
+
+    /// The bug behind the Glass Cockpit wheel snapping into view: it is placed taller than the
+    /// frame with only its upper arc showing, and any move or resize used to pull it fully inside.
+    @Test func aWheelTallerThanTheFrameSurvivesMovingAndResizing() {
+        let wheel = UnitRect(x: 0.2, y: 0.5, width: 0.6, height: 0.6 * 16 / 9)
+        #expect(wheel.height > 1, "the template wheel is taller than the picture")
+
+        let nudged = ObjectGeometry.drag(wheel, handle: .body, delta: CGSize(width: 0, height: 0.05))
+        #expect(abs(nudged.height - wheel.height) < 1e-9, "moving must not shrink it to fit")
+        #expect(abs(nudged.y - 0.55) < 1e-9, "and it must actually move down")
+
+        let grown = ObjectGeometry.drag(wheel, handle: .bottomRight, delta: CGSize(width: 0.2, height: 0.2))
+        #expect(grown.height > 1, "resizing must not cap the height at the frame")
+        #expect(abs(grown.width - 0.8) < 1e-9)
+
+        // It can be pushed down until only a sliver of the rim is left in shot.
+        let down = ObjectGeometry.drag(wheel, handle: .body, delta: CGSize(width: 0, height: 5))
+        #expect(abs(down.y - (1 - ObjectGeometry.minimumVisible)) < 1e-9)
+        #expect(abs(down.height - wheel.height) < 1e-9)
     }
 
     @Test func draggingHandlesResizes() {
