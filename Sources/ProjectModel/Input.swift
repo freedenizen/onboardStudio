@@ -177,6 +177,9 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     public var calculatedFields: [CalculatedFieldSpec]
     /// When set, laps come from crossings of this line instead of the file's lap markers.
     public var lapLine: LapLineSpec?
+    /// Seconds of the data file to keep, in its own time. Applied before laps are detected, so a
+    /// trimmed-away out-lap is not counted and does not compete for the best lap.
+    public var trim: TrimRange
 
     public init(
         importerID: String? = nil,
@@ -187,7 +190,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         resampleHertz: Double? = nil,
         smoothingSeconds: Double = 0,
         calculatedFields: [CalculatedFieldSpec] = [],
-        lapLine: LapLineSpec? = nil
+        lapLine: LapLineSpec? = nil,
+        trim: TrimRange = .none
     ) {
         self.importerID = importerID
         self.roleOverrides = roleOverrides
@@ -198,11 +202,12 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         self.smoothingSeconds = smoothingSeconds
         self.calculatedFields = calculatedFields
         self.lapLine = lapLine
+        self.trim = trim
     }
 
     private enum CodingKeys: String, CodingKey {
         case importerID, roleOverrides, unitOverrides, deriveSpeedFromPosition, deriveHeadingFromPosition
-        case resampleHertz, smoothingSeconds, calculatedFields, lapLine
+        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, trim
     }
 
     public init(from decoder: any Decoder) throws {
@@ -216,6 +221,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         smoothingSeconds = try c.decodeIfPresent(Double.self, forKey: .smoothingSeconds) ?? 0
         calculatedFields = try c.decodeIfPresent([CalculatedFieldSpec].self, forKey: .calculatedFields) ?? []
         lapLine = try c.decodeIfPresent(LapLineSpec.self, forKey: .lapLine)
+        // Absent in projects saved before data could be trimmed; no trim is the right reading.
+        trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
     }
 }
 

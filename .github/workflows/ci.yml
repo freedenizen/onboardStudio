@@ -155,7 +155,7 @@ jobs:
       matrix:
         include:
           - name: shard 1
-            classes: ObjectEditingUITests TrimUITests MarkerUITests
+            classes: ObjectEditingUITests TrimUITests MarkerUITests DataEditingUITests
           - name: shard 2
             classes: JourneyUITests TemplateUITests LauncherUITests SplitUITests
           - name: shard 3

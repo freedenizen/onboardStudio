@@ -172,6 +172,29 @@ struct VideoSplitTests {
         #expect(split.firstEnd == 30)
     }
 
+    /// A data session's first sample can be at any file time, not just 0. Without a lower bound
+    /// a cut placed before the data begins would succeed and make a first half holding no samples
+    /// at all, plus a twinned gauge bound to it.
+    @Test func aCutBeforeTheContentStartsIsRefused() {
+        // Data that starts at file time 2.5 with default sync: project time 1 is before any of it.
+        #expect(
+            VideoTrimming.split(
+                sync, trim: .none, atProjectTime: 1, fullStart: 2.5, fullDuration: 10) == nil)
+        #expect(
+            VideoTrimming.split(
+                sync, trim: .none, atProjectTime: 2.5, fullStart: 2.5, fullDuration: 10) == nil,
+            "and the first sample itself is an edge, not an inside")
+        #expect(
+            VideoTrimming.split(
+                sync, trim: .none, atProjectTime: 5, fullStart: 2.5, fullDuration: 10) != nil)
+    }
+
+    /// Video is unaffected: its content starts at file time 0, which is the default.
+    @Test func videoKeepsItsZeroLowerBound() {
+        #expect(VideoTrimming.split(sync, trim: .none, atProjectTime: 30, fullDuration: 100) != nil)
+        #expect(VideoTrimming.split(sync, trim: .none, atProjectTime: 0, fullDuration: 100) == nil)
+    }
+
     /// Cutting on an edge would make an empty input, so it is refused rather than allowed to
     /// produce a zero-length half that cannot be selected or removed.
     @Test func cuttingOutsideOrOnAnEdgeIsRefused() {

@@ -205,6 +205,13 @@ never appear. Both show up in the sidebar named after the original (`Camera 2`, 
 Start / End to Playhead**). Everything here is non-destructive — the files are untouched and
 **⌘Z** puts it all back.
 
+**Data files split and trim the same way.** Select the data bar instead of a video and the same
+commands apply, with the trim shown in seconds of the file in the inspector's *Trim* section.
+Trimming data is applied *before* laps are worked out, so trimming an out-lap away stops it being
+counted and stops it competing for the best lap — rather than leaving it in place renumbered.
+Splitting data duplicates the gauges reading it, for the same reason splitting a video duplicates
+the camera.
+
 There is no separate "split at marker" or "trim to marker": jump to the marker with **⇧↑** /
 **⇧↓**, which puts the playhead on it, then split or trim. That is how Resolve works too, and one
 command cannot disagree with another about where the cut goes.

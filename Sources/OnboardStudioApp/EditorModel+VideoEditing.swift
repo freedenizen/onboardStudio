@@ -272,9 +272,38 @@ extension EditorModel {
 
     private var selectedTrimmableVideo: Input? {
         guard selectedObjectID == nil, selectedMarkerID == nil, let input = selectedInput,
-            case .video = input.kind
+            input.kind.isVideo || input.kind.isData
         else { return nil }
         return input
+    }
+
+    /// Where a trimmable input starts and ends on the project ruler. Video length comes from the
+    /// file, a data session's from its own time range, so the two are asked separately.
+    private func trimmableSpan(of input: Input) -> (start: Double, end: Double)? {
+        if input.kind.isVideo {
+            guard let end = end(of: input) else { return nil }
+            return (input.sync.offsetInProject, end)
+        }
+        let span = dataSpan(of: input)
+        return span.end > span.start ? span : nil
+    }
+
+    /// Trims a data input by moving its own trim, in the file's seconds.
+    private func trimData(_ input: Input, toProjectTime time: Double, head: Bool) {
+        let fileTime = input.sync.inputTime(forProjectTime: time)
+        updateInput(input.id, name: head ? "Trim Data Start" : "Trim Data End") { updated in
+            guard case .data(var settings) = updated.kind else { return }
+            if head {
+                settings.trim.start = fileTime
+                // The picture and the data must still line up afterwards, so the input slides
+                // along the timeline by as much as was dropped off its front.
+                updated.sync.offsetInProject = time
+                updated.sync.startPositionInInput = fileTime
+            } else {
+                settings.trim.end = fileTime
+            }
+            updated.kind = .data(settings)
+        }
     }
 
     /// Drops everything before the playhead, as Resolve's Trim Start does.
@@ -283,31 +312,39 @@ extension EditorModel {
     /// playhead on it, then trim — the same two steps Resolve uses, and one command rather than
     /// two that can disagree.
     func trimStartToPlayhead() {
-        guard let video = selectedTrimmableVideo else {
-            statusMessage = "Select a video on the timeline to trim it."
+        guard let input = selectedTrimmableVideo else {
+            statusMessage = "Select a video or data file on the timeline to trim it."
             return
         }
         let time = currentTime
-        guard time > video.sync.offsetInProject, let end = end(of: video), time < end else {
-            statusMessage = "Put the playhead inside \(video.label) to trim it."
+        guard let span = trimmableSpan(of: input), time > span.start, time < span.end else {
+            statusMessage = "Put the playhead inside \(input.label) to trim it."
             return
         }
-        trimHead(of: video.id, toProjectTime: time)
-        statusMessage = "Trimmed the start of \(video.label) to the playhead."
+        if input.kind.isVideo {
+            trimHead(of: input.id, toProjectTime: time)
+        } else {
+            trimData(input, toProjectTime: time, head: true)
+        }
+        statusMessage = "Trimmed the start of \(input.label) to the playhead."
     }
 
     /// Drops everything after the playhead, as Resolve's Trim End does.
     func trimEndToPlayhead() {
-        guard let video = selectedTrimmableVideo else {
-            statusMessage = "Select a video on the timeline to trim it."
+        guard let input = selectedTrimmableVideo else {
+            statusMessage = "Select a video or data file on the timeline to trim it."
             return
         }
         let time = currentTime
-        guard time > video.sync.offsetInProject, let end = end(of: video), time < end else {
-            statusMessage = "Put the playhead inside \(video.label) to trim it."
+        guard let span = trimmableSpan(of: input), time > span.start, time < span.end else {
+            statusMessage = "Put the playhead inside \(input.label) to trim it."
             return
         }
-        trimTail(of: video.id, toProjectTime: time)
-        statusMessage = "Trimmed the end of \(video.label) to the playhead."
+        if input.kind.isVideo {
+            trimTail(of: input.id, toProjectTime: time)
+        } else {
+            trimData(input, toProjectTime: time, head: false)
+        }
+        statusMessage = "Trimmed the end of \(input.label) to the playhead."
     }
 }
