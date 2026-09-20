@@ -196,6 +196,15 @@ struct EditorCommands: Commands {
                 .keyboardShortcut(.upArrow, modifiers: [.shift])
             Button("Next Marker") { editor?.goToNextMarker() }
                 .keyboardShortcut(.downArrow, modifiers: [.shift])
+            Divider()
+            // Laps are the marks the data brings with it, so they sit beside the ones you place,
+            // on ⌥ rather than ⇧ to keep the two apart.
+            Button("Previous Lap") { editor?.goToPreviousLap() }
+                .keyboardShortcut(.upArrow, modifiers: [.option])
+                .disabled(editor?.canJumpByLap != true)
+            Button("Next Lap") { editor?.goToNextLap() }
+                .keyboardShortcut(.downArrow, modifiers: [.option])
+                .disabled(editor?.canJumpByLap != true)
         }
         CommandMenu("Playback") {
             Button(editor?.isPlaying == true ? "Pause" : "Play") { editor?.togglePlayback() }.keyboardShortcut(

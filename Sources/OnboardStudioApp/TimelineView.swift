@@ -29,6 +29,10 @@ struct TimelineView: View {
                             VideoLaneView(editor: editor, width: contentWidth)
                             Divider()
                         }
+                        if !editor.project.dataInputs.isEmpty {
+                            DataLaneView(editor: editor, width: contentWidth)
+                            Divider()
+                        }
                         SegmentLaneView(editor: editor, width: contentWidth)
                     }
                     .frame(width: contentWidth)
@@ -43,6 +47,7 @@ struct TimelineView: View {
         }
         .frame(
             height: MarkerLaneView.height + 1
+                + (editor.project.dataInputs.isEmpty ? 0 : DataLaneView.height + 1)
                 + (editor.project.videoInputs.isEmpty ? 12 + 18 + 34 + 3 : 12 + 18 + 26 + 34 + 4))
     }
 }
@@ -356,5 +361,71 @@ struct MarkerLaneView: View {
                 .allowsHitTesting(false)
         }
         .frame(width: width, height: Self.height)
+    }
+}
+
+/// A bar per data input with its laps marked out.
+///
+/// Data files had no bar at all, so there was nothing to say where the session sits against the
+/// video, or where the laps fall. Lap boundaries come from the session and are mapped through the
+/// input's sync, so re-syncing the data slides its laps with it.
+struct DataLaneView: View {
+    @Bindable var editor: EditorModel
+    let width: CGFloat
+
+    static let height: CGFloat = 22
+
+    var body: some View {
+        let duration = max(editor.timelineDuration, 0.001)
+        let pixelsPerSecond = width / duration
+        ZStack(alignment: .topLeading) {
+            Rectangle().fill(Color(nsColor: .windowBackgroundColor))
+            ForEach(editor.project.dataInputs) { data in
+                let laps = editor.laps(of: data)
+                let span = editor.dataSpan(of: data)
+                let selected = editor.selectedInputID == data.id && editor.selectedObjectID == nil
+                bar(data, laps: laps, selected: selected, pixelsPerSecond: pixelsPerSecond)
+                    .frame(width: max((span.end - span.start) * pixelsPerSecond - 2, 6))
+                    .offset(x: span.start * pixelsPerSecond + 1, y: 3)
+                    .onTapGesture {
+                        editor.selectedInputID = data.id
+                        editor.selectedObjectID = nil
+                        editor.selectedSegmentID = nil
+                        editor.selectedMarkerID = nil
+                    }
+            }
+            Rectangle().fill(Color.red).frame(width: 1, height: Self.height)
+                .offset(x: min(editor.currentTime, duration) * pixelsPerSecond)
+                .allowsHitTesting(false)
+        }
+        .frame(width: width, height: Self.height)
+    }
+
+    private func bar(_ data: Input, laps: [PlacedLap], selected: Bool, pixelsPerSecond: CGFloat) -> some View {
+        let start = laps.first.map { _ in editor.dataSpan(of: data).start } ?? 0
+        return ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 4).fill(Color.teal.opacity(selected ? 0.55 : 0.28))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4).stroke(Color.teal.opacity(selected ? 1 : 0.5), lineWidth: 1))
+            // A divider where each lap begins, with its number when there is room for it.
+            ForEach(laps) { placed in
+                let x = (placed.start - start) * pixelsPerSecond
+                Rectangle().fill(Color.white.opacity(selected ? 0.9 : 0.6)).frame(width: 1)
+                    .offset(x: x)
+                if let end = placed.end, (end - placed.start) * pixelsPerSecond > 22 {
+                    Text("\(placed.lap.number)")
+                        .font(.system(size: 9)).monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .offset(x: x + 3, y: 0)
+                }
+            }
+            Text(data.label).font(.caption).lineLimit(1).padding(.horizontal, 5)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .allowsHitTesting(false)
+        }
+        .frame(height: Self.height - 6)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .contentShape(Rectangle())
+        .help(laps.isEmpty ? data.label : "\(data.label) — \(laps.count) laps")
     }
 }

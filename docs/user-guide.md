@@ -53,8 +53,8 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   held (the step is set in **Settings ▸ Editing**). With nothing selected, ← and → step a frame
   instead; `,` and `.` always step a frame, whatever is selected.
 - **Transport and timeline (below the preview)**: play, step, scrub. The timeline has a time
-  ruler (click or drag it to scrub), a marker lane (§6a), a lane with one bar per video and the
-  segment strip (§6).
+  ruler (click or drag it to scrub), a marker lane (§6a), a lane with one bar per video, a lane
+  with one bar per data file showing where its laps fall (§6c), and the segment strip (§6).
   Drag a video bar to move it, drag its left or right edge to trim it (the head trim keeps the
   picture where it was), click it to select the video. The magnet button (N) snaps drags to other
   videos' edges and the playhead; zoom with ⌘= / ⌘− / ⇧Z, the slider next to the transport, or
@@ -188,6 +188,19 @@ incident, the start of a sector.
   to that input and is stored in *its* time, so re-syncing or re-speeding that input carries the
   marker along with it. With nothing selected it belongs to the timeline and stays at that
   timecode. The inspector says which kind you have.
+
+### 6c. Laps
+
+Each data file gets a bar on the timeline with a divider at every lap, numbered where there is
+room. The laps come from the file's own timing, so re-syncing the data slides its laps along with
+it rather than leaving them behind.
+
+**⌥↑** and **⌥↓** jump to the previous and next lap (**Marker ▸ Previous / Next Lap**), reporting
+the lap number and its time in the status line. Going back from mid-lap lands on the start of the
+lap you are in, as previous-edit does in an editor; a second press goes to the one before.
+
+Laps that fall past the end of the video cannot be reached — the timeline ends when the picture
+does.
 
 ### 6b. Trimming to the playhead
 
