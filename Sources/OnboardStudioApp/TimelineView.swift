@@ -207,10 +207,13 @@ struct VideoLaneView: View {
                 let offset = live?.offset ?? video.sync.offsetInProject
                 let length = live?.length ?? max(0, (editor.end(of: video) ?? offset) - video.sync.offsetInProject)
                 let selected = editor.selectedInputID == video.id && editor.selectedObjectID == nil
-                bar(video, selected: selected, width: max(length * pixelsPerSecond - 2, 6))
-                    .offset(x: offset * pixelsPerSecond + 1, y: 3)
-                    .gesture(
-                        dragGesture(for: video, pixelsPerSecond: pixelsPerSecond, barWidth: length * pixelsPerSecond))
+                bar(
+                    video, selected: selected, width: max(length * pixelsPerSecond - 2, 6),
+                    pixelsPerSecond: pixelsPerSecond
+                )
+                .offset(x: offset * pixelsPerSecond + 1, y: 3)
+                .gesture(
+                    dragGesture(for: video, pixelsPerSecond: pixelsPerSecond, barWidth: length * pixelsPerSecond))
             }
             Rectangle().fill(Color.red).frame(width: 1, height: height)
                 .offset(x: min(editor.currentTime, duration) * pixelsPerSecond)
@@ -219,11 +222,12 @@ struct VideoLaneView: View {
         .frame(width: width, height: height)
     }
 
-    private func bar(_ video: Input, selected: Bool, width: CGFloat) -> some View {
+    private func bar(_ video: Input, selected: Bool, width: CGFloat, pixelsPerSecond: CGFloat) -> some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 4).fill(Color.purple.opacity(selected ? 0.6 : 0.3))
                 .overlay(
                     RoundedRectangle(cornerRadius: 4).stroke(Color.purple.opacity(selected ? 1 : 0.5), lineWidth: 1))
+            chapterMarks(video, selected: selected, pixelsPerSecond: pixelsPerSecond)
             HStack(spacing: 0) {
                 Rectangle().fill(Color.white.opacity(selected ? 0.5 : 0.25)).frame(width: 3)
                 Text(video.label).font(.caption).lineLimit(1).padding(.horizontal, 5)
@@ -234,6 +238,34 @@ struct VideoLaneView: View {
         }
         .frame(width: width, height: height - 6)
         .contentShape(Rectangle())
+    }
+
+    /// Seams between the files of a joined recording, and the stopped-camera gaps between them.
+    ///
+    /// One unbroken bar for what were several files is correct but surprising, so the joins are
+    /// drawn. Positions come from the input's media timeline and are mapped through the same
+    /// trim, start position and play speed the bar's own length uses.
+    @ViewBuilder
+    private func chapterMarks(_ video: Input, selected: Bool, pixelsPerSecond: CGFloat) -> some View {
+        let chapters = editor.chapters(of: video.id)
+        if chapters.count > 1, case .video(let settings) = video.kind {
+            let start = max(settings.trim.start ?? 0, video.sync.startPositionInInput)
+            let speed = max(video.sync.playSpeed, 0.001)
+            let x = { (mediaTime: Double) in CGFloat((mediaTime - start) / speed) * pixelsPerSecond }
+            ForEach(chapters.dropFirst()) { chapter in
+                // A gap is time the camera was stopped: real elapsed time, drawn as a break in
+                // the bar rather than silently closed up.
+                if chapter.gapBefore > 0 {
+                    Rectangle().fill(Color(nsColor: .windowBackgroundColor).opacity(0.85))
+                        .frame(width: max(x(chapter.start) - x(chapter.start - chapter.gapBefore), 1))
+                        .offset(x: x(chapter.start - chapter.gapBefore))
+                }
+                Rectangle().fill(Color.white.opacity(selected ? 0.9 : 0.55))
+                    .frame(width: 1)
+                    .offset(x: x(chapter.start))
+            }
+            .allowsHitTesting(false)
+        }
     }
 
     private func dragGesture(for video: Input, pixelsPerSecond: CGFloat, barWidth: CGFloat) -> some Gesture {

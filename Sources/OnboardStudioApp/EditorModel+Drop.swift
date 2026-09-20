@@ -135,7 +135,8 @@ extension EditorModel {
         }
     }
 
-    private static func clock(_ seconds: Double) -> String {
+    /// Seconds as m:ss, or h:mm:ss past an hour. Shared with the sidebar.
+    static func clock(_ seconds: Double) -> String {
         let whole = Int(seconds.rounded())
         return whole >= 3600
             ? String(format: "%d:%02d:%02d", whole / 3600, whole / 60 % 60, whole % 60)

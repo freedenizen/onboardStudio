@@ -38,6 +38,27 @@ struct SidebarView: View {
                             ? Color.accentColor.opacity(0.2) : nil
                     )
                     .contextMenu { Button("Remove", role: .destructive) { editor.removeInput(input.id) } }
+                    // A recording the camera split into several files is joined into one input.
+                    // Listing the files under the selected row says so without making the user
+                    // open the inspector to find out, and without cluttering every other row.
+                    if editor.selectedInputID == input.id, editor.selectedObjectID == nil {
+                        ForEach(editor.chapters(of: input.id)) { chapter in
+                            HStack(spacing: 6) {
+                                Image(systemName: "film").foregroundStyle(.secondary)
+                                Text(chapter.name).lineLimit(1).truncationMode(.middle)
+                                Spacer(minLength: 0)
+                                Text(EditorModel.clock(chapter.duration)).foregroundStyle(.secondary)
+                            }
+                            .font(.caption)
+                            .padding(.leading, 22)
+                            .accessibilityElement(children: .combine)
+                            .accessibilityIdentifier("chapter.\(chapter.name)")
+                            .help(
+                                chapter.gapBefore > 0
+                                    ? "Starts \(EditorModel.clock(chapter.gapBefore)) after the previous file ends."
+                                    : "Continues straight on from the previous file.")
+                        }
+                    }
                 }
             }
             Section("Display Objects") {
@@ -80,7 +101,10 @@ struct SidebarView: View {
         switch input.kind {
         case .video:
             if let info = editor.loaded?.mediaInfo[input.id] {
-                return "\(info.width)×\(info.height), \(Int(info.duration.rounded())) s"
+                let size = "\(info.width)×\(info.height), \(Int(info.duration.rounded())) s"
+                let chapters = editor.chapters(of: input.id).count
+                // Two files going in and one row coming out is surprising unless the row says so.
+                return chapters > 1 ? "\(size) · \(chapters) files" : size
             }
             return "video"
         case .data:

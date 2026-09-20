@@ -19,6 +19,9 @@ public enum ProjectCompiler {
         public var mediaURLs: [InputID: URL]
         /// Playable URLs of the following clips of a sequence, per video input.
         public var clipURLs: [InputID: [URL]] = [:]
+        /// Where each file of a multi-file recording falls on its input's media timeline. Empty
+        /// for single-file inputs, so callers can treat "no chapters" as "nothing to show".
+        public var chapters: [InputID: [ChapterSpan]] = [:]
         public var images: [InputID: LoadedImage]
         /// Inputs that could not be loaded (missing or unreadable files) with the reason; the
         /// rest of the project still renders so the user can relink them.
@@ -82,12 +85,16 @@ public enum ProjectCompiler {
                         loaded.mediaInfo[input.id] = cached
                         loaded.mediaURLs[input.id] = previous?.mediaURLs[input.id]
                         loaded.clipURLs[input.id] = previous?.clipURLs[input.id]
+                        loaded.chapters[input.id] = previous?.chapters[input.id]
                     } else {
                         let playable = try await FFmpegBridge.prepare(url)
                         var info = try await MediaProbe.probe(playable)
                         if playable != url { loaded.mediaURLs[input.id] = playable }
                         if case .video(let settings) = input.kind, !settings.clips.isEmpty {
                             let clips = try await loadClips(settings.clips, location: location)
+                            loaded.chapters[input.id] = ChapterSpan.layout(
+                                firstName: input.source.displayName, firstDuration: info.duration,
+                                clips: settings.clips, playedDurations: clips.played)
                             info.duration += clips.duration
                             loaded.clipURLs[input.id] = clips.urls
                         }
@@ -116,21 +123,29 @@ public enum ProjectCompiler {
 
     /// Prepares and probes the following clips of a sequence: the summed duration is added to the
     /// first file's info (everything else, orientation included, comes from the first file).
-    static func loadClips(_ clips: [VideoClip], location: ProjectLocation) async throws
-        -> (urls: [URL], duration: Double)
-    {
+    /// The result of preparing a sequence's following clips.
+    struct LoadedClips {
+        /// Playable URL per clip, in order.
         var urls: [URL] = []
-        var duration = 0.0
+        /// Seconds the clips add to the input, gaps included.
+        var duration: Double = 0
+        /// Seconds of each clip's file that actually play, after its own trim.
+        var played: [Double] = []
+    }
+
+    static func loadClips(_ clips: [VideoClip], location: ProjectLocation) async throws -> LoadedClips {
+        var result = LoadedClips()
         for clip in clips {
             let clipURL = location.resolve(clip.source)
             guard FileManager.default.fileExists(atPath: clipURL.path) else { throw LoadError.missingFile(clipURL) }
             let playable = try await FFmpegBridge.prepare(clipURL)
             let full = try await MediaProbe.probe(playable).duration
-            let played = min(clip.trim.end ?? full, full) - min(max(clip.trim.start ?? 0, 0), full)
-            duration += max(0, clip.gapBefore) + clip.sequenceDuration(played: played)
-            urls.append(playable)
+            let clipPlayed = min(clip.trim.end ?? full, full) - min(max(clip.trim.start ?? 0, 0), full)
+            result.duration += max(0, clip.gapBefore) + clip.sequenceDuration(played: clipPlayed)
+            result.played.append(max(0, clipPlayed))
+            result.urls.append(playable)
         }
-        return (urls, duration)
+        return result
     }
 
     public enum LoadError: Error, CustomStringConvertible {
