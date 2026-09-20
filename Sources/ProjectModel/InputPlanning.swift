@@ -110,6 +110,11 @@ extension Project {
                 guard !adapted.channel.isEmpty else { continue }
                 displayObjects[index].kind = .steeringWheel(adapted)
                 bound.append(object.label)
+            case .gForce(let params):
+                let adapted = params.adapted(to: available)
+                guard adapted != params else { continue }
+                displayObjects[index].kind = .gForce(adapted)
+                bound.append(object.label)
             default:
                 continue
             }

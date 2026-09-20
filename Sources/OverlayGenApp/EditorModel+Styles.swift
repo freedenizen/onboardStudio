@@ -123,7 +123,12 @@ extension EditorModel {
         let bound = copy.bindEmptyChannels(summaries)
         guard !bound.isEmpty else { return }
         edit("Bind Channels") { $0 = copy }
+        // Say when a direction was measured rather than assumed, so a wrong guess is visible and
+        // can be overridden instead of leaving the user wondering why the wheel turns backwards.
+        let measured = summaries.values.flatMap { $0 }.contains { ($0.rightTurnCorrelation ?? 0) < 0 }
         statusMessage =
             "Bound \(bound.joined(separator: ", ")) to the matching channel\(bound.count == 1 ? "" : "s") of the data."
+            + (measured
+                ? " This logger reports a left turn as positive, so those objects were inverted to match." : "")
     }
 }
