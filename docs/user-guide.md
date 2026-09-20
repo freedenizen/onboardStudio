@@ -53,7 +53,8 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   held (the step is set in **Settings ▸ Editing**). With nothing selected, ← and → step a frame
   instead; `,` and `.` always step a frame, whatever is selected.
 - **Transport and timeline (below the preview)**: play, step, scrub. The timeline has a time
-  ruler (click or drag it to scrub), a lane with one bar per video and the segment strip (§6).
+  ruler (click or drag it to scrub), a marker lane (§6a), a lane with one bar per video and the
+  segment strip (§6).
   Drag a video bar to move it, drag its left or right edge to trim it (the head trim keeps the
   picture where it was), click it to select the video. The magnet button (N) snaps drags to other
   videos' edges and the playhead; zoom with ⌘= / ⌘− / ⇧Z, the slider next to the transport, or
@@ -172,6 +173,21 @@ from then on; anything not changed is inherited from the previous segment. Use t
 switches, hiding gauges during a pit stop, or moving a map when the picture-in-picture appears.
 **Add Segment at Playhead** (**⌘K**) creates one; drag its left edge to move it (later segments
 follow); the inspector shows which properties the segment overrides.
+
+### 6a. Markers
+
+A marker is a named point — or a stretch — worth coming back to: a braking reference, an
+incident, the start of a sector.
+
+- **M** drops one at the playhead; **⌘M** drops one and asks for its name straight away, pausing
+  playback so you can type. **⇧↑** and **⇧↓** walk to the previous and next marker.
+- Markers appear in the lane above the video bars and in a **Markers** list in the sidebar; click
+  either to jump to one. Select one and the inspector gives it a name, a colour, a note and a
+  *Length* — leave the length at 0 for a flag, or set it to draw a bar across a stretch.
+- **Where a marker belongs matters.** With an input selected when you press M, the marker belongs
+  to that input and is stored in *its* time, so re-syncing or re-speeding that input carries the
+  marker along with it. With nothing selected it belongs to the timeline and stays at that
+  timecode. The inspector says which kind you have.
 
 ## 7. Export and share
 

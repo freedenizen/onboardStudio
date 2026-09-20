@@ -19,6 +19,7 @@ final class EditorModel {
     var selectedObjectID: DisplayObjectID?
     var selectedInputID: InputID?
     var selectedSegmentID: SegmentID?
+    var selectedMarkerID: MarkerID?
     var showSyncWizard = false
     var showExport = false
     /// The file to offer for upload, set when an export finishes or a file is chosen from the menu.

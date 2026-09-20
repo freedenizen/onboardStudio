@@ -89,6 +89,20 @@ enum OpenPanels {
         return alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil
     }
 
+    /// Asks for a marker's name; returns nil when cancelled.
+    static func askMarkerName(default name: String) -> String? {
+        let alert = NSAlert()
+        alert.messageText = "Name Marker"
+        alert.informativeText = "Markers you cannot tell apart are markers you lose."
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Cancel")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+        field.stringValue = name
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        return alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil
+    }
+
     static func chooseExportDestination(suggestedName: String, fileExtension: String = "mp4") -> URL? {
         if let directory = UITestSupport.exportDirectory {
             return directory.appending(path: suggestedName).appendingPathExtension(fileExtension)

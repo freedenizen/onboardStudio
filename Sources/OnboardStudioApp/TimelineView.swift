@@ -23,6 +23,8 @@ struct TimelineView: View {
                     VStack(spacing: 0) {
                         TimelineRuler(editor: editor, width: contentWidth)
                         Divider()
+                        MarkerLaneView(editor: editor, width: contentWidth)
+                        Divider()
                         if !editor.project.videoInputs.isEmpty {
                             VideoLaneView(editor: editor, width: contentWidth)
                             Divider()
@@ -39,7 +41,9 @@ struct TimelineView: View {
                 }
             }
         }
-        .frame(height: editor.project.videoInputs.isEmpty ? 12 + 18 + 34 + 3 : 12 + 18 + 26 + 34 + 4)
+        .frame(
+            height: MarkerLaneView.height + 1
+                + (editor.project.videoInputs.isEmpty ? 12 + 18 + 34 + 3 : 12 + 18 + 26 + 34 + 4))
     }
 }
 
@@ -305,5 +309,52 @@ struct VideoLaneView: View {
                 case .tail: editor.trimTail(of: video.id, toProjectTime: drag.offset + drag.length)
                 }
             }
+    }
+}
+
+/// Markers above the lanes: a flag for a point, a bar for a range. Click one to go to it.
+///
+/// Markers belonging to an input are drawn in the input's colour-neutral shape at the place its
+/// sync puts them, so re-syncing an input visibly carries its marks along with it.
+struct MarkerLaneView: View {
+    @Bindable var editor: EditorModel
+    let width: CGFloat
+
+    static let height: CGFloat = 14
+
+    var body: some View {
+        let duration = max(editor.timelineDuration, 0.001)
+        let pixelsPerSecond = width / duration
+        ZStack(alignment: .topLeading) {
+            Rectangle().fill(Color(nsColor: .controlBackgroundColor))
+            ForEach(editor.markersInProjectTime) { placed in
+                let selected = editor.selectedMarkerID == placed.marker.id
+                let colour = Color(placed.marker.colour)
+                Group {
+                    if placed.marker.isRange {
+                        RoundedRectangle(cornerRadius: 2).fill(colour.opacity(selected ? 0.9 : 0.55))
+                            .frame(width: max((placed.end - placed.start) * pixelsPerSecond, 3))
+                    } else {
+                        // A flag: narrow, and wide enough to hit.
+                        RoundedRectangle(cornerRadius: 1).fill(colour.opacity(selected ? 1 : 0.75))
+                            .frame(width: 3)
+                    }
+                }
+                .frame(height: Self.height - 4)
+                .overlay(alignment: .leading) {
+                    if selected {
+                        RoundedRectangle(cornerRadius: 2).stroke(Color.primary.opacity(0.8), lineWidth: 1)
+                    }
+                }
+                .offset(x: placed.start * pixelsPerSecond, y: 2)
+                .help(placed.marker.name.isEmpty ? "Marker" : placed.marker.name)
+                .accessibilityIdentifier("marker.\(placed.marker.name)")
+                .onTapGesture { editor.select(marker: placed.marker.id, seekTo: placed.start) }
+            }
+            Rectangle().fill(Color.red).frame(width: 1, height: Self.height)
+                .offset(x: min(editor.currentTime, duration) * pixelsPerSecond)
+                .allowsHitTesting(false)
+        }
+        .frame(width: width, height: Self.height)
     }
 }

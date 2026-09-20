@@ -202,7 +202,9 @@ struct ShortcutsView: View {
     static let rows: [(String, String)] = [
         ("⌘N / ⌘O / ⌘S", "New, open, save project"), ("⌘I", "Add video"), ("⇧⌘I", "Add camera (new lane)"),
         ("⇧⌘D", "Add data file"),
-        ("⌘Y", "Synchronize data (wizard)"), ("⌘E", "Export video"), ("⌘K", "Add timeline segment at playhead"),
+        ("⌘Y", "Synchronize data"), ("⌘E", "Export video"), ("⌘K", "Add timeline segment at playhead"),
+        ("M / ⌘M", "Add a marker at the playhead; ⌘M names it too"),
+        ("⇧↑ / ⇧↓", "Previous / next marker"),
         ("Space", "Play / pause"), (", .", "Step one frame"), ("Home", "Go to start"),
         ("Arrows (object selected)", "Nudge the object 1 px; ⇧ for 10 px"),
         ("← → (nothing selected)", "Step one frame"),

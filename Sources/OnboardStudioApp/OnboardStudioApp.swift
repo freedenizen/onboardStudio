@@ -172,6 +172,23 @@ struct EditorCommands: Commands {
                 "Snapping",
                 isOn: Binding(get: { editor?.snappingEnabled ?? true }, set: { editor?.snappingEnabled = $0 }))
         }
+        CommandMenu("Marker") {
+            // M to drop one, ⌘M to drop and name it, ⇧↑/⇧↓ to walk them: the Resolve bindings
+            // recorded in docs/conventions.md, which Premiere shares.
+            Button("Add Marker") { editor?.addMarkerAtPlayhead() }
+                .keyboardShortcut("m", modifiers: [])
+            Button("Add and Name Marker…") { editor?.addAndNameMarker() }
+                .keyboardShortcut("m", modifiers: [.command])
+            Button("Rename Marker…") { editor?.renameSelectedMarker() }
+                .disabled(editor?.selectedMarkerID == nil)
+            Button("Delete Marker") { editor?.deleteSelectedMarker() }
+                .disabled(editor?.selectedMarkerID == nil)
+            Divider()
+            Button("Previous Marker") { editor?.goToPreviousMarker() }
+                .keyboardShortcut(.upArrow, modifiers: [.shift])
+            Button("Next Marker") { editor?.goToNextMarker() }
+                .keyboardShortcut(.downArrow, modifiers: [.shift])
+        }
         CommandMenu("Playback") {
             Button(editor?.isPlaying == true ? "Pause" : "Play") { editor?.togglePlayback() }.keyboardShortcut(
                 .space, modifiers: [])
