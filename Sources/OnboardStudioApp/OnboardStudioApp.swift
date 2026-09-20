@@ -153,6 +153,10 @@ struct EditorCommands: Commands {
                 .keyboardShortcut("k", modifiers: [.command])
             // Resolve's ⇧[ / ⇧], verified in docs/conventions.md. Trimming to a marker is the
             // same command: ⇧↑/⇧↓ put the playhead on the marker first.
+            // Resolve's Split Clip is ⌘\\ (manual p. 889/942).
+            Button("Split at Playhead") { editor?.splitVideoAtPlayhead() }
+                .keyboardShortcut("\\", modifiers: [.command])
+                .disabled(editor?.canSplitAtPlayhead != true)
             Button("Trim Start to Playhead") { editor?.trimStartToPlayhead() }
                 .keyboardShortcut("[", modifiers: [.shift])
                 .disabled(editor?.canTrimToPlayhead != true)

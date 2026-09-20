@@ -190,6 +190,25 @@ incident, the start of a sector.
   marker along with it. With nothing selected it belongs to the timeline and stays at that
   timecode. The inspector says which kind you have.
 
+### 6b. Splitting and trimming
+
+Select a video on the timeline and **⌘\** cuts it at the playhead (**Project ▸ Split at
+Playhead**). You get two independent halves that can be trimmed, moved and re-synced separately,
+and the picture runs on unbroken across the join.
+
+A split adds a second input *and* a second camera object, with a timeline segment that swaps them
+over at the cut. That is because a segment can show and hide objects but cannot change which
+input an object plays — so without the extra object the second half would sit on the timeline and
+never appear. Both show up in the sidebar named after the original (`Camera 2`, and so on).
+
+**⇧[** drops everything before the playhead and **⇧]** everything after it (**Project ▸ Trim
+Start / End to Playhead**). Everything here is non-destructive — the files are untouched and
+**⌘Z** puts it all back.
+
+There is no separate "split at marker" or "trim to marker": jump to the marker with **⇧↑** /
+**⇧↓**, which puts the playhead on it, then split or trim. That is how Resolve works too, and one
+command cannot disagree with another about where the cut goes.
+
 ### 6c. Laps
 
 Each data file gets a bar on the timeline with a divider at every lap, numbered where there is
@@ -202,16 +221,6 @@ lap you are in, as previous-edit does in an editor; a second press goes to the o
 
 Laps that fall past the end of the video cannot be reached — the timeline ends when the picture
 does.
-
-### 6b. Trimming to the playhead
-
-Select a video on the timeline and **⇧[** drops everything before the playhead, **⇧]** everything
-after it (**Project ▸ Trim Start / End to Playhead**). Both are non-destructive — the file is
-untouched and **⌘Z** puts it back.
-
-There is no separate "trim to marker": jump to the marker with **⇧↑** / **⇧↓**, which puts the
-playhead on it, then trim. That is how Resolve works too, and one command cannot disagree with
-another about where the cut goes.
 
 ## 7. Export and share
 

@@ -56,3 +56,39 @@ public enum VideoTrimming {
         return fileEnd
     }
 }
+
+extension VideoTrimming {
+    /// How a video's two halves are timed when it is cut at project time `time`.
+    ///
+    /// The first half keeps its place and stops at the cut; the second starts at the cut, both on
+    /// the timeline and in the file, so the picture runs on unbroken across the join. Speed and
+    /// any existing end trim carry over untouched.
+    public struct Split: Hashable, Sendable {
+        /// Trim end for the first half, in file seconds.
+        public let firstEnd: Double
+        /// Timing for the second half.
+        public let secondSync: SyncSettings
+        /// Trim for the second half: the original end, with the start moved to the cut.
+        public let secondTrim: TrimRange
+    }
+
+    /// Returns `nil` when the cut is not strictly inside the video, where there is no second half
+    /// to make and splitting would only produce an empty input.
+    public static func split(
+        _ sync: SyncSettings, trim: TrimRange, atProjectTime time: Double, fullDuration: Double?
+    ) -> Split? {
+        let speed = max(sync.playSpeed, 0.001)
+        let fileTime = (time - sync.offsetInProject) * speed + sync.startPositionInInput
+        let start = max(trim.start ?? 0, sync.startPositionInInput)
+        let end = min(trim.end ?? fullDuration ?? .infinity, fullDuration ?? .infinity)
+        // A cut on either edge leaves nothing on one side of it.
+        guard fileTime > start + 0.001, fileTime < end - 0.001 else { return nil }
+
+        var second = sync
+        second.startPositionInInput = fileTime
+        second.offsetInProject = time
+        return Split(
+            firstEnd: fileTime, secondSync: second,
+            secondTrim: TrimRange(start: fileTime, end: trim.end))
+    }
+}

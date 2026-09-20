@@ -168,6 +168,33 @@ final class LapUITests: OnboardStudioUITestCase {
     }
 }
 
+/// #54: splitting a video at the playhead.
+final class SplitUITests: OnboardStudioUITestCase {
+    @MainActor
+    func testSplitsAVideoIntoTwoHalvesThatSwapAtTheCut() throws {
+        launch()
+        addFixtureVideo()
+        sidebarInput("test-3s").click()
+
+        // On the very edge there is no second half to make, and it says so.
+        menu("Project", "Split at Playhead")
+        expectStatus(containing: "Put the playhead inside")
+
+        for _ in 0..<20 { app.typeKey(".", modifierFlags: []) }
+        menu("Project", "Split at Playhead")
+        expectStatus(containing: "Split test-3s")
+
+        // A second input, a second video object to show it, and a segment to swap them over —
+        // without all three the second half would never appear on screen.
+        XCTAssertTrue(sidebarInput("test-3s 2").waitForExistence(timeout: Self.timeout), "No second input")
+        XCTAssertTrue(sidebarObject("Camera 2").waitForExistence(timeout: Self.timeout), "No second camera object")
+
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(
+            sidebarInput("test-3s 2").waitForNonExistence(timeout: Self.timeout), "Undo left the split behind")
+    }
+}
+
 final class TimelineUITests: OnboardStudioUITestCase {
     @MainActor
     func testZoomSnapAndTransport() throws {

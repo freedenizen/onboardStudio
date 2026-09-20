@@ -73,8 +73,14 @@ playhead, Resolve's bindings. Trimming *to a marker* is deliberately not a separ
 `⇧↑`/`⇧↓` put the playhead on the marker, then trim, which is Resolve's own two-step and leaves
 no second code path to disagree about where the cut goes.
 
-**Still to come for #54:** splitting an input at the playhead, and trimming data inputs (which
-have no trim in the model yet — only video does).
+**Split implemented** (#54, third slice): `⌘\` cuts the selected video at the playhead, Resolve's
+Split Clip. Worth knowing why it does more than it looks: a `Segment`'s `ObjectOverride` can change
+visibility, frame and opacity but **not** which input an object plays, so camera switching works by
+showing one object and hiding another. A split therefore creates an input *and* an object *and* a
+segment that swaps them, or the second half would sit on the timeline and never reach the screen.
+
+**Still to come for #54:** splitting and trimming *data* inputs. Data has no trim in the model —
+only video does — and a data split would need its objects rebinding the same way.
 
 ## Navigation
 

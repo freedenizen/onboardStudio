@@ -123,3 +123,66 @@ struct VideoTrimmingTests {
         #expect(VideoTrimming.tailTrimmed(sync, trim: .none, toProjectTime: 9, fullDuration: 100) == 5.2)
     }
 }
+
+@Suite("Splitting a video")
+struct VideoSplitTests {
+    /// Identity timing: the cut falls at the same second in the file as on the timeline.
+    private let sync = SyncSettings(startPositionInInput: 0, offsetInProject: 0, playSpeed: 1)
+
+    @Test func theTwoHalvesMeetAtTheCut() throws {
+        let split = try #require(
+            VideoTrimming.split(sync, trim: .none, atProjectTime: 30, fullDuration: 100))
+
+        #expect(split.firstEnd == 30, "the first half stops at the cut")
+        #expect(split.secondSync.startPositionInInput == 30, "and the second picks the file up there")
+        #expect(split.secondSync.offsetInProject == 30, "at the same place on the timeline")
+        #expect(split.secondTrim.start == 30)
+        #expect(split.secondTrim.end == nil, "no end trim to carry over")
+    }
+
+    /// The point of splitting rather than trimming twice: the picture must run on unbroken, so
+    /// the file time the first half ends at is exactly the one the second begins at.
+    @Test func thereIsNoGapOrOverlapAcrossTheJoin() throws {
+        let shifted = SyncSettings(startPositionInInput: 12, offsetInProject: 5, playSpeed: 1)
+        let split = try #require(
+            VideoTrimming.split(shifted, trim: .none, atProjectTime: 20, fullDuration: 100))
+
+        #expect(split.firstEnd == split.secondSync.startPositionInInput)
+        #expect(split.secondSync.offsetInProject == 20)
+        // The second half shows file second 27 at project second 20, which is where the first
+        // half had reached.
+        #expect(split.secondSync.inputTime(forProjectTime: 20) == 27)
+        #expect(shifted.inputTime(forProjectTime: 20) == 27)
+    }
+
+    @Test func speedIsCarriedOverAndAppliedToTheCut() throws {
+        let fast = SyncSettings(startPositionInInput: 0, offsetInProject: 0, playSpeed: 2)
+        let split = try #require(
+            VideoTrimming.split(fast, trim: .none, atProjectTime: 10, fullDuration: 100))
+
+        #expect(split.firstEnd == 20, "ten seconds of a 2× video is twenty seconds of file")
+        #expect(split.secondSync.playSpeed == 2)
+        #expect(split.secondSync.startPositionInInput == 20)
+    }
+
+    @Test func anExistingEndTrimIsKeptOnTheSecondHalf() throws {
+        let split = try #require(
+            VideoTrimming.split(sync, trim: TrimRange(start: 5, end: 60), atProjectTime: 30, fullDuration: 100))
+        #expect(split.secondTrim.end == 60, "the second half still stops where the video did")
+        #expect(split.firstEnd == 30)
+    }
+
+    /// Cutting on an edge would make an empty input, so it is refused rather than allowed to
+    /// produce a zero-length half that cannot be selected or removed.
+    @Test func cuttingOutsideOrOnAnEdgeIsRefused() {
+        #expect(VideoTrimming.split(sync, trim: .none, atProjectTime: 0, fullDuration: 100) == nil)
+        #expect(VideoTrimming.split(sync, trim: .none, atProjectTime: 100, fullDuration: 100) == nil)
+        #expect(VideoTrimming.split(sync, trim: .none, atProjectTime: -5, fullDuration: 100) == nil)
+        #expect(VideoTrimming.split(sync, trim: .none, atProjectTime: 200, fullDuration: 100) == nil)
+        // Inside an existing trim, the trim's own edges are what count.
+        let trimmed = TrimRange(start: 20, end: 40)
+        #expect(VideoTrimming.split(sync, trim: trimmed, atProjectTime: 20, fullDuration: 100) == nil)
+        #expect(VideoTrimming.split(sync, trim: trimmed, atProjectTime: 30, fullDuration: 100) != nil)
+        #expect(VideoTrimming.split(sync, trim: trimmed, atProjectTime: 40, fullDuration: 100) == nil)
+    }
+}
