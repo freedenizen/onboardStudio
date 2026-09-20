@@ -23,6 +23,14 @@ public enum SessionBuilder {
         /// Lap detection from a finish line; `nil` keeps the file's own laps.
         public var finishLine: FinishLine?
         public var ignoreFirstCrossings: Int
+        /// Ignore samples before this point in the file's own time (`nil` = from the beginning).
+        ///
+        /// Applied before anything else, so the session behaves as if the recording had started
+        /// there: laps are detected, deltas computed and channels derived from what is left. A
+        /// trimmed-away out-lap does not become lap 1 and does not compete for the best lap.
+        public var trimStart: Double?
+        /// Ignore samples after this point (`nil` = to the end).
+        public var trimEnd: Double?
 
         public init(
             roleOverrides: [String: ChannelRole] = [:],
@@ -34,8 +42,12 @@ public enum SessionBuilder {
             smoothingSeconds: Double = 0,
             calculatedFields: [CalculatedField] = [],
             finishLine: FinishLine? = nil,
-            ignoreFirstCrossings: Int = 0
+            ignoreFirstCrossings: Int = 0,
+            trimStart: Double? = nil,
+            trimEnd: Double? = nil
         ) {
+            self.trimStart = trimStart
+            self.trimEnd = trimEnd
             self.roleOverrides = roleOverrides
             self.deriveSpeedFromPosition = deriveSpeedFromPosition
             self.deriveHeadingFromPosition = deriveHeadingFromPosition
@@ -50,7 +62,7 @@ public enum SessionBuilder {
     }
 
     public static func build(_ rawTable: RawTable, options: Options = Options()) -> TelemetrySession {
-        let table = sanitised(rawTable)
+        let table = trimmed(sanitised(rawTable), from: options.trimStart, to: options.trimEnd)
         var channels: [Channel] = []
         var usedRoles = Set<ChannelRole>()
 
@@ -111,6 +123,27 @@ public enum SessionBuilder {
     /// Every importer promises a finite, strictly increasing time axis, but a corrupt file can
     /// break that promise; rows with NaN, infinite or non-increasing times are dropped here so
     /// binary searches and time ranges stay valid.
+    /// Drops samples and lap markers outside the trim, keeping the file's own timebase: a
+    /// trimmed session's times still read as seconds into the original file, so sync, markers and
+    /// anything else pointing into it stay pointing at the same moments.
+    static func trimmed(_ table: RawTable, from start: Double?, to end: Double?) -> RawTable {
+        guard start != nil || end != nil else { return table }
+        let lower = start ?? -.infinity
+        let upper = end ?? .infinity
+        guard lower <= upper else { return table }
+        let keep = table.times.indices.filter { table.times[$0] >= lower && table.times[$0] <= upper }
+        guard keep.count != table.times.count else { return table }
+        var out = table
+        out.times = keep.map { table.times[$0] }
+        out.columns = table.columns.map { column in
+            var copy = column
+            copy.values = keep.map { $0 < column.values.count ? column.values[$0] : nil }
+            return copy
+        }
+        out.lapMarkers = table.lapMarkers.filter { $0.time >= lower && $0.time <= upper }
+        return out
+    }
+
     static func sanitised(_ table: RawTable) -> RawTable {
         var keep: [Int] = []
         keep.reserveCapacity(table.times.count)
@@ -178,7 +211,9 @@ public enum SessionBuilder {
     static func deriveLaps(table: RawTable, session: TelemetrySession) -> [Lap] {
         let end = session.timeRange?.upperBound
         if !table.lapMarkers.isEmpty {
-            return lapsFromMarkers(table.lapMarkers.sorted { $0.time < $1.time }, sessionEnd: end)
+            return lapsFromMarkers(
+                table.lapMarkers.sorted { $0.time < $1.time },
+                sessionStart: session.timeRange?.lowerBound ?? 0, sessionEnd: end)
         }
         if let lapChannel = session[.lap] {
             return lapsFromLapNumbers(lapChannel, sessionEnd: end)
@@ -188,10 +223,16 @@ public enum SessionBuilder {
 
     /// RaceRender semantics: `# Lap N: t` marks the *end* of lap N at time t. Lap 0 starts at
     /// the session start; each subsequent lap starts where the previous ended.
-    private static func lapsFromMarkers(_ markers: [RawLapMarker], sessionEnd: Double?) -> [Lap] {
+    ///
+    /// `sessionStart` is where the data actually begins, not zero: a trimmed session — or a file
+    /// whose first sample is not at t=0 — would otherwise report its first lap as starting before
+    /// any of its data.
+    private static func lapsFromMarkers(
+        _ markers: [RawLapMarker], sessionStart: Double, sessionEnd: Double?
+    ) -> [Lap] {
         var laps: [Lap] = []
-        var start = 0.0
-        for marker in markers {
+        var start = sessionStart
+        for marker in markers where marker.time > sessionStart {
             laps.append(Lap(number: marker.number, start: start, end: marker.time, isComplete: true))
             start = marker.time
         }

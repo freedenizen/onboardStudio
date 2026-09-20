@@ -50,6 +50,21 @@ struct DataInputInspector: View {
                         ? "Smoothing off" : "Smoothing \(String(format: "%.1f", settings.smoothingSeconds)) s")
             }
         }
+        Section("Trim") {
+            // In the file's own seconds, like a video's trim. Applied before laps are detected,
+            // so trimming an out-lap away stops it counting rather than renumbering it.
+            OptionalSecondsField(
+                "Start", value: field(\.trim.start, name: "Trim Data Start"),
+                placeholder: "from the beginning"
+            )
+            .accessibilityIdentifier("data.trimStart")
+            OptionalSecondsField(
+                "End", value: field(\.trim.end, name: "Trim Data End"), placeholder: "to the end"
+            )
+            .accessibilityIdentifier("data.trimEnd")
+            Text("Seconds into the data file. Laps, deltas and calculated fields are worked out from what is left.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
         Section("Calculated Fields") {
             ForEach(Array(settings.calculatedFields.enumerated()), id: \.offset) { index, spec in
                 CalculatedFieldRow(spec: spec, valid: (try? Expression(spec.expression)) != nil) { newSpec in
@@ -267,5 +282,26 @@ struct CalculatedFieldRow: View {
             .font(.system(.body, design: .monospaced))
             .foregroundStyle(valid ? .primary : Color.red)
         }
+    }
+}
+
+/// A seconds field that can be empty, meaning "no limit".
+struct OptionalSecondsField: View {
+    let title: String
+    @Binding var value: Double?
+    let placeholder: String
+
+    init(_ title: String, value: Binding<Double?>, placeholder: String) {
+        self.title = title
+        _value = value
+        self.placeholder = placeholder
+    }
+
+    var body: some View {
+        TextField(
+            title,
+            value: $value,
+            format: .number.precision(.fractionLength(0...3)),
+            prompt: Text(placeholder))
     }
 }

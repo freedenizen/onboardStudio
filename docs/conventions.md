@@ -79,8 +79,11 @@ visibility, frame and opacity but **not** which input an object plays, so camera
 showing one object and hiding another. A split therefore creates an input *and* an object *and* a
 segment that swaps them, or the second half would sit on the timeline and never reach the screen.
 
-**Still to come for #54:** splitting and trimming *data* inputs. Data has no trim in the model —
-only video does — and a data split would need its objects rebinding the same way.
+**Data implemented** (#54, final slice): `DataInputSettings.trim` is applied in `SessionBuilder`
+*before* anything else, so laps, deltas and calculated fields are all worked out from what is
+left. A trimmed-away out-lap does not become lap 1 and does not compete for the best lap. Fixing
+this also fixed a latent bug: `lapsFromMarkers` assumed a session starts at t=0, so any file whose
+first sample is later reported its first lap as starting before its own data.
 
 ## Navigation
 

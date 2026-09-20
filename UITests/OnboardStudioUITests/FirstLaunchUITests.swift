@@ -195,6 +195,39 @@ final class SplitUITests: OnboardStudioUITestCase {
     }
 }
 
+/// #54: the data half — trimming and splitting a data file, not just a video.
+final class DataEditingUITests: OnboardStudioUITestCase {
+    @MainActor
+    func testTrimsAndSplitsTheDataFile() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        sidebarInput("racerender-basic").click()
+
+        // Trim the start to the playhead; the data's own trim field picks it up.
+        for _ in 0..<15 { app.typeKey(".", modifierFlags: []) }
+        menu("Project", "Trim Start to Playhead")
+        expectStatus(containing: "Trimmed the start of racerender-basic")
+
+        let trimStart = app.textFields["data.trimStart"]
+        XCTAssertTrue(trimStart.waitForExistence(timeout: Self.timeout), "No data trim field")
+        reveal(trimStart)
+        XCTAssertNotEqual(trimStart.value as? String, "", "The data trim did not move")
+
+        app.typeKey("z", modifierFlags: .command)
+
+        // Splitting a data file works the same way a video does, gauges and all.
+        for _ in 0..<5 { app.typeKey(".", modifierFlags: []) }
+        menu("Project", "Split at Playhead")
+        expectStatus(containing: "Split racerender-basic")
+        XCTAssertTrue(
+            sidebarInput("racerender-basic 2").waitForExistence(timeout: Self.timeout), "No second data input")
+
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(sidebarInput("racerender-basic 2").waitForNonExistence(timeout: Self.timeout))
+    }
+}
+
 final class TimelineUITests: OnboardStudioUITestCase {
     @MainActor
     func testZoomSnapAndTransport() throws {

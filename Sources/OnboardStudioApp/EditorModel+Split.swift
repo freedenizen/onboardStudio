@@ -4,10 +4,10 @@ import ProjectModel
 // MARK: - Splitting a video at the playhead (#54)
 
 extension EditorModel {
-    /// The video a split would act on: the selected one, or the only one when nothing is chosen.
+    /// The input a split would act on: the selected one, or the only video when nothing is chosen.
     var splittableVideo: Input? {
         if selectedObjectID == nil, selectedMarkerID == nil, let input = selectedInput,
-            case .video = input.kind
+            input.kind.isVideo || input.kind.isData
         {
             return input
         }
@@ -24,47 +24,44 @@ extension EditorModel {
     /// there, a video object bound to it, and a segment at the cut that swaps the two. Doing less
     /// would leave the second half on the timeline but never on screen.
     func splitVideoAtPlayhead() {
-        guard let video = splittableVideo, case .video(let settings) = video.kind else {
-            statusMessage = "Select a video on the timeline to split it."
+        guard let source = splittableVideo else {
+            statusMessage = "Select a video or data file on the timeline to split it."
             return
         }
         // Floor to the millisecond so the playhead is never a hair before the new segment.
         let time = (currentTime * 1000).rounded(.down) / 1000
-        guard
-            let split = VideoTrimming.split(
-                video.sync, trim: settings.trim, atProjectTime: time,
-                fullDuration: loaded?.mediaInfo[video.id]?.duration)
-        else {
-            statusMessage = "Put the playhead inside \(video.label) to split it."
+        guard let split = splitTiming(of: source, atProjectTime: time) else {
+            statusMessage = "Put the playhead inside \(source.label) to split it."
             return
         }
 
-        var second = video
+        var second = source
         second.id = InputID()
-        second.label = nextSplitLabel(from: video.label)
+        second.label = nextSplitLabel(from: source.label)
         second.sync = split.secondSync
-        var secondSettings = settings
-        secondSettings.trim = split.secondTrim
-        second.kind = .video(secondSettings)
-
-        let objects = project.videoObjects.filter { $0.inputID == video.id }
-        var newObjects: [DisplayObject: DisplayObject] = [:]
-        for object in objects {
-            var copy = object
-            copy.id = DisplayObjectID()
-            copy.inputID = second.id
-            copy.label = nextSplitLabel(from: object.label)
-            // Hidden until the cut. The segment turns it on there; without this it would draw
-            // over the first half from the very beginning.
-            copy.isVisible = false
-            newObjects[object] = copy
+        switch source.kind {
+        case .video(var settings):
+            settings.trim = split.secondTrim
+            second.kind = .video(settings)
+        case .data(var settings):
+            settings.trim = split.secondTrim
+            second.kind = .data(settings)
+        default:
+            return
         }
 
-        edit("Split Video") { project in
-            guard let index = project.inputs.firstIndex(where: { $0.id == video.id }) else { return }
-            if case .video(var first) = project.inputs[index].kind {
+        let newObjects = twinnedObjects(of: source, boundTo: second.id)
+
+        edit(source.kind.isVideo ? "Split Video" : "Split Data") { project in
+            guard let index = project.inputs.firstIndex(where: { $0.id == source.id }) else { return }
+            switch project.inputs[index].kind {
+            case .video(var first):
                 first.trim.end = split.firstEnd
                 project.inputs[index].kind = .video(first)
+            case .data(var first):
+                first.trim.end = split.firstEnd
+                project.inputs[index].kind = .data(first)
+            default: break
             }
             project.inputs.insert(second, at: index + 1)
             for (original, copy) in newObjects {
@@ -84,7 +81,42 @@ extension EditorModel {
         selectedInputID = second.id
         selectedObjectID = nil
         selectedMarkerID = nil
-        statusMessage = "Split \(video.label) at the playhead."
+        statusMessage = "Split \(source.label) at the playhead."
+    }
+
+    /// A twin of every object reading `source`, bound to the other half.
+    ///
+    /// Data gauges as much as cameras: a `Segment`'s override can switch an object off, not
+    /// switch its source. Each twin starts hidden — the segment turns it on at the cut, and
+    /// without that it would draw over the first half from the very beginning.
+    private func twinnedObjects(of source: Input, boundTo second: InputID) -> [DisplayObject: DisplayObject] {
+        var twins: [DisplayObject: DisplayObject] = [:]
+        for object in project.displayObjects where object.inputID == source.id {
+            var copy = object
+            copy.id = DisplayObjectID()
+            copy.inputID = second
+            copy.label = nextSplitLabel(from: object.label)
+            copy.isVisible = false
+            twins[object] = copy
+        }
+        return twins
+    }
+
+    /// Where the two halves fall, whichever kind of input is being cut. Video length comes from
+    /// the file; a data session's from its own recorded time range.
+    private func splitTiming(of input: Input, atProjectTime time: Double) -> VideoTrimming.Split? {
+        switch input.kind {
+        case .video(let settings):
+            return VideoTrimming.split(
+                input.sync, trim: settings.trim, atProjectTime: time,
+                fullDuration: loaded?.mediaInfo[input.id]?.duration)
+        case .data(let settings):
+            guard let range = sessions[input.id]?.timeRange else { return nil }
+            return VideoTrimming.split(
+                input.sync, trim: settings.trim, atProjectTime: time, fullDuration: range.upperBound)
+        default:
+            return nil
+        }
     }
 
     /// "Camera" → "Camera 2" → "Camera 3": splitting twice should not make two things with the
