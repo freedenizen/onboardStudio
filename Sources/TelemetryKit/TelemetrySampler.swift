@@ -4,7 +4,12 @@ public struct TelemetrySample: Sendable, Equatable {
     public let values: [ChannelRole: Double]
     public let lapTiming: LapTiming
 
-    public subscript(role: ChannelRole) -> Double? { values[role] }
+    /// Falls back to the role's `legacyAlias` (see `TelemetrySession.subscript`).
+    public subscript(role: ChannelRole) -> Double? {
+        if let value = values[role] { return value }
+        guard let alias = role.legacyAlias else { return nil }
+        return values[alias]
+    }
 }
 
 /// Samples a session at arbitrary times. Value type; safe to share across threads.

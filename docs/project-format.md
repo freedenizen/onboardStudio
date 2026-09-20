@@ -37,7 +37,7 @@ Data input settings (all optional):
 | Field | Meaning |
 |---|---|
 | `importerID` | force an importer (`racechrono-csv`, `gpx`, …) instead of auto-detection |
-| `roleOverrides` | column name → channel role identifier (`speed`, `rpm`, `obd:Coolant`, `aux:Oil temp`) |
+| `roleOverrides` | column name → channel role identifier (`speed`, `rpm`, `canbus:Coolant`, `obd:Coolant`, `aux:Oil temp`) |
 | `unitOverrides` | column name → unit text (`km/h`, `mph`, `ft`, …) |
 | `deriveSpeedFromPosition`, `deriveHeadingFromPosition` | derive from GPS when the file lacks the channel |
 | `resampleHertz` | resample linear channels to this rate (`null` = as recorded) |
