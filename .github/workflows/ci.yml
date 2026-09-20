@@ -125,11 +125,15 @@ jobs:
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/DerivedData \
             CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual | tail -20
+      # Tarred, not uploaded as a directory: the upload does not preserve the executable bit, so
+      # the app and the test runner come back unlaunchable ("Launchd job spawn failed").
+      - name: Pack the built products
+        run: tar -C build/DerivedData/Build -cf products.tar Products
       - name: Keep the built products for the shards
         uses: actions/upload-artifact@v7
         with:
           name: ui-tests-products
-          path: build/DerivedData/Build/Products
+          path: products.tar
           retention-days: 1
           if-no-files-found: error
 
@@ -161,7 +165,10 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: ui-tests-products
-          path: build/DerivedData/Build/Products
+      - name: Unpack the built products
+        run: |
+          mkdir -p build/DerivedData/Build
+          tar -C build/DerivedData/Build -xf products.tar
       - name: Run XCUITests
         env:
           CLASSES: ${{ matrix.classes }}
