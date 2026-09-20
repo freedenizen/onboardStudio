@@ -7,6 +7,20 @@ import Testing
     #expect(Project.currentSchemaVersion >= 1)
 }
 
+/// Nothing rewrites Version.swift — the release workflow only overrides MARKETING_VERSION for
+/// the bundle — so the constant silently drifted to 0.18.1 while 0.19.0 shipped, and both
+/// `onboard --version` and the launcher reported the wrong number. Tying the two together stops
+/// that happening again.
+@Test func marketingVersionMatchesTheProjectFile() throws {
+    let root = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    let yaml = try String(contentsOf: root.appending(path: "project.yml"), encoding: .utf8)
+    let line = try #require(yaml.split(separator: "\n").first { $0.contains("MARKETING_VERSION") })
+    let quoted = line.split(separator: "\"")
+    try #require(quoted.count >= 2)
+    #expect(String(quoted[1]) == OnboardStudioVersion.marketing)
+}
+
 @Test func marketingVersionLooksSemantic() {
     let parts = OnboardStudioVersion.marketing.split(separator: ".")
     #expect(parts.count == 3)
