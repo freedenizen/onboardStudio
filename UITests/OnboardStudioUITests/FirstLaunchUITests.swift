@@ -146,6 +146,28 @@ final class TrimUITests: OnboardStudioUITestCase {
     }
 }
 
+/// #51: the data file shows where its laps are, and the playhead can jump between them.
+final class LapUITests: OnboardStudioUITestCase {
+    @MainActor
+    func testJumpsBetweenTheLapsOfTheDataFile() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+
+        // The fixture's laps start at 0, 4 and 8 s of the data. Jumping reports the lap it lands
+        // on, with its time.
+        menu("Marker", "Next Lap")
+        expectStatus(containing: "Lap 1")
+
+        menu("Marker", "Previous Lap")
+        expectStatus(containing: "Lap 0")
+
+        // Before the first lap there is nowhere to go, and it says so rather than sitting silent.
+        menu("Marker", "Previous Lap")
+        expectStatus(containing: "No lap that way")
+    }
+}
+
 final class TimelineUITests: OnboardStudioUITestCase {
     @MainActor
     func testZoomSnapAndTransport() throws {

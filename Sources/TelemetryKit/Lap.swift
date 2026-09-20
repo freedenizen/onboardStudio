@@ -50,3 +50,26 @@ public struct LapTiming: Sendable, Equatable {
         )
     }
 }
+
+extension [Lap] {
+    /// The lap `time` falls inside, if any. Laps are contiguous, so the first match wins.
+    public func lap(containing time: Double) -> Lap? {
+        first { time >= $0.start && time < ($0.end ?? .infinity) }
+    }
+
+    /// The next lap to begin strictly after `time`.
+    ///
+    /// Strictly after, with a tolerance, so jumping repeatedly walks the session instead of
+    /// sticking on the lap the playhead was just moved to.
+    public func lap(startingAfter time: Double, epsilon: Double = 1e-6) -> Lap? {
+        sorted { $0.start < $1.start }.first { $0.start > time + epsilon }
+    }
+
+    /// The last lap to begin strictly before `time`.
+    ///
+    /// Jumping back from the middle of a lap lands on that lap's own start, which is what an
+    /// editor's previous-edit behaves like: the first press goes to the start of what you are in.
+    public func lap(startingBefore time: Double, epsilon: Double = 1e-6) -> Lap? {
+        sorted { $0.start < $1.start }.last { $0.start < time - epsilon }
+    }
+}

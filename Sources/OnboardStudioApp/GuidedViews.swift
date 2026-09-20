@@ -204,7 +204,7 @@ struct ShortcutsView: View {
         ("⇧⌘D", "Add data file"),
         ("⌘Y", "Synchronize data"), ("⌘E", "Export video"), ("⌘K", "Add timeline segment at playhead"),
         ("M / ⌘M", "Add a marker at the playhead; ⌘M names it too"),
-        ("⇧↑ / ⇧↓", "Previous / next marker"),
+        ("⇧↑ / ⇧↓", "Previous / next marker"), ("⌥↑ / ⌥↓", "Previous / next lap"),
         ("⇧[ / ⇧]", "Trim the selected video's start / end to the playhead"),
         ("Space", "Play / pause"), (", .", "Step one frame"), ("Home", "Go to start"),
         ("Arrows (object selected)", "Nudge the object 1 px; ⇧ for 10 px"),
