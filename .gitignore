@@ -10,3 +10,9 @@ xcuserdata/
 *.p12
 sparkle_private_key*
 build/
+
+# Claude Code configuration is local-only — never published to the public repo
+.claude/
+.claude/settings.local.json
+CLAUDE.md
+CLAUDE.local.md
