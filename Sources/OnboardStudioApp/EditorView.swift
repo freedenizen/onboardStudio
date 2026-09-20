@@ -23,6 +23,12 @@ struct EditorView: View {
                 VStack(spacing: 0) {
                     PreviewView(editor: editor)
                     Divider()
+                    // Under the preview, not over it: manual sync is judged by looking at the
+                    // picture while nudging, which a sheet made impossible.
+                    if editor.showSyncWizard {
+                        SyncPanelView(editor: editor)
+                        Divider()
+                    }
                     TransportView(editor: editor)
                     TimelineView(editor: editor)
                     StatusLineView(editor: editor)
@@ -53,7 +59,6 @@ struct EditorView: View {
             return true
         }
         .focusedSceneValue(\.editor, editor)
-        .sheet(isPresented: $editor.showSyncWizard) { SyncWizardView(editor: editor) }
         .sheet(isPresented: $editor.showExport) { ExportSheet(editor: editor) }
         .sheet(item: $editor.uploadURL) { url in UploadSheet(file: url) }
         .alert(

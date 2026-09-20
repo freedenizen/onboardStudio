@@ -8,6 +8,23 @@ public enum SyncWizard {
     public static func startPosition(projectTime: Double, dataTime: Double, sync: SyncSettings) -> Double {
         dataTime - (projectTime - sync.offsetInProject) * sync.playSpeed
     }
+
+    /// Moves an input `seconds` later on the project timeline; negative moves it earlier.
+    ///
+    /// Shifting `offsetInProject` rather than `startPositionInInput` keeps the step in *project*
+    /// seconds whatever the play speed, which is what a nudge means to the user: one frame later
+    /// is one frame later on screen, not one frame of the source file.
+    public static func shifted(_ sync: SyncSettings, byProjectSeconds seconds: Double) -> SyncSettings {
+        var moved = sync
+        moved.offsetInProject += seconds
+        return moved
+    }
+
+    /// The finest useful sync step: one frame of the project's own rate.
+    ///
+    /// A tenth of a second is three to six frames at normal rates, so alignment that looks right
+    /// to a tenth can still be visibly out on a braking marker or a gear change.
+    public static func frameStep(frameRate: Double) -> Double { 1 / max(frameRate, 1) }
 }
 
 /// Which part of a display object a pointer hit.

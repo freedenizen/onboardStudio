@@ -54,6 +54,45 @@ struct SyncWizardTests {
         solved.startPositionInInput = start
         #expect(solved.inputTime(forProjectTime: 10) == 1000)
     }
+
+    /// A nudge moves an input on the *project* timeline, so the moment that was on screen at one
+    /// time is on screen that much later — whatever the play speed. Shifting the start position
+    /// instead would make the step mean source seconds, which is not what a user nudging against
+    /// the picture is asking for.
+    @Test func nudgingMovesAnInputByProjectSeconds() {
+        let sync = SyncSettings(startPositionInInput: 990, offsetInProject: 0, playSpeed: 1)
+        let moment = sync.projectTime(forInputTime: 1000)
+
+        let later = SyncWizard.shifted(sync, byProjectSeconds: 0.5)
+        #expect(later.projectTime(forInputTime: 1000) == moment + 0.5)
+        let earlier = SyncWizard.shifted(sync, byProjectSeconds: -0.5)
+        #expect(earlier.projectTime(forInputTime: 1000) == moment - 0.5)
+
+        #expect(later.startPositionInInput == sync.startPositionInInput, "how much of the file plays is unchanged")
+        #expect(later.playSpeed == sync.playSpeed)
+    }
+
+    /// At double speed a project second is two source seconds; the nudge must still be one
+    /// project second, or the step would silently change size with the input's speed.
+    @Test func nudgingIsTheSameSizeAtAnyPlaySpeed() {
+        for speed in [0.5, 1.0, 2.0] {
+            let sync = SyncSettings(startPositionInInput: 10, offsetInProject: 3, playSpeed: speed)
+            let moved = SyncWizard.shifted(sync, byProjectSeconds: 1)
+            #expect(abs(moved.projectTime(forInputTime: 40) - sync.projectTime(forInputTime: 40) - 1) < 1e-12)
+        }
+    }
+
+    /// The step the panel exists for: a tenth of a second is three to six frames at normal rates,
+    /// which is visibly out on a braking marker.
+    @Test func theFrameStepFollowsTheProjectRate() {
+        #expect(SyncWizard.frameStep(frameRate: 30) == 1.0 / 30)
+        #expect(SyncWizard.frameStep(frameRate: 60) == 1.0 / 60)
+        #expect(SyncWizard.frameStep(frameRate: 24) == 1.0 / 24)
+        #expect(SyncWizard.frameStep(frameRate: 60) < 0.1, "finer than the smallest button the sheet offered")
+        // A project with a nonsense rate must not divide by zero or hand back an infinite step.
+        #expect(SyncWizard.frameStep(frameRate: 0) == 1)
+        #expect(SyncWizard.frameStep(frameRate: -30) == 1)
+    }
 }
 
 @Suite("Object geometry")
