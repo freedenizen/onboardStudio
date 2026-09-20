@@ -263,3 +263,51 @@ extension EditorModel {
         syncFromDocument()
     }
 }
+
+// MARK: - Trim to the playhead (#54)
+
+extension EditorModel {
+    /// Whether there is a video selected that trim-to-playhead could act on.
+    var canTrimToPlayhead: Bool { selectedTrimmableVideo != nil }
+
+    private var selectedTrimmableVideo: Input? {
+        guard selectedObjectID == nil, selectedMarkerID == nil, let input = selectedInput,
+            case .video = input.kind
+        else { return nil }
+        return input
+    }
+
+    /// Drops everything before the playhead, as Resolve's Trim Start does.
+    ///
+    /// There is no separate "trim to marker": jump to the marker with ⇧↑/⇧↓, which puts the
+    /// playhead on it, then trim — the same two steps Resolve uses, and one command rather than
+    /// two that can disagree.
+    func trimStartToPlayhead() {
+        guard let video = selectedTrimmableVideo else {
+            statusMessage = "Select a video on the timeline to trim it."
+            return
+        }
+        let time = currentTime
+        guard time > video.sync.offsetInProject, let end = end(of: video), time < end else {
+            statusMessage = "Put the playhead inside \(video.label) to trim it."
+            return
+        }
+        trimHead(of: video.id, toProjectTime: time)
+        statusMessage = "Trimmed the start of \(video.label) to the playhead."
+    }
+
+    /// Drops everything after the playhead, as Resolve's Trim End does.
+    func trimEndToPlayhead() {
+        guard let video = selectedTrimmableVideo else {
+            statusMessage = "Select a video on the timeline to trim it."
+            return
+        }
+        let time = currentTime
+        guard time > video.sync.offsetInProject, let end = end(of: video), time < end else {
+            statusMessage = "Put the playhead inside \(video.label) to trim it."
+            return
+        }
+        trimTail(of: video.id, toProjectTime: time)
+        statusMessage = "Trimmed the end of \(video.label) to the playhead."
+    }
+}

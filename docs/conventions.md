@@ -66,7 +66,15 @@ Final Cut's marker *types* are not copied. `M` adds at the playhead, `⌘M` adds
 `⇧↑`/`⇧↓` walk the list — the bindings verified above. The timeline/clip distinction is real
 rather than cosmetic: a marker with an `inputID` is stored in **that input's own time**, so
 re-syncing the input carries its markers with it, while a timeline marker stays at its timecode.
-The sidebar's **Markers** section is the marker list panel. Split and trim are still to come.
+The sidebar's **Markers** section is the marker list panel.
+
+**Trim implemented** (#54, second slice): `⇧[` / `⇧]` trim the selected video's start / end to the
+playhead, Resolve's bindings. Trimming *to a marker* is deliberately not a separate command —
+`⇧↑`/`⇧↓` put the playhead on the marker, then trim, which is Resolve's own two-step and leaves
+no second code path to disagree about where the cut goes.
+
+**Still to come for #54:** splitting an input at the playhead, and trimming data inputs (which
+have no trim in the model yet — only video does).
 
 ## Navigation
 

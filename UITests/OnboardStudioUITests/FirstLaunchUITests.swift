@@ -119,6 +119,33 @@ final class MarkerUITests: OnboardStudioUITestCase {
     }
 }
 
+/// #54: trimming a video to the playhead, with Resolve's ⇧[ / ⇧].
+final class TrimUITests: OnboardStudioUITestCase {
+    @MainActor
+    func testTrimsAVideoToThePlayheadAndRefusesWhenItCannot() throws {
+        launch()
+        addFixtureVideo()
+        sidebarInput("test-3s").click()
+
+        // At the very start there is nothing before the playhead to drop, and saying so beats
+        // silently doing nothing or trimming the clip away.
+        menu("Project", "Trim Start to Playhead")
+        expectStatus(containing: "Put the playhead inside")
+
+        // Step a few frames in, then trim; the start position follows the playhead.
+        for _ in 0..<10 { app.typeKey(".", modifierFlags: []) }
+        menu("Project", "Trim Start to Playhead")
+        expectStatus(containing: "Trimmed the start")
+
+        let start = app.textFields["sync.startPosition"]
+        XCTAssertTrue(start.waitForExistence(timeout: Self.timeout))
+        XCTAssertNotEqual(start.value as? String, "0", "The start position did not move")
+
+        app.typeKey("z", modifierFlags: .command)
+        expect(start, toRead: "0")
+    }
+}
+
 final class TimelineUITests: OnboardStudioUITestCase {
     @MainActor
     func testZoomSnapAndTransport() throws {
