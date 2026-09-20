@@ -151,6 +151,14 @@ struct EditorCommands: Commands {
             }
             Button("Add Segment at Playhead") { editor?.addSegmentAtPlayhead() }
                 .keyboardShortcut("k", modifiers: [.command])
+            // Resolve's ⇧[ / ⇧], verified in docs/conventions.md. Trimming to a marker is the
+            // same command: ⇧↑/⇧↓ put the playhead on the marker first.
+            Button("Trim Start to Playhead") { editor?.trimStartToPlayhead() }
+                .keyboardShortcut("[", modifiers: [.shift])
+                .disabled(editor?.canTrimToPlayhead != true)
+            Button("Trim End to Playhead") { editor?.trimEndToPlayhead() }
+                .keyboardShortcut("]", modifiers: [.shift])
+                .disabled(editor?.canTrimToPlayhead != true)
             Button("Delete Selected Segment") {
                 if let id = editor?.selectedSegmentID { editor?.deleteSegment(id) }
             }

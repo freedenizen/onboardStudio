@@ -189,6 +189,16 @@ incident, the start of a sector.
   marker along with it. With nothing selected it belongs to the timeline and stays at that
   timecode. The inspector says which kind you have.
 
+### 6b. Trimming to the playhead
+
+Select a video on the timeline and **⇧[** drops everything before the playhead, **⇧]** everything
+after it (**Project ▸ Trim Start / End to Playhead**). Both are non-destructive — the file is
+untouched and **⌘Z** puts it back.
+
+There is no separate "trim to marker": jump to the marker with **⇧↑** / **⇧↓**, which puts the
+playhead on it, then trim. That is how Resolve works too, and one command cannot disagree with
+another about where the cut goes.
+
 ## 7. Export and share
 
 *Export* renders through the same pipeline as the preview, so what you see is what you get.
