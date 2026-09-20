@@ -84,6 +84,15 @@ public struct GForceParams: Hashable, Codable, Sendable {
     public var gridColor: RGBAColor
     public var faceColor: RGBAColor
     public var showValues: Bool
+    /// Channel driving the horizontal axis; empty uses the standard `lateralG` role.
+    public var lateralChannel: String
+    /// Channel driving the vertical axis; empty uses the standard `longitudinalG` role.
+    public var longitudinalChannel: String
+    /// Loggers disagree on which way is positive: RaceRender calls a right turn positive, while
+    /// ISO 8855 vehicle axes (which RaceChrono follows) make a left turn positive.
+    public var invertLateral: Bool
+    /// As `invertLateral`, for braking versus accelerating.
+    public var invertLongitudinal: Bool
 
     public init(
         maxG: Double = 2,
@@ -92,7 +101,11 @@ public struct GForceParams: Hashable, Codable, Sendable {
         dotColor: RGBAColor = .accent,
         gridColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.5),
         faceColor: RGBAColor = .faceDark,
-        showValues: Bool = true
+        showValues: Bool = true,
+        lateralChannel: String = "",
+        longitudinalChannel: String = "",
+        invertLateral: Bool = false,
+        invertLongitudinal: Bool = false
     ) {
         self.maxG = maxG
         self.ringStep = ringStep
@@ -101,6 +114,39 @@ public struct GForceParams: Hashable, Codable, Sendable {
         self.gridColor = gridColor
         self.faceColor = faceColor
         self.showValues = showValues
+        self.lateralChannel = lateralChannel
+        self.longitudinalChannel = longitudinalChannel
+        self.invertLateral = invertLateral
+        self.invertLongitudinal = invertLongitudinal
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxG, ringStep, trailSeconds, dotColor, gridColor, faceColor, showValues
+        case lateralChannel, longitudinalChannel, invertLateral, invertLongitudinal
+    }
+
+    /// Decoded field by field so projects saved before the axis settings existed still load.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = GForceParams()
+        maxG = try c.decodeIfPresent(Double.self, forKey: .maxG) ?? d.maxG
+        ringStep = try c.decodeIfPresent(Double.self, forKey: .ringStep) ?? d.ringStep
+        trailSeconds = try c.decodeIfPresent(Double.self, forKey: .trailSeconds) ?? d.trailSeconds
+        dotColor = try c.decodeIfPresent(RGBAColor.self, forKey: .dotColor) ?? d.dotColor
+        gridColor = try c.decodeIfPresent(RGBAColor.self, forKey: .gridColor) ?? d.gridColor
+        faceColor = try c.decodeIfPresent(RGBAColor.self, forKey: .faceColor) ?? d.faceColor
+        showValues = try c.decodeIfPresent(Bool.self, forKey: .showValues) ?? d.showValues
+        lateralChannel = try c.decodeIfPresent(String.self, forKey: .lateralChannel) ?? d.lateralChannel
+        longitudinalChannel =
+            try c.decodeIfPresent(String.self, forKey: .longitudinalChannel) ?? d.longitudinalChannel
+        invertLateral = try c.decodeIfPresent(Bool.self, forKey: .invertLateral) ?? d.invertLateral
+        invertLongitudinal = try c.decodeIfPresent(Bool.self, forKey: .invertLongitudinal) ?? d.invertLongitudinal
+    }
+
+    /// The signed value for an axis: the chosen channel if it names one, else the standard role.
+    public func axisValue(_ raw: Double?, invert: Bool) -> Double {
+        guard let raw, raw.isFinite else { return 0 }
+        return invert ? -raw : raw
     }
 }
 

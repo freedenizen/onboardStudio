@@ -210,3 +210,67 @@ struct OptionalChannelPicker: View {
         }
     }
 }
+
+struct GForceInspector: View {
+    @Bindable var editor: EditorModel
+    let object: DisplayObject
+    let params: GForceParams
+
+    var body: some View {
+        Section("G-Force") {
+            NumberField("Max G", value: clamped(\.maxG, least: 0.5))
+            NumberField("Trail (s)", value: clamped(\.trailSeconds, least: 0))
+            Toggle("Show values", isOn: field(\.showValues))
+        }
+        Section("Lateral (left/right)") {
+            axisPicker("Channel", selection: optional(\.lateralChannel), standard: "lateralG")
+            Toggle("Invert", isOn: field(\.invertLateral))
+        }
+        Section("Longitudinal (braking/acceleration)") {
+            axisPicker("Channel", selection: optional(\.longitudinalChannel), standard: "longitudinalG")
+            Toggle("Invert", isOn: field(\.invertLongitudinal))
+            Text(
+                "Loggers disagree on which way is positive: RaceRender calls a right turn positive, "
+                    + "ISO 8855 vehicle axes (which RaceChrono follows) call a left turn positive."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    /// Lists the object's own data input, unlike `OptionalChannelPicker`, which always reads the
+    /// project's first one. "Standard" leaves the channel empty so the axis follows its role.
+    @ViewBuilder
+    func axisPicker(_ title: String, selection: Binding<String?>, standard: String) -> some View {
+        let session = object.inputID.flatMap { editor.sessions[$0] }
+        let available = session?.orderedChannels.map(\.role.identifier) ?? []
+        Picker(title, selection: selection) {
+            Text("Standard (\(standard))").tag(String?.none)
+            ForEach(available, id: \.self) { Text($0).tag(String?.some($0)) }
+        }
+        if let chosen = selection.wrappedValue, !available.isEmpty, !available.contains(chosen) {
+            Label("\(chosen) is not in this data file.", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption).foregroundStyle(.yellow)
+        }
+    }
+
+    func field<T>(_ keyPath: WritableKeyPath<GForceParams, T>) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    }
+
+    func clamped(_ keyPath: WritableKeyPath<GForceParams, Double>, least: Double) -> Binding<Double> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = max(least, v) } })
+    }
+
+    /// The pickers offer "None", which for these means "use the standard role for the axis".
+    func optional(_ keyPath: WritableKeyPath<GForceParams, String>) -> Binding<String?> {
+        Binding(
+            get: { params[keyPath: keyPath].isEmpty ? nil : params[keyPath: keyPath] },
+            set: { v in update { $0[keyPath: keyPath] = v ?? "" } })
+    }
+
+    func update(_ change: (inout GForceParams) -> Void) {
+        var new = params
+        change(&new)
+        editor.updateObject(object.id, name: "Edit G-Force") { $0.kind = .gForce(new) }
+    }
+}

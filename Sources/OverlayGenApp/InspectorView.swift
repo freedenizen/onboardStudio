@@ -277,47 +277,7 @@ struct ObjectInspector: View {
         case .trackMap(let params):
             TrackMapInspector(editor: editor, object: object, params: params)
         case .gForce(let params):
-            Section("G-Force") {
-                NumberField(
-                    "Max G",
-                    value: Binding(
-                        get: { params.maxG },
-                        set: { v in
-                            set(
-                                .gForce(
-                                    {
-                                        var p = params
-                                        p.maxG = max(0.5, v)
-                                        return p
-                                    }()))
-                        }))
-                NumberField(
-                    "Trail (s)",
-                    value: Binding(
-                        get: { params.trailSeconds },
-                        set: { v in
-                            set(
-                                .gForce(
-                                    {
-                                        var p = params
-                                        p.trailSeconds = max(0, v)
-                                        return p
-                                    }()))
-                        }))
-                Toggle(
-                    "Show values",
-                    isOn: Binding(
-                        get: { params.showValues },
-                        set: { v in
-                            set(
-                                .gForce(
-                                    {
-                                        var p = params
-                                        p.showValues = v
-                                        return p
-                                    }()))
-                        }))
-            }
+            GForceInspector(editor: editor, object: object, params: params)
         case .timer(let params):
             TimerInspector(editor: editor, object: object, params: params)
         case .textData(let params):
