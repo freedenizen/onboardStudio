@@ -51,7 +51,8 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
 - **Preview (centre)**: the composed frame at the playhead, exactly as it will export. Selected
   objects show handles; the arrow keys nudge them one pixel of the exported frame, or ten with ⇧
   held (the step is set in **Settings ▸ Editing**). With nothing selected, ← and → step a frame
-  instead; `,` and `.` always step a frame, whatever is selected.
+  instead; `,` and `.` always step a frame, whatever is selected. In the inspector, ↑ and ↓ raise
+  and lower the number field you are in (⇧↑ and ⇧↓ select text there, as they do in any field).
 - **Transport and timeline (below the preview)**: play, step, scrub. The timeline has a time
   ruler (click or drag it to scrub), a marker lane (§6a), a lane with one bar per video, a lane
   with one bar per data file showing where its laps fall (§6c), and the segment strip (§6).

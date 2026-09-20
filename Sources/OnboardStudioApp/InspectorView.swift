@@ -232,8 +232,8 @@ struct ObjectInspector: View {
             }
         }
         Section {
-            NumberField("X", value: percent(\.x))
-            NumberField("Y", value: percent(\.y))
+            NumberField("X", value: percent(\.x)).accessibilityIdentifier("object.x")
+            NumberField("Y", value: percent(\.y)).accessibilityIdentifier("object.y")
             NumberField("Width", value: percent(\.width))
             NumberField("Height", value: percent(\.height))
         } header: {
