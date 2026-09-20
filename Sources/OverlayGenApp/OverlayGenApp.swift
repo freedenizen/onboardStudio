@@ -4,8 +4,13 @@ import UniformTypeIdentifiers
 
 @main
 struct OverlayGenApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var updater = UpdaterModel()
     @State private var youtube = YouTubeModel()
+
+    init() {
+        LaunchOptions.registerDefaults()
+    }
 
     var body: some Scene {
         DocumentGroup(
@@ -41,6 +46,13 @@ struct OverlayGenApp: App {
             EditorCommands()
             if UITestSupport.isActive { UITestCommands() }
         }
+        Window("Welcome to OverlayGen", id: "launcher") {
+            LauncherView()
+        }
+        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
+        .defaultLaunchBehavior(LaunchOptions.showLauncher ? .presented : .suppressed)
+        .restorationBehavior(.disabled)
         Window("Keyboard Shortcuts", id: "shortcuts") {
             ShortcutsView()
         }
@@ -84,6 +96,7 @@ struct EditorCommands: Commands {
             Button("YouTube Upload Setup") { HelpLinks.open(.youtube) }
             Button("Project File Format") { HelpLinks.open(.projectFormat) }
             Divider()
+            Button("Welcome to OverlayGen") { openWindow(id: "launcher") }
             Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
             Button("Take the Tour") { editor?.tourStep = 0 }.disabled(editor == nil)
             Button("Show Getting Started") { UserDefaults.standard.set(true, forKey: "showGettingStarted") }

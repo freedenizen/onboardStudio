@@ -7,8 +7,11 @@ and, ideally, a data log.
 
 ## 1. Your first overlay in five minutes
 
-1. **Launch OverlayGen.** A new, empty project opens with a welcome panel and, the first time, a
-   three-step tour (**Help ▸ Take the Tour** repeats it). Files can be dropped anywhere in the window. (**File ▸ New from
+1. **Launch OverlayGen.** The welcome window offers a **New Blank Project**, a project **from a
+   template** (gauges already laid out), **Open Project…**, your recent projects and the sample
+   project. Untick *Show this window at launch* to start on a blank project instead;
+   **Help ▸ Welcome to OverlayGen** brings the window back. A new project opens with a welcome
+   panel and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be dropped anywhere in the window. (**File ▸ New from
    Template** starts with gauges already laid out, which attach themselves to the video and data
    files you add next; **Help ▸ Open the Sample Project** opens a
    short clip with a synthetic log if you just want to poke around.)
