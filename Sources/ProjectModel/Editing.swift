@@ -50,6 +50,20 @@ public enum ObjectGeometry {
         return rect
     }
 
+    /// Moves `rect` by a number of **output pixels**, clamped like a drag.
+    ///
+    /// Object frames are fractions of the picture, but a nudge is specified in pixels so the step
+    /// means the same thing in a 1080p project and a 4K one. `dx` is positive to the right, `dy`
+    /// positive downwards, matching the frame's own coordinates.
+    public static func nudged(
+        _ rect: UnitRect, byPixels dx: Double, _ dy: Double, in settings: ProjectSettings
+    ) -> UnitRect {
+        var moved = rect
+        if settings.outputWidth > 0 { moved.x += dx / Double(settings.outputWidth) }
+        if settings.outputHeight > 0 { moved.y += dy / Double(settings.outputHeight) }
+        return clamped(moved)
+    }
+
     /// Hit-tests `point` against `frame`; `handleSize` is the handle radius in unit space.
     public static func handle(at point: CGPoint, in frame: UnitRect, handleSize: Double) -> ObjectHandle? {
         let r = CGRect(x: frame.x, y: frame.y, width: frame.width, height: frame.height)
