@@ -49,7 +49,9 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
 - **Sidebar (left)**: inputs (videos, data files, images) and display objects, bottom of the list
   is drawn first. Click to select and edit; the eye toggles an object; right-click to remove.
 - **Preview (centre)**: the composed frame at the playhead, exactly as it will export. Selected
-  objects show handles; arrow keys nudge them (⇧ for bigger steps).
+  objects show handles; the arrow keys nudge them one pixel of the exported frame, or ten with ⇧
+  held (the step is set in **Settings ▸ Editing**). With nothing selected, ← and → step a frame
+  instead; `,` and `.` always step a frame, whatever is selected.
 - **Transport and timeline (below the preview)**: play, step, scrub. The timeline has a time
   ruler (click or drag it to scrub), a lane with one bar per video and the segment strip (§6).
   Drag a video bar to move it, drag its left or right edge to trim it (the head trim keeps the

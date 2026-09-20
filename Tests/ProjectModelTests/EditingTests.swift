@@ -143,6 +143,39 @@ struct ObjectGeometryTests {
         #expect(abs(down.height - wheel.height) < 1e-9)
     }
 
+    /// A nudge is specified in output pixels so one arrow press means the same distance on screen
+    /// whatever the project's size — a fraction-based step moves twice as far in 4K as in 1080p.
+    @Test func nudgingMovesByOutputPixels() {
+        let hd = ProjectSettings(outputWidth: 1920, outputHeight: 1080)
+        let right = ObjectGeometry.nudged(frame, byPixels: 1, 0, in: hd)
+        #expect(abs(right.x - (frame.x + 1.0 / 1920)) < 1e-12)
+        #expect(right.y == frame.y, "a horizontal nudge leaves y alone")
+        #expect(right.width == frame.width && right.height == frame.height)
+
+        let down = ObjectGeometry.nudged(frame, byPixels: 0, 10, in: hd)
+        #expect(abs(down.y - (frame.y + 10.0 / 1080)) < 1e-12)
+
+        // The same ten pixels in a 4K project is a smaller fraction of the frame, so the object
+        // ends up in the same place on screen.
+        let uhd = ProjectSettings(outputWidth: 3840, outputHeight: 2160)
+        let downUHD = ObjectGeometry.nudged(frame, byPixels: 0, 10, in: uhd)
+        #expect(abs((downUHD.y - frame.y) - (down.y - frame.y) / 2) < 1e-12)
+    }
+
+    /// Nudging clamps like a drag: an object can hang off the edge but never be pushed away
+    /// entirely, and a degenerate project size must not divide by zero.
+    @Test func nudgingClampsAndSurvivesAZeroSizedProject() {
+        let hd = ProjectSettings(outputWidth: 1920, outputHeight: 1080)
+        var far = frame
+        for _ in 0..<5000 { far = ObjectGeometry.nudged(far, byPixels: 100, 0, in: hd) }
+        #expect(abs(far.x - (1 - ObjectGeometry.minimumVisible)) < 1e-9)
+        #expect(far.width == frame.width, "the size survives being nudged past the edge")
+
+        let zero = ProjectSettings(outputWidth: 0, outputHeight: 0)
+        let unmoved = ObjectGeometry.nudged(frame, byPixels: 5, 5, in: zero)
+        #expect(unmoved.x == frame.x && unmoved.y == frame.y)
+    }
+
     @Test func draggingHandlesResizes() {
         let right = ObjectGeometry.drag(frame, handle: .right, delta: CGSize(width: 0.1, height: 0))
         #expect(abs(right.width - 0.5) < 1e-9 && right.x == 0.2)

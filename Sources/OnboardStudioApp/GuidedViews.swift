@@ -203,8 +203,9 @@ struct ShortcutsView: View {
         ("⌘N / ⌘O / ⌘S", "New, open, save project"), ("⌘I", "Add video"), ("⇧⌘I", "Add camera (new lane)"),
         ("⇧⌘D", "Add data file"),
         ("⌘Y", "Synchronize data (wizard)"), ("⌘E", "Export video"), ("⌘K", "Add timeline segment at playhead"),
-        ("Space", "Play / pause"), ("← →", "Step one frame"), ("Home", "Go to start"),
-        ("Arrow keys (object selected)", "Nudge the object; ⇧ for larger steps"),
+        ("Space", "Play / pause"), (", .", "Step one frame"), ("Home", "Go to start"),
+        ("Arrows (object selected)", "Nudge the object 1 px; ⇧ for 10 px"),
+        ("← → (nothing selected)", "Step one frame"),
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
     ]
 
