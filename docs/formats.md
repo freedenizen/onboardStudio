@@ -46,12 +46,14 @@ unix time,,,s,m,m,deg,…,m/s,…,rpm,…
 - Preamble `Key,Value` lines become session metadata (title, track, driver, created date, note).
 - The header row starts with `timestamp`; a units row and a data-source row follow.
 - Times are unix seconds and are kept as-is. Duplicate rows (RaceChrono emits them) are dropped.
-- Column names repeat across sources (`speed` from GPS, calc and OBD). The first occurrence keeps
-  the role; later ones become `aux:<name> (<source>)`, except OBD columns which become
-  `obd:<name>`.
+- Column names repeat across sources (`speed` from GPS, calc and the vehicle). The first
+  occurrence keeps the role; later ones become `aux:<name> (<source>)`, except vehicle columns,
+  which become `canbus:<name>` for a `200: canbus` source and `obd:<name>` for `200: obd`. The
+  two are kept apart because a CAN log carries far more than OBD-II exposes. Projects saved
+  before CAN had its own role name those channels `obd:`; that name still resolves.
 - `lap_number` transitions define laps. The first run is marked partial when it does not start
   at lap 0, and the last run is always partial.
-- Blank cells (common for OBD channels) are skipped, so channels may have fewer samples than rows.
+- Blank cells (common for vehicle channels) are skipped, so channels may have fewer samples than rows.
 
 ## GPX (`gpx`)
 
