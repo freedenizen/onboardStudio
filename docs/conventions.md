@@ -75,8 +75,9 @@ optional range, and a marker scoped to a data input is the clip-marker case.
 
 **Arrow keys nudge the selected object; `,` and `.` step frames.**
 
-This is the reverse of Resolve and Final Cut, where arrows move the playhead and `,`/`.` nudge the
-selected clip by a frame. The divergence is deliberate, not an oversight:
+This is the reverse of Resolve and Final Cut, where `,`/`.` nudge the selected clip and the arrow
+keys belong to the timeline — left/right step a frame, up/down move the selection between edits.
+The divergence is deliberate, not an oversight:
 
 OverlayGen's display objects are positioned in the **picture** — `x`/`y` as fractions of the frame —
 not along the timeline. Nudging one with the arrow keys is the *inspector* gesture, which is what
@@ -84,31 +85,78 @@ arrows do in every app when a graphic is selected, rather than the *timeline* ge
 asks for exactly this. Premiere also nudges the selected clip with arrows, so the three references
 do not agree with one another here in any case.
 
-If OverlayGen ever gains clips that move along the timeline, revisit this.
+Two consequences worth keeping:
 
-## Shortcut claims and their status
+- **`,`/`.` still step frames here**, which is the one place the key is reused for a different job
+  than Resolve gives it. Accept it: the alternative is leaving frame stepping unbound.
+- **Resolve's fast nudge is 5 frames and is a preference**, not a fixed 10. OverlayGen's existing
+  ⇧ multiplier was already 5×; #50 moves it to 10 px because that is what the issue asks for, which
+  is a defensible product choice rather than a convention. Keeping it configurable would match
+  Resolve more closely than either number.
 
-Researched from the sources below. **The unverified rows must not be copied into the app's
-Keyboard Shortcuts window without being checked against a licensed install first** — a shortcut
-reference that is confidently wrong is worse than one that is silent.
+If OverlayGen ever gains clips that move along the timeline, revisit all of this.
+
+## Resolve shortcuts, from the shipped manual
+
+Read out of `DaVinci Resolve.app/Contents/Resources/DaVinci Resolve.pdf` (4,351 pages) with
+PDFKit, mostly from the "Keyboard Shortcuts in This Chapter" tables on pages 889 and 942. This is
+primary source material, not a secondary guide — web research had produced conflicting claims on
+six of these, and every one of those conflicts is settled below.
+
+| Key | Function | Page |
+| --- | --- | --- |
+| `A` | Selection tool/mode | 942 |
+| `B` | Razor blade tool — adds cuts with the pointer | 942 |
+| `⌘\` | Adds a cut to the clip(s) at the playhead | 889, 942 |
+| `Delete` | Delete clip and **leave a gap** — a lift edit | 889, 942 |
+| `Forward Delete` | **Ripple delete** — delete and close the gap | 889, 942 |
+| `N` | Toggle timeline snapping | 889, 942 |
+| `,` / `.` | Nudge the selected edit or clip one frame | 942 |
+| `⇧,` / `⇧.` | Fast nudge — **5 frames**, customizable | 942, 114 |
+| `⇧[` / `⇧]` | Trim Start to Playhead / Trim End to Playhead | 942 |
+| `E` | Extend edit: move the selected edit point to the playhead | 942 |
+| `↑` / `↓` | Move the **selection** to the previous/next edit | 889, 942 |
+| `⇧↑` / `⇧↓` | Previous / next **marker** | 4324 |
+| `M` | Add a marker at the playhead | 718 |
+| `⌘M` | Add a marker and open its edit dialog immediately | 880, 1016 |
+| `W` | Dynamic Trim mode (JKL trimming) | 731 |
+| `⇧Z` | Zoom to Fit | 3076, 3828 |
+| `⌥⇧1`…`8` | Lock an individual video track | 889 |
+| `⌥⇧9` | Lock **all** video tracks | 889 |
+| `⌥⇧F1`…`F8`, `⌥⇧F9` | The same for audio tracks | 889 |
+| `⌘⇧X` | Ripple cut — cut and close the gap | 942 |
+| `⌘X` | Cut, leaving a gap | 942 |
+
+Conflicts the web research could not settle, now resolved: ripple delete is **Forward Delete**
+(not `⇧Delete`), zoom to fit is **`⇧Z`**, next/previous marker is **`⇧↑`/`⇧↓`** (not plain arrows),
+trim-to-playhead is **`⇧[`/`⇧]`** (no `⌘`), and lock-all-tracks is **`⌥⇧9`** (`F9` is Insert Edit).
+
+Two details worth noting because they contradict what is widely repeated online:
+
+- **Fast nudge is 5 frames, not 10**, and it is a preference ("Default fast nudge length").
+- **Up/Down arrows move the selection between edits**, so Resolve does not reserve the arrow keys
+  for the playhead the way the secondary sources implied. Only left/right step frames.
+
+## Other apps
+
+Verified from Apple's official documentation; the Premiere rows could not be confirmed against an
+Adobe page and are marked accordingly.
 
 | Claim | App | Status |
 | --- | --- | --- |
-| Blade tool = `B`, Pointer = `A` | Resolve | Corroborated by several independent guides; the official shortcut PDF could not be read directly. Verify. |
-| Split Clip at playhead, all tracks = `⌘\`; Join = `⌥\` | Resolve | As above — consistent across secondary sources, no readable primary. Verify. |
-| Trim Edit Mode = `T`; Dynamic Trim = `W` | Resolve | Corroborated, not primary-verified. |
-| Snapping = `N` | Resolve | Consistently reported across many sources; long-standing. Reliable. |
-| Add marker = `M`; press again to name | Resolve, Premiere | Widely corroborated; the exact "twice or ⌘M" behaviour is community-sourced. |
-| Next / previous marker = `⇧↓` / `⇧↑` | Resolve | **Conflict** — plain `↑`/`↓` also appears in some guides. Unresolved. |
-| Ripple delete vs lift key | Resolve | **Conflict** — `⇧Delete`, plain `Delete`, and forward-delete are all claimed. Unresolved, and high risk. |
-| Zoom to fit = `Z` or `⇧Z` | Resolve | **Conflict** between sources, probably a version change. Unresolved. |
-| Ripple Trim Start/End to playhead = `⇧⌘[` / `⇧⌘]` | Resolve | Inferred from a forum thread, not an official table. Probable, unverified. |
-| Track lock = `⌥⇧<number>`; all tracks = `F9` or `9` | Resolve | Lock binding corroborated; the all-tracks key is disputed. |
-| Move a clip to the track above/below by keyboard | Resolve | **No shortcut found at all.** Likely mouse-only. |
-| Lift = `;`, Extract = `'`, ripple trim = `Q`/`W` | Premiere | Multiple secondary sources agree; no Adobe page fetched. Unverified. |
-| Blade = `B`, `⌘B` splits selection, `⇧⌘B` splits all | Final Cut | **Verified** from Apple's official shortcut page. |
-| Nudge selected clip = `,` / `.`, ten frames = `⇧,` / `⇧.` | Final Cut | **Verified** from Apple's official docs. |
-| Add marker `M`, add-and-edit `⌥M`, delete `⌃M` | Final Cut | **Verified** from Apple's marker docs. |
+| Blade `B`, `⌘B` splits the selection, `⇧⌘B` splits all clips | Final Cut | Verified |
+| Nudge selected clip `,` / `.`, ten frames `⇧,` / `⇧.` | Final Cut | Verified |
+| Add marker `M`, add-and-edit `⌥M`, delete `⌃M` | Final Cut | Verified |
+| Razor = `C`; `⇧`-click cuts all tracks | Premiere | Unverified |
+| Lift = `;`, Extract = `'`, ripple trim = `Q` / `W` | Premiere | Unverified |
+| Ripple `B`, roll `N`, slip `Y`, slide `U` as separate tools | Premiere | Unverified |
+
+To re-check anything here, or to extract a table this doc does not cover:
+
+```sh
+swift Scripts/resolve-shortcuts.swift "Ripple Delete"   # lines matching, with page numbers
+swift Scripts/resolve-shortcuts.swift --page 942        # a whole page
+```
 
 ## Sources
 
@@ -121,6 +169,6 @@ reference that is confidently wrong is worse than one that is silent.
 - Premiere sync lock — https://helpx.adobe.com/premiere/desktop/edit-projects/change-clip-sequence/sync-lock-to-prevent-changes.html
 - Premiere clip markers — https://helpx.adobe.com/premiere/desktop/organize-media/apply-labeling/add-a-marker-to-a-clip.html
 
-Apple's documentation was the only source that could be fetched and read directly throughout;
-Blackmagic's shortcut PDF returned unreadable binary, which is why so many Resolve rows above are
-marked unverified.
+Every Resolve binding above comes from the manual shipped inside the application bundle, read with
+`Scripts/resolve-shortcuts.swift`. Apple's documentation was fetched directly. Only the Premiere
+rows rest on secondary sources, and they say so.
