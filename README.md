@@ -1,24 +1,114 @@
+<div align="center">
+
+<img src="docs/images/app-icon.png" width="128" alt="Onboard Studio app icon">
+
 # Onboard Studio
 
-A modern, native macOS app for combining onboard video with telemetry data — GPS, data loggers,
-lap timers — into finished videos with data-driven overlays: gauges, track maps, g-force plots,
-lap timers, graphs, and more. A reimplementation of the classic RaceRender 3 workflow using
-Swift 6, SwiftUI, and AVFoundation.
+**Turn your onboard video and lap data into a finished track-day film.**
 
-**New here?** Read the [User Guide](docs/user-guide.md), or open **Help ▸ Open the Sample Project** in the app.
+A native Mac app that lays speedometers, track maps, g-force plots and lap timers
+over footage from your camera, driven by the data your logger recorded.
 
-**Status:** feature-complete against the RaceRender 3 checklist (milestone M14: performance, hardening, parity audit; see `docs/parity.md` for what is and is not covered). On Apple silicon a 4K HEVC export of a HERO13 clip with eleven overlays runs at about twice real time with flat memory; `onboard bench` measures it, and fuzz suites mutate every supported file format against the importers. A data log can be synced to the video without any clocks by correlating the video's motion with the log's speed (**Auto-Sync by Motion**, `onboard sync`); finished exports upload to YouTube with a device-code sign-in and resumable transfer (`docs/youtube.md`); DJI `.SRT` logs import and, like Garmin FIT and GPX files next to a clip, are offered as sidecar data, with DJI and Sony sidecar clocks feeding timestamp sync. Fisheye and 360° equirectangular footage can be unwrapped into a flat, pannable view per video input (Lens section; a runtime-compiled Metal kernel), exports can be tagged as spherical video for YouTube and 360° players, and the track map can draw a second vehicle from another data input and show Apple Maps imagery (map, satellite, hybrid) behind the outline. Script objects draw with JavaScript against a canvas and data API (with RaceRender-style helper names), edited live in the inspector with error badges instead of crashes (`docs/scripting.md`). GoPro recordings' embedded GPS, accelerometer and gyro data can be used directly (**Use Embedded GPS**), Garmin FIT activities import, and data files with a clock sync to the video automatically from timestamps. The app opens `.onboardproj` documents with a live preview, sync wizard and export (presets up to 4K and vertical, H.264/HEVC, ProRes 4444 or HEVC with alpha for overlay-only output over a key colour or transparency, whole/time-span/lap-range export); projects can be saved as and created from templates; missing media is reported per input and relinked in place; a timeline strip holds segments in which objects can be shown, hidden, moved or faded (camera switching, picture-in-picture, split and quad layouts from presets), with per-property inherit/override badges; the Gauge Designer covers needle/dual-needle/arc styles, sweep and direction, needle geometry, ticks and labels, colour zones with gradients, face images and needle smoothing; Bar, Graph (time/distance/lap-vs-best), Gear, Lap Counter, seven timer modes and formatted Text Data join the object set, and object styles can be copied, pasted, imported and exported; video inputs support rotation, mirror, crop, colour adjustments, chroma key and audio mixing; data inputs support channel mapping, resampling, smoothing, calculated fields and a start/finish-line lap editor. `onboard probe` reads RaceRender CSV, RaceChrono Pro CSV and GPX files (`docs/formats.md`); `onboard render --project` renders a project with speedometer, track map, g-force, lap timer and text readouts (`docs/project-format.md`). See `docs/testing.md` for how to verify each milestone and `docs/user-journeys.md` for the user journeys the XCUITest suite (`Scripts/ui-tests.sh`) drives through the real app. `docs/landscape.md` compares Onboard Studio with RaceChrono Pro, TrackAddict, VBOX, AiM and the rest, and `docs/conventions.md` records the editor conventions the timeline follows. See `docs/architecture.md` for the
-design and roadmap.
+[Download](#download) · [User Guide](docs/user-guide.md) · [What's new](https://github.com/freedenizen/onboardStudio/releases)
 
-## Requirements
+</div>
 
-- macOS 15 or later
-- Apple Silicon or Intel Mac
-- Optional: `ffmpeg` (`brew install ffmpeg`) for importing containers macOS can't open natively
+---
 
-## Building
+> [!WARNING]
+> **Onboard Studio is early alpha software.** It is under active development, has not been
+> through a public beta, and is not yet at version 1.0. Expect rough edges, changes that
+> break older project files, and occasional bugs.
+>
+> **Keep your original video and data files.** Onboard Studio never modifies them, but
+> please do not treat a project file as the only copy of anything you care about.
+>
+> Bug reports and suggestions are very welcome —
+> [open an issue](https://github.com/freedenizen/onboardStudio/issues/new).
 
-Libraries, tests, and the command-line tool build with Swift Package Manager alone:
+## What it does
+
+You come home from a track day with two things: video from a camera, and a data log from a
+lap timer or GPS logger. Onboard Studio puts them together.
+
+- **Line the two up.** Onboard Studio can sync your data to your video automatically — from
+  the clocks in the files, or, when there are no clocks, by matching the motion in the
+  picture to the speed in the log. No counting frames.
+- **Drop gauges on top.** Speedometer, tachometer, track map, g-force plot, lap timer,
+  bar and line graphs, gear indicator, lap counter and free text. Start from a template
+  and move things around, or design a gauge face from scratch.
+- **Cut between cameras.** Put a second camera picture-in-picture, split the screen, or
+  switch between angles partway through.
+- **Export a finished video.** Up to 4K, including vertical for phones. Upload straight to
+  YouTube, or export just the overlays with a transparent background to drop into Final
+  Cut or Premiere.
+
+Everything binds to whatever data you actually loaded — Onboard Studio does not assume your
+logger names things a particular way.
+
+### What it reads
+
+**Cameras** — GoPro (including the GPS, accelerometer and gyro recorded inside the video
+file), DJI, Sony, Garmin VIRB, and anything else your Mac can play. Fisheye and 360°
+footage can be flattened into a normal, pannable view.
+
+**Loggers and apps** — RaceChrono and RaceChrono Pro, RaceRender, Harry's LapTimer,
+TrackAddict, Racelogic VBO, Garmin FIT, GPX, TCX, NMEA, DJI `.SRT`, and plain CSV from
+almost anything else.
+
+Full details in [docs/formats.md](docs/formats.md).
+
+## Download
+
+**[⬇ Download the latest release](https://github.com/freedenizen/onboardStudio/releases/latest)**
+
+Grab the `OnboardStudio-<version>.dmg`, open it, and drag **Onboard Studio** to your
+Applications folder. That's it — the app is signed and notarized by Apple, so it opens with
+a normal double-click.
+
+Once installed, it keeps itself up to date: **Onboard Studio ▸ Check for Updates…**
+
+### Requirements
+
+- macOS 15 (Sequoia) or later
+- Any Mac from the last several years — Apple Silicon or Intel
+- Optional: [ffmpeg](https://ffmpeg.org) (`brew install ffmpeg`), only needed for unusual
+  video formats macOS can't open on its own
+
+### Upgrading from OverlayGen
+
+This app used to be called **OverlayGen**. If you have it installed, download the new DMG
+and install it once — the automatic updater does not carry across the rename.
+
+Your work comes with you. Existing `.overlayproj` projects, templates and object styles
+still open, and your settings and saved templates are migrated the first time Onboard
+Studio launches. Projects you save from now on use the new `.onboardproj` extension.
+
+## Getting started
+
+The fastest way in is the sample project — it opens with video, data and overlays already
+set up, so you can see how the pieces fit:
+
+**Help ▸ Open the Sample Project**
+
+From there, the [User Guide](docs/user-guide.md) walks through your first overlay in about
+five minutes, then covers videos, data, objects, timeline segments and exporting.
+
+If something looks wrong, the guide's
+[troubleshooting section](docs/user-guide.md#9-troubleshooting) covers the usual causes.
+
+## What's new
+
+Release notes for every version are on the
+[Releases page](https://github.com/freedenizen/onboardStudio/releases), newest first. The
+app is at **v0.19.0**; version numbers below 1.0 mean the file format and the interface can
+still change between releases.
+
+## For developers
+
+Onboard Studio is written in Swift 6 with SwiftUI and AVFoundation, and is a reimplementation
+of the classic RaceRender 3 workflow as a native Mac app. The libraries, tests and the
+`onboard` command-line tool build with Swift Package Manager alone:
 
 ```sh
 swift build
@@ -26,7 +116,8 @@ swift test
 swift run onboard --help
 ```
 
-The app bundle is built from an Xcode project generated with XcodeGen:
+The app bundle is built from an Xcode project generated with
+[XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
 ```sh
 brew install xcodegen
@@ -34,24 +125,17 @@ xcodegen generate
 open OnboardStudio.xcodeproj
 ```
 
-Or from the command line:
+Or from the command line — `Scripts/bundle-app.sh` builds `dist/OnboardStudio.app`, and
+`Scripts/make-dmg.sh` packages it into a DMG.
 
-```sh
-Scripts/bundle-app.sh        # builds dist/OnboardStudio.app
-Scripts/make-dmg.sh          # builds dist/OnboardStudio-<version>.dmg
-```
-
-## Installing
-
-Download the latest `OnboardStudio-<version>.dmg` from the
-[Releases page](https://github.com/freedenizen/onboardStudio/releases), open it and drag Onboard Studio
-to Applications. Releases from v0.2.3 onward are signed with a Developer ID certificate and
-notarized by Apple, so the app opens with a normal double-click and updates itself through
-**Onboard Studio ▸ Check for Updates…**.
-
-Earlier builds (v0.1.0 – v0.2.2) were unsigned test builds; they cannot self-update to a signed
-release, so replace them by installing the current DMG once.
+Further reading: [CONTRIBUTING.md](CONTRIBUTING.md) to get set up,
+[docs/architecture.md](docs/architecture.md) for how it fits together,
+[docs/landscape.md](docs/landscape.md) for how it compares with RaceChrono Pro, TrackAddict,
+VBOX and AiM, [docs/scripting.md](docs/scripting.md) for overlay objects that draw with
+JavaScript, and [docs/project-format.md](docs/project-format.md) for what's inside a project
+file.
 
 ## License
 
-MIT — see `LICENSE`. Third-party components are listed in `docs/third-party.md`.
+MIT — see [LICENSE](LICENSE). Third-party components are listed in
+[docs/third-party.md](docs/third-party.md).
