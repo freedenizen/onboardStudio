@@ -10,42 +10,42 @@ public enum VideoAddition: Equatable, Sendable {
     case newInput([URL])
 }
 
-/// Decides how added files fit an existing project, so "Add Video" does what a single-camera
-/// editor expects: chapters join their recording, a second recording follows the first on the
-/// same lane, and a file already in the project is not added twice. "Add Camera" always opens
-/// a new lane for picture-in-picture layouts.
+/// Decides how added files fit an existing project: chapters join their recording, a file already
+/// in the project is not added twice, and every distinct recording gets its own lane so it can be
+/// moved, trimmed and relabelled on its own. "Add Camera" is the same, except the new lane is
+/// meant to play *alongside* the others rather than after them.
 public enum InputPlanning {
     public static func plan(
         adding urls: [URL], to project: Project, asCamera: Bool = false, resolve: (MediaReference) -> URL
     ) -> [VideoAddition] {
-        var present = presentFiles(in: project, resolve: resolve)
-        let videoObjects = project.displayObjects.filter { if case .video = $0.kind { true } else { false } }
-        let singleLane = project.videoInputs.count == 1 && videoObjects.count <= 1 ? project.videoInputs[0].id : nil
-        // Several recordings chosen together for an empty single-camera project share one lane too.
-        let oneLane = !asCamera && project.videoInputs.isEmpty && videoObjects.count <= 1
+        let present = presentFiles(in: project, resolve: resolve)
         var actions: [VideoAddition] = []
-        var sequence: [URL] = []
         for group in CameraChapters.group(urls) {
             var fresh: [URL] = []
             for url in group {
                 if let owner = present[url.standardizedFileURL.path] {
                     actions.append(.alreadyPresent(url, in: owner))
-                } else if !sequence.contains(url) {
+                } else {
                     fresh.append(url)
                 }
             }
             guard !fresh.isEmpty else { continue }
-            if !asCamera, let lane = singleLane {
+            // Later chapters of a recording already in the project join it; anything else is a
+            // recording in its own right and opens its own lane.
+            if !asCamera, let lane = continuedRecording(startingWith: fresh[0], present: present) {
                 actions.append(.appendClips(to: lane, fresh))
-                for url in fresh { present[url.standardizedFileURL.path] = lane }
-            } else if oneLane {
-                sequence.append(contentsOf: fresh)
             } else {
                 actions.append(.newInput(fresh))
             }
         }
-        if !sequence.isEmpty { actions.append(.newInput(sequence)) }
         return actions
+    }
+
+    /// The input holding the chapter that comes immediately before `url`, when there is one — i.e.
+    /// `url` continues a recording the project already plays.
+    static func continuedRecording(startingWith url: URL, present: [String: InputID]) -> InputID? {
+        guard let previous = CameraChapters.previousChapter(of: url) else { return nil }
+        return present[previous.standardizedFileURL.path]
     }
 }
 
