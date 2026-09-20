@@ -113,7 +113,8 @@ extension EditorModel {
         case .data(let settings):
             guard let range = sessions[input.id]?.timeRange else { return nil }
             return VideoTrimming.split(
-                input.sync, trim: settings.trim, atProjectTime: time, fullDuration: range.upperBound)
+                input.sync, trim: settings.trim, atProjectTime: time, fullStart: range.lowerBound,
+                fullDuration: range.upperBound)
         default:
             return nil
         }

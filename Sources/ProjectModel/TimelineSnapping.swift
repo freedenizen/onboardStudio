@@ -72,14 +72,20 @@ extension VideoTrimming {
         public let secondTrim: TrimRange
     }
 
-    /// Returns `nil` when the cut is not strictly inside the video, where there is no second half
-    /// to make and splitting would only produce an empty input.
+    /// Returns `nil` when the cut is not strictly inside the input, where there is no second half
+    /// to make and splitting would only produce an empty one.
+    ///
+    /// `fullStart` is where the input's own content begins in file time, bounding the cut from
+    /// below as `fullDuration` bounds it from above. It is 0 for a video, but a data session's
+    /// first sample can be at any time, and without this a cut placed before it would succeed and
+    /// make a first half holding no samples at all.
     public static func split(
-        _ sync: SyncSettings, trim: TrimRange, atProjectTime time: Double, fullDuration: Double?
+        _ sync: SyncSettings, trim: TrimRange, atProjectTime time: Double, fullStart: Double = 0,
+        fullDuration: Double?
     ) -> Split? {
         let speed = max(sync.playSpeed, 0.001)
         let fileTime = (time - sync.offsetInProject) * speed + sync.startPositionInInput
-        let start = max(trim.start ?? 0, sync.startPositionInInput)
+        let start = max(max(trim.start ?? fullStart, sync.startPositionInInput), fullStart)
         let end = min(trim.end ?? fullDuration ?? .infinity, fullDuration ?? .infinity)
         // A cut on either edge leaves nothing on one side of it.
         guard fileTime > start + 0.001, fileTime < end - 0.001 else { return nil }
