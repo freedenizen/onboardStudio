@@ -75,3 +75,34 @@ struct GlassCockpitModelTests {
         #expect(wheel == SteeringWheelParams())
     }
 }
+
+@Suite("G-force axes")
+struct GForceParamsTests {
+    @Test func axisChannelsAndSignsRoundTrip() throws {
+        var params = GForceParams()
+        params.lateralChannel = "canbus:lateral_acc"
+        params.longitudinalChannel = "canbus:long_acc"
+        params.invertLateral = true
+        let data = try JSONEncoder().encode(params)
+        #expect(try JSONDecoder().decode(GForceParams.self, from: data) == params)
+    }
+
+    /// Projects saved before the axes were configurable carry none of these keys, and must still
+    /// load with the plot behaving exactly as it did.
+    @Test func projectsSavedBeforeTheAxesExistedStillDecode() throws {
+        let legacy = Data(#"{"maxG":1.5,"ringStep":0.5,"trailSeconds":3,"showValues":false}"#.utf8)
+        let params = try JSONDecoder().decode(GForceParams.self, from: legacy)
+        #expect(params.maxG == 1.5 && params.trailSeconds == 3 && params.showValues == false)
+        #expect(params.lateralChannel.isEmpty && params.longitudinalChannel.isEmpty)
+        #expect(params.invertLateral == false && params.invertLongitudinal == false)
+        #expect(try JSONDecoder().decode(GForceParams.self, from: Data("{}".utf8)) == GForceParams())
+    }
+
+    @Test func invertingNegatesAndNonFiniteValuesReadZero() {
+        let params = GForceParams()
+        #expect(params.axisValue(0.8, invert: false) == 0.8)
+        #expect(params.axisValue(0.8, invert: true) == -0.8)
+        #expect(params.axisValue(nil, invert: false) == 0)
+        #expect(params.axisValue(.nan, invert: true) == 0)
+    }
+}

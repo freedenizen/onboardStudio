@@ -40,13 +40,20 @@ public struct GForceRenderer: OverlayDrawing {
             return CGPoint(x: center.x + clampedLat * scale, y: center.y - clampedLong * scale)
         }
 
+        // Each axis follows the object's own channel when it names one, so a logger that reports
+        // lateral acceleration positive-to-the-left can be corrected without touching the import.
+        let lateralRole = ChannelValue.role(params.lateralChannel) ?? .lateralG
+        let longitudinalRole = ChannelValue.role(params.longitudinalChannel) ?? .longitudinalG
+
         if params.trailSeconds > 0, let sampler = context.sampler {
             let steps = 12
             for step in stride(from: steps, through: 1, by: -1) {
                 let t = time - params.trailSeconds * Double(step) / Double(steps)
                 let sample = sampler.sample(at: context.inputTime(t))
-                guard let lat = sample[.lateralG], let long = sample[.longitudinalG] else { continue }
-                let p = point(lateral: lat, longitudinal: long)
+                guard let lat = sample[lateralRole], let long = sample[longitudinalRole] else { continue }
+                let p = point(
+                    lateral: params.axisValue(lat, invert: params.invertLateral),
+                    longitudinal: params.axisValue(long, invert: params.invertLongitudinal))
                 let alpha = 0.5 * (1 - Double(step) / Double(steps + 1))
                 var color = params.dotColor
                 color.alpha *= alpha
@@ -57,8 +64,8 @@ public struct GForceRenderer: OverlayDrawing {
         }
 
         let sample = context.sample(at: time)
-        let lateral = sample?[.lateralG] ?? 0
-        let longitudinal = sample?[.longitudinalG] ?? 0
+        let lateral = params.axisValue(sample?[lateralRole], invert: params.invertLateral)
+        let longitudinal = params.axisValue(sample?[longitudinalRole], invert: params.invertLongitudinal)
         let p = point(lateral: lateral, longitudinal: longitudinal)
         let r = radius * 0.07
         cg.setFillColor(params.dotColor.cgColor)
