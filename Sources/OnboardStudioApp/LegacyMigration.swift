@@ -15,7 +15,7 @@ enum LegacyMigration {
     /// Settings worth carrying over. Deliberately explicit: copying a whole domain drags along
     /// window frames and other bundle-identifier-scoped state that no longer applies.
     static let settingKeys = [
-        "ffmpegPath", "youtubeClientID", "youtubeClientSecret", "nudgeStepPercent",
+        "ffmpegPath", "youtubeClientID", "youtubeClientSecret", "nudgeStepPixels",
         "showGettingStarted", "showLauncher", "NSShowAppCentricOpenPanelInsteadOfUntitledFile",
     ]
 

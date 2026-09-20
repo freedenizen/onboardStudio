@@ -101,6 +101,48 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Speedo").waitForNonExistence(timeout: Self.timeout), "Redo removes it again")
     }
 
+    /// #50: ↑/↓ step the number field that has focus, and ⇧ makes the step ten times as big.
+    /// The arrows used to be swallowed by the field editor, so the only way to change a value
+    /// slightly was to select the text and retype it.
+    @MainActor
+    func testArrowKeysStepTheFocusedNumberField() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout))
+
+        let x = app.textFields["X"]
+        XCTAssertTrue(x.waitForExistence(timeout: Self.timeout), "No X field in the inspector")
+        reveal(x)
+        guard let start = Double(x.value as? String ?? "") else {
+            return XCTFail("X did not read as a number: \(x.value ?? "nil")")
+        }
+        x.click()
+        app.typeKey(.upArrow, modifierFlags: [])
+        expectNumber(x, toBe: start + 1, "↑ should add one")
+        app.typeKey(.downArrow, modifierFlags: .shift)
+        expectNumber(x, toBe: start + 1 - 10, "⇧↓ should subtract ten")
+    }
+
+    /// Compares numerically: the field formats to as many as three decimals, so the printed text
+    /// depends on where the value started.
+    @MainActor
+    private func expectNumber(
+        _ element: XCUIElement, toBe expected: Double, _ message: String,
+        file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let predicate = NSPredicate { value, _ in
+            guard let read = Double((value as? XCUIElement)?.value as? String ?? "") else { return false }
+            return abs(read - expected) < 0.001
+        }
+        let result = XCTWaiter().wait(
+            for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: Self.timeout)
+        XCTAssertEqual(
+            result, .completed, "\(message): expected \(expected), got \(element.value ?? "nil")",
+            file: file, line: line)
+    }
+
     @MainActor
     func testIndicatorLightAsksForAChannelAndSuggestsAThreshold() throws {
         launch()

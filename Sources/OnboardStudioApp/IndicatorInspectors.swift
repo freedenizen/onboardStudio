@@ -27,8 +27,8 @@ struct IndicatorInspector: View {
                     }
                 }
             }
-            NumberField("Hold on (s)", value: field(\.holdSeconds), fractionDigits: 0...2)
-            NumberField("Flash (Hz, 0 = steady)", value: field(\.flashHertz), fractionDigits: 0...1)
+            NumberField("Hold on (s)", value: field(\.holdSeconds), fractionDigits: 0...2, step: 0.1)
+            NumberField("Flash (Hz, 0 = steady)", value: field(\.flashHertz), fractionDigits: 0...1, step: 0.1)
         }
         Section("Look") {
             ColorPicker("Lit", selection: color(\.onColor))
@@ -95,7 +95,7 @@ struct LapPanelInspector: View {
             }
             Toggle("Time lane", isOn: field(\.showTimeDelta))
             if params.showTimeDelta {
-                NumberField("Time scale (± s)", value: field(\.timeDeltaRange), fractionDigits: 0...2)
+                NumberField("Time scale (± s)", value: field(\.timeDeltaRange), fractionDigits: 0...2, step: 0.1)
             }
             Text(
                 "Both lanes compare with the chosen lap at the same distance into the lap "
