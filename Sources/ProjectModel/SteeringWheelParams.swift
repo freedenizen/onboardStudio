@@ -93,9 +93,8 @@ public struct SteeringWheelParams: Hashable, Codable, Sendable {
         if !channel.isEmpty, channels.contains(where: { $0.identifier == channel }) { return result }
         guard let pick = suggestedChannel(among: channels) else { return result }
         result.channel = pick
-        if let summary = channels.first(where: { $0.identifier == pick }), let low = summary.minValue,
-            let high = summary.maxValue
-        {
+        guard let summary = channels.first(where: { $0.identifier == pick }) else { return result }
+        if let low = summary.minValue, let high = summary.maxValue {
             let extent = max(abs(low), abs(high))
             if extent > 0, extent <= 1.05 {
                 result.degreesPerUnit = 450
@@ -103,6 +102,9 @@ public struct SteeringWheelParams: Hashable, Codable, Sendable {
                 result.degreesPerUnit = 180 / Double.pi
             }
         }
+        // Loggers disagree on which way is positive — RaceChrono reports a left turn as positive,
+        // following ISO 8855 axes. Where the session measured it, believe the measurement.
+        if let correlation = summary.rightTurnCorrelation { result.invert = correlation < 0 }
         return result
     }
 }

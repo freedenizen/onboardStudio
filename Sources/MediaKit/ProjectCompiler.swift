@@ -279,10 +279,24 @@ extension ProjectCompiler.LoadedProject {
     /// Identifier, name and value range of every channel of every loaded data input.
     public var channelSummaries: [InputID: [ChannelSummary]] {
         sessions.mapValues { session in
-            session.orderedChannels.map {
+            // Measuring the turn direction costs a correlation per channel, so only channels that
+            // could plausibly carry a steering angle or a lateral acceleration are measured.
+            session.orderedChannels.map { channel in
                 ChannelSummary(
-                    identifier: $0.role.identifier, name: $0.name, minValue: $0.minValue, maxValue: $0.maxValue)
+                    identifier: channel.role.identifier, name: channel.name, minValue: channel.minValue,
+                    maxValue: channel.maxValue,
+                    rightTurnCorrelation: Self.turnsWith(channel) == true
+                        ? TurnDirection.reading(for: channel, in: session)?.correlation : nil)
             }
         }
+    }
+
+    /// Whether a channel is worth measuring a turn direction for: the lateral acceleration role,
+    /// or anything whose name looks like a steering angle.
+    static func turnsWith(_ channel: Channel) -> Bool {
+        if channel.role == .lateralG { return true }
+        let words = (channel.role.identifier + " " + channel.name).lowercased()
+            .split { !$0.isLetter && !$0.isNumber }.map(String.init)
+        return words.contains { $0.hasPrefix("steer") || $0 == "swa" }
     }
 }
