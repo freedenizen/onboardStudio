@@ -41,7 +41,13 @@ public struct TelemetrySession: Sendable {
         self.laps = laps
     }
 
-    public subscript(role: ChannelRole) -> Channel? { channels[role] }
+    /// Falls back to the role's `legacyAlias`, so a project saved when CAN channels were filed
+    /// as `obd:` still finds them now that they import as `canbus:`.
+    public subscript(role: ChannelRole) -> Channel? {
+        if let channel = channels[role] { return channel }
+        guard let alias = role.legacyAlias else { return nil }
+        return channels[alias]
+    }
 
     public mutating func add(_ channel: Channel) {
         channels[channel.role] = channel
@@ -51,7 +57,7 @@ public struct TelemetrySession: Sendable {
         channels[role] = nil
     }
 
-    /// Channels ordered: standard roles first (in a fixed order), then obd/aux alphabetically.
+    /// Channels ordered: standard roles first (in a fixed order), then vehicle/aux alphabetically.
     public var orderedChannels: [Channel] {
         channels.values.sorted { lhs, rhs in
             let l = Self.sortKey(lhs.role)
@@ -86,6 +92,7 @@ public struct TelemetrySession: Sendable {
         }
         switch role {
         case .obd(let name): return "1\(name)"
+        case .canbus(let name): return "1\(name)"
         case .aux(let name): return "2\(name)"
         default: return "3\(role.identifier)"
         }

@@ -237,7 +237,11 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
     static func mapping(for name: String, unitText: String, source: String) -> Mapping {
         let unit = TelemetryUnit(parsing: unitText)
         let lowered = source.lowercased()
-        let isOBD = lowered.contains("obd") || lowered.contains("canbus")
+        // RaceChrono names the device a channel came from, and `200: canbus` is not `200: obd`:
+        // a CAN-bus log carries far more than OBD-II exposes, so keep the two apart.
+        let isCAN = lowered.contains("canbus")
+        let isVehicle = isCAN || lowered.contains("obd")
+        func vehicle(_ name: String) -> ChannelRole { isCAN ? .canbus(name) : .obd(name) }
         switch name.lowercased() {
         case "lap_number": return Mapping(role: .lap, unit: .count, interpolation: .step)
         case "elapsed_time": return Mapping(role: .aux("elapsed_time"), unit: .seconds)
@@ -246,7 +250,8 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
         case "bearing", "heading": return Mapping(role: .heading, unit: .degrees)
         case "latitude": return Mapping(role: .latitude, unit: .degrees)
         case "longitude": return Mapping(role: .longitude, unit: .degrees)
-        case "speed": return Mapping(role: isOBD ? .obd(name) : .speed, unit: unit == .none ? .metersPerSecond : unit)
+        case "speed":
+            return Mapping(role: isVehicle ? vehicle(name) : .speed, unit: unit == .none ? .metersPerSecond : unit)
         case "lateral_acc": return Mapping(role: .lateralG, unit: .gForce)
         case "longitudinal_acc": return Mapping(role: .longitudinalG, unit: .gForce)
         case "rpm": return Mapping(role: .rpm, unit: .rpm)
@@ -257,7 +262,7 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
         case "coordinate_precision": return Mapping(role: .aux(name), unit: .custom("DOP"))
         case "fragment_id", "fix_type", "satellites":
             return Mapping(role: .aux(name), unit: unit, interpolation: .step)
-        default: return Mapping(role: isOBD ? .obd(name) : .aux(name), unit: unit)
+        default: return Mapping(role: isVehicle ? vehicle(name) : .aux(name), unit: unit)
         }
     }
 }

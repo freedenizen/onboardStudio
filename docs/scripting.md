@@ -42,7 +42,7 @@ Colours: `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `rgb(r,g,b)`, `rgba(r,g,b,a)`, or `whit
 
 | Member | Meaning |
 |---|---|
-| `value(id)` | Channel value in its canonical unit (`speed` in m/s, `distance` in m, angles in degrees, `throttle` in %), or `null`. Ids as in the channel list: `speed`, `rpm`, `gear`, `throttle`, `brake`, `latitude`, `longitude`, `altitude`, `heading`, `lateralG`, `longitudinalG`, `distance`, `obd:Name`, `aux:name` |
+| `value(id)` | Channel value in its canonical unit (`speed` in m/s, `distance` in m, angles in degrees, `throttle` in %), or `null`. Ids as in the channel list: `speed`, `rpm`, `gear`, `throttle`, `brake`, `latitude`, `longitude`, `altitude`, `heading`, `lateralG`, `longitudinalG`, `distance`, `canbus:Name`, `obd:Name`, `aux:name` |
 | `speed(unit)` | Speed in `"mph"`, `"kph"` or `"ms"` |
 | `valueAgo(id, seconds)` | The value that many seconds earlier |
 | `range(id)` | `[min, max]` over the session |

@@ -167,6 +167,41 @@ struct RaceChronoCSVImporterTests {
         #expect(session[.latitude] != nil && session[.longitude] != nil)
     }
 
+    /// `200: canbus` is not `200: obd`. A CAN log carries far more than OBD-II exposes, and
+    /// naming those channels `obd:` was simply wrong.
+    @Test func canBusChannelsAreNotCalledOBD() throws {
+        let table = try RaceChronoCSVImporter().importFile(at: try Fixtures.url("racechrono-v3-canbus.csv"))
+        #expect(table.column(named: "steering_angle")?.suggestedRole == .canbus("steering_angle"))
+        #expect(table.column(named: "coolant_temp")?.suggestedRole == .canbus("coolant_temp"))
+        let canSpeed = table.columns.last { $0.name == "speed" }
+        #expect(canSpeed?.source == "200: canbus" && canSpeed?.suggestedRole == .canbus("speed"))
+
+        // Channels the file marks as genuinely OBD keep the OBD role.
+        let obd = try RaceChronoCSVImporter().importFile(at: try Fixtures.url("racechrono-v3.csv"))
+        #expect(obd.columns.last { $0.name == "speed" }?.suggestedRole == .obd("speed"))
+    }
+
+    /// Projects saved before CAN had its own role name these channels `obd:`; they must keep
+    /// resolving against a session that now imports them as `canbus:`.
+    @Test func projectsSavedWithObdNamesStillFindCanBusChannels() throws {
+        let session = try RaceChronoCSVImporter().importSession(at: try Fixtures.url("racechrono-v3-canbus.csv"))
+        #expect(session[.canbus("steering_angle")] != nil, "the channel imports under its real source")
+        #expect(session[.obd("steering_angle")] != nil, "and an old project's name still reaches it")
+        #expect(session[.obd("nothing_like_this")] == nil, "but the alias invents nothing")
+
+        let sampler = TelemetrySampler(session: session)
+        let sample = sampler.sample(at: 1_787_528_103.0)
+        #expect(sample[.canbus("steering_angle")] != nil)
+        #expect(sample[.canbus("steering_angle")] == sample[.obd("steering_angle")])
+    }
+
+    @Test func canBusRolesRoundTripThroughTheirIdentifier() {
+        #expect(ChannelRole.canbus("coolant_temp").identifier == "canbus:coolant_temp")
+        #expect(ChannelRole(identifier: "canbus:coolant_temp") == .canbus("coolant_temp"))
+        #expect(ChannelRole(identifier: "obd:coolant_temp") == .obd("coolant_temp"))
+        #expect(ChannelRole.canbus("x").isStandard == false)
+    }
+
     @Test func toleratesMissingUnitsAndSourceRows() throws {
         let text = """
             This file is created using RaceChrono v6.0.0 ( http://racechrono.com/ ).
@@ -272,7 +307,7 @@ struct RaceChronoV2Tests {
         #expect(speeds.count == 3)
         #expect(speeds[0].source == nil && speeds[0].suggestedRole == .speed && speeds[0].unit == .metersPerSecond)
         #expect(speeds[1].source == "calc" && speeds[1].suggestedRole == .speed)
-        #expect(speeds[2].source == "canbus" && speeds[2].suggestedRole == .obd("speed"))
+        #expect(speeds[2].source == "canbus" && speeds[2].suggestedRole == .canbus("speed"))
         #expect(table.column(named: "rpm")?.suggestedRole == .rpm)
         #expect(table.column(named: "rpm")?.values[5] == nil)  // blank CAN cell
         #expect(table.column(named: "brake_pos")?.suggestedRole == .brake)

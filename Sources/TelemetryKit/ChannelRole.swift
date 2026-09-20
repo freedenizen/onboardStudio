@@ -26,6 +26,9 @@ public enum ChannelRole: Hashable, Sendable, Codable {
     case speedDelta
     /// A channel from an OBD-II source that may update at a different rate than GPS.
     case obd(String)
+    /// A channel decoded straight off the vehicle's CAN bus. Distinct from `obd`: loggers read
+    /// far more from CAN than OBD-II exposes, and calling those channels OBD is simply wrong.
+    case canbus(String)
     /// Any other named channel.
     case aux(String)
 
@@ -52,15 +55,27 @@ public enum ChannelRole: Hashable, Sendable, Codable {
         case .lapDelta: "lapDelta"
         case .speedDelta: "speedDelta"
         case .obd(let name): "obd:\(name)"
+        case .canbus(let name): "canbus:\(name)"
         case .aux(let name): "aux:\(name)"
         }
     }
 
-    /// Whether the role is one of the well-known channels (as opposed to `obd`/`aux`).
+    /// Whether the role is one of the well-known channels (as opposed to `obd`/`canbus`/`aux`).
     public var isStandard: Bool {
         switch self {
-        case .obd, .aux: false
+        case .obd, .canbus, .aux: false
         default: true
+        }
+    }
+
+    /// The same channel under the name it used to be given. Vehicle channels were all filed as
+    /// `obd:` before CAN got its own role, so projects saved then still name them that way and
+    /// must keep resolving. Lookups try a role and then its alias.
+    public var legacyAlias: ChannelRole? {
+        switch self {
+        case .obd(let name): .canbus(name)
+        case .canbus(let name): .obd(name)
+        default: nil
         }
     }
 }
@@ -70,11 +85,15 @@ extension ChannelRole: CustomStringConvertible {
 }
 
 extension ChannelRole {
-    /// Parses the `identifier` form (`speed`, `obd:Coolant`, `aux:Oil temp`). Returns `nil` for
+    /// Parses the `identifier` form (`speed`, `canbus:Coolant`, `aux:Oil temp`). Returns `nil` for
     /// unknown standard names.
     public init?(identifier: String) {
         if identifier.hasPrefix("obd:") {
             self = .obd(String(identifier.dropFirst(4)))
+            return
+        }
+        if identifier.hasPrefix("canbus:") {
+            self = .canbus(String(identifier.dropFirst(7)))
             return
         }
         if identifier.hasPrefix("aux:") {
