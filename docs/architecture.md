@@ -56,6 +56,30 @@ two thin executables.
   publishes the DMG, `appcast.xml` and a CLI tarball as a GitHub Release. Sparkle's feed URL points
   at `releases/latest/download/appcast.xml`.
 
+## Icons
+
+The icons are vector sources in `Design/`, rasterised by `Scripts/make-icons.sh`:
+
+| Source | Used for |
+| --- | --- |
+| `Design/AppIcon.svg` | the app icon at 128 px and above |
+| `Design/AppIcon-small.svg` | the app icon at 16 and 32 px |
+| `Design/DocumentIcon.svg` | the `.overlayproj` document icon |
+
+Edit an SVG, run `Scripts/make-icons.sh`, and commit what it writes: the ten PNG slots and
+`Contents.json` in `App/Assets.xcassets/AppIcon.appiconset`, plus `App/DocumentIcon.icns` (built
+with `iconutil`, and pointed at by `CFBundleTypeIconFile` in `project.yml`). The script needs no
+Homebrew tools — AppKit rasterises SVG natively through `_NSSVGImageRep`.
+
+There are two app icon sources because the tick marks turn to mush and a thin needle disappears
+below about 48 px, so the small slots use a simplified dial: no ticks, a fatter sweep and a blunt
+needle. Apple's own icons split the same way.
+
+`Scripts/check-icons.sh` (a step in the **Lint** job) checks every slot has a file of the right
+pixel size and that the document icon is still wired up. It deliberately does *not* diff against a
+fresh render — SVG rasterisation shifts between macOS releases, so a byte comparison would fail
+whenever GitHub updates the runner image, with nothing actually wrong.
+
 ## Roadmap
 
 | Milestone | Deliverable |
