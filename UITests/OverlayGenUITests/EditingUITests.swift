@@ -32,13 +32,14 @@ final class TemplateUITests: OverlayGenUITestCase {
         testing("Add Fixture Video Again")
         expectStatus(containing: "already part of")
         XCTAssertEqual(app.staticTexts.matching(identifier: "input.test-3s").count, 1, "Video listed once")
-        // A different recording joins the same lane instead of stacking on a new one.
+        // A different recording is its own input: its own sidebar row and its own timeline bar,
+        // so it can be moved and trimmed on its own. It used to be folded in as extra clips.
         testing("Add Second Fixture Video")
-        expectStatus(containing: "now follows")
+        XCTAssertTrue(sidebarInput("test-rot180").waitForExistence(timeout: Self.timeout), "Second recording listed")
         XCTAssertEqual(app.staticTexts.matching(identifier: "input.test-3s").count, 1)
-        XCTAssertFalse(sidebarInput("test-rot180").exists, "No second lane for the same camera")
+        XCTAssertTrue(app.staticTexts["test-rot180"].exists, "Second bar on the timeline")
         sidebarInput("test-3s").click()
-        XCTAssertTrue(app.staticTexts["test-rot180.mp4"].waitForExistence(timeout: Self.timeout), "Clip listed")
+        XCTAssertFalse(app.staticTexts["test-rot180.mp4"].exists, "Not a clip of the first recording")
     }
 }
 
