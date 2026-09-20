@@ -44,8 +44,12 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: .build
-          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
-          restore-keys: spm-${{ runner.os }}-
+          # The repository name is part of the runner's workspace path, and Clang bakes that
+          # absolute path into the precompiled headers inside .build. Keying on it means a cache
+          # is only ever restored into the same path it was built at; renaming the repo (or a
+          # fork) starts fresh instead of restoring unusable .pcm files.
+          key: spm-${{ runner.os }}-${{ github.event.repository.name }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-${{ github.event.repository.name }}-
       - name: Build
         run: swift build
       - name: Test with coverage
