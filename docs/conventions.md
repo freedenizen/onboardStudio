@@ -94,6 +94,12 @@ Two consequences worth keeping:
   is a defensible product choice rather than a convention. Keeping it configurable would match
   Resolve more closely than either number.
 
+**Implemented** (#50). The plain step is a preference (**Settings ▸ Editing**, 1/2/5 px, default
+1 px) and ⇧ multiplies it by ten, so the configurable half of the note above is kept. The step is
+counted in **pixels of the exported frame** rather than a fraction of it, so one press moves the
+same distance on screen in a 1080p and a 4K project. With no object selected the arrows fall back
+to stepping the playhead, which is what #50 asks for and what the keys did before.
+
 If Onboard Studio ever gains clips that move along the timeline, revisit all of this.
 
 ## Resolve shortcuts, from the shipped manual

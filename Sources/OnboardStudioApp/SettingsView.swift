@@ -6,7 +6,7 @@ struct SettingsView: View {
     @Environment(UpdaterModel.self) private var updater
     @AppStorage("defaultExportPreset") private var defaultExportPreset = "project"
     @AppStorage("ffmpegPath") private var ffmpegPath = ""
-    @AppStorage("nudgeStepPercent") private var nudgeStep = 1.0
+    @AppStorage("nudgeStepPixels") private var nudgeStep = NudgeStep.defaultPixels
     @AppStorage("youtubeClientID") private var youtubeClientID = ""
     @AppStorage("youtubeClientSecret") private var youtubeClientSecret = ""
     @Environment(YouTubeModel.self) private var youtube
@@ -21,11 +21,16 @@ struct SettingsView: View {
             }
             Section("Editing") {
                 Picker("Arrow keys move objects by", selection: $nudgeStep) {
-                    Text("0.5 %").tag(0.5)
-                    Text("1 %").tag(1.0)
-                    Text("2 %").tag(2.0)
+                    Text("1 px").tag(1.0)
+                    Text("2 px").tag(2.0)
+                    Text("5 px").tag(5.0)
                 }
-                Text("Hold ⇧ for five times the step.").font(.caption).foregroundStyle(.secondary)
+                Text(
+                    "Pixels of the exported frame, so the step is the same in a 1080p and a 4K "
+                        + "project. Hold ⇧ for ten times the step. With nothing selected, the "
+                        + "arrows step the playhead; , and . always do."
+                )
+                .font(.caption).foregroundStyle(.secondary)
             }
             Section("Tools") {
                 TextField("ffmpeg path", text: $ffmpegPath, prompt: Text("auto-detect (Homebrew)"))

@@ -233,20 +233,46 @@ final class GizmoView: NSView {
         case 49:  // space
             editor.togglePlayback()
         case 123, 124, 125, 126:  // arrows
-            guard let id = selectedID, let object = objects.first(where: { $0.id == id }) else { return }
-            let step = UserDefaults.standard.double(forKey: "nudgeStepPercent").nonZero(default: 1) / 100
-            let amount = event.modifierFlags.contains(.shift) ? step * 5 : step
-            var frame = object.frame
-            switch event.keyCode {
-            case 123: frame.x -= amount
-            case 124: frame.x += amount
-            case 125: frame.y += amount
-            default: frame.y -= amount
+            guard let id = selectedID, let object = objects.first(where: { $0.id == id }) else {
+                // Nothing selected, so the arrows still belong to the playhead. `,`/`.` step
+                // frames whatever has focus; this keeps the habit working over the picture.
+                switch event.keyCode {
+                case 123: editor.step(by: -1)
+                case 124: editor.step(by: 1)
+                default: super.keyDown(with: event)
+                }
+                return
             }
-            editor.moveObject(id, frame: ObjectGeometry.clamped(frame))
+            // Nudge in pixels of the output frame, not a fraction of it, so the step means the
+            // same thing whatever the project's size.
+            let pixels = NudgeStep.pixels(shift: event.modifierFlags.contains(.shift))
+            let (dx, dy): (Double, Double) =
+                switch event.keyCode {
+                case 123: (-pixels, 0)
+                case 124: (pixels, 0)
+                case 125: (0, pixels)
+                default: (0, -pixels)
+                }
+            let frame = ObjectGeometry.nudged(
+                object.frame, byPixels: dx, dy, in: editor.project.settings)
+            editor.moveObject(id, frame: frame)
         default:
             super.keyDown(with: event)
         }
+    }
+}
+
+/// How far one press of an arrow key moves the selected object, in output pixels.
+///
+/// The plain step is a preference so it can be matched to how fine the user's layouts are; ⇧
+/// multiplies it, which is the gesture every editor uses for "the same thing, but coarser".
+enum NudgeStep {
+    static let defaultPixels = 1.0
+    static let shiftMultiplier = 10.0
+
+    static func pixels(shift: Bool, defaults: UserDefaults = .standard) -> Double {
+        let step = defaults.double(forKey: "nudgeStepPixels").nonZero(default: defaultPixels)
+        return shift ? step * shiftMultiplier : step
     }
 }
 

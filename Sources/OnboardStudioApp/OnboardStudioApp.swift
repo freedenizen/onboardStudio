@@ -175,8 +175,11 @@ struct EditorCommands: Commands {
         CommandMenu("Playback") {
             Button(editor?.isPlaying == true ? "Pause" : "Play") { editor?.togglePlayback() }.keyboardShortcut(
                 .space, modifiers: [])
-            Button("Step Back") { editor?.step(by: -1) }.keyboardShortcut(.leftArrow, modifiers: [])
-            Button("Step Forward") { editor?.step(by: 1) }.keyboardShortcut(.rightArrow, modifiers: [])
+            // `,`/`.` rather than the arrows, which belong to the selected object: a menu key
+            // equivalent is matched before the key reaches the picture, so binding the arrows
+            // here would stop them ever nudging. See docs/conventions.md.
+            Button("Step Back") { editor?.step(by: -1) }.keyboardShortcut(",", modifiers: [])
+            Button("Step Forward") { editor?.step(by: 1) }.keyboardShortcut(".", modifiers: [])
             Button("Go to Start") { editor?.seek(to: 0) }.keyboardShortcut(.home, modifiers: [])
         }
     }
