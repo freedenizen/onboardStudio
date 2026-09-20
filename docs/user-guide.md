@@ -17,10 +17,11 @@ and, ideally, a data log.
    short clip with a synthetic log if you just want to poke around.)
 2. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
    a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) OverlayGen joins the following chapters
-   so they play as one continuous video. Add a second recording the same way and it follows the
-   first on the same lane, with the pause between the two recordings kept as a gap (read from the
-   camera's clock) so one data log stays lined up across both. A file that is already in the
-   project is not added twice. For a second camera to show picture-in-picture use **Project ▸ Add
+   so they play as one continuous video. Add a second recording the same way and it gets its own
+   lane, starting where the previous video ends, with the pause between the two recordings kept
+   (read from the camera's clock) so one data log stays lined up across both. Each recording has
+   its own bar and its own row in the sidebar, so you can move, trim and rename it on its own. A
+   file that is already in the project is not added twice. For a second camera to show picture-in-picture use **Project ▸ Add
    Camera…** (**⇧⌘I**), which opens a new lane.
 3. **Add the data.** Either **Add Data File…** (**⇧⌘D**) with a RaceChrono export, GPX, FIT, CSV
    or similar, or, for a GoPro clip, select the video and press **Use Embedded GPS** to use the
