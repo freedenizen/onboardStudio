@@ -11,7 +11,7 @@ struct CameraFramingSection: View {
         Section("Transform (all videos)") {
             HStack {
                 Slider(value: binding(\.zoom), in: 1...4, step: 0.05) { Text("Zoom") }
-                NumberField("", value: binding(\.zoom), fractionDigits: 2...2, step: 0.1).frame(width: 60)
+                NumberField("", value: binding(\.zoom), fractionDigits: 2...2).frame(width: 60)
             }
             HStack {
                 Slider(value: offset(\.centerX), in: -100...100, step: 1) { Text("Position X") }
@@ -206,7 +206,6 @@ struct ShortcutsView: View {
         ("Space", "Play / pause"), (", .", "Step one frame"), ("Home", "Go to start"),
         ("Arrows (object selected)", "Nudge the object 1 px; ⇧ for 10 px"),
         ("← → (nothing selected)", "Step one frame"),
-        ("↑ ↓ (in a number field)", "Add or subtract one; ⇧ for ten"),
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
     ]
 

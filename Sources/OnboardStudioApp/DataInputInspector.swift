@@ -94,8 +94,8 @@ struct DataInputInspector: View {
                     }
                 }
                 .disabled(currentPositionLine == nil)
-                NumberField("Latitude", value: lineField(\.latitude), fractionDigits: 0...6, step: 0.0001)
-                NumberField("Longitude", value: lineField(\.longitude), fractionDigits: 0...6, step: 0.0001)
+                NumberField("Latitude", value: lineField(\.latitude), fractionDigits: 0...6)
+                NumberField("Longitude", value: lineField(\.longitude), fractionDigits: 0...6)
                 NumberField(
                     "Heading (°)",
                     value: Binding(
