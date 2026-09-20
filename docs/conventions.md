@@ -61,6 +61,13 @@ Final Cut-specific, and a Resolve or Premiere user will not expect them.
 For Onboard Studio this maps cleanly: lap boundaries, incidents and sectors are all colour + name +
 optional range, and a marker scoped to a data input is the clip-marker case.
 
+**Implemented** (#54, first slice). `Marker` carries colour, name, note and an optional duration;
+Final Cut's marker *types* are not copied. `M` adds at the playhead, `⌘M` adds and names, and
+`⇧↑`/`⇧↓` walk the list — the bindings verified above. The timeline/clip distinction is real
+rather than cosmetic: a marker with an `inputID` is stored in **that input's own time**, so
+re-syncing the input carries its markers with it, while a timeline marker stays at its timecode.
+The sidebar's **Markers** section is the marker list panel. Split and trim are still to come.
+
 ## Navigation
 
 - **J-K-L shuttle** is universal and predates all three apps — it comes from tape-deck logging.

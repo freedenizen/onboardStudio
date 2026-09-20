@@ -61,6 +61,8 @@ public struct Project: Hashable, Codable, Sendable {
     public var export: ExportSettings
     /// Time-based changes to object visibility, position and opacity (camera switches, layouts).
     public var timeline: Timeline
+    /// Named points and ranges worth coming back to. Unordered here; use `markersInProjectTime()`.
+    public var markers: [Marker]
 
     public init(
         schemaVersion: Int = Project.currentSchemaVersion,
@@ -68,7 +70,8 @@ public struct Project: Hashable, Codable, Sendable {
         inputs: [Input] = [],
         displayObjects: [DisplayObject] = [],
         export: ExportSettings = .hd1080,
-        timeline: Timeline = .empty
+        timeline: Timeline = .empty,
+        markers: [Marker] = []
     ) {
         self.schemaVersion = schemaVersion
         self.settings = settings
@@ -76,10 +79,11 @@ public struct Project: Hashable, Codable, Sendable {
         self.displayObjects = displayObjects
         self.export = export
         self.timeline = timeline
+        self.markers = markers
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, settings, inputs, displayObjects, export, timeline
+        case schemaVersion, settings, inputs, displayObjects, export, timeline, markers
     }
 
     public init(from decoder: any Decoder) throws {
@@ -90,6 +94,8 @@ public struct Project: Hashable, Codable, Sendable {
         displayObjects = try c.decodeIfPresent([DisplayObject].self, forKey: .displayObjects) ?? []
         export = try c.decodeIfPresent(ExportSettings.self, forKey: .export) ?? .hd1080
         timeline = try c.decodeIfPresent(Timeline.self, forKey: .timeline) ?? .empty
+        // Absent in projects saved before markers existed; an empty list is the right reading.
+        markers = try c.decodeIfPresent([Marker].self, forKey: .markers) ?? []
     }
 
     /// The objects as they appear at project `time`, with timeline overrides applied.

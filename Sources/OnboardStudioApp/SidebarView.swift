@@ -32,6 +32,7 @@ struct SidebarView: View {
                         editor.selectedInputID = input.id
                         editor.selectedObjectID = nil
                         editor.selectedSegmentID = nil
+                        editor.selectedMarkerID = nil
                     }
                     .listRowBackground(
                         editor.selectedInputID == input.id && editor.selectedObjectID == nil
@@ -61,6 +62,36 @@ struct SidebarView: View {
                     }
                 }
             }
+            // Markers you cannot enumerate are markers you lose, which is why every editor has a
+            // list as well as the marks themselves.
+            if !editor.project.markers.isEmpty {
+                Section("Markers") {
+                    ForEach(editor.markersInProjectTime) { placed in
+                        HStack(spacing: 6) {
+                            Image(systemName: placed.marker.isRange ? "arrow.left.and.right" : "mappin")
+                                .foregroundStyle(Color(placed.marker.colour))
+                            Text(placed.marker.name.isEmpty ? "Marker" : placed.marker.name).lineLimit(1)
+                            Spacer(minLength: 0)
+                            Text(TimelineRuler.label(placed.start)).font(.caption).monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .contentShape(Rectangle())
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("markerRow.\(placed.marker.name)")
+                        .onTapGesture { editor.select(marker: placed.marker.id, seekTo: placed.start) }
+                        .listRowBackground(
+                            editor.selectedMarkerID == placed.marker.id ? Color.accentColor.opacity(0.2) : nil
+                        )
+                        .contextMenu {
+                            Button("Rename…") {
+                                editor.selectedMarkerID = placed.marker.id
+                                editor.renameSelectedMarker()
+                            }
+                            Button("Delete", role: .destructive) { editor.deleteMarker(placed.marker.id) }
+                        }
+                    }
+                }
+            }
             Section("Display Objects") {
                 ForEach(editor.project.displayObjects.reversed()) { object in
                     HStack {
@@ -83,6 +114,7 @@ struct SidebarView: View {
                     .onTapGesture {
                         editor.selectedObjectID = object.id
                         editor.selectedSegmentID = nil
+                        editor.selectedMarkerID = nil
                     }
                     .listRowBackground(editor.selectedObjectID == object.id ? Color.accentColor.opacity(0.2) : nil)
                     .contextMenu {

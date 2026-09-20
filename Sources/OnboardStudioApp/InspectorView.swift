@@ -10,6 +10,8 @@ struct InspectorView: View {
         Form {
             if let object = editor.selectedObject {
                 ObjectInspector(editor: editor, object: object)
+            } else if let marker = editor.selectedMarker {
+                MarkerInspector(editor: editor, marker: marker)
             } else if let segment = editor.selectedSegment {
                 SegmentInspector(editor: editor, segment: segment)
             } else if let input = editor.selectedInput {
@@ -444,4 +446,53 @@ struct SpeedUnitPicker: View {
 
 private func fmt(_ value: Double) -> String {
     value == value.rounded() ? String(format: "%.0f", value) : String(format: "%.2f", value)
+}
+
+/// The selected marker: what it is called, what colour it is, and how long it runs.
+struct MarkerInspector: View {
+    @Bindable var editor: EditorModel
+    let marker: Marker
+
+    var body: some View {
+        Section("Marker") {
+            TextField(
+                "Name",
+                text: Binding(
+                    get: { marker.name },
+                    set: { editor.renameMarker(marker.id, to: $0) })
+            )
+            .accessibilityIdentifier("marker.name")
+            ColorPicker(
+                "Colour",
+                selection: Binding(
+                    get: { Color(marker.colour) },
+                    set: { colour in
+                        editor.updateMarker(marker.id, name: "Recolour Marker") { $0.colour = RGBAColor(colour) }
+                    }
+                ))
+            // 0 keeps it a flag; anything more draws it as a bar, which is how a sector or an
+            // incident that lasts is told apart from a moment.
+            NumberField(
+                "Length (s)",
+                value: Binding(
+                    get: { marker.duration },
+                    set: { value in
+                        editor.updateMarker(marker.id, name: "Resize Marker") { $0.duration = max(0, value) }
+                    }), fractionDigits: 0...2)
+            TextField(
+                "Note",
+                text: Binding(
+                    get: { marker.note },
+                    set: { note in editor.updateMarker(marker.id, name: "Annotate Marker") { $0.note = note } }),
+                axis: .vertical)
+            if let input = marker.inputID.flatMap(editor.project.input) {
+                Text("Belongs to \(input.label), so it moves when that input is re-synced.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("Belongs to the timeline, so it stays at this time.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Button("Delete Marker", role: .destructive) { editor.deleteMarker(marker.id) }
+        }
+    }
 }

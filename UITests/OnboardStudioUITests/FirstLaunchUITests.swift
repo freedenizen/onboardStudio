@@ -85,6 +85,40 @@ final class LauncherUITests: OnboardStudioUITestCase {
 }
 
 /// J8: timeline zoom, snapping and the transport.
+/// #54: markers on the timeline, and walking between them.
+final class MarkerUITests: OnboardStudioUITestCase {
+    @MainActor
+    func testMarkersAreAddedListedAndJumpedBetween() throws {
+        launch()
+        addFixtureVideo()
+
+        // M at the playhead, then move on and add a second one.
+        menu("Marker", "Add Marker")
+        XCTAssertTrue(
+            app.staticTexts["markerRow.Marker 1"].waitForExistence(timeout: Self.timeout), "No marker in the list")
+        menu("Playback", "Step Forward")
+        menu("Playback", "Step Forward")
+        menu("Marker", "Add Marker")
+        XCTAssertTrue(app.staticTexts["markerRow.Marker 2"].waitForExistence(timeout: Self.timeout))
+
+        // Walking back and forth reports the marker it lands on in the status line.
+        menu("Marker", "Previous Marker")
+        expectStatus(containing: "Marker 1")
+        menu("Marker", "Next Marker")
+        expectStatus(containing: "Marker 2")
+        // Past the last one there is nowhere to go, and it says so rather than jumping to 0.
+        menu("Marker", "Next Marker")
+        expectStatus(containing: "No marker that way")
+
+        // Deleting leaves the other, and undo brings it back.
+        menu("Marker", "Delete Marker")
+        XCTAssertTrue(app.staticTexts["markerRow.Marker 2"].waitForNonExistence(timeout: Self.timeout))
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(
+            app.staticTexts["markerRow.Marker 2"].waitForExistence(timeout: Self.timeout), "Undo did not restore it")
+    }
+}
+
 final class TimelineUITests: OnboardStudioUITestCase {
     @MainActor
     func testZoomSnapAndTransport() throws {
