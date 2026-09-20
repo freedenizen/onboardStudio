@@ -101,7 +101,7 @@ If something looks wrong, the guide's
 
 Release notes for every version are on the
 [Releases page](https://github.com/freedenizen/onboardStudio/releases), newest first. The
-app is at **v0.19.0**; version numbers below 1.0 mean the file format and the interface can
+app is at **v0.20.0**; version numbers below 1.0 mean the file format and the interface can
 still change between releases.
 
 ## For developers
