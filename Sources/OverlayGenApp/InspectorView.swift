@@ -355,7 +355,10 @@ struct ObjectInspector: View {
             get: { (resolved.frame[keyPath: keyPath] * 100).rounded() },
             set: { value in
                 var frame = resolved.frame
-                frame[keyPath: keyPath] = min(max(value / 100, 0), 1)
+                frame[keyPath: keyPath] = value / 100
+                // Negative positions and sizes past 100% are legitimate: objects may hang off
+                // the frame, as the Glass Cockpit steering wheel does.
+                frame = ObjectGeometry.clamped(frame)
                 editor.setOverridable(object.id, name: "Move Object") { $0.frame = frame }
             })
     }
@@ -476,22 +479,6 @@ struct SpeedUnitPicker: View {
         Picker("Speed unit", selection: $selection) {
             ForEach(SpeedDisplayUnit.allCases, id: \.self) { Text($0.rawValue).tag($0) }
         }
-    }
-}
-
-struct NumberField: View {
-    let title: String
-    @Binding var value: Double
-    let fractionDigits: ClosedRange<Int>
-
-    init(_ title: String, value: Binding<Double>, fractionDigits: ClosedRange<Int> = 0...3) {
-        self.title = title
-        _value = value
-        self.fractionDigits = fractionDigits
-    }
-
-    var body: some View {
-        TextField(title, value: $value, format: .number.precision(.fractionLength(fractionDigits)))
     }
 }
 
