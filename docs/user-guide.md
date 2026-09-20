@@ -69,7 +69,10 @@ speed* slows or speeds it up. **Start After Previous Video** chains a clip onto 
 the list; **Start at 0** resets its offset; the arrow buttons reorder inputs.
 
 **Clip sequences.** The *Clips* section lists the files that make up one continuous video: the
-recording's chapters, or any files you want played back to back. Chapters are joined silently
+recording's chapters, or any files you want played back to back. You can see the join without
+opening the inspector: the sidebar row says how many files the input is (`3840×2160, 1428 s ·
+2 files`) and lists them when the input is selected, and the timeline bar draws a line at each
+seam, with a break where the camera was stopped between files. Chapters are joined silently
 when you add or drop the first one, and further recordings added with **Add Video** join the
 sequence too (the status line says so; undo or remove a clip to split it),
 **Add Clips…** appends files, **Add Following Chapters** finds the camera's numbered

@@ -81,6 +81,10 @@ extension EditorModel {
         return video.sync.offsetInProject + max(0, stop - start) / max(video.sync.playSpeed, 0.001)
     }
 
+    /// The files a recording was split into, in order. Empty unless this input joins several,
+    /// so callers can treat "no chapters" as "nothing worth showing".
+    func chapters(of inputID: InputID) -> [ChapterSpan] { loaded?.chapters[inputID] ?? [] }
+
     /// The video input listed before `inputID`, if any.
     func previousVideo(before inputID: InputID) -> Input? {
         let videos = project.videoInputs
