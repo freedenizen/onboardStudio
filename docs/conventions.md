@@ -109,7 +109,7 @@ Two consequences worth keeping:
   is a defensible product choice rather than a convention. Keeping it configurable would match
   Resolve more closely than either number.
 
-**Implemented** (#50). The plain step is a preference (**Settings ▸ Editing**, 1/2/5 px, default
+**Implemented** (#50, and #86 for the inspector fields). The plain step is a preference (**Settings ▸ Editing**, 1/2/5 px, default
 1 px) and ⇧ multiplies it by ten, so the configurable half of the note above is kept. The step is
 counted in **pixels of the exported frame** rather than a fraction of it, so one press moves the
 same distance on screen in a 1080p and a 4K project. With no object selected the arrows fall back

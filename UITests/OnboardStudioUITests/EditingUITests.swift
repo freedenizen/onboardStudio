@@ -126,6 +126,62 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Speedo").waitForNonExistence(timeout: Self.timeout), "Redo removes it again")
     }
 
+    /// #86: ↑/↓ step the number field that has focus, so a value can be adjusted slightly
+    /// without selecting the text and retyping it.
+    ///
+    /// Every assertion is at the end on purpose. Polling the element between keystrokes — which
+    /// is what an `expect` after each press does — costs the field its key handling, and reads
+    /// as "only the first press works" when the app is in fact fine.
+    @MainActor
+    func testArrowKeysStepTheFocusedNumberField() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout))
+
+        let x = app.textFields["object.x"]
+        XCTAssertTrue(x.waitForExistence(timeout: Self.timeout), "No X field in the inspector")
+        reveal(x)
+        guard let start = Double((x.value as? String) ?? "") else {
+            return XCTFail("X did not read as a number: \(x.value ?? "nil")")
+        }
+
+        x.click()
+        for _ in 0..<3 { app.typeKey(.upArrow, modifierFlags: []) }
+        expectNumber(x, toBe: start + 3, "↑ should add one on every press, not just the first")
+
+        let y = app.textFields["object.y"]
+        reveal(y)
+        y.click()
+        for _ in 0..<2 { app.typeKey(.downArrow, modifierFlags: []) }
+        guard let yStart = Double((y.value as? String) ?? "") else { return XCTFail("Y unreadable") }
+        XCTAssertLessThan(yStart, 100, "Y should have come down")
+
+        // The steps are ordinary edits, so undo walks back through them.
+        app.typeKey("z", modifierFlags: .command)
+        app.typeKey("z", modifierFlags: .command)
+        expectNumber(x, toBe: start + 3, "undo should not have touched X yet")
+    }
+
+    /// Compares numerically: the field formats to as many as three decimals, so the printed text
+    /// depends on where the value started.
+    @MainActor
+    private func expectNumber(
+        _ element: XCUIElement, toBe expected: Double, _ message: String,
+        file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let predicate = NSPredicate { value, _ in
+            guard let read = Double(((value as? XCUIElement)?.value as? String) ?? "") else { return false }
+            return abs(read - expected) < 0.001
+        }
+        let result = XCTWaiter().wait(
+            for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: Self.timeout)
+        XCTAssertEqual(
+            result, .completed, "\(message): expected \(expected), got \(element.value ?? "nil")",
+            file: file, line: line)
+    }
+
     @MainActor
     func testIndicatorLightAsksForAChannelAndSuggestsAThreshold() throws {
         launch()
