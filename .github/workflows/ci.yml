@@ -155,11 +155,11 @@ jobs:
       matrix:
         include:
           - name: shard 1
-            classes: ObjectEditingUITests TrimUITests
+            classes: ObjectEditingUITests TrimUITests MarkerUITests
           - name: shard 2
             classes: JourneyUITests TemplateUITests LauncherUITests SplitUITests
           - name: shard 3
-            classes: FirstLaunchUITests SyncUITests MultiCameraUITests LapUITests ProjectUITests TimelineUITests MarkerUITests
+            classes: FirstLaunchUITests SyncUITests MultiCameraUITests LapUITests ProjectUITests TimelineUITests
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
