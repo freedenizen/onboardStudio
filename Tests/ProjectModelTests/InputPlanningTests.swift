@@ -28,18 +28,47 @@ struct InputPlanningTests {
         #expect(plan == [.alreadyPresent(Self.url("GX020029.MP4"), in: camera.id)])
     }
 
-    @Test func aSecondRecordingFollowsTheFirstOnASingleLane() {
+    /// A distinct recording is its own input, so it gets its own timeline bar and sidebar row and
+    /// can be moved, trimmed and relabelled on its own. It used to be folded onto the first lane
+    /// as extra clips, which left one bar for any number of recordings.
+    @Test func aSecondRecordingOpensItsOwnLane() {
         let camera = Self.video("GX010029.MP4", clips: ["GX020029.MP4"])
         let object = DisplayObject(label: "Camera", inputID: camera.id, frame: .full, kind: .video(VideoObjectParams()))
         let project = Project(inputs: [camera], displayObjects: [object])
         let files = [Self.url("GX010030.MP4"), Self.url("GX020030.MP4")]
-        #expect(
-            InputPlanning.plan(adding: files, to: project, resolve: Self.resolve) == [
-                .appendClips(to: camera.id, files)
-            ])
-        // Add Camera opens a new lane instead.
+        #expect(InputPlanning.plan(adding: files, to: project, resolve: Self.resolve) == [.newInput(files)])
         #expect(
             InputPlanning.plan(adding: files, to: project, asCamera: true, resolve: Self.resolve) == [.newInput(files)])
+    }
+
+    /// Chapters are the one thing that still merges: they are one recording the camera split.
+    @Test func laterChaptersJoinTheRecordingTheyContinue() {
+        let camera = Self.video("GX010029.MP4", clips: ["GX020029.MP4"])
+        let project = Project(inputs: [camera])
+        let third = [Self.url("GX030029.MP4")]
+        #expect(
+            InputPlanning.plan(adding: third, to: project, resolve: Self.resolve) == [
+                .appendClips(to: camera.id, third)
+            ]
+        )
+        // ...but only onto the recording they actually belong to.
+        let other = Self.video("GX010031.MP4")
+        let two = Project(inputs: [other, camera])
+        #expect(
+            InputPlanning.plan(adding: third, to: two, resolve: Self.resolve) == [.appendClips(to: camera.id, third)])
+    }
+
+    /// Several recordings chosen at once each open a lane; their chapters stay with them.
+    @Test func multiSelectKeepsOneLanePerRecording() {
+        let files = [
+            Self.url("GX010029.MP4"), Self.url("GX020029.MP4"), Self.url("GX010030.MP4"), Self.url("roof.mp4"),
+        ]
+        #expect(
+            InputPlanning.plan(adding: files, to: Project(), resolve: Self.resolve) == [
+                .newInput([Self.url("GX010029.MP4"), Self.url("GX020029.MP4")]),
+                .newInput([Self.url("GX010030.MP4")]),
+                .newInput([Self.url("roof.mp4")]),
+            ])
     }
 
     @Test func multiCameraProjectsKeepGettingLanes() {

@@ -7,9 +7,10 @@ import UniformTypeIdentifiers
 // MARK: - Adding files: chapters, drops, multi-select
 
 extension EditorModel {
-    /// Adds video files chosen together. Chapters of one recording become one input; a second
-    /// recording follows the first on the same lane (single-camera projects); files already in
-    /// the project are skipped. `asCamera` always opens a new lane (picture-in-picture).
+    /// Adds video files chosen together. Chapters of one recording become one input; every other
+    /// recording gets its own, placed after the previous video so they play in turn; files already
+    /// in the project are skipped. `asCamera` opens a lane that plays alongside the others
+    /// (picture-in-picture) rather than after them.
     func addVideos(at urls: [URL], asCamera: Bool = false) {
         let plan = InputPlanning.plan(adding: urls, to: project, asCamera: asCamera) { location.resolve($0) }
         var notes: [String] = []
@@ -21,9 +22,9 @@ extension EditorModel {
             case .appendClips(let inputID, let files):
                 appendRecording(files, to: inputID)
                 notes.append(
-                    "\(files.map(\.lastPathComponent).joined(separator: ", ")) now follows "
-                        + "\(project.input(inputID)?.label ?? "the video") on its lane (Project ▸ Add Camera… for "
-                        + "picture-in-picture).")
+                    "\(files.map(\.lastPathComponent).joined(separator: ", ")) joined "
+                        + "\(project.input(inputID)?.label ?? "the video"): they are later chapters of the same "
+                        + "recording.")
             case .newInput(let files):
                 addVideoGroup(files, asCamera: asCamera)
                 if files.count > 1 {
@@ -49,6 +50,11 @@ extension EditorModel {
         let input = Input(
             label: first.deletingPathExtension().lastPathComponent,
             source: MediaReference.make(for: first, relativeTo: fileURL), kind: .video(settings))
+        // A second recording plays *after* the first, so it fills the frame like the first one and
+        // starts where the previous video ends. A second camera plays *alongside*, so it comes in
+        // as picture-in-picture at the same time.
+        let previous = project.videoInputs.last
+        let follows = !asCamera ? previous : nil
         edit(asCamera ? "Add Camera" : settings.clips.isEmpty ? "Add Video" : "Add Video with Chapters") { project in
             let cameras = project.videoInputs.count
             project.inputs.append(input)
@@ -57,15 +63,20 @@ extension EditorModel {
             if !bound {
                 // No template object was waiting: the first camera fills the frame, later ones start
                 // as picture-in-picture so they show up at once.
+                let pip = asCamera && cameras > 0
                 let frame = LayoutPreset.pictureInPicture.frames(count: cameras + 1)[min(cameras, 2)] ?? .full
                 var object = DisplayObject.makeDefault(kind: .video(VideoObjectParams()), inputID: input.id, index: 0)
                 object.label = cameras == 0 ? "Camera" : input.label
-                object.frame = cameras == 0 ? .full : frame
+                object.frame = pip ? frame : .full
                 project.displayObjects.insert(object, at: cameras == 0 ? 0 : project.videoObjects.count)
             }
         }
         selectedInputID = input.id
         selectedObjectID = nil
+        if let follows, let end = end(of: follows) {
+            setOffset(of: input.id, to: end, name: "Add Video")
+            leaveRecordingPause(before: input.id, after: follows, nextFile: group[0])
+        }
         fillGaps(in: input.id, files: group, firstClipIndex: 0)
     }
 
@@ -82,6 +93,22 @@ extension EditorModel {
         }
         selectedInputID = inputID
         fillGaps(in: inputID, files: [previous] + files, firstClipIndex: firstNewIndex)
+    }
+
+    /// Recordings used to share a lane, where the camera's pause between them became a clip gap.
+    /// They are separate inputs now, so the same pause becomes the offset between them — a data
+    /// log stays lined up across the join either way.
+    private func leaveRecordingPause(before inputID: InputID, after previous: Input, nextFile: URL) {
+        guard case .video(let settings) = previous.kind else { return }
+        let last = settings.clips.last.map { location.resolve($0.source) } ?? location.resolve(previous.source)
+        guard let end = end(of: previous) else { return }
+        Task {
+            guard let pause = await RecordingGaps.pause(between: last, and: nextFile), pause > 0.25 else { return }
+            setOffset(of: inputID, to: end + pause, name: "Set Gap from Camera Clock")
+            statusMessage =
+                "Left a \(Self.clock(pause)) gap before \(nextFile.lastPathComponent): the camera was stopped that "
+                + "long (drag its bar on the timeline to change it)."
+        }
     }
 
     /// Where consecutive files are not chapters of one recording, and both carry a clock, leaves
