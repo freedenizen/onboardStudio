@@ -148,6 +148,19 @@ public struct GForceParams: Hashable, Codable, Sendable {
         guard let raw, raw.isFinite else { return 0 }
         return invert ? -raw : raw
     }
+
+    /// Points the lateral axis the right way when the session measured which way the car turned.
+    /// The channel it checks is whichever one drives that axis: the object's own if it names one,
+    /// otherwise the standard `lateralG` role.
+    public func adapted(to channels: [ChannelSummary]) -> GForceParams {
+        var result = self
+        let identifier = lateralChannel.isEmpty ? "lateralG" : lateralChannel
+        guard let summary = channels.first(where: { $0.identifier == identifier }),
+            let correlation = summary.rightTurnCorrelation
+        else { return result }
+        result.invertLateral = correlation < 0
+        return result
+    }
 }
 
 public enum TimerMode: String, Codable, Sendable, CaseIterable {

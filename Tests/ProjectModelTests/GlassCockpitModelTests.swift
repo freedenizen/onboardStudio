@@ -106,3 +106,43 @@ struct GForceParamsTests {
         #expect(params.axisValue(.nan, invert: true) == 0)
     }
 }
+
+@Suite("Turn direction binding")
+struct TurnDirectionBindingTests {
+    static func steering(_ correlation: Double?) -> ChannelSummary {
+        ChannelSummary(
+            identifier: "canbus:steering_angle", name: "steering_angle", minValue: -173, maxValue: 160,
+            rightTurnCorrelation: correlation)
+    }
+
+    @Test func aLeftPositiveLoggerBindsInverted() {
+        let wheel = SteeringWheelParams().adapted(to: [Self.steering(-0.72)])
+        #expect(wheel.channel == "canbus:steering_angle")
+        #expect(wheel.invert, "the session measured positive-steering-goes-left")
+        #expect(wheel.degreesPerUnit == 1, "the scale inference is untouched")
+    }
+
+    @Test func aRightPositiveLoggerBindsUninverted() {
+        #expect(SteeringWheelParams().adapted(to: [Self.steering(0.72)]).invert == false)
+    }
+
+    /// No measurement, no opinion: whatever the user set stays set.
+    @Test func anUnmeasuredChannelLeavesInvertAlone() {
+        #expect(SteeringWheelParams().adapted(to: [Self.steering(nil)]).invert == false)
+        var manual = SteeringWheelParams()
+        manual.invert = true
+        #expect(manual.adapted(to: [Self.steering(nil)]).invert, "a manual choice is not overwritten")
+    }
+
+    @Test func theGForceLateralAxisFollowsTheSameMeasurement() {
+        let lateral = ChannelSummary(
+            identifier: "lateralG", name: "lat", minValue: -1.3, maxValue: 1.4, rightTurnCorrelation: -0.69)
+        #expect(GForceParams().adapted(to: [lateral]).invertLateral)
+        // An object bound to its own channel is judged on that channel, not on the standard role.
+        var custom = GForceParams()
+        custom.lateralChannel = "canbus:lat_iso"
+        let own = ChannelSummary(identifier: "canbus:lat_iso", name: "iso", rightTurnCorrelation: -0.8)
+        #expect(custom.adapted(to: [lateral, own]).invertLateral)
+        #expect(custom.adapted(to: [lateral]).invertLateral == false, "its own channel was not measured")
+    }
+}
