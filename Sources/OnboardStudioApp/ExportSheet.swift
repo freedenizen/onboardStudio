@@ -270,7 +270,7 @@ extension ExportSheet {
 
     func start() {
         let settings = finalSettings
-        let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "OverlayGen Export"
+        let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
         guard
             let destination = OpenPanels.chooseExportDestination(
                 suggestedName: base + "." + settings.fileExtension, fileExtension: settings.fileExtension)

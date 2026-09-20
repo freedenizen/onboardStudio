@@ -16,7 +16,7 @@ struct RecordingGapsTests {
     /// Real GoPro files (local only): chapters of one recording butt together; separate
     /// recordings are minutes apart.
     @Test func goProChaptersButtTogetherAndRecordingsLeaveAPause() async throws {
-        guard let dir = ProcessInfo.processInfo.environment["OVERLAYGEN_SAMPLES_DIR"] else { return }
+        guard let dir = ProcessInfo.processInfo.environment["ONBOARD_SAMPLES_DIR"] else { return }
         let base = URL(fileURLWithPath: dir)
         let pairs = [("GX010037.MP4", "GX020037.MP4"), ("GX010030.MP4", "GX020030.MP4")]
         for (a, b) in pairs {

@@ -6,7 +6,7 @@ import RenderKit
 
 struct Render: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Render a video through the OverlayGen pipeline with a burned-in timestamp.",
+        abstract: "Render a video through the Onboard Studio pipeline with a burned-in timestamp.",
         discussion: """
             Re-encodes the input video via the same AVFoundation composition and custom compositor the
             app uses for preview and export. Useful for verifying the pipeline and for sync checks.
@@ -15,7 +15,7 @@ struct Render: AsyncParsableCommand {
     @Option(name: .long, help: "Input video file (MP4/MOV). Mutually exclusive with --project.")
     var video: String?
 
-    @Option(name: .long, help: "An .overlayproj package or project.json to render with all its display objects.")
+    @Option(name: .long, help: "An .onboardproj package or project.json to render with all its display objects.")
     var project: String?
 
     @Option(name: .long, help: "Output .mp4 path.")
@@ -50,7 +50,7 @@ struct Render: AsyncParsableCommand {
     @Option(
         name: .long,
         help:
-            "Apply a template before rendering: an .overlaytemplate file or a built-in name such as \"Glass Cockpit\".")
+            "Apply a template before rendering: an .onboardtemplate file or a built-in name such as \"Glass Cockpit\".")
     var template: String?
 
     @Option(name: .long, help: "Video bitrate in kbit/s.")

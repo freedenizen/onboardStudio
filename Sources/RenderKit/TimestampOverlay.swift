@@ -2,7 +2,7 @@ import CoreGraphics
 import CoreText
 import Foundation
 
-/// Burns the project time into a corner of the frame. Used by `overlaygen render` before real
+/// Burns the project time into a corner of the frame. Used by `onboard render` before real
 /// display objects exist, and handy for verifying preview/export sync.
 public struct TimestampOverlay: OverlayDrawing {
     public var fontSize: Double

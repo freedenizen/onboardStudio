@@ -1,4 +1,4 @@
-# Testing OverlayGen
+# Testing Onboard Studio
 
 Every milestone is verified in three layers. Run the first two yourself after any change; the
 third exists once the app has a GUI (milestone M4).
@@ -30,27 +30,27 @@ iteration counts locally when hunting a bug; CI runs the committed counts.
 
 ### UI tests (XCUITest)
 
-`UITests/OverlayGenUITests` drives the real app through its windows, menus, inspectors and sheets,
+`UITests/OnboardStudioUITests` drives the real app through its windows, menus, inspectors and sheets,
 one class per user journey in [user-journeys.md](user-journeys.md). Run them with
 `Scripts/ui-tests.sh` (or `Scripts/ui-tests.sh JourneyUITests` for one class); CI runs them in the
 **UI tests** job and keeps the `.xcresult` on failure. The app is launched with `-uiTesting YES`,
 which adds a **Testing** menu that adds the fixture files (open panels cannot be scripted) and with
-`OVERLAYGEN_TEST_EXPORT_DIR` so exports skip the save panel. Icon-only controls carry accessibility
+`ONBOARD_TEST_EXPORT_DIR` so exports skip the save panel. Icon-only controls carry accessibility
 identifiers (`toolbar.*`, `transport.*`, `object.<label>`, `input.<label>`, `tour.*`, `export.*`,
 `sync.*`, `status.message`); text controls are found by their titles.
 
 ## 2. Headless checks with the CLI
 
-The `overlaygen` tool exercises the same libraries the app uses, without the GUI:
+The `onboard` tool exercises the same libraries the app uses, without the GUI:
 
 ```sh
-swift run overlaygen probe path/to/session.csv            # what channels/laps were read?
-swift run overlaygen probe session.csv --at 95.5          # interpolated values at a time
-swift run overlaygen probe session.csv --json             # machine-readable
+swift run onboard probe path/to/session.csv            # what channels/laps were read?
+swift run onboard probe session.csv --at 95.5          # interpolated values at a time
+swift run onboard probe session.csv --json             # machine-readable
 
-swift run overlaygen render --video clip.mp4 --out out.mp4 --range 0:10      # M2 pipeline check
-swift run overlaygen render --video clip.mp4 --out out.mp4 --preset 720p --codec hevc --speed 2
-swift run -c release overlaygen bench --project my.overlayproj --export --codec hevc --seconds 60   # M14 speed check
+swift run onboard render --video clip.mp4 --out out.mp4 --range 0:10      # M2 pipeline check
+swift run onboard render --video clip.mp4 --out out.mp4 --preset 720p --codec hevc --speed 2
+swift run -c release onboard bench --project my.onboardproj --export --codec hevc --seconds 60   # M14 speed check
 ```
 
 `render` re-encodes the clip through the AVFoundation composition and custom compositor with a
@@ -71,22 +71,22 @@ before tagging a release.
 |---|---|---|
 | M1 telemetry | `probe` on your own logs | Every channel you expect is listed with sensible min/max/Hz; laps match the logger app |
 | M2 media | `render --range 0:10` on your own clip | Plays in QuickTime, timestamp visible, audio in sync, size/fps as requested |
-| M3 objects | `render --project Tests/Fixtures/slice.overlayproj --out slice.mp4`, then your own project (`docs/project-format.md`) | Gauges move with the data, track map dot follows the car, lap timer resets at the line; golden images in `Tests/Fixtures/Goldens` show what each object should look like |
+| M3 objects | `render --project Tests/Fixtures/slice.onboardproj --out slice.mp4`, then your own project (`docs/project-format.md`) | Gauges move with the data, track map dot follows the car, lap timer resets at the line; golden images in `Tests/Fixtures/Goldens` show what each object should look like |
 | M4 app | `docs/qa-m4.md` | Preview frame == exported frame at the same time |
 | M5 inputs | `docs/qa-m5.md` | Rotation/mirror/crop/colour/chroma key change the preview immediately; volume, balance and channel selection are audible; MTS files import when ffmpeg is installed |
 | M6 data | `docs/qa-m6.md`; `probe file --lap-line lat,lon,heading` on your own log | Detected lap times match your logger app; channel mapping fixes a mis-detected column; calculated field shows in Text Data |
-| M7 gauges | `docs/qa-m7.md`; goldens in `Tests/Fixtures/Goldens` (`gauge-*`, `bar-*`, `graph-*`, `gear-*`, `lapcounter-*`, `timer-delta-*`) | Every designer option changes the preview live; a `.overlaystyle` round-trips; the delta timer reads 0.00 on the best lap |
+| M7 gauges | `docs/qa-m7.md`; goldens in `Tests/Fixtures/Goldens` (`gauge-*`, `bar-*`, `graph-*`, `gear-*`, `lapcounter-*`, `timer-delta-*`) | Every designer option changes the preview live; a `.onboardstyle` round-trips; the delta timer reads 0.00 on the best lap |
 | M8 timeline | `docs/qa-m8.md`; `TimelineMediaTests` exports a two-camera switch at 1.5 s and pixel-probes both sides | Segment badges show what is set where; a camera switch lands on the same frame in preview and export |
 | M9 templates/export | `docs/qa-m9.md`; `ExportOptionsTests` (lap-range duration, key-colour and ProRes-alpha exports, missing media) | A lap export is exactly the lap long; a transparent export composites cleanly in another editor; templates rebind to new inputs |
-| M10 GoPro/FIT/auto-sync | `docs/qa-m10.md`; `GPMFKitTests` build a synthetic MP4 with a `gpmd` track; `FITTests` encode a FIT file in-test; set `OVERLAYGEN_SAMPLES_DIR` to also run against a real HERO13 clip | Use Embedded GPS gives a moving map from the video alone; adding a RaceChrono file next to the GoPro clip syncs to within a second without the wizard |
+| M10 GoPro/FIT/auto-sync | `docs/qa-m10.md`; `GPMFKitTests` build a synthetic MP4 with a `gpmd` track; `FITTests` encode a FIT file in-test; set `ONBOARD_SAMPLES_DIR` to also run against a real HERO13 clip | Use Embedded GPS gives a moving map from the video alone; adding a RaceChrono file next to the GoPro clip syncs to within a second without the wizard |
 | M11 scripting | `docs/qa-m11.md`; `ScriptingTests` (data API, canvas pixels, error badge, examples, RaceRender-style names, frame budget) | An example script draws live; a typo shows a badge and an inspector message, never a crash; the busy-script test stays under 4 ms/frame |
 | M12 lens/360/maps | `docs/qa-m12.md`; `LensUnwrapTests` (synthetic equirectangular and fisheye sources on both kernel backends, golden), `SphericalMetadataTests` (uuid box present, file still decodes, ffprobe reports a spherical mapping when installed), `TrackMapExtrasTests` (two-vehicle and map-background goldens) | A 360° clip shows a flat, pannable view; a tagged export plays as a panorama in QuickTime Player; a second data input appears as a second dot; a map background lines up with the outline |
-| M13 motion sync / YouTube / sidecars | `docs/qa-m13.md`; `SignalCorrelationTests`, `MotionSyncTests` (a synthetic clip with motion bursts is written with AVAssetWriter and matched against a shifted speed log), `YouTubeKitTests` (device flow, token refresh and a resumable upload with a dropped chunk against a mock Google served by a `URLProtocol`), `DJISRTTests`, `CompanionTelemetryTests` | Auto-Sync by Motion lands within a second of the manual sync on the real project; `overlaygen sync` prints a convincing match; a DJI clip's SRT is offered as sidecar data; an upload reaches YouTube after the device-code sign-in |
-| M14 performance/hardening | `overlaygen bench [--export]`; `LongSessionTests` (two-hour 20 Hz session, memory flat, frames quick), fuzz suites (`ImporterFuzzTests`, `GPMFFuzzTests`, `ExpressionFuzzTests`, `SphericalFuzzTests`) with fixed seeds; `docs/parity.md` | 4K HEVC export faster than real time on Apple silicon; resident memory flat over a long export; no importer crashes on mutated files |
+| M13 motion sync / YouTube / sidecars | `docs/qa-m13.md`; `SignalCorrelationTests`, `MotionSyncTests` (a synthetic clip with motion bursts is written with AVAssetWriter and matched against a shifted speed log), `YouTubeKitTests` (device flow, token refresh and a resumable upload with a dropped chunk against a mock Google served by a `URLProtocol`), `DJISRTTests`, `CompanionTelemetryTests` | Auto-Sync by Motion lands within a second of the manual sync on the real project; `onboard sync` prints a convincing match; a DJI clip's SRT is offered as sidecar data; an upload reaches YouTube after the device-code sign-in |
+| M14 performance/hardening | `onboard bench [--export]`; `LongSessionTests` (two-hour 20 Hz session, memory flat, frames quick), fuzz suites (`ImporterFuzzTests`, `GPMFFuzzTests`, `ExpressionFuzzTests`, `SphericalFuzzTests`) with fixed seeds; `docs/parity.md` | 4K HEVC export faster than real time on Apple silicon; resident memory flat over a long export; no importer crashes on mutated files |
 | M15 guided experience / video editing | `docs/qa-m15.md`; `VideoEditingModelTests` (crop composition, zoom window, decoding defaults, chapter naming), `ClipSequenceTests` (clips play back to back in one track; trim and speed cover the sequence) | A new project explains itself; GoPro chapters join as one video; the video lane moves and chains clips; camera framing reframes every video at once |
-| 0.18 see-through overlays | `GlassCockpitModelTests` (wheel scale/sign/limit, channel binding for degrees/radians/normalised, template binds when data arrives, old files decode), `steeringWheelMarkerTurnsWithTheAngle` (golden + marker position), `gradientShapeFadesAndTheOverlayLayerCanFade` | The Glass Cockpit template renders a turning translucent wheel over real footage; `overlaygen render --template "Glass Cockpit"` applies a built-in template by name |
-| 0.17 native lap deltas | `LapDeltaChannelTests` (every lap against the session best, zero on the best lap, short fragments cannot be best), `LapDeltaReferenceTests` (sample-by-sample against the user's `racechrono_add_deltas.py` output, gated on `OVERLAYGEN_SAMPLES_DIR` + `OVERLAYGEN_DELTA_REFERENCE_CSV`), `deltaBarGrowsEitherSideOfZero`, `deltaSettingsKeepOldFilesUnchanged` | Delta bars, graphs and readouts work from a plain RaceChrono export with no external script |
-| 0.16.2 adding videos | `InputPlanningTests` (first recording opens a lane, duplicates skipped, a second recording opens its own lane, later chapters join the recording they continue, template objects bind to the inputs that arrive), `RecordingGapsTests` (no clock = no gap; real GoPro chapters butt together and recordings are minutes apart, gated on `OVERLAYGEN_SAMPLES_DIR`) | New from Template shows its gauges, they bind to the video and data added afterwards; two recordings play in sequence on their own lanes instead of stacking |
+| 0.18 see-through overlays | `GlassCockpitModelTests` (wheel scale/sign/limit, channel binding for degrees/radians/normalised, template binds when data arrives, old files decode), `steeringWheelMarkerTurnsWithTheAngle` (golden + marker position), `gradientShapeFadesAndTheOverlayLayerCanFade` | The Glass Cockpit template renders a turning translucent wheel over real footage; `onboard render --template "Glass Cockpit"` applies a built-in template by name |
+| 0.17 native lap deltas | `LapDeltaChannelTests` (every lap against the session best, zero on the best lap, short fragments cannot be best), `LapDeltaReferenceTests` (sample-by-sample against the user's `racechrono_add_deltas.py` output, gated on `ONBOARD_SAMPLES_DIR` + `ONBOARD_DELTA_REFERENCE_CSV`), `deltaBarGrowsEitherSideOfZero`, `deltaSettingsKeepOldFilesUnchanged` | Delta bars, graphs and readouts work from a plain RaceChrono export with no external script |
+| 0.16.2 adding videos | `InputPlanningTests` (first recording opens a lane, duplicates skipped, a second recording opens its own lane, later chapters join the recording they continue, template objects bind to the inputs that arrive), `RecordingGapsTests` (no clock = no gap; real GoPro chapters butt together and recordings are minutes apart, gated on `ONBOARD_SAMPLES_DIR`) | New from Template shows its gauges, they bind to the video and data added afterwards; two recordings play in sequence on their own lanes instead of stacking |
 | M16 timeline editing | `docs/qa-m16.md`; `ClipModelTests` (both clip forms decode, chapter grouping, snapping), `ClipEditingTests` (per-clip trim and gap shape the track and render black gaps; a rotated chapter keeps its orientation end to end) | Dragging a bar's edge trims it; the magnet snaps to edges and the playhead; ⌘= zooms the timeline; dropped GoPro chapters become one input |
 | M17 viewer pan / clip speed / overview | `docs/qa-m17.md`; `ClipSpeedTests` (a double-speed clip takes half the sequence and shows the right frame; speed decodes) | Dragging the zoomed picture pans it; a clip's Speed field shortens the bar; the overview strip scrolls the zoomed timeline |
 | M18 native RaceRender objects | `docs/qa-m18.md`; `IndicatorPanelTests` (ABS light off/on goldens, hold time, timing panel golden, text-data zones), `SpeedDeltaTests`, `IndicatorParamsTests` (channel/threshold suggestions, template adaptation, panel decode defaults), `ReferenceLapTests` (best vs previous lap) | The ABS light lights amber when the channel crosses its level; the timing panel shows best/previous/current and both delta lanes; water/oil readouts turn amber/red at their thresholds |

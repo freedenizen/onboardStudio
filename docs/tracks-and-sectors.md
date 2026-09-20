@@ -15,7 +15,7 @@ Issues: #64 sectors, #65 circuit identification, #66 start/finish editing, #67 m
 | --- | --- | --- |
 | Wikidata | CC0 | Circuit name, one coordinate, country. No geometry. |
 | OpenStreetMap | ODbL | `highway=raceway` geometry; *sometimes* a `raceway=start-finish` node. **No sector tag exists** — only an unfinished relation proposal. |
-| `lovely-track-data` (via track-atlas) | CC **BY-NC-SA** | Real sector geometry — but NonCommercial, so unusable in a public MIT repo regardless of whether OverlayGen is ever sold. |
+| `lovely-track-data` (via track-atlas) | CC **BY-NC-SA** | Real sector geometry — but NonCommercial, so unusable in a public MIT repo regardless of whether Onboard Studio is ever sold. |
 | RaceChrono / VBOX / TrackAddict / AiM | Closed | No published API or licensing route found for any of them. |
 
 Nor does the logger have them. A `.rcz` archive was unpacked: `session.json` carries `trackName`,
@@ -51,7 +51,7 @@ and an unresolved question about whether caching tips a client into holding a De
 for a worse result than the driver's own laps already give.
 
 **The file often already knows.** `SessionInfo.trackName` is parsed from the RaceChrono CSV preamble
-(`Track name,"Sonoma"`) and from GPX, but today it is used only by `overlaygen probe` — the app
+(`Track name,"Sonoma"`) and from GPX, but today it is used only by `onboard probe` — the app
 discards it. Use it directly, and let the coordinate match confirm or correct it.
 
 ## The outline comes from the driver's own laps

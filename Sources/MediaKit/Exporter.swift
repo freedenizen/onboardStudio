@@ -230,7 +230,7 @@ final class ExportJob: @unchecked Sendable {
         label: String,
         onSample: @escaping @Sendable (Double) -> Void
     ) async throws {
-        let queue = DispatchQueue(label: "overlaygen.export.\(label)")
+        let queue = DispatchQueue(label: "onboard.export.\(label)")
         let finished = Flag()
         // AVFoundation invokes the block only on `queue`, serially, so these captures are safe.
         nonisolated(unsafe) let output = output

@@ -15,7 +15,7 @@
 ## Results (0.16.0)
 
 Run on 2026-09-18 against the Sonoma track-day project (GoPro GX010037 + RaceChrono v3 CSV, local files only). The
-user's desktop was in use during the run, so the checks went through the headless renderer (`overlaygen render`
+user's desktop was in use during the run, so the checks went through the headless renderer (`onboard render`
 uses the same compositor as the preview) plus a window capture of the app with the same project open.
 
 | # | Result |

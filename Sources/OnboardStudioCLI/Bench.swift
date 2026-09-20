@@ -96,7 +96,7 @@ struct Bench: AsyncParsableCommand {
         _ loaded: ProjectCompiler.LoadedProject, _ compiled: CompiledComposition, width: Int, height: Int,
         report: inout Report
     ) async throws {
-        let out = FileManager.default.temporaryDirectory.appending(path: "overlaygen-bench-\(UUID().uuidString).mp4")
+        let out = FileManager.default.temporaryDirectory.appending(path: "onboard-bench-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: out) }
         var settings = loaded.project.export
         settings.codec = codec
@@ -139,10 +139,10 @@ struct Bench: AsyncParsableCommand {
     }
 
     static var fixture: String {
-        // Sources/OverlayGenCLI/Bench.swift → Tests/Fixtures/slice.overlayproj
+        // Sources/OnboardStudioCLI/Bench.swift → Tests/Fixtures/slice.onboardproj
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appending(path: "Tests/Fixtures/slice.overlayproj").path
+            .appending(path: "Tests/Fixtures/slice.onboardproj").path
     }
 
     func outputSize(default plan: RenderPlan) throws -> (Int, Int) {

@@ -1,11 +1,11 @@
 # RaceRender 3 parity audit
 
-Status of every RaceRender 3 feature (from its documentation) in OverlayGen 0.12, ticked after
+Status of every RaceRender 3 feature (from its documentation) in Onboard Studio 0.12, ticked after
 the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 ## Inputs
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Video / audio / image / data files | ✅ | One input feeds many objects |
 | Trim, rotation, mirror H/V, crop per edge | ✅ | Rotation is 0/90/180/270 in the UI; any angle in the file |
@@ -18,7 +18,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 ## Data input
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Column → channel mapping with fallbacks, unit factors | ✅ | Role and unit overrides per column |
 | Sample-rate boost with GPS-aware interpolation | ✅ | Resample + GPS-update-aware policy |
@@ -30,7 +30,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 ## Display objects
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Common: label, input, X/Y/W/H %, aspect lock, transparency, mirror, RGB mask, volume/pan | ✅ | |
 | Video, Audio Only | ◐ | Video ✅; audio-only inputs mix without an object (an `.audio` input) |
@@ -48,7 +48,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 ## Gauge Designer
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Needle / dual-needle / graph styles | ✅ | needle, dualNeedle, arc |
 | Sweep ≤ 360°, rotation, CCW | ✅ | |
@@ -59,7 +59,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 ## Scripting (Enhanced objects)
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Background (once) + foreground (per frame) scripts | ✅ | `background(canvas)` / `frame(canvas, data)` |
 | Text / number / time, dot, line, rect, rrect, circle, poly, gradients | ✅ | |
@@ -68,7 +68,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 ## Timeline and multi-camera
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Segments at project times, inherit/override per property | ✅ | Visibility, frame, opacity per object |
 | Shifting a segment moves later ones | ✅ | |
@@ -76,18 +76,18 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 ## Output
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | H.264 / HEVC MP4 up to 4K, size presets, fps, bitrates, audio settings | ✅ | Plus ProRes 4444 and HEVC-with-alpha overlay-only exports |
 | Range: whole / time span / laps | ✅ | |
 | 360° spherical metadata | ✅ | |
 | YouTube upload | ✅ | Device-code sign-in, resumable upload (needs the user's own OAuth client) |
-| Templates, object style import/export | ✅ | `.overlaytemplate`, `.overlaystyle` |
+| Templates, object style import/export | ✅ | `.onboardtemplate`, `.onboardstyle` |
 | RaceRender `.rrt` / `.rrp` files | ❌ | Undocumented binary format; not reverse-engineered |
 
 ## Data formats
 
-| RaceRender | OverlayGen | Notes |
+| RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | RaceRender CSV, GPX, TCX, FIT, NMEA, VBO, generic CSV/TSV (TrackAddict, Harry's, RaceChrono, AIM, MoTeC…) | ✅ | Own FIT decoder; header profiles for common apps |
 | RaceChrono `.rcz` archives | ❌ | Export CSV v3 from RaceChrono instead |
@@ -104,4 +104,4 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Full export, 4K HEVC | 1.9× real time (58 fps) |
 | Memory | Flat: +13 MB over 300 frames; the two-hour synthetic session test allows +200 MB |
 
-`overlaygen bench [--project X] [--size WxH] [--export --codec hevc --seconds 60]` reproduces these.
+`onboard bench [--project X] [--size WxH] [--export --codec hevc --seconds 60]` reproduces these.

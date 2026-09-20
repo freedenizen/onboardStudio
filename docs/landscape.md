@@ -1,22 +1,22 @@
 # Competitive landscape
 
 `docs/parity.md` answers "did we reimplement RaceRender 3". This answers a different question:
-what do the tools people actually use offer, where is OverlayGen ahead, and what is worth building
+what do the tools people actually use offer, where is Onboard Studio ahead, and what is worth building
 next.
 
 Surveyed 2026-09-19. Claims carry sources; anything that could not be confirmed says so.
 
-## Where OverlayGen is already ahead
+## Where Onboard Studio is already ahead
 
 The most useful result of the survey. Each row is a need that users of other tools are **still
-asking for**, in public, and that OverlayGen already meets.
+asking for**, in public, and that Onboard Studio already meets.
 
-| Unmet need elsewhere | Evidence | OverlayGen |
+| Unmet need elsewhere | Evidence | Onboard Studio |
 | --- | --- | --- |
 | **Alpha / matte overlay export** — render the data over a transparent or key-colour background so it can be composited in another editor | An explicit, unfulfilled request on the Harry's LapTimer forum; not confirmed in any of the eight tools surveyed | `ExportSettings.Background.transparent` and `.keyColor`, with ProRes 4444 and HEVC-with-alpha |
 | **Reliable video/data sync** | The single most recurring complaint in the field: Harry's LapTimer users report drift from 1–2 s to 5–6 s across a session | `MediaKit/MotionSync` correlates video motion against logged speed and G-force — the same approach as the open-source OpenLap, which the survey identified as the technically right answer — plus timestamp sync from camera and sidecar clocks |
 | **Steering-angle overlay** | Not found in any surveyed tool | `SteeringWheelParams` + `SteeringWheelRenderer` |
-| **One portable file for layout and channel mapping** | An explicit RaceChrono forum request from users who lost their setup changing phones; VBOX's `.VVHSN` scene file is the model others are measured against | `.overlayproj`, plus `.overlaytemplate` and `.overlaystyle` for reuse across projects |
+| **One portable file for layout and channel mapping** | An explicit RaceChrono forum request from users who lost their setup changing phones; VBOX's `.VVHSN` scene file is the model others are measured against | `.onboardproj`, plus `.onboardtemplate` and `.onboardstyle` for reuse across projects |
 
 Two things follow. These are the product's differentiators and should be said out loud in the
 README and release notes. And they are worth protecting: a regression in sync or alpha export costs
@@ -83,7 +83,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 
 ## Overlay elements by how widely supported they are
 
-| Support | Element | OverlayGen |
+| Support | Element | Onboard Studio |
 | --- | --- | --- |
 | Near-universal | Speedometer | Yes |
 | Near-universal | Track map with position | Yes, plus Apple Maps imagery and a second vehicle |
@@ -116,7 +116,7 @@ For review before any of these is filed as an issue. Ranked by breadth of eviden
    lap. VBOX and Garmin both make a headline of it. Depends on 1.
 3. **Sector deltas as an overlay object** — `enhancement`. Depends on 1.
 4. **Track database** — `enhancement`. Others ship 2,600+ circuits with start/finish and sectors
-   pre-set; OverlayGen has a manual `LapLineSpec`. This is the "works out of the box" gap, and it
+   pre-set; Onboard Studio has a manual `LapLineSpec`. This is the "works out of the box" gap, and it
    matters: low setup friction is praised by name in reviews of VBOX and TrackAddict, while
    RaceRender, Harry's and AiM are all criticised for the opposite. Consider deriving a line from
    the data instead of shipping a database — the lap geometry is already in the log.

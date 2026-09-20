@@ -174,7 +174,7 @@ struct SourceOrientationMediaTests {
             ])
         project.settings.outputWidth = 320
         project.settings.outputHeight = 180
-        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.overlayproj"))
+        let location = ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj"))
         let loaded = try await ProjectCompiler.load(project, location: location)
         let compiled = try await ProjectCompiler.compile(loaded)
         #expect(compiled.plan.videoLayers.first?.sourceTransform != .identity)

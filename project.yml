@@ -1,4 +1,4 @@
-name: OverlayGen
+name: OnboardStudio
 options:
   bundleIdPrefix: com.freedenizen
   deploymentTarget:
@@ -14,45 +14,66 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_STRICT_CONCURRENCY: complete
 packages:
-  OverlayGenPackage:
+  OnboardStudioPackage:
     path: .
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: "2.10.0"
 targets:
-  OverlayGen:
+  OnboardStudio:
     type: application
     platform: macOS
     sources:
-      - path: Sources/OverlayGenApp
+      - path: Sources/OnboardStudioApp
       - path: App/Assets.xcassets
       - path: App/DocumentIcon.icns
         buildPhase: resources
-      - path: App/Sample.overlayproj
+      - path: App/Sample.onboardproj
         type: folder
         buildPhase: resources
     info:
       path: App/Info.plist
       properties:
-        CFBundleName: OverlayGen
-        CFBundleDisplayName: OverlayGen
-        CFBundleIdentifier: com.freedenizen.overlaygen
+        CFBundleName: Onboard Studio
+        CFBundleDisplayName: Onboard Studio
+        CFBundleIdentifier: com.freedenizen.onboardstudio
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSApplicationCategoryType: public.app-category.video
         NSHumanReadableCopyright: "MIT License"
-        SUFeedURL: https://github.com/freedenizen/overlayGen/releases/latest/download/appcast.xml
+        SUFeedURL: https://github.com/freedenizen/onboardStudio/releases/latest/download/appcast.xml
         SUPublicEDKey: F/7BM7lVhYVQxvRAW7G4ugBaJZ4UkOyjUf0YTCVLLcc=
         SUEnableInstallerLauncherService: true
         CFBundleDocumentTypes:
-          - CFBundleTypeName: OverlayGen Project
+          - CFBundleTypeName: Onboard Studio Project
             CFBundleTypeRole: Editor
             CFBundleTypeIconFile: DocumentIcon
             LSHandlerRank: Owner
             LSTypeIsPackage: true
-            LSItemContentTypes: [com.freedenizen.overlaygen.project]
+            LSItemContentTypes:
+              - com.freedenizen.onboardstudio.project
+              - com.freedenizen.overlaygen.project
         UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.freedenizen.onboardstudio.project
+            UTTypeDescription: Onboard Studio Project
+            UTTypeConformsTo: [com.apple.package, public.composite-content]
+            UTTypeTagSpecification:
+              public.filename-extension: [onboardproj]
+          - UTTypeIdentifier: com.freedenizen.onboardstudio.template
+            UTTypeDescription: Onboard Studio Template
+            UTTypeConformsTo: [public.json]
+            UTTypeTagSpecification:
+              public.filename-extension: [onboardtemplate]
+          - UTTypeIdentifier: com.freedenizen.onboardstudio.style
+            UTTypeDescription: Onboard Studio Object Style
+            UTTypeConformsTo: [public.json]
+            UTTypeTagSpecification:
+              public.filename-extension: [onboardstyle]
+        # Documents written by OverlayGen, this app's former name. Declared as imported types so
+        # projects, templates and styles saved before the rename still open; new files are written
+        # with the exported types above.
+        UTImportedTypeDeclarations:
           - UTTypeIdentifier: com.freedenizen.overlaygen.project
             UTTypeDescription: OverlayGen Project
             UTTypeConformsTo: [com.apple.package, public.composite-content]
@@ -69,62 +90,62 @@ targets:
             UTTypeTagSpecification:
               public.filename-extension: [overlaystyle]
     entitlements:
-      path: App/OverlayGen.entitlements
+      path: App/OnboardStudio.entitlements
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.files.user-selected.read-write: true
         com.apple.security.network.client: true
     dependencies:
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: ProjectModel
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: TelemetryKit
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: Importers
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: GPMFKit
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: RenderKit
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: MediaKit
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: Scripting
-      - package: OverlayGenPackage
+      - package: OnboardStudioPackage
         product: YouTubeKit
       - package: Sparkle
         product: Sparkle
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.freedenizen.overlaygen
+        PRODUCT_BUNDLE_IDENTIFIER: com.freedenizen.onboardstudio
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
-  OverlayGenUITests:
+  OnboardStudioUITests:
     type: bundle.ui-testing
     platform: macOS
     sources:
-      - path: UITests/OverlayGenUITests
+      - path: UITests/OnboardStudioUITests
     dependencies:
-      - target: OverlayGen
+      - target: OnboardStudio
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.freedenizen.overlaygen.uitests
-        TEST_TARGET_NAME: OverlayGen
+        PRODUCT_BUNDLE_IDENTIFIER: com.freedenizen.onboardstudio.uitests
+        TEST_TARGET_NAME: OnboardStudio
         GENERATE_INFOPLIST_FILE: YES
         ENABLE_HARDENED_RUNTIME: NO
 schemes:
-  OverlayGen:
+  OnboardStudio:
     build:
       targets:
-        OverlayGen: all
-        OverlayGenUITests: [test]
+        OnboardStudio: all
+        OnboardStudioUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - OverlayGenUITests
+        - OnboardStudioUITests
       environmentVariables:
-        OVERLAYGEN_FIXTURES: $(SRCROOT)/Tests/Fixtures
+        ONBOARD_FIXTURES: $(SRCROOT)/Tests/Fixtures
     archive:
       config: Release

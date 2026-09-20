@@ -1,7 +1,7 @@
 # Uploading to YouTube
 
-OverlayGen can upload an export straight to YouTube (**Export ▸ Upload to YouTube…**, **Project ▸
-Upload Video to YouTube…**, or `overlaygen upload`). Google requires every app to identify itself
+Onboard Studio can upload an export straight to YouTube (**Export ▸ Upload to YouTube…**, **Project ▸
+Upload Video to YouTube…**, or `onboard upload`). Google requires every app to identify itself
 with its own OAuth client, and an open-source app cannot ship a shared one, so a one-time setup is
 needed:
 
@@ -12,11 +12,11 @@ needed:
    Google account as a test user (a consent screen in "Testing" is enough for personal use).
 3. Under *Credentials ▸ Create credentials ▸ OAuth client ID* pick **TVs and Limited Input
    devices**. Copy the client ID and client secret.
-4. In OverlayGen open **Settings ▸ YouTube** and paste both. (Google documents the secret of an
-   installed app as not confidential; OverlayGen keeps it in preferences and the sign-in token in
+4. In Onboard Studio open **Settings ▸ YouTube** and paste both. (Google documents the secret of an
+   installed app as not confidential; Onboard Studio keeps it in preferences and the sign-in token in
    the keychain.) For the CLI pass `--client-id/--client-secret` or set
-   `OVERLAYGEN_YT_CLIENT_ID` / `OVERLAYGEN_YT_CLIENT_SECRET`; its token lives in
-   `~/Library/Application Support/OverlayGen/youtube-token.json` (owner-only permissions).
+   `ONBOARD_YT_CLIENT_ID` / `ONBOARD_YT_CLIENT_SECRET`; its token lives in
+   `~/Library/Application Support/OnboardStudio/youtube-token.json` (owner-only permissions).
 
 ## Signing in
 
@@ -32,8 +32,8 @@ connection is retried from the last byte the server confirms (up to five times w
 long uploads survive a flaky link. The sheet shows the watch link when the upload completes.
 
 ```sh
-swift run overlaygen upload out.mp4 --title "Sonoma lap 3" --privacy unlisted --tags "sonoma,track day"
-swift run overlaygen upload --sign-out
+swift run onboard upload out.mp4 --title "Sonoma lap 3" --privacy unlisted --tags "sonoma,track day"
+swift run onboard upload --sign-out
 ```
 
 ## Quota

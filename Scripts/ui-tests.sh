@@ -4,8 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-only="OverlayGenUITests${1:+/$1}"
-export_dir="$(mktemp -d "${TMPDIR:-/tmp}/overlaygen-uitests.XXXXXX")"
+only="OnboardStudioUITests${1:+/$1}"
+export_dir="$(mktemp -d "${TMPDIR:-/tmp}/onboard-uitests.XXXXXX")"
 result="build/UITests.xcresult"
 rm -rf "$result"
 
@@ -14,8 +14,8 @@ xcodegen generate --quiet
 
 echo "Exports: $export_dir"
 set +e
-OVERLAYGEN_TEST_EXPORT_DIR="$export_dir" caffeinate -dis xcodebuild test \
-  -project OverlayGen.xcodeproj -scheme OverlayGen -destination 'platform=macOS' \
+ONBOARD_TEST_EXPORT_DIR="$export_dir" caffeinate -dis xcodebuild test \
+  -project OnboardStudio.xcodeproj -scheme OnboardStudio -destination 'platform=macOS' \
   -only-testing:"$only" -derivedDataPath build/DerivedData -resultBundlePath "$result" \
   CODE_SIGN_IDENTITY="-" 2>&1 | grep -E "error:|Test Case|Executed|TEST |warning: .*UITests"
 status=${PIPESTATUS[0]}

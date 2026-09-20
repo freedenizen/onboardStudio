@@ -69,7 +69,7 @@ final class EditorModel {
         scheduleCompile()
     }
     var location: ProjectLocation {
-        ProjectLocation(fileURL ?? URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: "Untitled.overlayproj"))
+        ProjectLocation(fileURL ?? URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: "Untitled.onboardproj"))
     }
     var selectedObject: DisplayObject? { selectedObjectID.flatMap(project.displayObject) }
     var selectedSegment: Segment? { selectedSegmentID.flatMap(project.timeline.segment) }

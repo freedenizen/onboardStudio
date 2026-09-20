@@ -49,7 +49,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     }
 }
 
-/// The document model. Pure data; saved as `project.json` inside a `.overlayproj` package.
+/// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
     public static let currentSchemaVersion = 1
 
@@ -142,25 +142,33 @@ public enum ProjectError: Error, Equatable, CustomStringConvertible {
     public var description: String {
         switch self {
         case .unsupportedSchemaVersion(let version):
-            "This project was saved by a newer version of OverlayGen (schema \(version))."
-        case .notAProject(let path): "\(path) is not an OverlayGen project."
+            "This project was saved by a newer version of Onboard Studio (schema \(version))."
+        case .notAProject(let path): "\(path) is not an Onboard Studio project."
         case .missingInput(let id): "The project references an input that does not exist (\(id))."
         }
     }
 }
 
-/// Locates `project.json` for either a `.overlayproj` package directory or a bare JSON file, and
+/// Locates `project.json` for either a `.onboardproj` package directory or a bare JSON file, and
 /// resolves relative media paths against the right base directory.
 public struct ProjectLocation: Sendable, Equatable {
-    public static let packageExtension = "overlayproj"
+    public static let packageExtension = "onboardproj"
+    /// The extension used before the app was renamed from OverlayGen. Still opened, never written.
+    public static let legacyPackageExtension = "overlayproj"
     public static let fileName = "project.json"
+
+    /// True for a path this app treats as a project package, under either the current or the
+    /// pre-rename extension.
+    public static func isPackageExtension(_ ext: String) -> Bool {
+        ext == packageExtension || ext == legacyPackageExtension
+    }
 
     public let jsonURL: URL
     /// Base for relative `MediaReference` paths.
     public let baseDirectory: URL
 
     public init(_ url: URL) {
-        if url.pathExtension == Self.packageExtension {
+        if Self.isPackageExtension(url.pathExtension) {
             let directory = URL(fileURLWithPath: url.path, isDirectory: true)
             jsonURL = directory.appending(path: Self.fileName)
             baseDirectory = directory

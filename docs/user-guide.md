@@ -1,22 +1,22 @@
-# OverlayGen User Guide
+# Onboard Studio User Guide
 
-OverlayGen turns a lap video and the data recorded with it into a video with gauges, a track
+Onboard Studio turns a lap video and the data recorded with it into a video with gauges, a track
 map, lap timing and anything else you want drawn on top. This guide walks through a first
 project and then explains every part of the window. It assumes nothing beyond having a video
 and, ideally, a data log.
 
 ## 1. Your first overlay in five minutes
 
-1. **Launch OverlayGen.** The welcome window offers a **New Blank Project**, a project **from a
+1. **Launch Onboard Studio.** The welcome window offers a **New Blank Project**, a project **from a
    template** (gauges already laid out), **Open Project…**, your recent projects and the sample
    project. Untick *Show this window at launch* to start on a blank project instead;
-   **Help ▸ Welcome to OverlayGen** brings the window back. A new project opens with a welcome
+   **Help ▸ Welcome to Onboard Studio** brings the window back. A new project opens with a welcome
    panel and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be dropped anywhere in the window. (**File ▸ New from
    Template** starts with gauges already laid out, which attach themselves to the video and data
    files you add next; **Help ▸ Open the Sample Project** opens a
    short clip with a synthetic log if you just want to poke around.)
 2. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
-   a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) OverlayGen joins the following chapters
+   a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) Onboard Studio joins the following chapters
    so they play as one continuous video. Add a second recording the same way and it gets its own
    lane, starting where the previous video ends, with the pause between the two recordings kept
    (read from the camera's clock) so one data log stays lined up across both. Each recording has
@@ -116,7 +116,7 @@ that draw with JavaScript ([scripting.md](scripting.md)).
 
 Every object has a position and size in percent of the frame, opacity, mirror and an RGB mask.
 Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save it as an
-`.overlaystyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse
+`.onboardstyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse
 it on the next session.
 
 ### See-through overlays
@@ -134,7 +134,7 @@ that count a right turn as negative.
 
 ### Deltas to your best lap
 
-No script or pre-processing is needed for delta readouts. Whenever the data has laps, OverlayGen
+No script or pre-processing is needed for delta readouts. Whenever the data has laps, Onboard Studio
 adds two channels that any object can use (bars, graphs, text, gauges, indicator lights, scripts):
 **`lapDelta`**, the seconds you are behind (+) or ahead of (−) the session's best lap at the same
 spot on the track, and **`speedDelta`**, your speed minus the best lap's speed there. Both compare
@@ -180,7 +180,7 @@ one-time Google API setup described in [youtube.md](youtube.md).
 
 ## 8. Command line
 
-`overlaygen` does the same work without the app: `probe` inspects a data file, `render` exports
+`onboard` does the same work without the app: `probe` inspects a data file, `render` exports
 a project, `sync` finds the data/video offset from motion, `upload` sends a file to YouTube and
 `bench` measures speed. See [testing.md](testing.md).
 
@@ -189,11 +189,11 @@ a project, `sync` finds the data/video offset from motion, `upload` sends a file
 - **The gauges lead or lag the picture.** Open the sync wizard and step with the ±0.1 s buttons
   while watching a braking point; or run Auto-Sync by Motion. GoPro creation times can be tens of
   seconds off, which is why the GPS clock is preferred when the clip has one.
-- **A GoPro clip appears upside down.** OverlayGen honours the camera's orientation flag; use
+- **A GoPro clip appears upside down.** Onboard Studio honours the camera's orientation flag; use
   Rotation 180° in the Picture section if the camera was mounted inverted without setting it.
 - **A file will not open.** MTS, MKV and some AVI files need `ffmpeg` installed
-  (`brew install ffmpeg`); OverlayGen converts them on first use.
+  (`brew install ffmpeg`); Onboard Studio converts them on first use.
 - **Missing media after moving files.** The sidebar marks the input; select it and press
   **Relink…**.
-- **An export is slow.** `overlaygen bench --export` reports the speed; on Apple silicon 4K HEVC
+- **An export is slow.** `onboard bench --export` reports the speed; on Apple silicon 4K HEVC
   runs at about twice real time. Large scripted objects and 4K map backgrounds cost the most.

@@ -3,7 +3,7 @@ import XCTest
 /// Shared launch and navigation helpers for the journey tests. The app runs with the Testing menu
 /// (fixture files instead of open panels) and with state restoration off, so every test starts
 /// from a fresh Untitled document.
-class OverlayGenUITestCase: XCTestCase {
+class OnboardStudioUITestCase: XCTestCase {
     private var launched: XCUIApplication?
     /// The app under test; `launch()` must have run.
     var app: XCUIApplication {
@@ -36,8 +36,8 @@ class OverlayGenUITestCase: XCTestCase {
             "-skipLauncher", launcher ? "NO" : "YES", "-showLauncherAtLaunch", "YES",
         ]
         app.launchArguments += extraArguments
-        app.launchEnvironment["OVERLAYGEN_FIXTURES"] = Self.fixtures.path
-        app.launchEnvironment["OVERLAYGEN_TEST_EXPORT_DIR"] = Self.exportDirectory.path
+        app.launchEnvironment["ONBOARD_FIXTURES"] = Self.fixtures.path
+        app.launchEnvironment["ONBOARD_TEST_EXPORT_DIR"] = Self.exportDirectory.path
         app.launch()  // the app activates itself when the editor appears (UITestSupport.editorAppeared)
         XCTAssertTrue(
             app.windows.firstMatch.waitForExistence(timeout: Self.timeout), "No window: \(app.debugDescription)")
@@ -47,7 +47,7 @@ class OverlayGenUITestCase: XCTestCase {
 
     /// `Tests/Fixtures` in the checkout the tests were built from.
     static let fixtures: URL = {
-        if let path = ProcessInfo.processInfo.environment["OVERLAYGEN_FIXTURES"] {
+        if let path = ProcessInfo.processInfo.environment["ONBOARD_FIXTURES"] {
             return URL(fileURLWithPath: path, isDirectory: true)
         }
         return URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -56,11 +56,11 @@ class OverlayGenUITestCase: XCTestCase {
 
     /// Where the export sheet writes during tests (the runner's environment or a temp folder).
     static let exportDirectory: URL = {
-        if let path = ProcessInfo.processInfo.environment["OVERLAYGEN_TEST_EXPORT_DIR"] {
+        if let path = ProcessInfo.processInfo.environment["ONBOARD_TEST_EXPORT_DIR"] {
             return URL(fileURLWithPath: path, isDirectory: true)
         }
         let url = FileManager.default.temporaryDirectory.appending(
-            path: "overlaygen-uitests", directoryHint: .isDirectory)
+            path: "onboard-uitests", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }()

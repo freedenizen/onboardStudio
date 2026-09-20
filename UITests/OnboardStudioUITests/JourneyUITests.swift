@@ -2,7 +2,7 @@ import AVFoundation
 import XCTest
 
 /// J2 and J11: the whole track-day workflow, from an empty project to an exported file.
-final class JourneyUITests: OverlayGenUITestCase {
+final class JourneyUITests: OnboardStudioUITestCase {
     @MainActor
     func testTrackDayFromVideoToExport() throws {
         launch()

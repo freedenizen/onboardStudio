@@ -8,7 +8,7 @@ import Testing
 }
 
 @Test func marketingVersionLooksSemantic() {
-    let parts = OverlayGenVersion.marketing.split(separator: ".")
+    let parts = OnboardStudioVersion.marketing.split(separator: ".")
     #expect(parts.count == 3)
     #expect(parts.allSatisfy { Int($0) != nil })
 }

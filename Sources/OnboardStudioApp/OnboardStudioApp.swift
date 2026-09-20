@@ -3,12 +3,13 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 @main
-struct OverlayGenApp: App {
+struct OnboardStudioApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var updater = UpdaterModel()
     @State private var youtube = YouTubeModel()
 
     init() {
+        LegacyMigration.run()
         LaunchOptions.registerDefaults()
     }
 
@@ -46,7 +47,7 @@ struct OverlayGenApp: App {
             EditorCommands()
             if UITestSupport.isActive { UITestCommands() }
         }
-        Window("Welcome to OverlayGen", id: "launcher") {
+        Window("Welcome to Onboard Studio", id: "launcher") {
             LauncherView()
         }
         .windowResizability(.contentSize)
@@ -79,8 +80,11 @@ final class PendingTemplate {
 }
 
 extension UTType {
-    nonisolated static let overlayProject = UTType(
+    nonisolated static let onboardProject = UTType(
         exportedAs: ProjectPackage.contentTypeIdentifier, conformingTo: .package)
+    /// Projects saved under the app's former name, OverlayGen. Opened, never written.
+    nonisolated static let legacyOverlayProject = UTType(
+        importedAs: ProjectPackage.legacyContentTypeIdentifier, conformingTo: .package)
 }
 
 /// Menu commands that act on the focused editor.
@@ -90,13 +94,13 @@ struct EditorCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .help) {
-            Button("OverlayGen User Guide") { HelpLinks.open(.userGuide) }
+            Button("Onboard Studio User Guide") { HelpLinks.open(.userGuide) }
             Button("Supported Data Formats") { HelpLinks.open(.formats) }
             Button("Scripting Reference") { HelpLinks.open(.scripting) }
             Button("YouTube Upload Setup") { HelpLinks.open(.youtube) }
             Button("Project File Format") { HelpLinks.open(.projectFormat) }
             Divider()
-            Button("Welcome to OverlayGen") { openWindow(id: "launcher") }
+            Button("Welcome to Onboard Studio") { openWindow(id: "launcher") }
             Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
             Button("Take the Tour") { editor?.tourStep = 0 }.disabled(editor == nil)
             Button("Show Getting Started") { UserDefaults.standard.set(true, forKey: "showGettingStarted") }

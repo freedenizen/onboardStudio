@@ -1,6 +1,6 @@
 import Foundation
 
-/// The OAuth client of the Google Cloud project the user created for OverlayGen (type "TVs and
+/// The OAuth client of the Google Cloud project the user created for Onboard Studio (type "TVs and
 /// Limited Input devices"). Google treats the secret of installed apps as non-confidential.
 public struct YouTubeCredentials: Sendable, Equatable {
     public var clientID: String

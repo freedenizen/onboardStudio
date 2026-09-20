@@ -8,14 +8,14 @@ import SwiftUI
 enum UITestSupport {
     static var isActive: Bool { UserDefaults.standard.bool(forKey: "uiTesting") }
 
-    /// `OVERLAYGEN_FIXTURES`: the `Tests/Fixtures` directory.
+    /// `ONBOARD_FIXTURES`: the `Tests/Fixtures` directory.
     static var fixtures: URL? {
-        ProcessInfo.processInfo.environment["OVERLAYGEN_FIXTURES"].map { URL(fileURLWithPath: $0, isDirectory: true) }
+        ProcessInfo.processInfo.environment["ONBOARD_FIXTURES"].map { URL(fileURLWithPath: $0, isDirectory: true) }
     }
 
-    /// `OVERLAYGEN_TEST_EXPORT_DIR`: where the export sheet writes instead of asking.
+    /// `ONBOARD_TEST_EXPORT_DIR`: where the export sheet writes instead of asking.
     static var exportDirectory: URL? {
-        ProcessInfo.processInfo.environment["OVERLAYGEN_TEST_EXPORT_DIR"].map {
+        ProcessInfo.processInfo.environment["ONBOARD_TEST_EXPORT_DIR"].map {
             URL(fileURLWithPath: $0, isDirectory: true)
         }
     }
@@ -52,12 +52,12 @@ enum UITestSupport {
     static func scratchProject() -> URL? {
         guard let fixtures else { return nil }
         let scratch = FileManager.default.temporaryDirectory.appending(
-            path: "overlaygen-uitests-\(ProcessInfo.processInfo.processIdentifier)", directoryHint: .isDirectory)
-        let project = scratch.appending(path: "slice.overlayproj", directoryHint: .isDirectory)
+            path: "onboard-uitests-\(ProcessInfo.processInfo.processIdentifier)", directoryHint: .isDirectory)
+        let project = scratch.appending(path: "slice.onboardproj", directoryHint: .isDirectory)
         if FileManager.default.fileExists(atPath: project.path) { return project }
         do {
             try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
-            for name in ["slice.overlayproj", "test-3s.mp4", "racerender-basic.csv"] {
+            for name in ["slice.onboardproj", "test-3s.mp4", "racerender-basic.csv"] {
                 try FileManager.default.copyItem(at: fixtures.appending(path: name), to: scratch.appending(path: name))
             }
             return project

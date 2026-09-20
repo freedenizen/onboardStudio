@@ -1,6 +1,6 @@
 # QA script — M4 app MVP
 
-Build and launch (`xcodegen generate && open OverlayGen.xcodeproj`, run the OverlayGen scheme, or
+Build and launch (`xcodegen generate && open OnboardStudio.xcodeproj`, run the Onboard Studio scheme, or
 install the release DMG). Have a video clip and a matching data file to hand; the fixtures
 `Tests/Fixtures/test-3s.mp4` + `Tests/Fixtures/racerender-basic.csv` work for a smoke test.
 
@@ -19,7 +19,7 @@ install the release DMG). Have a video clip and a matching data file to hand; th
 | 11 | Select the speedometer, set **Maximum** to 200 and **Speed unit** to kph | Scale relabels; readout changes to kph |
 | 12 | Scrub to a recognisable moment, click **Sync** | Wizard opens with the project time; slider scrubs the data with live readouts; **Apply** sets the input's start position (visible in the input inspector) |
 | 13 | Toggle an object's eye icon in the sidebar | Object disappears from preview; toggling again restores it |
-| 14 | ⌘S, choose a name | `Name.overlayproj` package is written; **File ▸ Close** then reopen it via **File ▸ Open** | All inputs and objects restored, playback works |
+| 14 | ⌘S, choose a name | `Name.onboardproj` package is written; **File ▸ Close** then reopen it via **File ▸ Open** | All inputs and objects restored, playback works |
 | 15 | **Export** (⌘E), keep project size, click **Export…**, pick a path | Progress bar advances; **Reveal in Finder** shows an MP4 that plays in QuickTime with the overlays identical to the preview |
 | 16 | Start an export, click **Cancel** | Export stops; message says cancelled; no stray file plays |
 | 17 | Remove the data input via its context menu | Data-driven objects are removed with it; video remains |

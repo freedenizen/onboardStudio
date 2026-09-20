@@ -44,7 +44,7 @@ public struct FileTokenStore: TokenStore {
         let base =
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser
-        return base.appending(path: "OverlayGen/youtube-token.json")
+        return base.appending(path: "OnboardStudio/youtube-token.json")
     }
 
     public func load() throws -> OAuthToken? {
@@ -65,10 +65,14 @@ public struct FileTokenStore: TokenStore {
 
 /// The login keychain (the app uses this).
 public struct KeychainTokenStore: TokenStore {
+    /// The service the app used before it was renamed from OverlayGen. Read once, to carry an
+    /// existing sign-in across the rename; never written.
+    public static let legacyService = "com.overlaygen.youtube"
+
     public let service: String
     public let account: String
 
-    public init(service: String = "com.overlaygen.youtube", account: String = "oauth") {
+    public init(service: String = "com.onboardstudio.youtube", account: String = "oauth") {
         self.service = service
         self.account = account
     }
@@ -81,7 +85,18 @@ public struct KeychainTokenStore: TokenStore {
     }
 
     public func load() throws -> OAuthToken? {
-        var q = query
+        if let token = try Self.read(service: service, account: account) { return token }
+        // Fall back to the pre-rename service so an existing sign-in survives the rename. The
+        // next `save` writes it under the current service.
+        guard service != Self.legacyService else { return nil }
+        return try Self.read(service: Self.legacyService, account: account)
+    }
+
+    private static func read(service: String, account: String) throws -> OAuthToken? {
+        var q: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
         var item: CFTypeRef?

@@ -61,8 +61,8 @@ struct LauncherView: View {
         VStack(spacing: 10) {
             Spacer()
             Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 112, height: 112)
-            Text("OverlayGen").font(.largeTitle).bold()
-            Text("Version \(OverlayGenVersion.marketing)").foregroundStyle(.secondary)
+            Text("Onboard Studio").font(.largeTitle).bold()
+            Text("Version \(OnboardStudioVersion.marketing)").foregroundStyle(.secondary)
             Text("Lap video and data in, overlay video out.")
                 .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal, 16)
             Spacer()

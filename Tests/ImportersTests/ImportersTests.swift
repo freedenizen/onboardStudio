@@ -123,7 +123,7 @@ struct RaceChronoCSVImporterTests {
         #expect(table.info.sourceFormat == "RaceChrono CSV")
         #expect(table.info.title == "Test Circuit")
         #expect(table.info.trackName == "Test Circuit")
-        #expect(table.info.driverName == "OverlayGen")
+        #expect(table.info.driverName == "OnboardStudio")
         #expect(table.info.notes == "synthetic fixture, two laps")
         let created = try #require(table.info.createdAt)
         var calendar = Calendar(identifier: .gregorian)

@@ -5,7 +5,9 @@ import Foundation
 /// template's objects to them.
 public struct ProjectTemplate: Hashable, Codable, Sendable {
     public static let formatVersion = 1
-    public static let fileExtension = "overlaytemplate"
+    public static let fileExtension = "onboardtemplate"
+    /// The extension used before the app was renamed from OverlayGen. Still opened, never written.
+    public static let legacyFileExtension = "overlaytemplate"
 
     public var formatVersion: Int
     public var name: String
@@ -131,7 +133,8 @@ public enum ProjectTemplateError: Error, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .newerFormat(let version): "This template was saved by a newer version of OverlayGen (format \(version))."
+        case .newerFormat(let version):
+            "This template was saved by a newer version of Onboard Studio (format \(version))."
         }
     }
 }

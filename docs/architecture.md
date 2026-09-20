@@ -1,6 +1,6 @@
-# OverlayGen architecture
+# Onboard Studio architecture
 
-OverlayGen mixes video, audio and telemetry into a rendered video with data-driven overlays. It is
+Onboard Studio mixes video, audio and telemetry into a rendered video with data-driven overlays. It is
 a native macOS app (Swift 6, SwiftUI, AVFoundation) organised as a Swift package of libraries plus
 two thin executables.
 
@@ -15,8 +15,8 @@ two thin executables.
 | `RenderKit` | Overlay rendering with Core Graphics: one renderer per display-object kind, gauge engine, render cache, `FrameCompositor`. |
 | `MediaKit` | AVFoundation composition building, the custom `AVVideoCompositing` shared by preview and export, video transforms (Core Image), audio mix, exporter, optional ffmpeg bridge. |
 | `Scripting` | JavaScriptCore runtime for scripted display objects with a RaceRender-compatible API shim. |
-| `overlaygen` (CLI) | Headless probe / render / bench / golden-update commands. Also the CI smoke test. |
-| `OverlayGenApp` | SwiftUI editor. Built by SwiftPM as a bare executable and by the XcodeGen project (`project.yml`) as `OverlayGen.app` with Sparkle. |
+| `onboard` (CLI) | Headless probe / render / bench / golden-update commands. Also the CI smoke test. |
+| `OnboardStudioApp` | SwiftUI editor. Built by SwiftPM as a bare executable and by the XcodeGen project (`project.yml`) as `OnboardStudio.app` with Sparkle. |
 
 ## Core ideas
 
@@ -43,14 +43,14 @@ two thin executables.
   and text are drawn per frame. Fonts are resolved once and cached under a lock.
 - Telemetry lookups are binary searches over contiguous `[Double]` channels, so a two-hour 20 Hz
   session costs the same per frame as a two-minute one (`LongSessionTests`).
-- `overlaygen bench` measures overlay drawing, export throughput against real time and resident
+- `onboard bench` measures overlay drawing, export throughput against real time and resident
   memory; `docs/parity.md` records the current numbers. CI runs it on the fixture project.
 
 ## Build and release
 
 - `swift build` / `swift test` build every library, the CLI and the app executable.
-- `xcodegen generate` creates `OverlayGen.xcodeproj` from `project.yml`; the app target compiles
-  `Sources/OverlayGenApp` and links the package libraries and Sparkle.
+- `xcodegen generate` creates `OnboardStudio.xcodeproj` from `project.yml`; the app target compiles
+  `Sources/OnboardStudioApp` and links the package libraries and Sparkle.
 - `Scripts/bundle-app.sh` → `Scripts/make-dmg.sh` → `Scripts/notarize.sh` (optional) →
   `Scripts/make-appcast.sh` mirror `.github/workflows/release.yml`, which runs on every `v*` tag and
   publishes the DMG, `appcast.xml` and a CLI tarball as a GitHub Release. Sparkle's feed URL points
@@ -64,7 +64,7 @@ The icons are vector sources in `Design/`, rasterised by `Scripts/make-icons.sh`
 | --- | --- |
 | `Design/AppIcon.svg` | the app icon at 128 px and above |
 | `Design/AppIcon-small.svg` | the app icon at 16 and 32 px |
-| `Design/DocumentIcon.svg` | the `.overlayproj` document icon |
+| `Design/DocumentIcon.svg` | the `.onboardproj` document icon |
 
 Edit an SVG, run `Scripts/make-icons.sh`, and commit what it writes: the ten PNG slots and
 `Contents.json` in `App/Assets.xcassets/AppIcon.appiconset`, plus `App/DocumentIcon.icns` (built
@@ -85,7 +85,7 @@ whenever GitHub updates the runner image, with nothing actually wrong.
 | Milestone | Deliverable |
 |---|---|
 | M0 | Scaffolding, CI, DMG, Sparkle updates |
-| M1 | Telemetry core, RaceRender CSV and GPX importers, `overlaygen probe` |
+| M1 | Telemetry core, RaceRender CSV and GPX importers, `onboard probe` |
 | M2 | AVFoundation pipeline and headless export |
 | M3 | First display objects, project file, CLI end-to-end slice |
 | M4 | App MVP: import, sync wizard, place gauges, preview, export |

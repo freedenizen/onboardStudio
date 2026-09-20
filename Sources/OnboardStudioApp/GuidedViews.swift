@@ -165,7 +165,7 @@ enum HelpLinks {
         case parity = "parity.md"
     }
 
-    static let base = "https://github.com/freedenizen/overlayGen/blob/main/docs/"
+    static let base = "https://github.com/freedenizen/onboardStudio/blob/main/docs/"
 
     static func open(_ page: Page) {
         if let url = URL(string: base + page.rawValue) { NSWorkspace.shared.open(url) }
@@ -175,7 +175,7 @@ enum HelpLinks {
 /// The bundled sample project (a short clip with a synthetic data log), copied to Documents so
 /// it can be edited and saved.
 enum SampleProject {
-    static var bundled: URL? { Bundle.main.url(forResource: "Sample", withExtension: "overlayproj") }
+    static var bundled: URL? { Bundle.main.url(forResource: "Sample", withExtension: "onboardproj") }
     static var isAvailable: Bool { bundled != nil }
 
     static func open() {
@@ -183,7 +183,7 @@ enum SampleProject {
         let documents =
             FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
-        let destination = documents.appending(path: "OverlayGen Sample.overlayproj")
+        let destination = documents.appending(path: "Onboard Studio Sample.onboardproj")
         do {
             if !FileManager.default.fileExists(atPath: destination.path) {
                 try FileManager.default.copyItem(at: source, to: destination)

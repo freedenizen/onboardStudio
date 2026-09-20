@@ -21,10 +21,10 @@ struct Upload: AsyncParsableCommand {
     @Option(name: .long, help: "private, unlisted or public.")
     var privacy: String = "private"
 
-    @Option(name: .long, help: "Google OAuth client ID (or set OVERLAYGEN_YT_CLIENT_ID).")
+    @Option(name: .long, help: "Google OAuth client ID (or set ONBOARD_YT_CLIENT_ID).")
     var clientID: String?
 
-    @Option(name: .long, help: "Google OAuth client secret (or set OVERLAYGEN_YT_CLIENT_SECRET).")
+    @Option(name: .long, help: "Google OAuth client secret (or set ONBOARD_YT_CLIENT_SECRET).")
     var clientSecret: String?
 
     @Flag(name: .long, help: "Forget the stored sign-in and exit.")
@@ -39,10 +39,10 @@ struct Upload: AsyncParsableCommand {
         }
         let environment = ProcessInfo.processInfo.environment
         let credentials = YouTubeCredentials(
-            clientID: clientID ?? environment["OVERLAYGEN_YT_CLIENT_ID"] ?? "",
-            clientSecret: clientSecret ?? environment["OVERLAYGEN_YT_CLIENT_SECRET"] ?? "")
+            clientID: clientID ?? environment["ONBOARD_YT_CLIENT_ID"] ?? "",
+            clientSecret: clientSecret ?? environment["ONBOARD_YT_CLIENT_SECRET"] ?? "")
         guard credentials.isComplete else {
-            throw ValidationError("Provide --client-id/--client-secret or the OVERLAYGEN_YT_CLIENT_* variables.")
+            throw ValidationError("Provide --client-id/--client-secret or the ONBOARD_YT_CLIENT_* variables.")
         }
         guard let privacyValue = VideoMetadata.Privacy(rawValue: privacy) else {
             throw ValidationError("--privacy must be private, unlisted or public.")

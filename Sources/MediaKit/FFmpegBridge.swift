@@ -19,9 +19,9 @@ public enum FFmpegBridge {
         }
     }
 
-    /// Candidate ffmpeg locations, first match wins. `OVERLAYGEN_FFMPEG` overrides.
+    /// Candidate ffmpeg locations, first match wins. `ONBOARD_FFMPEG` overrides.
     public static var executable: URL? {
-        let env = ProcessInfo.processInfo.environment["OVERLAYGEN_FFMPEG"]
+        let env = ProcessInfo.processInfo.environment["ONBOARD_FFMPEG"]
         let preference = UserDefaults.standard.string(forKey: "ffmpegPath").flatMap { $0.isEmpty ? nil : $0 }
         let candidates = [env, preference, "/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
             .compactMap { $0 }
@@ -35,7 +35,7 @@ public enum FFmpegBridge {
         let base =
             FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
-        return base.appending(path: "OverlayGen/remux", directoryHint: .isDirectory)
+        return base.appending(path: "OnboardStudio/remux", directoryHint: .isDirectory)
     }
 
     /// Returns a URL AVFoundation can play: the original when readable, otherwise a cached

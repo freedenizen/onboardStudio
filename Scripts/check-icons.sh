@@ -45,7 +45,7 @@ done
 
 [ -f App/DocumentIcon.icns ] || fail "missing App/DocumentIcon.icns — run Scripts/make-icons.sh"
 grep -q "CFBundleTypeIconFile: DocumentIcon" project.yml ||
-  fail "project.yml no longer points the .overlayproj document type at DocumentIcon"
+  fail "project.yml no longer points the .onboardproj document type at DocumentIcon"
 
 if [ "$status" -eq 0 ]; then
   echo "Icons OK: 10 app icon slots, document icon present and wired up."

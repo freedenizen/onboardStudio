@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds dist/OverlayGen.app via the XcodeGen project (requires Xcode + xcodegen).
+# Builds dist/OnboardStudio.app via the XcodeGen project (requires Xcode + xcodegen).
 # Signs with Developer ID if SIGNING_IDENTITY is set, otherwise ad-hoc.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -18,21 +18,21 @@ if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
   [[ -n "${DEVELOPMENT_TEAM:-}" ]] && SIGN_ARGS+=(DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM")
 fi
 
-xcodebuild -project OverlayGen.xcodeproj -scheme OverlayGen -configuration Release \
+xcodebuild -project OnboardStudio.xcodeproj -scheme OnboardStudio -configuration Release \
   -derivedDataPath build/DerivedData -destination 'generic/platform=macOS' \
   MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
   "${SIGN_ARGS[@]}" \
   build | grep -E '^(error|warning: .*unresolved|\*\* BUILD)' || true
 
-APP=$(find build/DerivedData/Build/Products/Release -maxdepth 1 -name 'OverlayGen.app' | head -1)
-[[ -d "$APP" ]] || { echo "Build failed: OverlayGen.app not found" >&2; exit 1; }
-cp -R "$APP" "$DIST/OverlayGen.app"
+APP=$(find build/DerivedData/Build/Products/Release -maxdepth 1 -name 'OnboardStudio.app' | head -1)
+[[ -d "$APP" ]] || { echo "Build failed: OnboardStudio.app not found" >&2; exit 1; }
+cp -R "$APP" "$DIST/OnboardStudio.app"
 
 if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
   # Xcode signs Sparkle.framework itself but not the helpers nested inside it, which ship with
   # Sparkle's own signature. Notarization requires every binary to carry our Developer ID with a
   # secure timestamp, so re-sign inside-out, then the framework, then the app.
-  FW="$DIST/OverlayGen.app/Contents/Frameworks/Sparkle.framework"
+  FW="$DIST/OnboardStudio.app/Contents/Frameworks/Sparkle.framework"
   SIGN=(codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY")
   for xpc in "$FW"/Versions/B/XPCServices/*.xpc; do
     [[ -e "$xpc" ]] && "${SIGN[@]}" --preserve-metadata=entitlements "$xpc"
@@ -40,7 +40,7 @@ if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
   [[ -e "$FW/Versions/B/Autoupdate" ]] && "${SIGN[@]}" "$FW/Versions/B/Autoupdate"
   [[ -e "$FW/Versions/B/Updater.app" ]] && "${SIGN[@]}" "$FW/Versions/B/Updater.app"
   "${SIGN[@]}" "$FW"
-  "${SIGN[@]}" --entitlements App/OverlayGen.entitlements "$DIST/OverlayGen.app"
+  "${SIGN[@]}" --entitlements App/OnboardStudio.entitlements "$DIST/OnboardStudio.app"
 fi
-codesign --verify --deep --strict --verbose=2 "$DIST/OverlayGen.app"
-echo "Built $DIST/OverlayGen.app ($VERSION build $BUILD_NUMBER)"
+codesign --verify --deep --strict --verbose=2 "$DIST/OnboardStudio.app"
+echo "Built $DIST/OnboardStudio.app ($VERSION build $BUILD_NUMBER)"

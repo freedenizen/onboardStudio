@@ -54,7 +54,7 @@ jobs:
           NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
         run: |
           echo "$NOTARY_KEY_P8" > $RUNNER_TEMP/AuthKey.p8
-          NOTARY_KEY_PATH=$RUNNER_TEMP/AuthKey.p8 Scripts/notarize.sh dist/OverlayGen.app
+          NOTARY_KEY_PATH=$RUNNER_TEMP/AuthKey.p8 Scripts/notarize.sh dist/OnboardStudio.app
       - name: Make DMG
         run: Scripts/make-dmg.sh
       - name: Notarize DMG
@@ -65,7 +65,7 @@ jobs:
           NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
         run: |
           echo "$NOTARY_KEY_P8" > $RUNNER_TEMP/AuthKey.p8
-          NOTARY_KEY_PATH=$RUNNER_TEMP/AuthKey.p8 Scripts/notarize.sh dist/OverlayGen-*.dmg
+          NOTARY_KEY_PATH=$RUNNER_TEMP/AuthKey.p8 Scripts/notarize.sh dist/OnboardStudio-*.dmg
       - name: Keep the DMG for inspection when notarization fails
         if: failure()
         uses: actions/upload-artifact@v7
@@ -79,12 +79,12 @@ jobs:
         run: Scripts/make-appcast.sh
       - name: CLI tarball
         run: |
-          swift build -c release --product overlaygen
-          tar -C .build/release -czf dist/overlaygen-cli-${{ github.ref_name }}-macos.tar.gz overlaygen
+          swift build -c release --product onboard
+          tar -C .build/release -czf dist/onboard-cli-${{ github.ref_name }}-macos.tar.gz onboard
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           PRERELEASE=""; [[ "$GITHUB_REF_NAME" == *-* ]] && PRERELEASE="--prerelease"
           gh release create "${{ github.ref_name }}" $PRERELEASE --generate-notes \
-            dist/OverlayGen-*.dmg dist/appcast.xml dist/overlaygen-cli-*.tar.gz
+            dist/OnboardStudio-*.dmg dist/appcast.xml dist/onboard-cli-*.tar.gz

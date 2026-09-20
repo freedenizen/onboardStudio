@@ -6,7 +6,7 @@ let strict: [SwiftSetting] = [
 ]
 
 let package = Package(
-    name: "OverlayGen",
+    name: "OnboardStudio",
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "ProjectModel", targets: ["ProjectModel"]),
@@ -17,8 +17,8 @@ let package = Package(
         .library(name: "MediaKit", targets: ["MediaKit"]),
         .library(name: "Scripting", targets: ["Scripting"]),
         .library(name: "YouTubeKit", targets: ["YouTubeKit"]),
-        .executable(name: "overlaygen", targets: ["OverlayGenCLI"]),
-        .executable(name: "OverlayGenApp", targets: ["OverlayGenApp"]),
+        .executable(name: "onboard", targets: ["OnboardStudioCLI"]),
+        .executable(name: "OnboardStudioApp", targets: ["OnboardStudioApp"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2")
@@ -40,7 +40,7 @@ let package = Package(
 
         // MARK: Executables
         .executableTarget(
-            name: "OverlayGenCLI",
+            name: "OnboardStudioCLI",
             dependencies: [
                 "ProjectModel", "TelemetryKit", "Importers", "GPMFKit", "RenderKit", "MediaKit", "Scripting",
                 "YouTubeKit",
@@ -48,10 +48,10 @@ let package = Package(
             ],
             swiftSettings: strict
         ),
-        // The SwiftUI app. Also compiled by the XcodeGen project (project.yml) as OverlayGen.app,
+        // The SwiftUI app. Also compiled by the XcodeGen project (project.yml) as OnboardStudio.app,
         // where Sparkle is added; here it builds as a plain executable for `swift run`.
         .executableTarget(
-            name: "OverlayGenApp",
+            name: "OnboardStudioApp",
             dependencies: [
                 "ProjectModel", "TelemetryKit", "Importers", "GPMFKit", "RenderKit", "MediaKit", "Scripting",
                 "YouTubeKit",
