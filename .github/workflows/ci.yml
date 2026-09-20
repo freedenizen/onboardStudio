@@ -74,8 +74,42 @@ jobs:
           swift run onboard bench --frames 90 --json | tee bench.json
           { echo '### Bench (fixture slice, debug build)'; echo '```'; cat bench.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
-  build-app:
-    name: Build app
+  changes:
+    name: Detect app changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Does this change touch the app?
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Anything not a pull request (i.e. a push to main) always runs the suite.
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only "$BASE" "$HEAD" |
+            grep -qE '^(Sources/OnboardStudioApp/|UITests/|project\.yml$)'; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "app=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Compiles the app and the UI test bundle once. The shards below reuse the products, so the
+  # ~2 minute compile is paid once rather than once per shard. This also replaces the old
+  # "Build app" job, which compiled a strict subset of the same thing.
+  ui-tests-build:
+    name: UI tests (build)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
@@ -84,38 +118,101 @@ jobs:
         run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
       - name: Generate Xcode project
         run: brew install xcodegen && xcodegen generate --quiet
-      - name: Build app (unsigned)
+      - name: Build for testing
         run: |
           set -o pipefail
-          xcodebuild -project OnboardStudio.xcodeproj -scheme OnboardStudio -configuration Debug \
-            -destination 'generic/platform=macOS' CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual \
-            -derivedDataPath build/DerivedData build | tail -20
+          xcodebuild build-for-testing -project OnboardStudio.xcodeproj -scheme OnboardStudio \
+            -configuration Debug -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Manual | tail -20
+      # Tarred, not uploaded as a directory: the upload does not preserve the executable bit, so
+      # the app and the test runner come back unlaunchable ("Launchd job spawn failed").
+      - name: Pack the built products
+        run: |
+          tar -C build/DerivedData/Build -cf products.tar Products
+          # The generated project travels too, so a shard needs neither brew nor xcodegen —
+          # which was costing each of them over a minute before the tests even started.
+          tar -rf products.tar OnboardStudio.xcodeproj
+      - name: Keep the built products for the shards
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-tests-products
+          path: products.tar
+          retention-days: 1
+          if-no-files-found: error
 
-  ui-tests:
-    name: UI tests
+  # Sharded across runners rather than parallelised on one: parallel macOS UI test workers run
+  # several copies of the app on a single screen, fighting over the key window and the menu bar.
+  # Shards are balanced by measured per-class time (see #100).
+  ui-tests-shard:
+    name: UI tests (${{ matrix.name }})
+    needs: [changes, ui-tests-build]
+    if: needs.changes.outputs.app == 'true'
     runs-on: macos-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: shard 1
+            classes: ObjectEditingUITests TrimUITests MarkerUITests
+          - name: shard 2
+            classes: JourneyUITests TemplateUITests LauncherUITests SplitUITests
+          - name: shard 3
+            classes: FirstLaunchUITests SyncUITests MultiCameraUITests LapUITests ProjectUITests TimelineUITests
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
         run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
-      - name: Generate Xcode project
-        run: brew install xcodegen && xcodegen generate --quiet
+      - uses: actions/download-artifact@v7
+        with:
+          name: ui-tests-products
+      - name: Unpack the built products
+        run: |
+          mkdir -p build/DerivedData/Build
+          tar -xf products.tar OnboardStudio.xcodeproj
+          tar -C build/DerivedData/Build -xf products.tar Products
       - name: Run XCUITests
+        env:
+          CLASSES: ${{ matrix.classes }}
         run: |
           set -o pipefail
           export ONBOARD_TEST_EXPORT_DIR="$RUNNER_TEMP/exports"
           mkdir -p "$ONBOARD_TEST_EXPORT_DIR"
-          xcodebuild test -project OnboardStudio.xcodeproj -scheme OnboardStudio -destination 'platform=macOS' \
-            -only-testing:OnboardStudioUITests -derivedDataPath build/DerivedData \
-            -resultBundlePath build/UITests.xcresult CODE_SIGN_IDENTITY="-" \
+          only=()
+          for class in $CLASSES; do only+=("-only-testing:OnboardStudioUITests/$class"); done
+          xcodebuild test-without-building -project OnboardStudio.xcodeproj -scheme OnboardStudio \
+            -destination 'platform=macOS' -derivedDataPath build/DerivedData \
+            "${only[@]}" -resultBundlePath build/UITests.xcresult CODE_SIGN_IDENTITY="-" \
             | grep -E "error:|Test Case|Executed|TEST "
       - name: Keep the result bundle
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: ui-tests-xcresult
+          name: ui-tests-xcresult-${{ strategy.job-index }}
           path: build/UITests.xcresult
+
+  # `main` requires a check named exactly "UI tests", so this reports for the shards above. It
+  # must run even when they are skipped: a required check that never reports blocks the merge
+  # forever, which is why the path filter skips the work and not this job.
+  ui-tests:
+    name: UI tests
+    needs: [changes, ui-tests-shard]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Report the shard results
+        env:
+          APP: ${{ needs.changes.outputs.app }}
+          RESULT: ${{ needs.ui-tests-shard.result }}
+        run: |
+          if [ "$APP" != "true" ]; then
+            echo "No change to Sources/OnboardStudioApp, UITests or project.yml — suite not needed."
+            exit 0
+          fi
+          echo "Shards: $RESULT"
+          [ "$RESULT" = "success" ]
 
   verify-signatures:
     name: Verify commit signatures
