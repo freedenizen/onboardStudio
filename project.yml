@@ -26,6 +26,8 @@ targets:
     sources:
       - path: Sources/OverlayGenApp
       - path: App/Assets.xcassets
+      - path: App/DocumentIcon.icns
+        buildPhase: resources
       - path: App/Sample.overlayproj
         type: folder
         buildPhase: resources
@@ -46,6 +48,7 @@ targets:
         CFBundleDocumentTypes:
           - CFBundleTypeName: OverlayGen Project
             CFBundleTypeRole: Editor
+            CFBundleTypeIconFile: DocumentIcon
             LSHandlerRank: Owner
             LSTypeIsPackage: true
             LSItemContentTypes: [com.freedenizen.overlaygen.project]

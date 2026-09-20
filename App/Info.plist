@@ -9,6 +9,8 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeIconFile</key>
+			<string>DocumentIcon</string>
 			<key>CFBundleTypeName</key>
 			<string>OverlayGen Project</string>
 			<key>CFBundleTypeRole</key>
