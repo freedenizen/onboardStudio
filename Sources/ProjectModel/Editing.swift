@@ -29,6 +29,27 @@ public enum ObjectHandle: Sendable, Equatable {
 public enum ObjectGeometry {
     public static let minimumSize = 0.02
 
+    /// Objects are allowed to hang off the edges of the frame, and some are meant to: the Glass
+    /// Cockpit steering wheel is placed taller than the frame with only its upper arc showing.
+    /// A drag therefore only has to leave enough of the object on screen to grab again, rather
+    /// than pulling the whole rectangle back inside.
+    public static let minimumVisible = 0.06
+
+    /// An object may be up to four frames across, so a wheel or a dial can overflow the picture.
+    public static let maximumSize = 4.0
+
+    /// Limits a frame to somewhere it can still be grabbed, allowing it off the edges.
+    public static func clamped(_ rect: UnitRect) -> UnitRect {
+        var rect = rect
+        rect.width = min(max(rect.width, minimumSize), maximumSize)
+        rect.height = min(max(rect.height, minimumSize), maximumSize)
+        let grabX = min(minimumVisible, rect.width)
+        let grabY = min(minimumVisible, rect.height)
+        rect.x = min(max(rect.x, grabX - rect.width), 1 - grabX)
+        rect.y = min(max(rect.y, grabY - rect.height), 1 - grabY)
+        return rect
+    }
+
     /// Hit-tests `point` against `frame`; `handleSize` is the handle radius in unit space.
     public static func handle(at point: CGPoint, in frame: UnitRect, handleSize: Double) -> ObjectHandle? {
         let r = CGRect(x: frame.x, y: frame.y, width: frame.width, height: frame.height)
@@ -45,7 +66,8 @@ public enum ObjectGeometry {
         return r.insetBy(dx: -handleSize / 2, dy: -handleSize / 2).contains(point) ? .body : nil
     }
 
-    /// Applies a drag of `delta` (unit space) from `original` via `handle`, clamped to the frame.
+    /// Applies a drag of `delta` (unit space) from `original` via `handle`. The result may hang
+    /// off the edges of the frame; see `clamped(_:)`.
     public static func drag(_ original: UnitRect, handle: ObjectHandle, delta: CGSize, keepAspect: Bool = false)
         -> UnitRect
     {
@@ -82,11 +104,7 @@ public enum ObjectGeometry {
                 }
             }
         }
-        rect.width = min(rect.width, 1)
-        rect.height = min(rect.height, 1)
-        rect.x = min(max(rect.x, 0), 1 - rect.width)
-        rect.y = min(max(rect.y, 0), 1 - rect.height)
-        return rect
+        return clamped(rect)
     }
 }
 
