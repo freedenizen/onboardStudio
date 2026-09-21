@@ -242,6 +242,52 @@ struct TrackExtentTests {
         #expect(TrackExtent.settled(uniform, times: [0, 1, 2], shorterThan: 4) == uniform)
     }
 
+    @Test("Several brief stretches in a row settle together rather than inverting")
+    func settlesConsecutiveShortRuns() {
+        // Found in review on #126. Flipping each short run on its own reads correctly for one blip
+        // between two long stretches and **inverts** the middle of three or more in a row — which
+        // is the noisy case this exists for, where a pit road runs inside the search radius of the
+        // track. It left a two-second hole in the outline instead of closing one, and every `false`
+        // run is a gap in the drawn circuit.
+        let times = (0..<26).map(Double.init)
+        var keep = [Bool](repeating: true, count: 26)
+        for index in 10..<12 { keep[index] = false }
+        for index in 14..<16 { keep[index] = false }
+        let settled = TrackExtent.settled(keep, times: times, shorterThan: 4)
+        #expect(settled.allSatisfy { $0 })
+
+        // The same the other way up: brief interruptions to a stretch that is off the track do not
+        // manufacture scraps of circuit in the middle of the paddock.
+        let inverted = keep.map { !$0 }
+        #expect(TrackExtent.settled(inverted, times: times, shorterThan: 4).allSatisfy { !$0 })
+
+        // Whatever the arrangement, nothing shorter than the minimum is left standing — which is
+        // the property the whole thing is for, and the one the old version did not have.
+        for pattern in [[10, 12, 14, 16, 18], [2, 4, 20, 22, 24], [1, 3, 5, 7, 9]] {
+            var noisy = [Bool](repeating: true, count: 26)
+            for (position, index) in pattern.enumerated() where position.isMultiple(of: 2) {
+                for offset in index..<min(index + 2, 26) { noisy[offset] = false }
+            }
+            let result = TrackExtent.settled(noisy, times: times, shorterThan: 4)
+            for run in TrackExtent.runs(of: result) where run.lowerBound > 0 {
+                #expect(times[min(run.upperBound, 25)] - times[run.lowerBound] >= 4, "\(pattern)")
+            }
+        }
+    }
+
+    @Test("A brief stretch at the very front takes what the trace settles into")
+    func settlesALeadingShortRun() {
+        let times = (0..<12).map(Double.init)
+        var keep = [Bool](repeating: false, count: 12)
+        for index in 0..<2 { keep[index] = true }
+        // Two seconds of "circuit" before ten of "not" is not a circuit; there is simply nothing
+        // before it to join it to, so it joins what follows.
+        #expect(TrackExtent.settled(keep, times: times, shorterThan: 4).allSatisfy { !$0 })
+        // With no long run anywhere there is nothing to settle into, and it is left as it is.
+        let allBrief = [true, false, true, false]
+        #expect(TrackExtent.settled(allBrief, times: [0, 1, 2, 3], shorterThan: 4) == allBrief)
+    }
+
     @Test("The answer is worked out once per session")
     func remembersItsAnswer() {
         let session = PitLaneSession.session(laps: 6)

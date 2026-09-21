@@ -165,21 +165,49 @@ public enum TrackExtent {
         return kept
     }
 
-    /// Flips any stretch shorter than `seconds` to agree with what is on either side of it.
+    /// Gives any stretch shorter than `seconds` the answer of the stretch it follows.
     ///
-    /// Runs alternate, so both of a short run's neighbours already say the same thing: flipping it
-    /// joins all three. Decided against the runs as they were found, so one brief blip cannot
-    /// cascade into swallowing the stretch beyond it.
+    /// **Absorbed into what came before, not flipped.** Flipping each short run on its own reads
+    /// correctly for one blip between two long stretches, and inverts the middle of three or more
+    /// short runs in a row — which is the noisy case this exists for, where a pit road runs within
+    /// the search radius of the track. There it leaves a hole in the outline instead of closing
+    /// one, and a hole in the outline is a circuit drawn broken.
+    ///
+    /// A short run at the very front has nothing before it, so it takes what the trace settles
+    /// into instead. A trace with no long run anywhere is left exactly as it is.
     static func settled(_ keep: [Bool], times: [Double], shorterThan seconds: Double) -> [Bool] {
         guard keep.count > 1, keep.count <= times.count else { return keep }
         var result = keep
+        // The last stretch long enough to stand on its own, held as where it starts rather than
+        // as what it said, so "nothing yet" needs no second value for a boolean.
+        var inForce: Int?
+        var pendingStart: Int?
+        for run in runs(of: keep) {
+            let last = min(run.upperBound, keep.count - 1)
+            guard times[last] - times[run.lowerBound] >= seconds else {
+                if let current = inForce {
+                    for position in run { result[position] = keep[current] }
+                } else if pendingStart == nil {
+                    pendingStart = run.lowerBound
+                }
+                continue
+            }
+            if let start = pendingStart {
+                for position in start..<run.lowerBound { result[position] = keep[run.lowerBound] }
+                pendingStart = nil
+            }
+            inForce = run.lowerBound
+        }
+        return result
+    }
+
+    /// The stretches of equal values in `keep`, as ranges into it.
+    static func runs(of keep: [Bool]) -> [Range<Int>] {
+        guard !keep.isEmpty else { return [] }
+        var result: [Range<Int>] = []
         var start = 0
         for index in 1...keep.count where index == keep.count || keep[index] != keep[start] {
-            let last = min(index, keep.count - 1)
-            // A run at either end is still brief if it is brief; there is just less to join it to.
-            if times[last] - times[start] < seconds, !(start == 0 && index == keep.count) {
-                for position in start..<index { result[position] = !keep[start] }
-            }
+            result.append(start..<index)
             start = index
         }
         return result
