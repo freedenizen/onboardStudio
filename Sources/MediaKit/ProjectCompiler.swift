@@ -245,6 +245,7 @@ public enum ProjectCompiler {
                     halfWidthMeters: $0.halfWidthMeters, headingToleranceDegrees: $0.headingToleranceDegrees)
             },
             ignoreFirstCrossings: settings.lapLine?.ignoreFirstCrossings ?? 0,
+            sectorMode: sectorMode(settings.sectors),
             trimStart: settings.trim.start, trimEnd: settings.trim.end)
         if let importerID = settings.importerID {
             guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {
@@ -314,5 +315,22 @@ extension ProjectCompiler.LoadedProject {
         let words = (channel.role.identifier + " " + channel.name).lowercased()
             .split { !$0.isLetter && !$0.isNumber }.map(String.init)
         return words.contains { $0.hasPrefix("steer") || $0 == "swa" }
+    }
+}
+
+extension ProjectCompiler {
+    /// The project's sector settings as TelemetryKit understands them.
+    static func sectorMode(_ spec: SectorSpec) -> SectorMode {
+        switch spec.mode {
+        case .equalDistance: .equalDistance(count: spec.count)
+        case .cornerAware: .cornerAware(count: spec.count)
+        case .manual:
+            .manual(
+                lines: spec.lines.map {
+                    FinishLine(
+                        latitude: $0.latitude, longitude: $0.longitude, headingDegrees: $0.headingDegrees,
+                        halfWidthMeters: $0.halfWidthMeters, headingToleranceDegrees: $0.headingToleranceDegrees)
+                })
+        }
     }
 }

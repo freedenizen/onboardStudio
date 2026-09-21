@@ -44,6 +44,7 @@ Data input settings (all optional):
 | `smoothingSeconds` | moving-average window (0 = off) |
 | `calculatedFields` | `[{ "name", "expression", "unit" }]` (see `docs/formats.md`) |
 | `lapLine` | `{ "latitude", "longitude", "headingDegrees" (or null), "halfWidthMeters", "headingToleranceDegrees", "ignoreFirstCrossings" }`; when present, laps come from line crossings instead of the file |
+| `sectors` | `{ "mode": "equalDistance" / "cornerAware" / "manual", "count": 3, "lines": [ … ] }`: how each lap is split for sector times. `count` applies to the two automatic modes; `lines` holds `lapLine`-shaped gates for `manual`. Absent in files saved before sectors existed, and read as three equal sectors — safe as a decode default only because nothing in such a project draws a sector time, so measuring them cannot change how it renders |
 
 Video input settings (all optional; older files decode as neutral):
 
