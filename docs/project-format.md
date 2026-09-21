@@ -8,6 +8,78 @@ files are referenced by path; relative paths resolve against the package directo
 (sorted keys, pretty printed). `schemaVersion` is checked on load; older versions are migrated in
 `Project.migrateIfNeeded()`, newer ones are rejected.
 
+## Opening a project never changes how it renders
+
+A project saved by an earlier build keeps the values it had. New defaults, new inheritance and new
+automatic behaviour apply only to projects created after the change. A driver who opens last
+season's project sees the video they exported, not a reinterpretation of it.
+
+There are two ways to hold that line, and the difference between them is worth understanding
+before reaching for either.
+
+### A decode default, for a field being introduced
+
+A non-optional field whose `init(from:)` default differs from its memberwise default does
+distinguish old files from new ones, and the codebase relies on it. `TimerParams.deltaReference`
+is constructed as `.sessionBest` but decodes as `decodeIfPresent(…) ?? .bestLap`; because the
+field is non-optional and the encoder is synthesised, **every build that has the field writes the
+key**, so an absent key can only have come from a build that did not. The shipped test
+`deltaSettingsKeepOldFilesUnchanged` asserts exactly that, and the `timer` row below records the
+resulting behaviour.
+
+What it carries is **one bit**: this file predates the field. That bit never becomes ambiguous —
+but it is also all there is, and the fallback is a single slot holding one prior value. Three
+things follow.
+
+- **A later change to the memberwise default is fine.** Files written since the field existed
+  carry the key explicitly, so they are unaffected, and the fallback goes on meaning what it
+  always meant.
+- **Changing the fallback itself is not.** It is the only record of how the app behaved before
+  the field existed; rewriting it retroactively changes what every pre-field project resolves to,
+  which is the thing this section exists to prevent.
+- **It cannot tell two post-field builds apart.** They both wrote the key. Anything that needs to
+  treat, say, a 0.20 file differently from a 0.22 one has nowhere to put that, and a nested type's
+  `init(from:)` cannot see the document's `schemaVersion` either.
+
+The field must also be genuinely always-written. An optional property, or a custom `encode(to:)`
+that omits defaults, makes absence mean two things at once and the mechanism stops working.
+
+Introducing a field is therefore the safe case, and the common one: absence is unambiguous, and
+if nothing in an older project drew the value, the default cannot change how that project renders
+at all.
+
+### A migration, for anything else
+
+Anything that changes an existing default, or that a nested decoder cannot decide alone, belongs
+in the migration:
+
+1. Add the new field with the default a *new* project should get — `automatic`, `nil`, inherit.
+2. Step `Project.currentSchemaVersion` by one.
+3. In `migrateIfNeeded()`, for documents at the old version, write the old behaviour in explicitly:
+   set the field to the value that build used to apply, so what was implicit becomes stated.
+
+A change that alters a default ships a fixture project saved before the change, asserting it still
+resolves to the old values.
+
+### This covers `project.json` only
+
+`Project.migrateIfNeeded()` is called from one place: the static `Project.decode(_:)`. It is
+`mutating`, so it cannot run inside `init(from:)` at all — which means **decoding a `Project` any
+other way skips migration entirely**. Nothing does today; everything goes through
+`Project.decode(_:)` or `ProjectPackage`. Reaching for `JSONDecoder().decode(Project.self, …)`
+directly would quietly opt out.
+
+Templates (`.onboardtemplate`) and object styles (`.onboardstyle`) embed the same `DisplayObject`
+and params types, carry their own `formatVersion`, and have **no migration seam** — nothing
+inspects that version and rewrites old values. Applying a template replaces `displayObjects`
+wholesale, so a template saved by an earlier build can still pick up a new default when it is
+applied.
+
+That is a real gap rather than a rule, tracked as #124: today the only thing protecting templates
+and styles is the decode default above, which covers a field being introduced and nothing else. A
+change that alters a default on a type reachable from a template needs to say what happens to
+templates saved before it, and may need the seam adding first.
+
 ```json
 {
   "schemaVersion": 1,
