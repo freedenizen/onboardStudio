@@ -30,6 +30,8 @@ jobs:
         run: brew install shellcheck && shellcheck -S warning Scripts/*.sh .githooks/*
       - name: Icons
         run: Scripts/check-icons.sh
+      - name: UI test shards
+        run: Scripts/check-ui-test-shards.sh
 
   test:
     name: Test
@@ -204,9 +206,16 @@ jobs:
     steps:
       - name: Report the shard results
         env:
+          DETECTED: ${{ needs.changes.result }}
           APP: ${{ needs.changes.outputs.app }}
           RESULT: ${{ needs.ui-tests-shard.result }}
         run: |
+          # A failed detector produces no outputs, so APP is empty — which must not be read as
+          # "the app was untouched". That would skip every shard and still report green.
+          if [ "$DETECTED" != "success" ]; then
+            echo "::error::Detect app changes did not succeed ($DETECTED); the shards were skipped without knowing whether they were needed. Re-run the workflow."
+            exit 1
+          fi
           if [ "$APP" != "true" ]; then
             echo "No change to Sources/OnboardStudioApp, UITests or project.yml — suite not needed."
             exit 0
