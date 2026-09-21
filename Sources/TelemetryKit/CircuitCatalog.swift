@@ -118,6 +118,19 @@ public enum CircuitCatalog {
             nameAgrees: names(trackName, match: chosen.circuit.name))
     }
 
+    /// How `session` sits against a circuit that has already been chosen — by the driver, or
+    /// recorded in the project — rather than against the nearest one.
+    ///
+    /// There is no runner-up here: nothing was ranked. A decision already made is not a guess,
+    /// so it reports as confident.
+    public static func match(_ circuit: Circuit, to session: TelemetrySession) -> Match {
+        let centre = centroid(of: session)
+        let km = centre.map { distanceKm($0.latitude, $0.longitude, circuit.latitude, circuit.longitude) } ?? 0
+        return Match(
+            circuit: circuit, distanceKm: km, runnerUpKm: nil,
+            nameAgrees: names(session.info.trackName, match: circuit.name))
+    }
+
     /// Circuits whose name contains `query`, for a correction list. Empty query returns nothing
     /// rather than all 1,290.
     public static func search(_ query: String, limit: Int = 25) -> [Circuit] {

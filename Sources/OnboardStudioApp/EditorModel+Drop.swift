@@ -154,6 +154,7 @@ extension EditorModel {
         selectedInputID = input.id
         selectedObjectID = nil
         pendingAutoSync = input.id
+        pendingTrackLookup = input.id
     }
 
     func addImage(at url: URL) {

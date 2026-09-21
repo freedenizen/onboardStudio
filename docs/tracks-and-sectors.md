@@ -66,6 +66,28 @@ The file's track name only ever *confirms* a coordinate — except that a named 
 radius beats a nearer unnamed one, which is how a venue listed once per layout resolves to the
 layout the driver says they drove.
 
+### Remembering a circuit
+
+`TrackDefinition` (ProjectModel) is what was worked out about a venue once: its start/finish line,
+its sector settings, a name and a coordinate. `TrackLibrary` keeps them in
+`~/Library/Application Support/OnboardStudio/Tracks`, **one `.onboardtrack` JSON file each** —
+deliberately separate files rather than a database, because a definition is meant to be handed to
+another driver and a file you can attach to a message is the whole point.
+
+A definition is filed under its Wikidata id where there is one, and under a slug of its name where
+there is not (a club circuit, a car park, an airfield). The id is preferred because circuits get
+renamed by sponsors — Laguna Seca twice — and a definition should outlive that.
+
+**When it is applied, and when it is emphatically not.** `EditorModel.applyPendingTrackDefinition`
+runs after a compile, and only for a data file the user has just *added*: it names the circuit and,
+if that circuit has a saved definition, fills in the start/finish line and sectors. Opening a saved
+project does none of this and never will. A definition saved last week must not change how a
+project made last month renders — a project-wide rule, and the reason
+`DataInputSettings.circuitID` is left as it was found rather than recomputed on open.
+
+The inspector shows the match with its distance and its runner-up, says so when the match is not
+confident, and offers *Not This Circuit* and a search box. Nothing is insisted on.
+
 `onboard probe` prints the match:
 
 ```
