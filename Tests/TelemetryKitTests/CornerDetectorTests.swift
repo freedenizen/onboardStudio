@@ -121,6 +121,56 @@ struct CornerDetectorTests {
         #expect(CornerDetector.straightMidpoints(between: [late, early]).isEmpty)
     }
 
+    /// A point-to-point stage that begins in one corner and ends in another turning the same
+    /// way: two real corners with a straight between them, and the path does not close.
+    static func hillClimb() -> TelemetrySession {
+        var east = 0.0
+        var north = 0.0
+        var heading = 0.0
+        var times: [Double] = []
+        var latitudes: [Double] = []
+        var longitudes: [Double] = []
+        var distances: [Double] = []
+        let step = 2.0
+        let speed = 20.0
+        let metresPerDegreeEast = 111_320 * cos(37.5 * .pi / 180)
+        // A right-hand bend, then a long straight, then another right-hand bend.
+        let turnPerStep = 90.0 / 30.0
+        let plan =
+            Array(repeating: turnPerStep, count: 30) + Array(repeating: 0.0, count: 150)
+            + Array(repeating: turnPerStep, count: 30)
+        for (index, turn) in plan.enumerated() {
+            times.append(Double(index) * step / speed)
+            latitudes.append(37.5 + north / 110_540)
+            longitudes.append(-122.0 + east / metresPerDegreeEast)
+            distances.append(Double(index) * step)
+            heading += turn
+            east += sin(heading * .pi / 180) * step
+            north += cos(heading * .pi / 180) * step
+        }
+        return TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [
+                Channel(role: .latitude, name: "lat", unit: .degrees, times: times, values: latitudes),
+                Channel(role: .longitude, name: "lon", unit: .degrees, times: times, values: longitudes),
+                Channel(role: .distance, name: "d", unit: .meters, times: times, values: distances),
+            ],
+            laps: [Lap(number: 1, start: times[0], end: times[times.count - 1], isComplete: true)])
+    }
+
+    @Test func anOpenPathNeverJoinsItsFirstAndLastCorners() throws {
+        // Found in review: the run-joining was unconditional, so a stage beginning and ending in
+        // same-way corners fused them into one impossible corner spanning the whole run.
+        let stage = Self.hillClimb()
+        let lap = try #require(stage.laps.first)
+        let corners = CornerDetector.corners(of: lap, in: stage)
+        #expect(corners.count == 2)
+        #expect(corners.allSatisfy { !$0.wrapsStartFinish })
+        #expect(corners.allSatisfy { $0.turnsRight })
+        // And the straight between them survives, which a fused corner would have swallowed.
+        #expect(CornerDetector.straightMidpoints(between: corners).count == 1)
+    }
+
     @Test func aStraightLineHasNoCorners() {
         let times = Array(stride(from: 0.0, through: 60.0, by: 0.1))
         let session = TelemetrySession(

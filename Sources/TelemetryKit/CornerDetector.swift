@@ -250,9 +250,13 @@ public enum CornerDetector {
 
         // A lap is a loop, so a corner sitting on the start/finish line arrives as two runs —
         // one at each end of the array — and neither half turns far enough to count on its own.
-        // Joining them is what makes the corner on the line a corner. (A circuit puts its line on
-        // a straight, so this matters most to an autocross or a point-to-point.)
-        if merged.count > 1, let first = merged.first, let last = merged.last, first.lower == 0,
+        // Joining them is what makes the corner on the line a corner.
+        //
+        // Only when the lap actually closes. A point-to-point stage that begins in a corner and
+        // ends in another the same way has two runs touching the ends too, and fusing those makes
+        // one impossible corner spanning the whole stage — taking the real straight between them
+        // with it, because the fused corner's end lands before its start.
+        if path.isClosed, merged.count > 1, let first = merged.first, let last = merged.last, first.lower == 0,
             last.upper == smooth.count - 1, first.sign == last.sign
         {
             merged.removeLast()
