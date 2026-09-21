@@ -60,6 +60,10 @@ enum SyntheticTrack {
         /// Mirrors the circuit north–south, which turns the right-handers into left-handers
         /// without moving a single distance.
         mirrored: Bool = false,
+        /// Moves the start/finish line this far round the circuit, without changing the shape.
+        /// Setting it to a bend's apex puts a corner on the line, which is the case a lap-at-a-
+        /// time corner detector gets wrong unless it treats the lap as a loop.
+        startOffset: Double = 0,
         speedInSector: (_ lap: Int, _ distanceIntoLap: Double) -> Double = { _, _ in 1 }
     ) -> TelemetrySession {
         let g = Geometry(straight: straight, radius: radius)
@@ -77,7 +81,7 @@ enum SyntheticTrack {
         let metersPerDegreeEast = 111_320 * cos(origin.latitude * .pi / 180)
 
         func emit(_ into: Double, lap: Int) {
-            let point = point(at: into, geometry: g)
+            let point = point(at: into + startOffset, geometry: g)
             times.append(now)
             latitudes.append(origin.latitude + flip * point.y / 110_540)
             longitudes.append(origin.longitude + point.x / metersPerDegreeEast)

@@ -117,6 +117,41 @@ framing is already right.
 
 **The outline does not need fixing.** #67 is display options, not repair.
 
+### What was built
+
+Four options on `TrackMapParams`, each independently switchable and **all off by default**, so a
+project saved before them draws the outline it always drew:
+
+- **`colorBySector`** paints each sector of the trace its own colour. The outline is stroked once
+  per run of same-sector points rather than once per point, and consecutive runs overlap by a
+  point so the colours meet instead of leaving a gap.
+- **`showSectorTicks`** draws a line across the track at each boundary, square to the direction of
+  travel there, numbered. There is no `S1` tick: the first sector begins at the start/finish line,
+  which is not a sector boundary. The number goes on the side of the tick facing the middle of the
+  map — the map is framed to the trace, so a label on the outside falls off the object, while the
+  middle of a circuit is the one place reliably empty.
+- **`trace = .referenceLap`** draws only the lap sectors and deltas are measured against, and
+  frames the map to that lap. It is much crisper, and **it leaves the pit lane and the paddock out
+  for free**, because the reference lap never went there — worth knowing before building anything
+  separate for #95.
+- **`showCornerNumbers`** numbers the corners from the reference lap's curvature.
+
+### The corner on the start/finish line
+
+Numbering the corners of a square found three of four. The missing one sat on the start/finish
+line, and the reason is worth recording: curvature is measured between consecutive samples *within
+a lap*, so the turn between the lap's last step and its first is not between any two samples and
+does not exist at all. Joining the two halves afterwards cannot recover a turn that was never
+measured.
+
+`CornerDetector` now closes the loop when the lap closes — the first and last points within a
+couple of samples of each other — by computing that one wrap-around curvature and by running the
+smoothing window round the ends. An open path (a point-to-point stage) is left alone. Corners come
+back sorted by apex distance, which is the order they are met after the line and the order a
+circuit numbers them.
+
+Sonoma is unaffected: still exactly 12, because a circuit puts its start/finish on a straight.
+
 ## Sectors
 
 A sector time is the difference between two distances into the lap. That is already implemented:

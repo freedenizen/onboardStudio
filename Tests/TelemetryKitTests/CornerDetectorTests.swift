@@ -42,6 +42,18 @@ struct CornerDetectorTests {
         #expect(corners.allSatisfy { !$0.turnsRight })
     }
 
+    @Test func aCornerOnTheStartFinishLineIsStillOneCorner() throws {
+        // Start the lap at the first bend's apex, so that bend is half at the end of the lap and
+        // half at the beginning. A detector that works strictly within the lap either misses it
+        // (neither half turns far enough) or reports it twice.
+        let apex = (Self.geometry.firstBend.lowerBound + Self.geometry.firstBend.upperBound) / 2
+        let shifted = SyntheticTrack.session(startOffset: apex)
+        let lap = try #require(shifted.laps.first)
+        let corners = CornerDetector.corners(of: lap, in: shifted)
+        #expect(corners.count == 2)
+        #expect(corners.allSatisfy { abs($0.headingChangeDegrees - 180) < 15 })
+    }
+
     @Test func aStraightLineHasNoCorners() {
         let times = Array(stride(from: 0.0, through: 60.0, by: 0.1))
         let session = TelemetrySession(
