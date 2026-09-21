@@ -70,15 +70,25 @@ other way skips migration entirely**. Nothing does today; everything goes throug
 directly would quietly opt out.
 
 Templates (`.onboardtemplate`) and object styles (`.onboardstyle`) embed the same `DisplayObject`
-and params types, carry their own `formatVersion`, and have **no migration seam** — nothing
-inspects that version and rewrites old values. Applying a template replaces `displayObjects`
-wholesale, so a template saved by an earlier build can still pick up a new default when it is
-applied.
+and params types and carry their own `formatVersion`. Applying a template replaces
+`displayObjects` wholesale and applying a style replaces an object's whole `kind`, so the rule
+above reaches them by a different door — and since #124 they have the same seam:
+`ProjectTemplate.migrateIfNeeded()` and `ObjectStyle.migrateIfNeeded()`, each called from that
+type's `init(data:)`, each stepping `formatVersion` one at a time.
 
-That is a real gap rather than a rule, tracked as #124: today the only thing protecting templates
-and styles is the decode default above, which covers a field being introduced and nothing else. A
-change that alters a default on a type reachable from a template needs to say what happens to
-templates saved before it, and may need the seam adding first.
+**They are better placed than `Project` in one respect:** `init(data:)` is the only way either is
+read anywhere — the template store, both file panels, the style pasteboard and
+`onboard render --template` all go through it — so there is no second door. Reaching for
+`JSONDecoder().decode(ProjectTemplate.self, …)` directly would opt out silently, and a test
+asserts the seam rather than the convention.
+
+`Tests/Fixtures/fixture.onboardtemplate` and `fixture.onboardstyle` are **frozen files**, not
+rebuilt from current code, holding deliberately non-default values on the types most likely to
+move: a track map's `trace`, a timer's `deltaReference`, a gauge's `speedUnit`, a bar's
+`fillFromZero`. `TemplateStyleMigrationTests` asserts what they resolve to.
+
+**A failure there is the signal, not the problem.** It means a default moved on a type a template
+can carry; the answer is a migration pinning the old value, never regenerating the fixture.
 
 ```json
 {

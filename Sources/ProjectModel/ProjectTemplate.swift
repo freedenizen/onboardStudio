@@ -84,11 +84,30 @@ public struct ProjectTemplate: Hashable, Codable, Sendable {
     }
 
     public init(data: Data) throws {
-        let template = try JSONDecoder().decode(ProjectTemplate.self, from: data)
-        guard template.formatVersion <= Self.formatVersion else {
-            throw ProjectTemplateError.newerFormat(template.formatVersion)
-        }
+        var template = try JSONDecoder().decode(ProjectTemplate.self, from: data)
+        try template.migrateIfNeeded()
         self = template
+    }
+
+    /// Brings a template saved by an earlier build up to the current format, and refuses a newer one.
+    ///
+    /// The same seam `Project.migrateIfNeeded()` is, and for the same reason: applying a template
+    /// replaces `displayObjects` wholesale, so a template saved last season can pick up a default
+    /// changed since and lay out a project differently from the day it was saved.
+    ///
+    /// **Every way in goes through `init(data:)`** — the template store, the import panel and
+    /// `onboard render --template` — so unlike `Project` there is no second door that skips this.
+    /// Keep it that way: a `JSONDecoder().decode(ProjectTemplate.self, …)` anywhere else would opt
+    /// out silently. The built-in templates are built in code and never decoded, so they always
+    /// get current defaults, which is what a template shipped with the build should get.
+    public mutating func migrateIfNeeded() throws {
+        guard formatVersion != Self.formatVersion else { return }
+        guard formatVersion < Self.formatVersion else {
+            throw ProjectTemplateError.newerFormat(formatVersion)
+        }
+        // Future migrations go here, stepping formatVersion up one at a time. A change that alters
+        // a default on any type reachable from `displayObjects` belongs here, pinning the old value.
+        formatVersion = Self.formatVersion
     }
 
     /// Replaces the project's objects, timeline, output settings and export settings with the

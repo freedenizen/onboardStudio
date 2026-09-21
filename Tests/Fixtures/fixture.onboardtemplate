@@ -1,0 +1,249 @@
+{
+  "displayObjects" : [
+    {
+      "frame" : {
+        "height" : 1,
+        "width" : 1,
+        "x" : 0,
+        "y" : 0
+      },
+      "id" : "67B52BDA-D9CA-4510-B12F-56310F28A169",
+      "isVisible" : true,
+      "kind" : {
+        "video" : {
+          "_0" : {
+            "channelMask" : {
+              "blue" : true,
+              "green" : true,
+              "red" : true
+            },
+            "mirror" : {
+              "horizontal" : false,
+              "vertical" : false
+            }
+          }
+        }
+      },
+      "label" : "Camera",
+      "opacity" : 1
+    },
+    {
+      "frame" : {
+        "height" : 0.3,
+        "width" : 0.24,
+        "x" : 0.72,
+        "y" : 0.05
+      },
+      "id" : "0558921B-54DF-4C47-984C-9C11C3F79B59",
+      "isVisible" : true,
+      "kind" : {
+        "trackMap" : {
+          "_0" : {
+            "background" : "none",
+            "backgroundColor" : "#00000000",
+            "colorBySector" : true,
+            "dotColor" : "#FF9E1A",
+            "dotRadius" : 7,
+            "labelColor" : "#FFFFFF",
+            "labelScale" : 0.09,
+            "lineColor" : "#FFFFFF",
+            "lineWidth" : 3,
+            "rotation" : 37,
+            "secondDotColor" : "#4099FF",
+            "sectorColors" : [
+              "#59C7FF",
+              "#FFD633",
+              "#F273BF"
+            ],
+            "showCornerNumbers" : false,
+            "showSectorTicks" : false,
+            "trace" : "referenceLap"
+          }
+        }
+      },
+      "label" : "Map",
+      "opacity" : 1
+    },
+    {
+      "frame" : {
+        "height" : 0.08,
+        "width" : 0.3,
+        "x" : 0.35,
+        "y" : 0.04
+      },
+      "id" : "FC9A2C2C-F004-45B7-B137-B6FD26180A60",
+      "isVisible" : true,
+      "kind" : {
+        "timer" : {
+          "_0" : {
+            "aheadColor" : "#40D959",
+            "backgroundColor" : "#0000008C",
+            "behindColor" : "#E62626",
+            "decimals" : 3,
+            "deltaReference" : "previousLap",
+            "mode" : "deltaToBest",
+            "showLapNumber" : true,
+            "textColor" : "#FFFFFF"
+          }
+        }
+      },
+      "label" : "Delta",
+      "opacity" : 1
+    },
+    {
+      "frame" : {
+        "height" : 0.36,
+        "width" : 0.22,
+        "x" : 0.04,
+        "y" : 0.6
+      },
+      "id" : "082A3E4B-08E3-45FF-ACF7-5840B655A781",
+      "isVisible" : true,
+      "kind" : {
+        "speedometer" : {
+          "_0" : {
+            "arcTrackColor" : "#FFFFFF26",
+            "arcWidth" : 0.14,
+            "channel" : "speed",
+            "counterClockwise" : false,
+            "decimals" : 0,
+            "faceColor" : "#14141ABF",
+            "majorTick" : 20,
+            "maxValue" : 180,
+            "minValue" : 0,
+            "minorTick" : 10,
+            "needle" : {
+              "hubRadius" : 0.08,
+              "length" : 0.86,
+              "smoothingSeconds" : 0,
+              "tailLength" : 0.15,
+              "tapered" : true,
+              "width" : 0.06
+            },
+            "needleColor" : "#FF9E1A",
+            "rotation" : 0,
+            "secondChannel" : "",
+            "secondNeedleColor" : "#FFFFFF",
+            "showFace" : true,
+            "showValue" : true,
+            "speedUnit" : "mph",
+            "style" : "needle",
+            "sweep" : 270,
+            "textColor" : "#FFFFFF",
+            "ticks" : {
+              "declutter" : true,
+              "labelDecimals" : 0,
+              "labelRadius" : 0.58,
+              "labelScale" : 0.13,
+              "majorLength" : 0.16,
+              "minorLength" : 0.08,
+              "outerRadius" : 0.88,
+              "showLabels" : true,
+              "showMajor" : true,
+              "showMinor" : true
+            },
+            "title" : "SPEED",
+            "unitLabel" : "",
+            "valueDivisor" : 1,
+            "zoneTargets" : {
+              "face" : true,
+              "gradient" : false,
+              "marks" : false,
+              "needle" : false
+            },
+            "zones" : [
+
+            ]
+          }
+        }
+      },
+      "label" : "Speed",
+      "opacity" : 1
+    },
+    {
+      "frame" : {
+        "height" : 0.05,
+        "width" : 0.3,
+        "x" : 0.04,
+        "y" : 0.5
+      },
+      "id" : "FEEDE3B5-FE38-4BBB-B0DA-1617058ED84B",
+      "isVisible" : true,
+      "kind" : {
+        "bar" : {
+          "_0" : {
+            "channel" : "throttle",
+            "cornerRadius" : 0.25,
+            "decimals" : 0,
+            "fillColor" : "#FF9E1A",
+            "fillFromZero" : true,
+            "label" : "THR",
+            "maxValue" : 100,
+            "minValue" : 0,
+            "orientation" : "horizontal",
+            "segments" : 20,
+            "showValue" : true,
+            "speedUnit" : "mph",
+            "textColor" : "#FFFFFF",
+            "trackColor" : "#14141ABF",
+            "unitLabel" : "",
+            "zoneColorsFill" : true,
+            "zones" : [
+
+            ]
+          }
+        }
+      },
+      "label" : "Throttle",
+      "opacity" : 1
+    }
+  ],
+  "export" : {
+    "audioBitrate" : 192000,
+    "audioChannels" : 2,
+    "audioSampleRate" : 48000,
+    "background" : {
+      "video" : {
+
+      }
+    },
+    "codec" : "h264",
+    "frameRate" : 30,
+    "height" : 1080,
+    "range" : {
+      "whole" : {
+
+      }
+    },
+    "spherical" : false,
+    "videoBitrate" : 16000000,
+    "width" : 1920
+  },
+  "formatVersion" : 1,
+  "name" : "Fixture",
+  "settings" : {
+    "frameRate" : 30,
+    "framing" : {
+      "centerX" : 0.5,
+      "centerY" : 0.5,
+      "crop" : {
+        "bottom" : 0,
+        "left" : 0,
+        "right" : 0,
+        "top" : 0
+      },
+      "zoom" : 1
+    },
+    "outputHeight" : 1440,
+    "outputWidth" : 2560,
+    "overlayOpacity" : 1
+  },
+  "timeline" : {
+    "segments" : [
+
+    ]
+  },
+  "videoOrdinals" : {
+
+  }
+}

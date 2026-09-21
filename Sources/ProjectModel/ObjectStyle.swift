@@ -43,9 +43,26 @@ public struct ObjectStyle: Hashable, Codable, Sendable {
     }
 
     public init(data: Data) throws {
-        let style = try JSONDecoder().decode(ObjectStyle.self, from: data)
-        guard style.formatVersion <= Self.formatVersion else { throw ObjectStyleError.newerFormat(style.formatVersion) }
+        var style = try JSONDecoder().decode(ObjectStyle.self, from: data)
+        try style.migrateIfNeeded()
         self = style
+    }
+
+    /// Brings a style saved by an earlier build up to the current format, and refuses a newer one.
+    ///
+    /// The same seam `Project.migrateIfNeeded()` is, and for the same reason: applying a style
+    /// replaces an object's whole `kind`, so a style saved last season can pick up a default
+    /// changed since and quietly render differently from the day it was saved.
+    ///
+    /// **Every way in goes through `init(data:)`** — the file panels, the pasteboard and the CLI —
+    /// so unlike `Project` there is no second door that skips this. Keep it that way: a
+    /// `JSONDecoder().decode(ObjectStyle.self, …)` anywhere else would opt out silently.
+    public mutating func migrateIfNeeded() throws {
+        guard formatVersion != Self.formatVersion else { return }
+        guard formatVersion < Self.formatVersion else { throw ObjectStyleError.newerFormat(formatVersion) }
+        // Future migrations go here, stepping formatVersion up one at a time. A change that alters
+        // a default on any type reachable from `kind` belongs here, pinning the old value.
+        formatVersion = Self.formatVersion
     }
 }
 
