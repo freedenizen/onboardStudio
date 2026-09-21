@@ -121,6 +121,73 @@ final class EditorModel {
         }
     }
 
+    // MARK: - Circuits
+
+    /// A data input just added, whose circuit should be looked up once it has loaded.
+    var pendingTrackLookup: InputID?
+
+    /// The track definitions kept between projects.
+    let trackLibrary = TrackLibrary()
+
+    /// Called after every compile: names the circuit a freshly added file was recorded at and,
+    /// if that circuit has a saved definition, applies its start/finish line and sectors.
+    ///
+    /// **Only for a file the user just added.** Opening a saved project must never do this, or a
+    /// definition saved last week would silently change how a project renders today.
+    func applyPendingTrackDefinition() {
+        guard let id = pendingTrackLookup, let session = sessions[id] else { return }
+        pendingTrackLookup = nil
+        guard let match = CircuitCatalog.identify(session) else { return }
+        guard let definition = trackLibrary.definition(id: match.circuit.id) else {
+            updateInput(id, name: "Identify Circuit") {
+                guard case .data(var settings) = $0.kind else { return }
+                settings.circuitID = match.circuit.id
+                $0.kind = .data(settings)
+            }
+            statusMessage = "Recognised \(match.circuit.displayName)."
+            return
+        }
+        updateInput(id, name: "Apply Track Definition") {
+            guard case .data(var settings) = $0.kind else { return }
+            settings.circuitID = match.circuit.id
+            if let line = definition.startFinish { settings.lapLine = line }
+            settings.sectors = definition.sectors
+            $0.kind = .data(settings)
+        }
+        statusMessage = "Recognised \(definition.name) and used your saved start/finish and sectors."
+    }
+
+    /// The circuit a data input is at: what the project recorded, else what the file looks like.
+    func circuit(for id: InputID) -> CircuitCatalog.Match? {
+        guard let session = sessions[id] else { return nil }
+        if case .data(let settings) = project.input(id)?.kind, let recorded = settings.circuitID,
+            let circuit = CircuitCatalog.circuit(id: recorded)
+        {
+            return CircuitCatalog.match(circuit, to: session)
+        }
+        return CircuitCatalog.identify(session)
+    }
+
+    /// Saves this input's start/finish line and sectors against its circuit, for next time.
+    func saveTrackDefinition(for id: InputID) {
+        guard case .data(let settings) = project.input(id)?.kind, let match = circuit(for: id) else { return }
+        let definition = TrackDefinition(
+            circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
+            longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors)
+        do {
+            try trackLibrary.save(definition)
+            statusMessage = "Saved the start/finish and sectors for \(definition.name)."
+        } catch {
+            statusMessage = "Could not save the track: \(error.localizedDescription)"
+        }
+    }
+
+    func forgetTrackDefinition(for id: InputID) {
+        guard let match = circuit(for: id) else { return }
+        try? trackLibrary.remove(id: match.circuit.id)
+        statusMessage = "Forgot the saved settings for \(match.circuit.name)."
+    }
+
     /// Adds an image input and an image object showing it.
     func addImage() {
         guard let url = OpenPanels.chooseImage() else { return }
@@ -192,6 +259,7 @@ final class EditorModel {
                     lastCompiledProject = project
                     errorMessage = nil
                     applyPendingAutoSync()
+                    applyPendingTrackDefinition()
                     bindEmptyChannels()
                 } else {
                     compilePending = true  // superseded by a newer edit

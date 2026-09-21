@@ -111,6 +111,17 @@ Supported files: RaceChrono (CSV v2/v3), RaceRender CSV, GPX, TCX, Garmin FIT, N
 VBO, DJI SRT, GoPro GPMF (inside the video) and generic CSV/TSV from most logging apps. Details
 and column names are in [formats.md](formats.md).
 
+**The circuit.** Onboard Studio recognises where you were driving from the GPS trace, against a
+bundled list of 1,290 motorsport venues — nothing is fetched and nothing is sent anywhere. The
+*Track* section names it, says how sure it is, and lets you search for the right one if it guessed
+wrong or found nothing. *Not This Circuit* clears it.
+
+**Save Start/Finish and Sectors for This Track** files your start/finish line and sector settings
+against that circuit. The next data file you *add* from the same place starts with them already
+filled in, so you set a venue up once rather than once a session. Opening a project you saved
+earlier never applies them: a project renders the way you left it, whatever the app has learned
+since.
+
 ## 5. Objects
 
 Speedometer, tachometer, custom gauge (the *Gauge Designer*: needle styles, sweep, ticks, colour

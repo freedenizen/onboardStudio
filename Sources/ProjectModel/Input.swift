@@ -216,6 +216,9 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     public var lapLine: LapLineSpec?
     /// How each lap is divided for sector times.
     public var sectors: SectorSpec
+    /// The circuit this file was recorded at, as a Wikidata id (`Q112563`) or a track-definition
+    /// key. Set when the file is added and correctable; `nil` means nothing has been decided.
+    public var circuitID: String?
     /// Seconds of the data file to keep, in its own time. Applied before laps are detected, so a
     /// trimmed-away out-lap is not counted and does not compete for the best lap.
     public var trim: TrimRange
@@ -231,6 +234,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         calculatedFields: [CalculatedFieldSpec] = [],
         lapLine: LapLineSpec? = nil,
         sectors: SectorSpec = SectorSpec(),
+        circuitID: String? = nil,
         trim: TrimRange = .none
     ) {
         self.importerID = importerID
@@ -243,12 +247,13 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         self.calculatedFields = calculatedFields
         self.lapLine = lapLine
         self.sectors = sectors
+        self.circuitID = circuitID
         self.trim = trim
     }
 
     private enum CodingKeys: String, CodingKey {
         case importerID, roleOverrides, unitOverrides, deriveSpeedFromPosition, deriveHeadingFromPosition
-        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, trim
+        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID, trim
     }
 
     public init(from decoder: any Decoder) throws {
@@ -265,6 +270,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         // Absent in projects saved before sectors existed. Nothing drew a sector time then, so
         // measuring them now cannot change how such a project renders.
         sectors = try c.decodeIfPresent(SectorSpec.self, forKey: .sectors) ?? SectorSpec()
+        // Absent before circuits were identified. Left nil rather than worked out on open: a
+        // saved project keeps the lap line and sectors it was saved with, whatever the circuit
+        // library has learned since.
+        circuitID = try c.decodeIfPresent(String.self, forKey: .circuitID)
         // Absent in projects saved before data could be trimmed; no trim is the right reading.
         trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
     }
