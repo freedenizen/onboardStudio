@@ -8,6 +8,27 @@ files are referenced by path; relative paths resolve against the package directo
 (sorted keys, pretty printed). `schemaVersion` is checked on load; older versions are migrated in
 `Project.migrateIfNeeded()`, newer ones are rejected.
 
+## Opening a project never changes how it renders
+
+A project saved by an earlier build keeps the values it had. New defaults, new inheritance and new
+automatic behaviour apply only to projects created after the change. A driver who opens last
+season's project sees the video they exported, not a reinterpretation of it.
+
+Express that in the migration, not in the decoder:
+
+1. Add the new field with the default a *new* project should get — `automatic`, `nil`, inherit.
+2. Step `Project.currentSchemaVersion` by one.
+3. In `migrateIfNeeded()`, for documents at the old version, write the old behaviour in explicitly:
+   set the field to the value that build used to apply, so what was implicit becomes stated.
+
+Do not express it as a decode default. `Project.init(from:)` reads absent keys as
+`decodeIfPresent(…) ?? <default>`, and a nested type's `init(from:)` cannot see the document's
+`schemaVersion` at all — so decoding cannot tell an old file from a new one, and both take the new
+default. That is fine while a default never changes and wrong the moment one does.
+
+A change that alters a default ships a fixture project saved before the change, asserting it still
+resolves to the old values.
+
 ```json
 {
   "schemaVersion": 1,
