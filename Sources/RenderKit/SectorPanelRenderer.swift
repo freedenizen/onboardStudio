@@ -34,6 +34,9 @@ public struct SectorPanelRenderer: OverlayDrawing {
         let time: Double?
         let delta: Double?
         let isCurrent: Bool
+        /// The theoretical lap, which is a time and never a comparison — so it draws its time
+        /// even in the delta-only mode, where every other cell draws none.
+        var isTheoretical = false
     }
 
     public func draw(in cg: CGContext, size: CGSize, time: Double) {
@@ -73,7 +76,8 @@ public struct SectorPanelRenderer: OverlayDrawing {
         if params.showTheoretical {
             cells.append(
                 Cell(
-                    label: params.theoreticalLabel, time: analysis.theoreticalLapTime, delta: nil, isCurrent: false))
+                    label: params.theoreticalLabel, time: analysis.theoreticalLapTime, delta: nil, isCurrent: false,
+                    isTheoretical: true))
         }
         return cells
     }
@@ -120,13 +124,14 @@ public struct SectorPanelRenderer: OverlayDrawing {
                 cell.label, at: CGPoint(x: centre, y: layout.labelY), size: layout.label,
                 color: cell.isCurrent && params.highlightCurrent ? params.currentColor : params.labelColor, in: cg)
         }
-        if params.display.showsTime {
+        // The theoretical lap has no delta to draw in its place, so it keeps its time whatever
+        // the mode is; anything else would leave the column permanently blank.
+        let showingTime = params.display.showsTime || cell.isTheoretical
+        if showingTime {
             let string = cell.time.map { TimeParsing.lapTimeString($0, decimals: decimals) } ?? "–"
             text(string, at: CGPoint(x: centre, y: layout.timeY), size: layout.time, color: timeColour, in: cg)
         }
         guard params.display.showsDelta, let delta = cell.delta else { return }
-        // In the delta-only mode the delta takes the time's place, and its size with it.
-        let showingTime = params.display.showsTime
         text(
             TimeParsing.deltaString(delta, decimals: decimals),
             at: CGPoint(x: centre, y: showingTime ? layout.deltaY : layout.timeY),

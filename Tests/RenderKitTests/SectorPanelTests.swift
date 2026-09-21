@@ -201,12 +201,24 @@ struct SectorPanelTests {
             try render(params, time: SectorSession.lateOnTheQuickLap), named: "sector-panel-lap3")
     }
 
-    @Test func deltasOnly() throws {
-        // Against the best sector: S1 is two seconds off it, and S2 holds it, so S2's 0.00 is
-        // drawn in the text colour rather than red.
+    @Test func theTheoreticalLapKeepsItsTimeInTheDeltaOnlyMode() throws {
+        // It is a lap time, not a comparison, so it has no delta to draw in its place. Without
+        // this its column is a heading over permanent blank space.
         var params = SectorPanelParams()
         params.display = .delta
-        params.showTheoretical = false
+        let cells = renderer(params).cells(at: SectorSession.lateOnTheQuickLap)
+        let theoretical = try #require(cells.last)
+        #expect(theoretical.isTheoretical)
+        #expect(theoretical.delta == nil)
+        #expect(try #require(theoretical.time) > 0)
+        #expect(cells.dropLast().allSatisfy { !$0.isTheoretical })
+    }
+
+    @Test func deltasOnly() throws {
+        // Against the best sector: S1 is two seconds off it, and S2 holds it, so S2's 0.00 is
+        // drawn in the text colour rather than red. The theoretical lap keeps its time.
+        var params = SectorPanelParams()
+        params.display = .delta
         try GoldenImage.assertMatches(
             try render(params, time: SectorSession.lateOnTheQuickLap), named: "sector-panel-deltas-lap3")
     }
