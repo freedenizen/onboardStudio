@@ -113,6 +113,13 @@ struct Probe: ParsableCommand {
         }
         if let title = session.info.title { print("Title:     \(title)") }
         if let track = session.info.trackName { print("Track:     \(track)") }
+        if let match = CircuitCatalog.identify(session) {
+            let margin = match.runnerUpKm.map { String(format: ", next %.0f km", $0) } ?? ""
+            let agrees = match.nameAgrees ? ", name agrees" : ""
+            print(
+                "Circuit:   \(match.circuit.displayName) [\(match.circuit.id)]"
+                    + String(format: "  (%.2f km from the session centre", match.distanceKm) + margin + agrees + ")")
+        }
         if let driver = session.info.driverName { print("Driver:    \(driver)") }
         if let created = session.info.createdAt {
             print("Created:   \(created.formatted(date: .abbreviated, time: .shortened))")
@@ -246,6 +253,16 @@ extension Probe {
         let isComplete: Bool
     }
 
+    private struct CircuitSummary: Encodable {
+        let id: String
+        let name: String
+        let country: String
+        let distanceKm: Double
+        let runnerUpKm: Double?
+        let nameAgrees: Bool
+        let isConfident: Bool
+    }
+
     private struct SectorSummary: Encodable {
         let boundaryDistances: [Double]
         let lapLengthMeters: Double
@@ -270,6 +287,7 @@ extension Probe {
         let channels: [ChannelSummary]
         let laps: [LapSummary]
         let sectors: SectorSummary?
+        let circuit: CircuitSummary?
     }
 
     private func printJSON(_ session: TelemetrySession, importerID: String, confidence: ImportConfidence) throws {
@@ -297,6 +315,12 @@ extension Probe {
                     bestTimes: analysis.best.map { $0?.time },
                     theoreticalLapTime: analysis.theoreticalLapTime,
                     laps: analysis.laps.map { LapSectorSummary(number: $0.lapNumber, times: $0.times) })
+            },
+            circuit: CircuitCatalog.identify(session).map {
+                CircuitSummary(
+                    id: $0.circuit.id, name: $0.circuit.name, country: $0.circuit.country,
+                    distanceKm: $0.distanceKm, runnerUpKm: $0.runnerUpKm, nameAgrees: $0.nameAgrees,
+                    isConfident: $0.isConfident)
             })
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
