@@ -47,10 +47,14 @@ struct TimelineView: View {
                 }
             }
         }
+        // Every lane that can be absent is subtracted here as well as skipped above. Hiding the
+        // segment lane while still reserving its height would leave the empty grey strip #105 is
+        // about, only without the label on it.
         .frame(
             height: MarkerLaneView.height + 1
                 + (editor.project.dataInputs.isEmpty ? 0 : DataLaneView.height + 1)
-                + (editor.project.videoInputs.isEmpty ? 12 + 18 + 34 + 3 : 12 + 18 + 26 + 34 + 4))
+                + (editor.project.timeline.segments.isEmpty ? 0 : SegmentLaneView.height)
+                + (editor.project.videoInputs.isEmpty ? 12 + 18 + 3 : 12 + 18 + 26 + 4))
     }
 }
 
@@ -117,7 +121,8 @@ struct SegmentLaneView: View {
     let width: CGFloat
     @State private var dragging: (id: SegmentID, start: Double)?
 
-    private let height: CGFloat = 34
+    /// Not private: `TimelineView` subtracts it when this lane is not shown.
+    static let height: CGFloat = 34
 
     var body: some View {
         let duration = max(editor.timelineDuration, 0.001)
@@ -146,7 +151,7 @@ struct SegmentLaneView: View {
                     editor.selectedInputID = nil
                     editor.seek(to: min(max(0, location.x / width * duration), duration))
                 }
-                Rectangle().fill(Color.clear).frame(width: 10, height: height).contentShape(Rectangle())
+                Rectangle().fill(Color.clear).frame(width: 10, height: Self.height).contentShape(Rectangle())
                     .offset(x: x - 5)
                     .gesture(
                         DragGesture(minimumDistance: 1)
@@ -164,7 +169,7 @@ struct SegmentLaneView: View {
                     )
                     .onHover { inside in if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() } }
             }
-            Rectangle().fill(Color.red).frame(width: 1, height: height)
+            Rectangle().fill(Color.red).frame(width: 1, height: Self.height)
                 .offset(x: width * min(editor.currentTime, duration) / duration)
                 .allowsHitTesting(false)
         }
@@ -181,7 +186,7 @@ struct SegmentLaneView: View {
                 Button("Delete Selected Segment") { editor.deleteSegment(id) }
             }
         }
-        .frame(width: width, height: height)
+        .frame(width: width, height: Self.height)
         .disabled(editor.project.videoInputs.isEmpty)
     }
 
@@ -192,7 +197,7 @@ struct SegmentLaneView: View {
                 .overlay(RoundedRectangle(cornerRadius: 4).stroke(color.opacity(selected ? 1 : 0.5), lineWidth: 1))
             Text(label).font(.caption).lineLimit(1).padding(.horizontal, 6)
         }
-        .frame(width: max(width - 2, 2), height: height - 8)
+        .frame(width: max(width - 2, 2), height: Self.height - 8)
         .offset(x: x + 1, y: 4)
     }
 }
