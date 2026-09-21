@@ -54,6 +54,73 @@ struct CornerDetectorTests {
         #expect(corners.allSatisfy { abs($0.headingChangeDegrees - 180) < 15 })
     }
 
+    @Test func aWrappedCornersDistancesStayInsideTheLap() throws {
+        // Found in review: letting the end run past the lap put it in a different coordinate
+        // system from the apex, which is what corners are sorted by.
+        let apex = (Self.geometry.firstBend.lowerBound + Self.geometry.firstBend.upperBound) / 2
+        let shifted = SyntheticTrack.session(startOffset: apex)
+        let lap = try #require(shifted.laps.first)
+        let corners = CornerDetector.corners(of: lap, in: shifted)
+        let wrapped = try #require(corners.first { $0.wrapsStartFinish })
+        for distance in [wrapped.startDistance, wrapped.endDistance, wrapped.apexDistance] {
+            #expect(distance >= 0)
+            #expect(distance < wrapped.lapLengthMeters)
+        }
+        // And it is still measured as one corner, not as the negative of one.
+        #expect(wrapped.lengthMeters > 0)
+        #expect(wrapped.lengthMeters < Self.geometry.lapLength / 2)
+    }
+
+    @Test func noStraightIsInventedAcrossAWrappedCorner() throws {
+        // A gap that runs backwards is not a straight. Siting one there would let
+        // SectorMode.cornerAware snap a boundary into the middle of the circuit.
+        let apex = (Self.geometry.firstBend.lowerBound + Self.geometry.firstBend.upperBound) / 2
+        let shifted = SyntheticTrack.session(startOffset: apex)
+        let lap = try #require(shifted.laps.first)
+        let corners = CornerDetector.corners(of: lap, in: shifted)
+        let lapLength = Self.geometry.lapLength
+        for midpoint in CornerDetector.straightMidpoints(between: corners) {
+            #expect(midpoint >= 0)
+            #expect(midpoint <= lapLength)
+            // Every midpoint must be on a straight, which means outside every corner.
+            for corner in corners where !corner.wrapsStartFinish {
+                #expect(!(midpoint > corner.startDistance && midpoint < corner.endDistance))
+            }
+        }
+    }
+
+    @Test func aWrappedCornerPairsWithTheStraightThatFollowsIt() {
+        // The case from review, stated directly. A corner spanning the line ends at 50 m, and the
+        // straight after it runs to the next corner at 400 m: its middle is 225.
+        //
+        // Before the fix the end was stored as 50 + 3000, so this came out as (3050 + 400) / 2 =
+        // 1725 — a "straight" in the middle of the circuit, which cornerAware would then snap a
+        // sector boundary onto.
+        let wrapped = Corner(
+            startDistance: 2900, endDistance: 50, apexDistance: 10, headingChangeDegrees: 90,
+            lapLengthMeters: 3000)
+        let next = Corner(
+            startDistance: 400, endDistance: 500, apexDistance: 450, headingChangeDegrees: 90,
+            lapLengthMeters: 3000)
+        #expect(CornerDetector.straightMidpoints(between: [wrapped, next]) == [225])
+        #expect(wrapped.wrapsStartFinish)
+        #expect(wrapped.lengthMeters == 150)
+        #expect(!next.wrapsStartFinish)
+        #expect(next.lengthMeters == 100)
+    }
+
+    @Test func aGapThatRunsBackwardsIsNotAStraight() {
+        // Whatever ordering produces it, a pair whose first corner ends after the second begins
+        // describes no stretch of track, and a midpoint there would be fiction.
+        let late = Corner(
+            startDistance: 2800, endDistance: 2900, apexDistance: 2850, headingChangeDegrees: 90,
+            lapLengthMeters: 3000)
+        let early = Corner(
+            startDistance: 400, endDistance: 500, apexDistance: 450, headingChangeDegrees: 90,
+            lapLengthMeters: 3000)
+        #expect(CornerDetector.straightMidpoints(between: [late, early]).isEmpty)
+    }
+
     @Test func aStraightLineHasNoCorners() {
         let times = Array(stride(from: 0.0, through: 60.0, by: 0.1))
         let session = TelemetrySession(

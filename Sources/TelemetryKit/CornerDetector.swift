@@ -11,16 +11,35 @@ public struct Corner: Sendable, Equatable {
     public let apexDistance: Double
     /// Total heading change through the corner in degrees; positive turns right (clockwise).
     public let headingChangeDegrees: Double
+    /// The lap these distances are into, needed to measure a corner that spans the line.
+    public let lapLengthMeters: Double
 
-    public init(startDistance: Double, endDistance: Double, apexDistance: Double, headingChangeDegrees: Double) {
+    public init(
+        startDistance: Double, endDistance: Double, apexDistance: Double, headingChangeDegrees: Double,
+        lapLengthMeters: Double
+    ) {
         self.startDistance = startDistance
         self.endDistance = endDistance
         self.apexDistance = apexDistance
         self.headingChangeDegrees = headingChangeDegrees
+        self.lapLengthMeters = lapLengthMeters
     }
 
     public var turnsRight: Bool { headingChangeDegrees > 0 }
-    public var lengthMeters: Double { endDistance - startDistance }
+
+    /// A corner sitting on the start/finish line begins near the end of the lap and finishes
+    /// just after it, so its end reads as *before* its start.
+    ///
+    /// Every distance stays inside `0..<lapLengthMeters`. Letting the end run past the lap
+    /// instead would put it in a different coordinate system from the apex, and the apex is what
+    /// corners are sorted by — a wrapped corner would then sort early while carrying an
+    /// out-of-range end, and `straightMidpoints` would pair that end with the next corner's start
+    /// and site a straight in the middle of the circuit.
+    public var wrapsStartFinish: Bool { endDistance < startDistance }
+
+    public var lengthMeters: Double {
+        wrapsStartFinish ? endDistance + lapLengthMeters - startDistance : endDistance - startDistance
+    }
 }
 
 /// Finds the corners of a lap from the curvature of its GPS trace.
@@ -249,9 +268,9 @@ public enum CornerDetector {
             guard abs(change) >= options.minTurnDegrees else { return nil }
             let apex = indices.max { abs(smooth[$0]) < abs(smooth[$1]) } ?? run.lower
             return Corner(
-                startDistance: path.distances[run.lower],
-                endDistance: path.distances[run.upper] + (wrapped ? path.length : 0),
-                apexDistance: path.distances[apex], headingChangeDegrees: change)
+                startDistance: path.distances[run.lower], endDistance: path.distances[run.upper],
+                apexDistance: path.distances[apex], headingChangeDegrees: change,
+                lapLengthMeters: path.length)
         }
         // In the order they are met after the start/finish line, which is how a circuit numbers
         // them. Joining a corner across the line can put it either end depending on where its
@@ -265,8 +284,14 @@ public enum CornerDetector {
     /// boundary a few metres from it would time a sector nobody drives.
     public static func straightMidpoints(between corners: [Corner]) -> [Double] {
         guard corners.count > 1 else { return [] }
-        return (0..<(corners.count - 1)).map { index in
-            (corners[index].endDistance + corners[index + 1].startDistance) / 2
+        return (0..<(corners.count - 1)).compactMap { index in
+            let from = corners[index].endDistance
+            let to = corners[index + 1].startDistance
+            // A corner that wraps the line leaves the gap before it running backwards; there is
+            // no straight to site there, and inventing a midpoint would put a sector boundary
+            // somewhere the car never straightens up.
+            guard to >= from else { return nil }
+            return (from + to) / 2
         }
     }
 }

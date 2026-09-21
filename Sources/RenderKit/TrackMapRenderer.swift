@@ -155,18 +155,9 @@ public struct TrackMapRenderer: OverlayDrawing {
         projection: TrackProjection, scale: Double, labelSize: Double
     ) {
         let centre = projection.point(latitude: boundary.latitude, longitude: boundary.longitude, in: bounds)
-        // A point a little further along the track gives the direction of travel in map space,
-        // which already includes the map's rotation; the tick is square to it.
-        let ahead = projection.point(
-            latitude: boundary.latitude + cos(boundary.headingDegrees * .pi / 180) * 1e-4,
-            longitude: boundary.longitude + sin(boundary.headingDegrees * .pi / 180) * 1e-4,
-            in: bounds)
-        var dx = ahead.x - centre.x
-        var dy = ahead.y - centre.y
-        let length = hypot(dx, dy)
-        guard length > 0 else { return }
-        dx /= length
-        dy /= length
+        guard let travel = direction(of: boundary, projection: projection, bounds: bounds) else { return }
+        let dx = travel.x
+        let dy = travel.y
         let half = max(4, 7 * scale)
         cg.setStrokeColor(params.labelColor.cgColor)
         cg.setLineWidth(max(1, params.lineWidth * scale * 0.8))
@@ -176,6 +167,30 @@ public struct TrackMapRenderer: OverlayDrawing {
         label(
             "S\(number)", at: labelPoint(from: centre, across: (dy, -dx), by: half * 2.2, in: bounds),
             size: labelSize, in: cg)
+    }
+
+    /// The direction of travel at a boundary, as a unit vector in map space — which already
+    /// includes the map's rotation, so the tick can simply be drawn square to it.
+    ///
+    /// The longitude step is divided by `cosLat` because the projection multiplies it back: a
+    /// degree of longitude is a shorter distance away from the equator. Without that the
+    /// projected direction comes out as `atan(tan(heading) · cosLat)`, which is 13° off a
+    /// diagonal heading at Silverstone's latitude and leaves the tick square to nothing.
+    func direction(of boundary: LapComparison.LapPoint, projection: TrackProjection, bounds: CGRect)
+        -> (x: Double, y: Double)?
+    {
+        let step = 1e-4
+        let centre = projection.point(latitude: boundary.latitude, longitude: boundary.longitude, in: bounds)
+        let ahead = projection.point(
+            latitude: boundary.latitude + cos(boundary.headingDegrees * .pi / 180) * step,
+            longitude: boundary.longitude + sin(boundary.headingDegrees * .pi / 180) * step
+                / max(projection.basis.cosLat, 1e-9),
+            in: bounds)
+        let dx = ahead.x - centre.x
+        let dy = ahead.y - centre.y
+        let length = hypot(dx, dy)
+        guard length > 0 else { return nil }
+        return (dx / length, dy / length)
     }
 
     /// Which end of a tick to write its number at: the one towards the middle of the map.

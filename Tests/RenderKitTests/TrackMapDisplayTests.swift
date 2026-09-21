@@ -158,6 +158,30 @@ struct TrackMapDisplayTests {
         }
     }
 
+    @Test func aTickIsSquareToTheDirectionOfTravel() throws {
+        // Found in review: the step used to find the direction of travel is in degrees, and the
+        // projection scales longitude by cosLat — so without dividing the longitude step by
+        // cosLat the tick came out as atan(tan(heading) · cosLat), 13° off a diagonal heading at
+        // Silverstone's latitude. Measure the projected direction and compare it with the real one.
+        var params = TrackMapParams()
+        params.showSectorTicks = true
+        let panel = renderer(params)
+        let projection = try #require(panel.projection)
+        let bounds = CGRect(x: 0, y: 0, width: 300, height: 300)
+        let origin = SectorMapSession.origin
+        for heading in stride(from: 0.0, to: 360.0, by: 15) {
+            let boundary = LapComparison.LapPoint(
+                time: 0, latitude: origin.latitude, longitude: origin.longitude, headingDegrees: heading)
+            let travel = try #require(panel.direction(of: boundary, projection: projection, bounds: bounds))
+            // Map space is y-down, so a bearing of 0 (north) points at −y.
+            let projected = (atan2(travel.x, -travel.y) * 180 / .pi + 360)
+                .truncatingRemainder(dividingBy: 360)
+            var off = abs(projected - heading).truncatingRemainder(dividingBy: 360)
+            if off > 180 { off = 360 - off }
+            #expect(off < 0.5, "heading \(heading)° projected as \(projected)°")
+        }
+    }
+
     @Test func thereIsNoTickForTheFirstSector() throws {
         var params = TrackMapParams()
         params.showSectorTicks = true
