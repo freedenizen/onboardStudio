@@ -73,6 +73,16 @@ struct LongSessionTests {
         return result == KERN_SUCCESS ? UInt64(info.resident_size) : 0
     }
 
+    /// Index into sorted frame timings of the slowest frame the budget applies to: the 95th
+    /// percentile, so the slowest 5% may stall without failing the run.
+    ///
+    /// At 120 frames that tolerates six stalls. Six frames descheduled on a shared runner is
+    /// ordinary; six frames slow because the compositor got slower is not — that shows up in the
+    /// average, which is asserted separately and unchanged.
+    static func steadyIndex(of frames: Int) -> Int {
+        max(0, min(frames - 1, Int((Double(frames) * 0.95).rounded(.down)) - 1))
+    }
+
     static func objects() -> [DisplayObjectKind] {
         var graph = GraphParams(series: [GraphSeries(channel: "speed")], axis: .lap)
         graph.compareBestLap = true
@@ -107,27 +117,69 @@ struct LongSessionTests {
         try compositor.render(sources: [:], time: 100, into: output)
         let before = Self.residentMemory()
         let frames = 120
-        var total = 0.0
-        var worst = 0.0
+        var timings: [Double] = []
+        timings.reserveCapacity(frames)
         for index in 0..<frames {
             let time = Double(index) / Double(frames) * (Self.hours * 3600 - 60)
             let started = DispatchTime.now().uptimeNanoseconds
             try compositor.render(sources: [:], time: time, into: output)
-            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - started) / 1e6
-            total += elapsed
-            worst = max(worst, elapsed)
+            timings.append(Double(DispatchTime.now().uptimeNanoseconds - started) / 1e6)
         }
         let after = Self.residentMemory()
-        let average = total / Double(frames)
+        let sorted = timings.sorted()
+        let average = timings.reduce(0, +) / Double(frames)
+        let worst = sorted[frames - 1]
+        let steady = sorted[Self.steadyIndex(of: frames)]
         let growthMB = Double(Int64(after) - Int64(before)) / 1e6
-        print("two-hour session: \(average) ms/frame average, \(worst) ms worst, memory \(growthMB) MB")
+        print(
+            "two-hour session: \(average) ms/frame average, \(steady) ms steady, \(worst) ms worst, "
+                + "memory \(growthMB) MB")
         let ci = ProcessInfo.processInfo.environment["CI"] != nil
         #expect(average < (ci ? 120 : 40), "average \(average) ms per frame")
-        #expect(worst < (ci ? 600 : 250), "worst \(worst) ms")
+        // The steady frame, not the worst one. `max` over 120 frames fails on a single stall: #139
+        // was this test blocking an unrelated PR at 890 ms on CI while the same commit measured a
+        // 6.8 ms worst frame locally — the runner descheduling the process, not the compositor
+        // doing work. A real regression slows most frames, so it moves the percentile and the
+        // average together; one stall moves neither.
+        #expect(steady < (ci ? 600 : 250), "steady \(steady) ms per frame (worst \(worst) ms)")
         #expect(growthMB < 200, "memory grew \(growthMB) MB over \(frames) frames")
         // The last frame of the session still shows data (nothing fell off the end).
         let late = PixelBuffers.pixel(in: output, x: 640, y: 360)
         #expect(late.a > 0 || true)
+    }
+
+    /// #139: what the frame budget tolerates, stated rather than assumed.
+    @Test func theFrameBudgetIgnoresAFewStallsAndNotASlowdown() {
+        let frames = 120
+        let index = Self.steadyIndex(of: frames)
+        // Six of 120 frames may be slower than the one the budget is applied to.
+        #expect(index == 113)
+        #expect(frames - 1 - index == 6)
+
+        // A runner stall: 114 quick frames and six very slow ones. The old `max` assertion failed
+        // on exactly this, at 890 ms against a 600 ms budget, for a commit that never touched the
+        // render path.
+        var stalled = [Double](repeating: 5, count: frames - 6) + [Double](repeating: 890, count: 6)
+        stalled.sort()
+        #expect(stalled[index] == 5)
+        #expect(stalled[frames - 1] == 890)
+
+        // A real regression is not a few slow frames, it is all of them, and the percentile moves
+        // with the average rather than staying behind it.
+        var slow = [Double](repeating: 700, count: frames)
+        slow.sort()
+        #expect(slow[index] == 700)
+        #expect(slow.reduce(0, +) / Double(frames) == 700)
+
+        // One more stall than tolerated does fail, so the tolerance has a floor rather than being
+        // a way of never failing.
+        var many = [Double](repeating: 5, count: frames - 7) + [Double](repeating: 890, count: 7)
+        many.sort()
+        #expect(many[index] == 890)
+
+        // Degenerate counts stay inside the array.
+        #expect(Self.steadyIndex(of: 1) == 0)
+        #expect(Self.steadyIndex(of: 2) == 0)
     }
 
     @Test func lapLookupsAreCheapWithSixtyLaps() {
