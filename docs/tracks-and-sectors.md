@@ -131,10 +131,60 @@ project saved before them draws the outline it always drew:
   map — the map is framed to the trace, so a label on the outside falls off the object, while the
   middle of a circuit is the one place reliably empty.
 - **`trace = .referenceLap`** draws only the lap sectors and deltas are measured against, and
-  frames the map to that lap. It is much crisper, and **it leaves the pit lane and the paddock out
-  for free**, because the reference lap never went there — worth knowing before building anything
-  separate for #95.
+  frames the map to that lap. It is much crisper, and it leaves the pit lane and the paddock out
+  for free, because the reference lap never went there.
+- **`trace = .trackOnly`** is the default for a new map, and is #95. See below.
 - **`showCornerNumbers`** numbers the corners from the reference lap's curvature.
+
+### Finding the track in the trace (#95)
+
+A session is not only laps. The car leaves the pits, comes back in, is driven to the paddock and
+parked, and every metre of it is in the file. On a map that is worse than clutter, because the map
+is framed to fit the whole trace: **one trip across the paddock shrinks the circuit into a corner
+of the object.** On the reference session the paddock run makes the drawn map about half the size
+the circuit alone would be.
+
+`.referenceLap` already avoided this, but it draws one lap and needs laps to have been detected.
+`TelemetryKit/TrackExtent.swift` answers the question directly and needs no laps at all: **a
+circuit is what gets driven over again and again, and a pit lane is not.** Each sample is asked how
+many separate times the car came within 12 m of it, and the ones with far fewer visits than the
+busy parts of the trace are not the track.
+
+Four decisions in it are worth not re-deriving:
+
+- **Visits are counted as unbroken runs of samples, not by a time gap.** A time threshold has to
+  sit below the lap time and above the time spent crossing a 12 m circle, and no single value does
+  both for a Nordschleife lap and a kart lap. Pick 20 s and a 20 s kart lap folds every lap into
+  one visit, the answer collapses and nothing is excluded. After thinning, index distance *is*
+  ground distance, so a run of consecutive samples is one pass with no constant to tune.
+- **The threshold is `max(3, typical / 2)`, and the floor of 3 does the work.** A pit lane is
+  driven **twice** however many laps follow it — out at the start, in at the end — so a purely
+  proportional threshold lets it through on anything under six laps.
+- **Answered on a trace thinned to one sample per 4 m.** The reference file records at about
+  93 Hz, which asks the same question ten times per car length: 131,526 samples took **109 s**
+  unthinned and **0.35 s** thinned, for the same answer. It is memoised on top, because a plan is
+  built per timeline cut and the editor builds its own.
+- **Stretches under 4 s are made to agree with what surrounds them.** Without it the pit exit
+  merging alongside the track puts a half-second of "circuit" inside the out lap, and the out lap
+  rejoining puts a three-second hole just after the start/finish line. Both drew as visible faults.
+
+When too little was repeated to tell — a hillclimb, a single flying lap, a two-lap session where
+the pit lane was also driven twice — **the answer is rejected and the whole trace is drawn.**
+Drawing almost none of a session is a worse answer than drawing all of it.
+
+On the reference session this leaves exactly **two** stretches out: everything before the first
+complete lap, and everything after the last. Every complete lap survives whole. A lap with a hole
+in it would draw as a broken circuit and is the real failure to guard against, so the tests assert
+it directly.
+
+**What it does not claim to solve:** a pit lane running *alongside* the pit straight, within the
+12 m radius, is not distinguishable from the track by this or by any other means available here.
+The last few metres of a pit road survive where it meets the circuit, and should.
+
+Because the outline now has gaps in it, `TrackProjection` carries `segments` and the renderer
+strokes each separately — joining two would rule a line straight across the circuit from where the
+car left it to where it came back. The car's dot is also held inside the object: it is not part of
+the cached trace image, so a car in the pit lane would otherwise draw loose over the video.
 
 ### Corner numbering is the circuit's, and it is not sequential
 

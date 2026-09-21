@@ -25,11 +25,17 @@ public enum TrackMapTrace: String, Hashable, Codable, Sendable, CaseIterable {
     /// Only the lap sectors and deltas are measured against — a crisper line, and one that
     /// leaves out the pit lane and the paddock because the reference lap never went there.
     case referenceLap
+    /// Every lap, but only where the car actually drove the circuit: the pit lane, the pit entry
+    /// and exit, and the paddock are left out because they were driven once and the track was
+    /// driven every lap. Keeps the density of the whole session without its detours, and unlike
+    /// `referenceLap` it needs no laps to have been detected.
+    case trackOnly
 
     public var displayName: String {
         switch self {
         case .wholeSession: "Whole session"
         case .referenceLap: "Reference lap only"
+        case .trackOnly: "The track only"
         }
     }
 }
@@ -74,7 +80,7 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         background: MapBackgroundStyle = .none,
         secondInputID: InputID? = nil,
         secondDotColor: RGBAColor = RGBAColor(red: 0.25, green: 0.6, blue: 1),
-        trace: TrackMapTrace = .wholeSession,
+        trace: TrackMapTrace = .trackOnly,
         colorBySector: Bool = false,
         sectorColors: [RGBAColor] = TrackMapParams.defaultSectorColors,
         showSectorTicks: Bool = false,
@@ -128,7 +134,13 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         secondDotColor = try c.decodeIfPresent(RGBAColor.self, forKey: .secondDotColor) ?? d.secondDotColor
         // All absent from projects saved before these options existed, and all default to off,
         // so such a project draws exactly the outline it drew before.
-        trace = try c.decodeIfPresent(TrackMapTrace.self, forKey: .trace) ?? d.trace
+        //
+        // `trace` falls back to `.wholeSession` and not to `d.trace`, which is now `.trackOnly`.
+        // The fallback is the record of how the app drew before the option existed, and every
+        // build that has had the field writes the key, so an absent one can only mean a file older
+        // than the field. Rewriting that fallback to follow the default would retroactively change
+        // what those files draw — the one thing `docs/project-format.md` forbids.
+        trace = try c.decodeIfPresent(TrackMapTrace.self, forKey: .trace) ?? .wholeSession
         colorBySector = try c.decodeIfPresent(Bool.self, forKey: .colorBySector) ?? d.colorBySector
         sectorColors = try c.decodeIfPresent([RGBAColor].self, forKey: .sectorColors) ?? d.sectorColors
         showSectorTicks = try c.decodeIfPresent(Bool.self, forKey: .showSectorTicks) ?? d.showSectorTicks

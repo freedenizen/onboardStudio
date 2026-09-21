@@ -342,12 +342,23 @@ struct TrackMapInspector: View {
             Picker("Draw from", selection: field(\.trace)) {
                 ForEach(TrackMapTrace.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            if params.trace == .referenceLap {
+            switch params.trace {
+            case .referenceLap:
                 Text(
                     "The lap sectors and deltas are measured against — a crisper line, and one that "
                         + "leaves out the pit lane and the paddock."
                 )
                 .font(.caption).foregroundStyle(.secondary)
+            case .trackOnly:
+                Text(
+                    "Every lap, but only where the car drove the circuit: the pit lane, the pit entry and "
+                        + "exit and the paddock were driven once and the track was driven every lap. A session "
+                        + "with too few laps to tell them apart is drawn whole."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            case .wholeSession:
+                Text("Every position in the file, including the pit lane and anywhere else the car was driven.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Toggle("Colour by sector", isOn: field(\.colorBySector))
             Toggle("Sector boundary ticks", isOn: field(\.showSectorTicks))

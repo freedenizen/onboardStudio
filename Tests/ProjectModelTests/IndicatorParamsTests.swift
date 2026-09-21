@@ -72,6 +72,28 @@ struct IndicatorParamsTests {
         #expect(custom.reference == .previousLap && custom.currentLabel == "Now")
     }
 
+    @Test func aTrackMapSavedBeforeTheOptionStillDrawsTheWholeSession() throws {
+        // A new map draws the circuit and leaves out the pit lane. A map saved before `trace`
+        // existed has no key and goes on drawing every position in the file, which is what it drew
+        // when it was saved — the rule in `docs/project-format.md`.
+        #expect(TrackMapParams().trace == .trackOnly)
+        let old = try JSONDecoder().decode(TrackMapParams.self, from: Data(#"{"lineWidth":3}"#.utf8))
+        #expect(old.trace == .wholeSession)
+        // The fallback is not the memberwise default and must not be rewritten to follow it: it is
+        // the record of how the app drew before the field existed, and it is all there is.
+        #expect(old.trace != TrackMapParams().trace)
+        // Every build that has the field writes the key, so a file saved by one keeps what it
+        // chose — including the choice that is no longer the default.
+        for trace in TrackMapTrace.allCases {
+            let saved = try JSONEncoder().encode(TrackMapParams(trace: trace))
+            #expect(try JSONDecoder().decode(TrackMapParams.self, from: saved).trace == trace)
+            #expect(String(data: saved, encoding: .utf8)?.contains("trace") == true)
+        }
+        // Templates and object styles embed these params and have no migration seam of their own
+        // (#124); this fallback is what protects one saved before the field existed.
+        #expect(TrackMapTrace.allCases.count == 3)
+    }
+
     @Test func deltaSettingsKeepOldFilesUnchanged() throws {
         // New delta timers compare with the session's best lap; files saved before 0.17 have no
         // key and keep comparing with the best lap so far.

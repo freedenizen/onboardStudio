@@ -41,14 +41,27 @@ public struct TrackProjection: Sendable {
     /// with it without re-deriving which samples were used.
     let times: [Double]
 
-    /// `range` restricts the outline to part of the session — one lap, say. The framing follows:
-    /// a reference-lap map fits the lap, not the paddock the car was parked in.
-    public init?(session: TelemetrySession, rotationDegrees: Double, range: ClosedRange<Double>? = nil) {
+    /// Unbroken stretches of `points`, as ranges into it.
+    ///
+    /// More than one only when samples were left out of the middle — the pit lane, the paddock —
+    /// and then the outline must lift the pen rather than rule a line across the circuit from
+    /// where the car left it to where it came back.
+    let segments: [Range<Int>]
+
+    /// `range` restricts the outline to part of the session — one lap, say — and `onTrack`, given
+    /// per sample of the latitude channel, restricts it to where the car drove the circuit. The
+    /// framing follows both: a map fits what it draws, not the paddock the car was parked in.
+    public init?(
+        session: TelemetrySession, rotationDegrees: Double, range: ClosedRange<Double>? = nil,
+        onTrack: [Bool]? = nil
+    ) {
         guard let lat = session[.latitude], let lon = session[.longitude], lat.count > 1 else { return nil }
-        let indices: [Int] =
-            if let range { lat.times.indices.filter { range.contains(lat.times[$0]) } } else {
-                Array(lat.times.indices)
-            }
+        let wanted = onTrack?.count == lat.count ? onTrack : nil
+        let indices: [Int] = lat.times.indices.filter {
+            if let range, !range.contains(lat.times[$0]) { return false }
+            if let wanted, !wanted[$0] { return false }
+            return true
+        }
         guard indices.count > 1 else { return nil }
         let usedLatitudes = indices.map { lat.values[$0] }
         guard let latMin = usedLatitudes.min(), let latMax = usedLatitudes.max() else { return nil }
@@ -69,10 +82,23 @@ public struct TrackProjection: Sendable {
         }
         points = projected
         times = indices.map { lat.times[$0] }
+        segments = Self.runs(of: indices)
         minX = projected.map(\.x).min() ?? 0
         maxX = projected.map(\.x).max() ?? 1
         minY = projected.map(\.y).min() ?? 0
         maxY = projected.map(\.y).max() ?? 1
+    }
+
+    /// Where the kept samples ran on from one another, as ranges into the kept ones.
+    static func runs(of indices: [Int]) -> [Range<Int>] {
+        var result: [Range<Int>] = []
+        var start = 0
+        for position in 1...indices.count
+        where position == indices.count || indices[position] != indices[position - 1] + 1 {
+            result.append(start..<position)
+            start = position
+        }
+        return result
     }
 
     /// The projection a track map object draws with, so the editor and the renderer agree about
@@ -80,7 +106,8 @@ public struct TrackProjection: Sendable {
     public init?(session: TelemetrySession, params: TrackMapParams) {
         self.init(
             session: session, rotationDegrees: params.rotation,
-            range: params.trace == .referenceLap ? Sectors.referenceLap(in: session).flatMap(\.timeRange) : nil)
+            range: params.trace == .referenceLap ? Sectors.referenceLap(in: session).flatMap(\.timeRange) : nil,
+            onTrack: params.trace == .trackOnly ? TrackExtent.onTrack(in: session) : nil)
     }
 
     public func point(latitude: Double, longitude: Double, in bounds: CGRect) -> CGPoint {
