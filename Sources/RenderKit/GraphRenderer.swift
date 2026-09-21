@@ -20,6 +20,9 @@ public struct GraphRenderer: OverlayDrawing {
         var color: RGBAColor
         var lineWidth: Double
         var isGhost: Bool
+        /// Set when the series scales on its own, in which case this trace is drawn through this
+        /// range and takes no part in the graph's shared fit (#145).
+        var ownRange: ClosedRange<Double>?
     }
 
     struct Layout {
@@ -33,7 +36,8 @@ public struct GraphRenderer: OverlayDrawing {
         var yRange: ClosedRange<Double>
         var scale: Double
 
-        func map(_ p: CGPoint) -> CGPoint {
+        func map(_ p: CGPoint, using override: ClosedRange<Double>? = nil) -> CGPoint {
+            let yRange = override ?? self.yRange
             let xSpan = max(xRange.upperBound - xRange.lowerBound, 0.000_001)
             let ySpan = max(yRange.upperBound - yRange.lowerBound, 0.000_001)
             return CGPoint(
@@ -71,7 +75,10 @@ public struct GraphRenderer: OverlayDrawing {
         var yMin = params.minValue ?? .infinity
         var yMax = params.maxValue ?? -.infinity
         if params.minValue == nil || params.maxValue == nil {
-            for trace in layout.traces {
+            // Only the traces that actually use this range. A series on its own scale would
+            // otherwise go on distorting the fit for the ones that follow the shared one, which is
+            // the whole problem it was taken off the shared scale to avoid.
+            for trace in layout.traces where trace.ownRange == nil {
                 for p in trace.points {
                     if params.minValue == nil { yMin = min(yMin, p.y) }
                     if params.maxValue == nil { yMax = max(yMax, p.y) }
@@ -109,7 +116,7 @@ public struct GraphRenderer: OverlayDrawing {
         cg.clip(to: plot.rect.insetBy(dx: -2 * plot.scale, dy: -2 * plot.scale))
         let liveColor = traces.first { !$0.isGhost }?.color
         for trace in traces.sorted(by: { $0.isGhost && !$1.isGhost }) where trace.points.count > 1 {
-            let mapped = trace.points.map(plot.map)
+            let mapped = trace.points.map { plot.map($0, using: trace.ownRange) }
             if params.fillUnderLine, !trace.isGhost, trace.color == liveColor {
                 var fill = trace.color
                 fill.alpha *= 0.25
@@ -130,7 +137,7 @@ public struct GraphRenderer: OverlayDrawing {
         }
         cg.restoreGState()
         if params.showCursor, let live = traces.first(where: { !$0.isGhost }), let last = live.points.last {
-            let p = plot.map(last)
+            let p = plot.map(last, using: live.ownRange)
             let r = max(2, 5 * plot.scale)
             cg.setFillColor(live.color.cgColor)
             cg.fillEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
@@ -271,11 +278,40 @@ public struct GraphRenderer: OverlayDrawing {
             guard let v = sampler.value(of: role, at: t) else { continue }
             points.append(CGPoint(x: x(t), y: v * factor))
         }
-        return Trace(points: points, color: series.color, lineWidth: series.lineWidth, isGhost: ghost)
+        return Trace(
+            points: points, color: series.color, lineWidth: series.lineWidth, isGhost: ghost,
+            ownRange: Self.ownRange(of: series, points: points))
     }
 
     private func linspace(_ a: Double, _ b: Double, _ count: Int) -> [Double] {
         guard b > a, count > 1 else { return [b] }
         return (0..<count).map { a + (b - a) * Double($0) / Double(count - 1) }
+    }
+}
+
+extension GraphRenderer {
+    /// The range a series is drawn through when it scales on its own: what it was given, falling
+    /// back per-bound to this series' own data. `nil` when it follows the graph's shared range.
+    static func ownRange(of series: GraphSeries, points: [CGPoint]) -> ClosedRange<Double>? {
+        guard series.usesOwnScale else { return nil }
+        var low = series.minValue ?? .infinity
+        var high = series.maxValue ?? -.infinity
+        if series.minValue == nil || series.maxValue == nil {
+            for p in points {
+                if series.minValue == nil { low = min(low, p.y) }
+                if series.maxValue == nil { high = max(high, p.y) }
+            }
+            if !low.isFinite { low = 0 }
+            if !high.isFinite { high = 1 }
+            if high - low < 0.000_001 {
+                low -= 0.5
+                high += 0.5
+            } else {
+                let pad = (high - low) * 0.05
+                if series.minValue == nil { low -= pad }
+                if series.maxValue == nil { high += pad }
+            }
+        }
+        return low...max(high, low + 0.000_001)
     }
 }

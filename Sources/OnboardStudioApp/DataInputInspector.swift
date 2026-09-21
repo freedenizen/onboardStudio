@@ -56,12 +56,12 @@ struct DataInputInspector: View {
         Section("Trim") {
             // In the file's own seconds, like a video's trim. Applied before laps are detected,
             // so trimming an out-lap away stops it counting rather than renumbering it.
-            OptionalSecondsField(
+            OptionalNumberField(
                 "Start", value: field(\.trim.start, name: "Trim Data Start"),
                 placeholder: "from the beginning"
             )
             .accessibilityIdentifier("data.trimStart")
-            OptionalSecondsField(
+            OptionalNumberField(
                 "End", value: field(\.trim.end, name: "Trim Data End"), placeholder: "to the end"
             )
             .accessibilityIdentifier("data.trimEnd")
@@ -383,8 +383,8 @@ struct CalculatedFieldRow: View {
     }
 }
 
-/// A seconds field that can be empty, meaning "no limit".
-struct OptionalSecondsField: View {
+/// A number field that can be empty, meaning "unset" — no trim limit, no fixed bound.
+struct OptionalNumberField: View {
     let title: String
     @Binding var value: Double?
     let placeholder: String

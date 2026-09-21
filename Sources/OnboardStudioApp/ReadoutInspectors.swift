@@ -125,7 +125,32 @@ struct GraphInspector: View {
                     .buttonStyle(.borderless)
                     .disabled(params.series.count <= 1)
                 }
+                Toggle(
+                    "Scale on its own",
+                    isOn: Binding(
+                        get: { series.usesOwnScale },
+                        set: { v in update { $0.series[index].usesOwnScale = v } })
+                )
+                .accessibilityIdentifier("graph.ownScale")
+                if series.usesOwnScale {
+                    OptionalNumberField(
+                        "Min",
+                        value: Binding(
+                            get: { series.minValue }, set: { v in update { $0.series[index].minValue = v } }),
+                        placeholder: "fit")
+                    OptionalNumberField(
+                        "Max",
+                        value: Binding(
+                            get: { series.maxValue }, set: { v in update { $0.series[index].maxValue = v } }),
+                        placeholder: "fit")
+                }
             }
+            Text(
+                "A series on its own scale fills the plot whatever its numbers are, and is left out "
+                    + "of the shared fit — which is how throttle in % and brake pressure in kPa can be "
+                    + "read against each other."
+            )
+            .font(.caption).foregroundStyle(.secondary)
             Button("Add Series") {
                 update { $0.series.append(GraphSeries(channel: "rpm", color: .white)) }
             }

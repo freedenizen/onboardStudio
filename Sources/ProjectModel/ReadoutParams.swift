@@ -111,12 +111,29 @@ public struct GraphSeries: Hashable, Codable, Sendable, Identifiable {
     public var color: RGBAColor
     /// Line width in pixels at 1080p; scaled with the output.
     public var lineWidth: Double
+    /// Plot this series on a scale of its own instead of the graph's shared one, and keep it out
+    /// of the shared fit (#145).
+    ///
+    /// Throttle is 0–100% and brake pressure is 0–14,470 kPa: on one scale the pressure fills the
+    /// plot and throttle is a flat line along the bottom. They are different physical quantities
+    /// and will never share a range, but their *shapes* are the whole reason for drawing them
+    /// together.
+    public var usesOwnScale: Bool
+    /// Bounds for this series when it scales on its own; `nil` fits this series' own data.
+    public var minValue: Double?
+    public var maxValue: Double?
 
-    public init(id: UUID = UUID(), channel: String, color: RGBAColor = .accent, lineWidth: Double = 3) {
+    public init(
+        id: UUID = UUID(), channel: String, color: RGBAColor = .accent, lineWidth: Double = 3,
+        usesOwnScale: Bool = false, minValue: Double? = nil, maxValue: Double? = nil
+    ) {
         self.id = id
         self.channel = channel
         self.color = color
         self.lineWidth = lineWidth
+        self.usesOwnScale = usesOwnScale
+        self.minValue = minValue
+        self.maxValue = maxValue
     }
 
     public init(from decoder: any Decoder) throws {
@@ -125,6 +142,10 @@ public struct GraphSeries: Hashable, Codable, Sendable, Identifiable {
         channel = try c.decode(String.self, forKey: .channel)
         color = try c.decodeIfPresent(RGBAColor.self, forKey: .color) ?? .accent
         lineWidth = try c.decodeIfPresent(Double.self, forKey: .lineWidth) ?? 3
+        // Absent in every graph saved before this existed, and false is what those did.
+        usesOwnScale = try c.decodeIfPresent(Bool.self, forKey: .usesOwnScale) ?? false
+        minValue = try c.decodeIfPresent(Double.self, forKey: .minValue)
+        maxValue = try c.decodeIfPresent(Double.self, forKey: .maxValue)
     }
 }
 
