@@ -161,6 +161,43 @@ public struct LapLineSpec: Hashable, Codable, Sendable {
     }
 }
 
+/// How this data file's laps are divided into sectors.
+///
+/// Sector geometry cannot be fetched — no open source publishes it under a usable licence and no
+/// logger format surveyed carries it (`docs/tracks-and-sectors.md`) — so it is derived from the
+/// driving or drawn here.
+public struct SectorSpec: Hashable, Codable, Sendable {
+    public enum Mode: String, Hashable, Codable, Sendable {
+        /// Equal parts of the reference lap's distance.
+        case equalDistance
+        /// Equal parts, with each boundary moved onto the nearest straight.
+        case cornerAware
+        /// The gate lines in `lines`.
+        case manual
+    }
+
+    public var mode: Mode
+    /// Sectors per lap for `equalDistance` and `cornerAware`. Three is the convention.
+    public var count: Int
+    /// Gate lines for `manual`, in the order the track runs them.
+    public var lines: [LapLineSpec]
+
+    public init(mode: Mode = .equalDistance, count: Int = 3, lines: [LapLineSpec] = []) {
+        self.mode = mode
+        self.count = count
+        self.lines = lines
+    }
+
+    private enum CodingKeys: String, CodingKey { case mode, count, lines }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mode = try c.decodeIfPresent(Mode.self, forKey: .mode) ?? .equalDistance
+        count = try c.decodeIfPresent(Int.self, forKey: .count) ?? 3
+        lines = try c.decodeIfPresent([LapLineSpec].self, forKey: .lines) ?? []
+    }
+}
+
 public struct DataInputSettings: Hashable, Codable, Sendable {
     /// Importer id to force (e.g. `racechrono-csv`); `nil` auto-detects.
     public var importerID: String?
@@ -177,6 +214,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     public var calculatedFields: [CalculatedFieldSpec]
     /// When set, laps come from crossings of this line instead of the file's lap markers.
     public var lapLine: LapLineSpec?
+    /// How each lap is divided for sector times.
+    public var sectors: SectorSpec
     /// Seconds of the data file to keep, in its own time. Applied before laps are detected, so a
     /// trimmed-away out-lap is not counted and does not compete for the best lap.
     public var trim: TrimRange
@@ -191,6 +230,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         smoothingSeconds: Double = 0,
         calculatedFields: [CalculatedFieldSpec] = [],
         lapLine: LapLineSpec? = nil,
+        sectors: SectorSpec = SectorSpec(),
         trim: TrimRange = .none
     ) {
         self.importerID = importerID
@@ -202,12 +242,13 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         self.smoothingSeconds = smoothingSeconds
         self.calculatedFields = calculatedFields
         self.lapLine = lapLine
+        self.sectors = sectors
         self.trim = trim
     }
 
     private enum CodingKeys: String, CodingKey {
         case importerID, roleOverrides, unitOverrides, deriveSpeedFromPosition, deriveHeadingFromPosition
-        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, trim
+        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, trim
     }
 
     public init(from decoder: any Decoder) throws {
@@ -221,6 +262,9 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         smoothingSeconds = try c.decodeIfPresent(Double.self, forKey: .smoothingSeconds) ?? 0
         calculatedFields = try c.decodeIfPresent([CalculatedFieldSpec].self, forKey: .calculatedFields) ?? []
         lapLine = try c.decodeIfPresent(LapLineSpec.self, forKey: .lapLine)
+        // Absent in projects saved before sectors existed. Nothing drew a sector time then, so
+        // measuring them now cannot change how such a project renders.
+        sectors = try c.decodeIfPresent(SectorSpec.self, forKey: .sectors) ?? SectorSpec()
         // Absent in projects saved before data could be trimmed; no trim is the right reading.
         trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
     }

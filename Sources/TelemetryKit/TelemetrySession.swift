@@ -34,11 +34,15 @@ public struct TelemetrySession: Sendable {
     public var info: SessionInfo
     public private(set) var channels: [ChannelRole: Channel]
     public var laps: [Lap]
+    /// Sector times, measured once when the session was built. `nil` when the file has no laps
+    /// or no distance to divide, which is every session recorded without GPS.
+    public var sectors: SectorAnalysis?
 
-    public init(info: SessionInfo, channels: [Channel], laps: [Lap] = []) {
+    public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info
         self.channels = Dictionary(channels.map { ($0.role, $0) }, uniquingKeysWith: { first, _ in first })
         self.laps = laps
+        self.sectors = sectors
     }
 
     /// Falls back to the role's `legacyAlias`, so a project saved when CAN channels were filed

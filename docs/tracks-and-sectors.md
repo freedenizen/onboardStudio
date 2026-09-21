@@ -83,6 +83,39 @@ Four modes, user-selectable, because no single one suits every venue:
 Equal-distance is the default because it is the only one guaranteed to work — on an autocross, a
 point-to-point stage, or a circuit nobody has mapped.
 
+### What was built
+
+`Sources/TelemetryKit/Sectors.swift`. Every mode resolves to the same thing: **boundary distances
+into the lap**, measured once on a reference lap (the session's quickest full lap) and then applied
+to every lap by distance travelled. Manual gates are no exception — a gate becomes the distance at
+which the reference lap crossed it.
+
+Distance rather than geometry throughout, deliberately. A gate the car drove around on one wide lap
+would otherwise lose that lap's sector entirely, and the two automatic modes have no gates to cross
+in the first place. The cost is that a sector boundary is a distance, not a place, so a lap driven
+appreciably longer than the reference has its boundaries fall slightly early — 0.9 m of lap-to-lap
+spread on a 4 km lap makes that immaterial here.
+
+Corner-aware snapping has one rule worth keeping: **a boundary never moves more than half a
+sector**. A circuit whose straights all bunch in one place would otherwise give one enormous sector
+and two tiny ones, which says less about the driving than an equal split does.
+
+Sector times give the **theoretical best lap** for free: every sector's best added together, the lap
+the driver has already shown they can do. On the reference Sonoma session it is 1:54.54 against a
+best lap of 1:56.88, the three best sectors coming from laps 2, 3 and 6.
+
+### Corner detection
+
+`Sources/TelemetryKit/CornerDetector.swift`, shared by the corner-aware mode and (later) corner
+numbering on the track map. The trace is resampled to a fixed 5 m spacing — which is what makes the
+result independent of the logger's sample rate — then heading change per metre is smoothed over
+25 m, and maximal same-signed runs above a curvature threshold become corners. Runs the same way
+less than 40 m apart merge, so an esses is one corner and not four.
+
+**Validated against the reference session: it finds exactly 12 corners on a lap of Sonoma Raceway,
+which has 12 turns.** The two 180°-plus readings are the Carousel and the final hairpin.
+`onboard probe <file> --corners` prints them.
+
 ## Start/finish
 
 More exists than it appears. `DataInputInspector` already has a "Detect laps from a start/finish

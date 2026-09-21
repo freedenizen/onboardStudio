@@ -23,6 +23,9 @@ public enum SessionBuilder {
         /// Lap detection from a finish line; `nil` keeps the file's own laps.
         public var finishLine: FinishLine?
         public var ignoreFirstCrossings: Int
+        /// How laps are split into sectors. Three equal parts is the convention and costs a
+        /// binary search per boundary per lap, so it is always measured rather than asked for.
+        public var sectorMode: SectorMode
         /// Ignore samples before this point in the file's own time (`nil` = from the beginning).
         ///
         /// Applied before anything else, so the session behaves as if the recording had started
@@ -43,6 +46,7 @@ public enum SessionBuilder {
             calculatedFields: [CalculatedField] = [],
             finishLine: FinishLine? = nil,
             ignoreFirstCrossings: Int = 0,
+            sectorMode: SectorMode = .equalDistance(count: SectorMode.defaultCount),
             trimStart: Double? = nil,
             trimEnd: Double? = nil
         ) {
@@ -58,6 +62,7 @@ public enum SessionBuilder {
             self.calculatedFields = calculatedFields
             self.finishLine = finishLine
             self.ignoreFirstCrossings = ignoreFirstCrossings
+            self.sectorMode = sectorMode
         }
     }
 
@@ -115,6 +120,8 @@ public enum SessionBuilder {
         // Pit-lane fragments cannot be the best lap, and every object can read the deltas to it.
         session.laps = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
         for channel in LapDeltas.channels(for: session) { session.add(channel) }
+        // After the demotion, so an out-lap cannot be the lap the sectors are measured on.
+        session.sectors = Sectors.analyse(mode: options.sectorMode, session: session)
         return session
     }
 

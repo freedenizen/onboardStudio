@@ -25,6 +25,15 @@ struct Probe: ParsableCommand {
     @Option(name: .long, help: "Warm-up crossings to ignore before lap 1 (with --lap-line).")
     var ignoreFirst: Int = 0
 
+    @Option(name: .long, help: "Sectors per lap for the sector table.")
+    var sectors: Int = SectorMode.defaultCount
+
+    @Flag(name: .long, help: "Put sector boundaries on the straights between corners, not at equal distances.")
+    var cornerAware = false
+
+    @Flag(name: .long, help: "List the corners found on the reference lap.")
+    var corners = false
+
     @Option(name: .long, help: "Moving-average smoothing window in seconds.")
     var smooth: Double = 0
 
@@ -75,6 +84,7 @@ struct Probe: ParsableCommand {
                 halfWidthMeters: parts.count > 3 ? parts[3] : 25)
             options.ignoreFirstCrossings = ignoreFirst
         }
+        options.sectorMode = cornerAware ? .cornerAware(count: sectors) : .equalDistance(count: sectors)
         return options
     }
 
@@ -87,6 +97,8 @@ struct Probe: ParsableCommand {
         print("")
         printChannels(session)
         if !session.laps.isEmpty { printLaps(session) }
+        if let analysis = session.sectors, analysis.count > 1 { printSectors(analysis) }
+        if corners { printCorners(session) }
         if let at { printValues(session, at: at) }
     }
 
@@ -139,6 +151,46 @@ struct Probe: ParsableCommand {
         }
     }
 
+    private func printSectors(_ analysis: SectorAnalysis) {
+        let layout = analysis.layout
+        let boundaries = layout.boundaryDistances.map { String(format: "%.0f", $0) }.joined(separator: ", ")
+        print("\nSectors (\(layout.count), from lap \(layout.referenceLapNumber) at \(boundaries) m):")
+        let bests = analysis.best
+        let names = (0..<layout.count).map { SectorLayout.name(of: $0) }
+        print("  " + pad("Lap", 6) + names.map { pad($0, 10, left: true) }.joined(separator: " "))
+        for lap in analysis.laps {
+            let cells = lap.times.enumerated().map { index, time -> String in
+                guard let time else { return pad("…", 10, left: true) }
+                // A star marks the lap that owns the sector's best time.
+                let star = bests[index]?.lapNumber == lap.lapNumber ? "*" : " "
+                return pad(TimeParsing.lapTimeString(time, decimals: 2) + star, 10, left: true)
+            }
+            print("  " + pad(String(lap.lapNumber), 6) + cells.joined(separator: " "))
+        }
+        let bestCells = bests.map { best in
+            pad(best.map { TimeParsing.lapTimeString($0.time, decimals: 2) } ?? "…", 10, left: true)
+        }
+        print("  " + pad("best", 6) + bestCells.joined(separator: " "))
+        if let theoretical = analysis.theoreticalLapTime {
+            print("  Theoretical best lap: \(TimeParsing.lapTimeString(theoretical, decimals: 2))")
+        }
+    }
+
+    private func printCorners(_ session: TelemetrySession) {
+        guard let reference = Sectors.referenceLap(in: session) else { return }
+        let found = CornerDetector.corners(of: reference, in: session)
+        print("\nCorners on lap \(reference.number) (\(found.count)):")
+        for (index, corner) in found.enumerated() {
+            let turn = corner.turnsRight ? "right" : "left"
+            print(
+                "  \(pad(String(index + 1), 4))"
+                    + "  \(pad(String(format: "%.0f", corner.startDistance), 6, left: true))"
+                    + " … \(pad(String(format: "%.0f", corner.endDistance), 6, left: true)) m"
+                    + "  apex \(pad(String(format: "%.0f", corner.apexDistance), 6, left: true)) m"
+                    + "  \(pad(turn, 6)) \(String(format: "%.0f", abs(corner.headingChangeDegrees)))°")
+        }
+    }
+
     private func printValues(_ session: TelemetrySession, at time: Double) {
         let sample = TelemetrySampler(session: session).sample(at: time)
         print("\nValues at \(fmt(time)) s:")
@@ -169,8 +221,11 @@ struct Probe: ParsableCommand {
         if abs(value) >= 1_000_000 { return String(format: "%.2f", value) }
         return value == value.rounded() ? String(format: "%.0f", value) : String(format: "%.3f", value)
     }
+}
 
-    // MARK: - JSON
+// MARK: - JSON
+
+extension Probe {
 
     private struct ChannelSummary: Encodable {
         let role: String
@@ -191,6 +246,20 @@ struct Probe: ParsableCommand {
         let isComplete: Bool
     }
 
+    private struct SectorSummary: Encodable {
+        let boundaryDistances: [Double]
+        let lapLengthMeters: Double
+        let referenceLap: Int
+        let bestTimes: [Double?]
+        let theoreticalLapTime: Double?
+        let laps: [LapSectorSummary]
+    }
+
+    private struct LapSectorSummary: Encodable {
+        let number: Int
+        let times: [Double?]
+    }
+
     private struct Report: Encodable {
         let importer: String
         let confidence: Int
@@ -200,6 +269,7 @@ struct Probe: ParsableCommand {
         let duration: Double
         let channels: [ChannelSummary]
         let laps: [LapSummary]
+        let sectors: SectorSummary?
     }
 
     private func printJSON(_ session: TelemetrySession, importerID: String, confidence: ImportConfidence) throws {
@@ -218,6 +288,15 @@ struct Probe: ParsableCommand {
             laps: session.laps.map {
                 LapSummary(
                     number: $0.number, start: $0.start, end: $0.end, duration: $0.duration, isComplete: $0.isComplete)
+            },
+            sectors: session.sectors.map { analysis in
+                SectorSummary(
+                    boundaryDistances: analysis.layout.boundaryDistances,
+                    lapLengthMeters: analysis.layout.lapLengthMeters,
+                    referenceLap: analysis.layout.referenceLapNumber,
+                    bestTimes: analysis.best.map { $0?.time },
+                    theoreticalLapTime: analysis.theoreticalLapTime,
+                    laps: analysis.laps.map { LapSectorSummary(number: $0.lapNumber, times: $0.times) })
             })
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
