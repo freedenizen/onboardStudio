@@ -231,8 +231,11 @@ struct VideoLaneView: View {
             Rectangle().fill(Color(nsColor: .windowBackgroundColor))
             ForEach(editor.project.videoInputs) { video in
                 let live = drag?.id == video.id ? drag : nil
-                let offset = live?.offset ?? video.sync.offsetInProject
-                let length = live?.length ?? max(0, (editor.end(of: video) ?? offset) - video.sync.offsetInProject)
+                // `startInProject`, not the raw offset: a clip nudged before the project's start
+                // renders from zero with its head dropped, and the bar has to show that rather
+                // than hanging off the left edge claiming length it will not have.
+                let offset = live?.offset ?? video.sync.startInProject
+                let length = live?.length ?? max(0, (editor.end(of: video) ?? offset) - offset)
                 let selected = editor.selectedInputID == video.id && editor.selectedObjectID == nil
                 bar(
                     video, selected: selected, width: max(length * pixelsPerSecond - 2, 6),
@@ -298,7 +301,11 @@ struct VideoLaneView: View {
     private func dragGesture(for video: Input, pixelsPerSecond: CGFloat, barWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                let start = video.sync.offsetInProject
+                // The same clamped start the bar is drawn from. Dragging from the raw offset while
+                // drawing from the clamped one puts them exactly `-offsetInProject` apart: a body
+                // drag would do nothing until the pointer had travelled that far, and a tail drag
+                // would resize the bar the moment it began.
+                let start = video.sync.startInProject
                 let length = max(0, (editor.end(of: video) ?? start) - start)
                 let edge: Edge =
                     drag?.edge
