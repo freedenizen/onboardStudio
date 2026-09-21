@@ -152,6 +152,7 @@ final class EditorModel {
             settings.circuitID = match.circuit.id
             if let line = definition.startFinish { settings.lapLine = line }
             settings.sectors = definition.sectors
+            settings.cornerLabels = definition.cornerLabels
             $0.kind = .data(settings)
         }
         statusMessage = "Recognised \(definition.name) and used your saved start/finish and sectors."
@@ -173,12 +174,34 @@ final class EditorModel {
         guard case .data(let settings) = project.input(id)?.kind, let match = circuit(for: id) else { return }
         let definition = TrackDefinition(
             circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
-            longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors)
+            longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
+            cornerLabels: settings.cornerLabels)
         do {
             try trackLibrary.save(definition)
             statusMessage = "Saved the start/finish and sectors for \(definition.name)."
         } catch {
             statusMessage = "Could not save the track: \(error.localizedDescription)"
+        }
+    }
+
+    /// The corners this data input's reference lap has, for naming them.
+    func corners(for id: InputID) -> [Corner] {
+        guard let session = sessions[id], let reference = Sectors.referenceLap(in: session) else { return [] }
+        return CornerDetector.corners(of: reference, in: session)
+    }
+
+    /// Names the `index`-th corner of `id`'s lap, padding the list out as needed so a label can
+    /// be set on any corner without filling in the ones before it.
+    func setCornerLabel(_ label: String, at index: Int, for id: InputID) {
+        updateInput(id, name: "Name Corner") {
+            guard case .data(var settings) = $0.kind, index >= 0 else { return }
+            var labels = settings.cornerLabels
+            while labels.count <= index { labels.append("") }
+            labels[index] = label.trimmingCharacters(in: .whitespaces)
+            // Trailing blanks carry no meaning and would grow the file for nothing.
+            while let last = labels.last, last.isEmpty { labels.removeLast() }
+            settings.cornerLabels = labels
+            $0.kind = .data(settings)
         }
     }
 

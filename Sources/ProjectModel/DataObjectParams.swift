@@ -17,6 +17,23 @@ public enum MapBackgroundStyle: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// Which part of the session the track map draws its outline from.
+public enum TrackMapTrace: String, Hashable, Codable, Sendable, CaseIterable {
+    /// Every position in the file. Measured on a real session: nine laps overlap to within
+    /// 0.9 m on a 4 km lap, so at overlay size the overdraw is invisible.
+    case wholeSession
+    /// Only the lap sectors and deltas are measured against — a crisper line, and one that
+    /// leaves out the pit lane and the paddock because the reference lap never went there.
+    case referenceLap
+
+    public var displayName: String {
+        switch self {
+        case .wholeSession: "Whole session"
+        case .referenceLap: "Reference lap only"
+        }
+    }
+}
+
 public struct TrackMapParams: Hashable, Codable, Sendable {
     public var lineColor: RGBAColor
     public var lineWidth: Double
@@ -30,6 +47,22 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
     /// A second data input whose position is shown as another dot (two-vehicle map).
     public var secondInputID: InputID?
     public var secondDotColor: RGBAColor
+    /// Which part of the session the outline is drawn from.
+    public var trace: TrackMapTrace
+    /// Paints each sector of the outline its own colour, which is what makes a sector time
+    /// legible at a glance.
+    public var colorBySector: Bool
+    /// Cycled across the sectors; a shorter list repeats. Empty falls back to `lineColor`.
+    public var sectorColors: [RGBAColor]
+    /// A short line across the track at each sector boundary, numbered. Cheaper to read than
+    /// full colouring at small sizes, and the two can be used together.
+    public var showSectorTicks: Bool
+    /// Numbers the corners the way a circuit diagram does, found from the reference lap's
+    /// curvature rather than from any published map.
+    public var showCornerNumbers: Bool
+    public var labelColor: RGBAColor
+    /// Label size as a fraction of the map's shorter side.
+    public var labelScale: Double
 
     public init(
         lineColor: RGBAColor = .white,
@@ -40,7 +73,14 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         backgroundColor: RGBAColor = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0),
         background: MapBackgroundStyle = .none,
         secondInputID: InputID? = nil,
-        secondDotColor: RGBAColor = RGBAColor(red: 0.25, green: 0.6, blue: 1)
+        secondDotColor: RGBAColor = RGBAColor(red: 0.25, green: 0.6, blue: 1),
+        trace: TrackMapTrace = .wholeSession,
+        colorBySector: Bool = false,
+        sectorColors: [RGBAColor] = TrackMapParams.defaultSectorColors,
+        showSectorTicks: Bool = false,
+        showCornerNumbers: Bool = false,
+        labelColor: RGBAColor = .white,
+        labelScale: Double = 0.09
     ) {
         self.lineColor = lineColor
         self.lineWidth = lineWidth
@@ -51,11 +91,27 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         self.background = background
         self.secondInputID = secondInputID
         self.secondDotColor = secondDotColor
+        self.trace = trace
+        self.colorBySector = colorBySector
+        self.sectorColors = sectorColors
+        self.showSectorTicks = showSectorTicks
+        self.showCornerNumbers = showCornerNumbers
+        self.labelColor = labelColor
+        self.labelScale = labelScale
     }
+
+    /// Three colours that stay apart on a dark video and for the common colour blindness, so a
+    /// sector can be told from its neighbour without reading the numbers.
+    public static let defaultSectorColors: [RGBAColor] = [
+        RGBAColor(red: 0.35, green: 0.78, blue: 1),
+        RGBAColor(red: 1, green: 0.84, blue: 0.2),
+        RGBAColor(red: 0.95, green: 0.45, blue: 0.75),
+    ]
 
     private enum CodingKeys: String, CodingKey {
         case lineColor, lineWidth, dotColor, dotRadius, rotation, backgroundColor
         case background, secondInputID, secondDotColor
+        case trace, colorBySector, sectorColors, showSectorTicks, showCornerNumbers, labelColor, labelScale
     }
 
     public init(from decoder: any Decoder) throws {
@@ -70,6 +126,15 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         background = try c.decodeIfPresent(MapBackgroundStyle.self, forKey: .background) ?? .none
         secondInputID = try c.decodeIfPresent(InputID.self, forKey: .secondInputID)
         secondDotColor = try c.decodeIfPresent(RGBAColor.self, forKey: .secondDotColor) ?? d.secondDotColor
+        // All absent from projects saved before these options existed, and all default to off,
+        // so such a project draws exactly the outline it drew before.
+        trace = try c.decodeIfPresent(TrackMapTrace.self, forKey: .trace) ?? d.trace
+        colorBySector = try c.decodeIfPresent(Bool.self, forKey: .colorBySector) ?? d.colorBySector
+        sectorColors = try c.decodeIfPresent([RGBAColor].self, forKey: .sectorColors) ?? d.sectorColors
+        showSectorTicks = try c.decodeIfPresent(Bool.self, forKey: .showSectorTicks) ?? d.showSectorTicks
+        showCornerNumbers = try c.decodeIfPresent(Bool.self, forKey: .showCornerNumbers) ?? d.showCornerNumbers
+        labelColor = try c.decodeIfPresent(RGBAColor.self, forKey: .labelColor) ?? d.labelColor
+        labelScale = try c.decodeIfPresent(Double.self, forKey: .labelScale) ?? d.labelScale
     }
 }
 

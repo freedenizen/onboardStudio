@@ -116,8 +116,13 @@ bundled list of 1,290 motorsport venues — nothing is fetched and nothing is se
 *Track* section names it, says how sure it is, and lets you search for the right one if it guessed
 wrong or found nothing. *Not This Circuit* clears it.
 
-**Save Start/Finish and Sectors for This Track** files your start/finish line and sector settings
-against that circuit. The next data file you *add* from the same place starts with them already
+**Corners.** The map can number the corners, found from your own driving. Out of the box it
+counts them 1, 2, 3 — which is not what your circuit calls them: Sonoma runs 1, 2, 3, **3a**, 4,
+**4a**, and letter suffixes are normal everywhere. No public source publishes corner numbering, so
+type the real names into *Corners* once and they stay with the track.
+
+**Save Start/Finish, Sectors and Corner Names for This Track** files them all against that
+circuit. The next data file you *add* from the same place starts with them already
 filled in, so you set a venue up once rather than once a session. Opening a project you saved
 earlier never applies them: a project renders the way you left it, whatever the app has learned
 since.

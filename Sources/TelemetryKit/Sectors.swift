@@ -284,6 +284,25 @@ public enum Sectors {
         }
     }
 
+    /// The sector each of `times` falls in, `nil` for a time outside every lap.
+    ///
+    /// For colouring a track map: one pass over the trace rather than a lap search per point,
+    /// because the trace on a real session is six figures of samples.
+    public static func sectorIndices(at times: [Double], layout: SectorLayout, session: TelemetrySession) -> [Int?] {
+        guard let distance = session[.distance] else { return [Int?](repeating: nil, count: times.count) }
+        let laps = session.laps.sorted { $0.start < $1.start }
+        let lapStartDistances = laps.map { distance.value(at: $0.start) }
+        var cursor = 0
+        return times.map { time in
+            // The trace is chronological, so the lap only ever moves forwards.
+            while cursor < laps.count, (laps[cursor].end ?? .infinity) <= time { cursor += 1 }
+            guard cursor < laps.count, time >= laps[cursor].start, let start = lapStartDistances[cursor],
+                let now = distance.value(at: time)
+            else { return nil }
+            return layout.sector(atDistanceIntoLap: max(0, now - start))
+        }
+    }
+
     /// Sector times for every lap of the session under `mode`.
     public static func analyse(
         mode: SectorMode, session: TelemetrySession, cornerOptions: CornerDetector.Options = .init()

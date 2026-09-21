@@ -41,6 +41,47 @@ public enum LapComparison {
         return max(0, endValue - startValue)
     }
 
+    /// A place on a lap, found by how far into the lap it is.
+    ///
+    /// What a sector boundary and a corner apex both are: they are recorded as distances, and
+    /// anything that draws them needs a position.
+    public struct LapPoint: Sendable, Equatable {
+        public let time: Double
+        public let latitude: Double
+        public let longitude: Double
+        /// Direction of travel there, degrees (0 = north), measured across the sample either side
+        /// so a single noisy GPS fix cannot swing it.
+        public let headingDegrees: Double
+
+        public init(time: Double, latitude: Double, longitude: Double, headingDegrees: Double) {
+            self.time = time
+            self.latitude = latitude
+            self.longitude = longitude
+            self.headingDegrees = headingDegrees
+        }
+    }
+
+    /// Where the car was `metres` into `lap`. `nil` without position, without a distance channel,
+    /// or when the lap never got that far.
+    public static func point(atDistanceInto lap: Lap, metres: Double, session: TelemetrySession) -> LapPoint? {
+        guard let distance = session[.distance], let latitude = session[.latitude], let longitude = session[.longitude],
+            let end = lap.end, let startDistance = distance.value(at: lap.start),
+            let at = time(atDistance: startDistance + metres, in: distance, between: lap.start, and: end),
+            let lat = latitude.value(at: at), let lon = longitude.value(at: at)
+        else { return nil }
+        // A step either side, so the heading reflects the track rather than one jittery fix.
+        let step = 5.0
+        let before = time(atDistance: startDistance + max(0, metres - step), in: distance, between: lap.start, and: end)
+        let after = time(atDistance: startDistance + metres + step, in: distance, between: lap.start, and: end)
+        var heading = session[.heading]?.value(at: at) ?? 0
+        if let from = before, let to = after, let lat1 = latitude.value(at: from), let lon1 = longitude.value(at: from),
+            let lat2 = latitude.value(at: to), let lon2 = longitude.value(at: to)
+        {
+            heading = DerivedChannels.bearing(lat1: lat1, lon1: lon1, lat2: lat2, lon2: lon2)
+        }
+        return LapPoint(time: at, latitude: lat, longitude: lon, headingDegrees: heading)
+    }
+
     /// Which completed lap a delta is measured against.
     public enum Reference: Sendable, Equatable {
         /// The fastest full lap of the whole session, known from the first lap on.

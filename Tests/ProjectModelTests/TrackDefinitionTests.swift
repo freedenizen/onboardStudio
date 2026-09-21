@@ -9,7 +9,8 @@ struct TrackDefinitionTests {
         TrackDefinition(
             circuitID: "Q112563", name: "Sonoma Raceway", latitude: 38.16083, longitude: -122.455,
             startFinish: LapLineSpec(latitude: 38.16155, longitude: -122.45467, headingDegrees: 308),
-            sectors: SectorSpec(mode: .cornerAware, count: 3))
+            sectors: SectorSpec(mode: .cornerAware, count: 3),
+            cornerLabels: ["1", "2", "3", "3a", "4", "4a"])
     }
 
     @Test func aDefinitionIsFiledUnderItsWikidataID() {
@@ -44,6 +45,8 @@ struct TrackDefinitionTests {
         #expect(decoded.name == original.name)
         #expect(decoded.startFinish?.headingDegrees == 308)
         #expect(decoded.sectors.mode == .cornerAware)
+        // The reason corner names are strings: Sonoma's fourth corner is called 3a.
+        #expect(decoded.cornerLabels == ["1", "2", "3", "3a", "4", "4a"])
     }
 
     @Test func aDefinitionMissingEverythingOptionalStillDecodes() throws {
@@ -53,6 +56,7 @@ struct TrackDefinitionTests {
         #expect(decoded.circuitID == nil)
         #expect(decoded.startFinish == nil)
         #expect(decoded.sectors == SectorSpec())
+        #expect(decoded.cornerLabels.isEmpty)
     }
 }
 

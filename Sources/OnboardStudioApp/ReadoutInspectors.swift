@@ -338,6 +338,32 @@ struct TrackMapInspector: View {
             ColorPicker("Dot", selection: color(\.dotColor))
             ColorPicker("Panel", selection: color(\.backgroundColor), supportsOpacity: true)
         }
+        Section("Outline") {
+            Picker("Draw from", selection: field(\.trace)) {
+                ForEach(TrackMapTrace.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            if params.trace == .referenceLap {
+                Text(
+                    "The lap sectors and deltas are measured against — a crisper line, and one that "
+                        + "leaves out the pit lane and the paddock."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
+            Toggle("Colour by sector", isOn: field(\.colorBySector))
+            Toggle("Sector boundary ticks", isOn: field(\.showSectorTicks))
+            Toggle("Corner numbers", isOn: field(\.showCornerNumbers))
+            if params.showSectorTicks || params.showCornerNumbers {
+                ColorPicker("Labels", selection: color(\.labelColor))
+                NumberField("Label size", value: field(\.labelScale), fractionDigits: 0...2, step: 0.01)
+            }
+            if params.colorBySector || params.showSectorTicks {
+                Text(sectorNote).font(.caption).foregroundStyle(.secondary)
+            }
+            if params.showCornerNumbers {
+                Text("Corners are found from the reference lap's curvature, not from a published map.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
         Section("Map Background") {
             Picker("Imagery", selection: field(\.background)) {
                 ForEach(MapBackgroundStyle.allCases, id: \.self) { Text($0.displayName).tag($0) }
@@ -360,6 +386,15 @@ struct TrackMapInspector: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
+    }
+
+    /// How many sectors this map's data input actually has, so the colouring says where it is
+    /// set rather than leaving the driver hunting for it.
+    var sectorNote: String {
+        guard let session = object.inputID.flatMap({ editor.loaded?.sessions[$0] }), let analysis = session.sectors,
+            analysis.count > 1
+        else { return "This data file has no sectors yet — set them on the data input." }
+        return "\(analysis.count) sectors, set on the data input."
     }
 
     func field<T>(_ keyPath: WritableKeyPath<TrackMapParams, T>) -> Binding<T> {

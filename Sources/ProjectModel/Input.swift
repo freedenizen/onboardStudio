@@ -227,6 +227,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// The circuit this file was recorded at, as a Wikidata id (`Q112563`) or a track-definition
     /// key. Set when the file is added and correctable; `nil` means nothing has been decided.
     public var circuitID: String?
+    /// What this circuit calls its corners, in driving order from the start/finish, one per
+    /// corner the detector finds. Strings, because circuits number 3, 3a, 4, 4a. Empty leaves
+    /// the map counting them instead.
+    public var cornerLabels: [String]
     /// Seconds of the data file to keep, in its own time. Applied before laps are detected, so a
     /// trimmed-away out-lap is not counted and does not compete for the best lap.
     public var trim: TrimRange
@@ -243,6 +247,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         lapLine: LapLineSpec? = nil,
         sectors: SectorSpec = SectorSpec(),
         circuitID: String? = nil,
+        cornerLabels: [String] = [],
         trim: TrimRange = .none
     ) {
         self.importerID = importerID
@@ -256,12 +261,14 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         self.lapLine = lapLine
         self.sectors = sectors
         self.circuitID = circuitID
+        self.cornerLabels = cornerLabels
         self.trim = trim
     }
 
     private enum CodingKeys: String, CodingKey {
         case importerID, roleOverrides, unitOverrides, deriveSpeedFromPosition, deriveHeadingFromPosition
-        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID, trim
+        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID
+        case cornerLabels, trim
     }
 
     public init(from decoder: any Decoder) throws {
@@ -282,6 +289,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         // saved project keeps the lap line and sectors it was saved with, whatever the circuit
         // library has learned since.
         circuitID = try c.decodeIfPresent(String.self, forKey: .circuitID)
+        cornerLabels = try c.decodeIfPresent([String].self, forKey: .cornerLabels) ?? []
         // Absent in projects saved before data could be trimmed; no trim is the right reading.
         trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
     }

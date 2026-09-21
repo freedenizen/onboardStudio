@@ -11,16 +11,35 @@ public struct Corner: Sendable, Equatable {
     public let apexDistance: Double
     /// Total heading change through the corner in degrees; positive turns right (clockwise).
     public let headingChangeDegrees: Double
+    /// The lap these distances are into, needed to measure a corner that spans the line.
+    public let lapLengthMeters: Double
 
-    public init(startDistance: Double, endDistance: Double, apexDistance: Double, headingChangeDegrees: Double) {
+    public init(
+        startDistance: Double, endDistance: Double, apexDistance: Double, headingChangeDegrees: Double,
+        lapLengthMeters: Double
+    ) {
         self.startDistance = startDistance
         self.endDistance = endDistance
         self.apexDistance = apexDistance
         self.headingChangeDegrees = headingChangeDegrees
+        self.lapLengthMeters = lapLengthMeters
     }
 
     public var turnsRight: Bool { headingChangeDegrees > 0 }
-    public var lengthMeters: Double { endDistance - startDistance }
+
+    /// A corner sitting on the start/finish line begins near the end of the lap and finishes
+    /// just after it, so its end reads as *before* its start.
+    ///
+    /// Every distance stays inside `0..<lapLengthMeters`. Letting the end run past the lap
+    /// instead would put it in a different coordinate system from the apex, and the apex is what
+    /// corners are sorted by — a wrapped corner would then sort early while carrying an
+    /// out-of-range end, and `straightMidpoints` would pair that end with the next corner's start
+    /// and site a straight in the middle of the circuit.
+    public var wrapsStartFinish: Bool { endDistance < startDistance }
+
+    public var lengthMeters: Double {
+        wrapsStartFinish ? endDistance + lapLengthMeters - startDistance : endDistance - startDistance
+    }
 }
 
 /// Finds the corners of a lap from the curvature of its GPS trace.
@@ -112,6 +131,14 @@ public enum CornerDetector {
 
         var count: Int { distances.count }
         var length: Double { distances[distances.count - 1] }
+
+        /// Whether the lap comes back to where it started, which a circuit lap does and a
+        /// point-to-point stage does not. Only a closed lap may have its curvature wrapped.
+        var isClosed: Bool {
+            let gap = DerivedChannels.distance(
+                lat1: latitude[0], lon1: longitude[0], lat2: latitude[count - 1], lon2: longitude[count - 1])
+            return gap < step * 2
+        }
     }
 
     /// Signed heading change per metre at each point of `path`, positive clockwise. The first and
@@ -130,6 +157,12 @@ public enum CornerDetector {
         for index in 1..<headings.count {
             result[index] = signedDifference(headings[index], headings[index - 1]) / path.step
         }
+        // The turn at the start/finish line itself falls between the last step of the lap and the
+        // first, so on a closed lap it is not between any two samples and would be missed
+        // entirely — a corner on the line would simply not exist.
+        if path.isClosed {
+            result[0] = signedDifference(headings[0], headings[headings.count - 1]) / path.step
+        }
         return result
     }
 
@@ -142,8 +175,22 @@ public enum CornerDetector {
     }
 
     /// Centred moving average over `window` samples either side.
-    static func smoothed(_ values: [Double], window: Int) -> [Double] {
+    ///
+    /// `wrapping` runs the window round the ends, which a closed lap needs: a corner on the
+    /// start/finish line would otherwise be averaged against only half a window and smoothed
+    /// below the threshold that makes it a corner.
+    static func smoothed(_ values: [Double], window: Int, wrapping: Bool = false) -> [Double] {
         guard window > 0, values.count > 2 * window else { return values }
+        if wrapping {
+            let count = values.count
+            return values.indices.map { index in
+                var total = 0.0
+                for offset in -window...window {
+                    total += values[((index + offset) % count + count) % count]
+                }
+                return total / Double(2 * window + 1)
+            }
+        }
         var prefix = [Double](repeating: 0, count: values.count + 1)
         for index in values.indices { prefix[index + 1] = prefix[index] + values[index] }
         return values.indices.map { index in
@@ -165,7 +212,7 @@ public enum CornerDetector {
     static func corners(along path: Path, options: Options) -> [Corner] {
         let raw = curvature(along: path)
         let window = Int((options.smoothingMeters / options.stepMeters / 2).rounded())
-        let smooth = smoothed(raw, window: window)
+        let smooth = smoothed(raw, window: window, wrapping: path.isClosed)
         let threshold = options.curvatureThreshold
 
         // Maximal runs of the same-signed curvature above the threshold.
@@ -201,14 +248,38 @@ public enum CornerDetector {
             }
         }
 
-        return merged.compactMap { run in
-            let change = (run.lower...run.upper).reduce(0.0) { $0 + raw[$1] * path.step }
+        // A lap is a loop, so a corner sitting on the start/finish line arrives as two runs —
+        // one at each end of the array — and neither half turns far enough to count on its own.
+        // Joining them is what makes the corner on the line a corner.
+        //
+        // Only when the lap actually closes. A point-to-point stage that begins in a corner and
+        // ends in another the same way has two runs touching the ends too, and fusing those makes
+        // one impossible corner spanning the whole stage — taking the real straight between them
+        // with it, because the fused corner's end lands before its start.
+        if path.isClosed, merged.count > 1, let first = merged.first, let last = merged.last, first.lower == 0,
+            last.upper == smooth.count - 1, first.sign == last.sign
+        {
+            merged.removeLast()
+            merged[0] = Run(lower: last.lower, upper: first.upper, sign: first.sign)
+        }
+
+        let corners = merged.compactMap { run -> Corner? in
+            // A joined run runs off the end of the lap and back round to `upper`.
+            let wrapped = run.lower > run.upper
+            let indices =
+                wrapped ? Array(run.lower..<smooth.count) + Array(0...run.upper) : Array(run.lower...run.upper)
+            let change = indices.reduce(0.0) { $0 + raw[$1] * path.step }
             guard abs(change) >= options.minTurnDegrees else { return nil }
-            let apex = (run.lower...run.upper).max { abs(smooth[$0]) < abs(smooth[$1]) } ?? run.lower
+            let apex = indices.max { abs(smooth[$0]) < abs(smooth[$1]) } ?? run.lower
             return Corner(
                 startDistance: path.distances[run.lower], endDistance: path.distances[run.upper],
-                apexDistance: path.distances[apex], headingChangeDegrees: change)
+                apexDistance: path.distances[apex], headingChangeDegrees: change,
+                lapLengthMeters: path.length)
         }
+        // In the order they are met after the start/finish line, which is how a circuit numbers
+        // them. Joining a corner across the line can put it either end depending on where its
+        // apex fell, so sorting is not optional.
+        return corners.sorted { $0.apexDistance < $1.apexDistance }
     }
 
     /// Midpoints of the straights *between* corners, which is where a sector boundary belongs.
@@ -217,8 +288,14 @@ public enum CornerDetector {
     /// boundary a few metres from it would time a sector nobody drives.
     public static func straightMidpoints(between corners: [Corner]) -> [Double] {
         guard corners.count > 1 else { return [] }
-        return (0..<(corners.count - 1)).map { index in
-            (corners[index].endDistance + corners[index + 1].startDistance) / 2
+        return (0..<(corners.count - 1)).compactMap { index in
+            let from = corners[index].endDistance
+            let to = corners[index + 1].startDistance
+            // A corner that wraps the line leaves the gap before it running backwards; there is
+            // no straight to site there, and inventing a midpoint would put a sector boundary
+            // somewhere the car never straightens up.
+            guard to >= from else { return nil }
+            return (from + to) / 2
         }
     }
 }
