@@ -1,0 +1,31 @@
+{
+  "formatVersion" : 1,
+  "height" : 0.44,
+  "kind" : {
+    "trackMap" : {
+      "_0" : {
+        "background" : "none",
+        "backgroundColor" : "#00000000",
+        "colorBySector" : true,
+        "dotColor" : "#FF9E1A",
+        "dotRadius" : 7,
+        "labelColor" : "#FFFFFF",
+        "labelScale" : 0.09,
+        "lineColor" : "#FFFFFF",
+        "lineWidth" : 3,
+        "rotation" : 37,
+        "secondDotColor" : "#4099FF",
+        "sectorColors" : [
+          "#59C7FF",
+          "#FFD633",
+          "#F273BF"
+        ],
+        "showCornerNumbers" : false,
+        "showSectorTicks" : false,
+        "trace" : "referenceLap"
+      }
+    }
+  },
+  "opacity" : 0.8,
+  "width" : 0.33
+}
