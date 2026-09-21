@@ -215,6 +215,43 @@ struct DataInputInspector: View {
         update("Edit Sectors") { change(&$0.sectors) }
     }
 
+    /// Position and heading at the current preview time, mapped through this input's sync.
+    var currentPositionLine: LapLineSpec? {
+        guard let session else { return nil }
+        let inputTime = input.sync.inputTime(forProjectTime: editor.currentTime)
+        guard let line = LapDetector.finishLine(at: inputTime, in: session) else { return nil }
+        return LapLineSpec(latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees)
+    }
+
+    func field<T>(_ keyPath: WritableKeyPath<DataInputSettings, T>, name: String) -> Binding<T> {
+        Binding(get: { settings[keyPath: keyPath] }, set: { value in update(name) { $0[keyPath: keyPath] = value } })
+    }
+
+    func lineField(_ keyPath: WritableKeyPath<LapLineSpec, Double>) -> Binding<Double> {
+        Binding(
+            get: { settings.lapLine?[keyPath: keyPath] ?? 0 }, set: { v in updateLine { $0[keyPath: keyPath] = v } })
+    }
+
+    func updateLine(_ change: (inout LapLineSpec) -> Void) {
+        update("Edit Start/Finish") { settings in
+            guard var line = settings.lapLine else { return }
+            change(&line)
+            settings.lapLine = line
+        }
+    }
+
+    func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
+        var new = settings
+        change(&new)
+        editor.updateInput(input.id, name: name) { $0.kind = .data(new) }
+    }
+}
+
+/// Which circuit the file was recorded at, and naming its corners.
+///
+/// Split out so `DataInputInspector` stays inside SwiftLint's type-body limit: sectors and
+/// circuits arrived from separate branches and together took the struct over it.
+extension DataInputInspector {
     /// Which circuit this file was recorded at, and what the app remembers about it.
     ///
     /// The match is only ever shown, never insisted on: the driver can correct it or clear it,
@@ -267,36 +304,6 @@ struct DataInputInspector: View {
         update(id == nil ? "Clear Circuit" : "Set Circuit") { $0.circuitID = id }
     }
 
-    /// Position and heading at the current preview time, mapped through this input's sync.
-    var currentPositionLine: LapLineSpec? {
-        guard let session else { return nil }
-        let inputTime = input.sync.inputTime(forProjectTime: editor.currentTime)
-        guard let line = LapDetector.finishLine(at: inputTime, in: session) else { return nil }
-        return LapLineSpec(latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees)
-    }
-
-    func field<T>(_ keyPath: WritableKeyPath<DataInputSettings, T>, name: String) -> Binding<T> {
-        Binding(get: { settings[keyPath: keyPath] }, set: { value in update(name) { $0[keyPath: keyPath] = value } })
-    }
-
-    func lineField(_ keyPath: WritableKeyPath<LapLineSpec, Double>) -> Binding<Double> {
-        Binding(
-            get: { settings.lapLine?[keyPath: keyPath] ?? 0 }, set: { v in updateLine { $0[keyPath: keyPath] = v } })
-    }
-
-    func updateLine(_ change: (inout LapLineSpec) -> Void) {
-        update("Edit Start/Finish") { settings in
-            guard var line = settings.lapLine else { return }
-            change(&line)
-            settings.lapLine = line
-        }
-    }
-
-    func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
-        var new = settings
-        change(&new)
-        editor.updateInput(input.id, name: name) { $0.kind = .data(new) }
-    }
 }
 
 /// One imported channel with its role and unit, editable via overrides.
