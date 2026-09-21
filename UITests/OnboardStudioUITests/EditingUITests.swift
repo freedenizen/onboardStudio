@@ -126,6 +126,23 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Speedo").waitForNonExistence(timeout: Self.timeout), "Redo removes it again")
     }
 
+    /// #64: the Sector Times panel is reachable from the Add Object menu and its comparison is
+    /// switchable, which is the only way a user meets sector timing in the app.
+    @MainActor
+    func testSectorTimesPanelIsAddedAndCompared() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Sector Times")
+        XCTAssertTrue(sidebarObject("Sector Times").waitForExistence(timeout: Self.timeout))
+        // The panel compares with the best sector by default; switch it to the lap before.
+        choose("Previous lap", inPopUpShowing: "Best sector")
+        XCTAssertTrue(
+            app.popUpButtons.matching(NSPredicate(format: "value == 'Previous lap'")).firstMatch.waitForExistence(
+                timeout: Self.timeout),
+            "The sector comparison did not change")
+    }
+
     /// #86: ↑/↓ step the number field that has focus, so a value can be adjusted slightly
     /// without selecting the text and retyping it.
     ///

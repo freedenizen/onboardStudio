@@ -388,6 +388,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
     case scripted(ScriptedParams)
     case indicator(IndicatorParams)
     case lapPanel(LapPanelParams)
+    case sectorPanel(SectorPanelParams)
     case steeringWheel(SteeringWheelParams)
 
     public var typeName: String {
@@ -410,6 +411,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .scripted: "Script"
         case .indicator: "Indicator"
         case .lapPanel: "Timing Panel"
+        case .sectorPanel: "Sector Times"
         case .steeringWheel: "Steering Wheel"
         }
     }

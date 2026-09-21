@@ -128,6 +128,15 @@ public struct SectorAnalysis: Sendable, Equatable {
 
     public func sectors(ofLap number: Int) -> LapSectors? { laps.first { $0.lapNumber == number } }
 
+    /// Lap `number`'s sector times, all `nil` when that lap timed none.
+    public func times(ofLap number: Int?) -> [Double?] {
+        guard let number, let lap = sectors(ofLap: number) else { return [Double?](repeating: nil, count: count) }
+        return lap.times
+    }
+
+    /// The fastest time recorded in each sector, without the lap it came from.
+    public var bestTimes: [Double?] { best.map { $0?.time } }
+
     /// Lap `number`'s time in `sector` minus the fastest anyone did it this session.
     /// Zero on the lap that set the best.
     public func deltaToBest(sector: Int, lapNumber: Int) -> Double? {
@@ -147,6 +156,13 @@ public struct SectorStatus: Sendable, Equatable {
     public let elapsedInSector: Double
     /// This lap's finished sectors; `nil` for the one in progress and the ones still to come.
     public let times: [Double?]
+
+    public init(lapNumber: Int, sectorIndex: Int, elapsedInSector: Double, times: [Double?]) {
+        self.lapNumber = lapNumber
+        self.sectorIndex = sectorIndex
+        self.elapsedInSector = elapsedInSector
+        self.times = times
+    }
 }
 
 /// Builds sector layouts and times. A sector time is the gap between two distances into the lap,

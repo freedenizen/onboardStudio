@@ -240,6 +240,31 @@ lap you are in, as previous-edit does in an editor; a second press goes to the o
 Laps that fall past the end of the video cannot be reached — the timeline ends when the picture
 does.
 
+### 6d. Sectors
+
+A lap split into parts tells you *where* the time went, not just how much. Select the data file
+and open **Sectors** in the inspector:
+
+- **Equal distances** (the default) cuts the fastest lap's distance into three. It needs no setup
+  and works anywhere — a circuit, an autocross, a hill climb.
+- **On the straights** puts each boundary on the nearest straight instead, so a sector never cuts
+  a corner in half. The corners are found from your own driving; nothing here knows the venue.
+- **Gates I place** uses lines you add at the preview position, crossed in the order you drive
+  them.
+
+The inspector then lists each sector's best time and the lap it came from, and the **theoretical
+lap** — every sector's best added together, the lap you have already driven in pieces.
+
+Add a **Sector Times** object to put them on the video. Finished sectors show their time and how
+it compares; the sector you are in counts up in the highlight colour; the ones ahead stay blank.
+**Compare with** chooses the yardstick: the best that sector was driven all session, the same
+sector on your best lap, or on the lap before. Crossing the line holds the finished lap up for a few
+seconds, which is the only moment its last sector can be read.
+
+No source of sector definitions exists that this app could ship — circuits do not publish them in
+any readable form, and the one dataset that has them is licensed so it cannot be used here. That
+is why sectors are derived from your driving or drawn by you.
+
 ## 7. Export and share
 
 *Export* renders through the same pipeline as the preview, so what you see is what you get.

@@ -158,6 +158,20 @@ Sector times give the **theoretical best lap** for free: every sector's best add
 the driver has already shown they can do. On the reference Sonoma session it is 1:54.54 against a
 best lap of 1:56.88, the three best sectors coming from laps 2, 3 and 6.
 
+### Seeing them
+
+A **Sector Times** display object (`Sources/RenderKit/SectorPanelRenderer.swift`) draws the lap in
+progress one cell per sector: finished sectors show what they took and how that compares, the
+sector the car is in shows its running time in the highlight colour, and sectors still to come are
+blank — the way a timing screen fills in across a lap. The theoretical lap sits on the end.
+
+A delta that rounds away to `0.00` is drawn in the text colour rather than red. The lap holding a
+best sector always shows exactly that, and painting the best lap red on the last digit of floating
+point is the sort of thing a driver notices and stops trusting.
+
+Where the sectors come from is set on the **data input**, not on the panel: one file, one set of
+sectors, however many panels read them.
+
 ### Corner detection
 
 `Sources/TelemetryKit/CornerDetector.swift`, shared by the corner-aware mode and (later) corner

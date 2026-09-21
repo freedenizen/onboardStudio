@@ -189,3 +189,76 @@ struct OverlayOpacitySection: View {
         }
     }
 }
+
+struct SectorPanelInspector: View {
+    @Bindable var editor: EditorModel
+    let object: DisplayObject
+    let params: SectorPanelParams
+
+    /// Where the sectors themselves are set up. The panel draws whatever the data input says,
+    /// so pointing at that is more useful than repeating the controls here.
+    var sectorSource: String {
+        guard let input = object.inputID.flatMap({ editor.project.input($0) }),
+            case .data(let settings) = input.kind
+        else { return "Choose a data input to show its sectors." }
+        let spec = settings.sectors
+        return switch spec.mode {
+        case .equalDistance: "\(spec.count) equal sectors, set on “\(input.label)”."
+        case .cornerAware: "\(spec.count) sectors on the straights, set on “\(input.label)”."
+        case .manual: "\(spec.lines.count + 1) sectors from placed gates, set on “\(input.label)”."
+        }
+    }
+
+    var body: some View {
+        Section("Sector Times") {
+            Picker("Show", selection: field(\.display)) {
+                ForEach(SectorPanelParams.Display.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            Picker("Compare with", selection: field(\.reference)) {
+                ForEach(SectorReference.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            Toggle("Sector labels", isOn: field(\.showLabels))
+            Toggle("Highlight the sector in progress", isOn: field(\.highlightCurrent))
+            NumberField(
+                "Hold the finished lap (s)", value: field(\.holdPreviousSeconds), fractionDigits: 0...1, step: 1)
+            Text(
+                "After the start/finish line the lap just completed stays up for this long, which is the only "
+                    + "moment its last sector is readable. 0 moves on immediately."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+            Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 1...3)
+            Text(sectorSource).font(.caption).foregroundStyle(.secondary)
+        }
+        Section("Theoretical lap") {
+            Toggle("Show", isOn: field(\.showTheoretical))
+            if params.showTheoretical {
+                TextField("Heading", text: field(\.theoreticalLabel))
+                Text("Every sector's best time added together — the lap you have already driven in pieces.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        Section("Look") {
+            ColorPicker("Text", selection: color(\.textColor))
+            ColorPicker("Labels", selection: color(\.labelColor))
+            if params.highlightCurrent { ColorPicker("Sector in progress", selection: color(\.currentColor)) }
+            ColorPicker("Ahead", selection: color(\.aheadColor))
+            ColorPicker("Behind", selection: color(\.behindColor))
+            ColorPicker("Background", selection: color(\.backgroundColor), supportsOpacity: true)
+            Toggle("Black outline", isOn: field(\.outline))
+        }
+    }
+
+    func field<T>(_ keyPath: WritableKeyPath<SectorPanelParams, T>) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    }
+
+    func color(_ keyPath: WritableKeyPath<SectorPanelParams, RGBAColor>) -> Binding<Color> {
+        Binding(get: { Color(params[keyPath: keyPath]) }, set: { v in update { $0[keyPath: keyPath] = RGBAColor(v) } })
+    }
+
+    func update(_ change: (inout SectorPanelParams) -> Void) {
+        var new = params
+        change(&new)
+        editor.updateObject(object.id, name: "Edit Sector Times") { $0.kind = .sectorPanel(new) }
+    }
+}

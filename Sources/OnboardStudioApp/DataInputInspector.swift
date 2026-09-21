@@ -137,8 +137,121 @@ struct DataInputInspector: View {
                 Text("No laps found.").foregroundStyle(.secondary)
             }
         }
+        sectorsSection
     }
 
+    /// How this file's laps are split, and what the split produced. Nothing here knows the
+    /// circuit: no source publishes sector geometry under a licence we can use, so the sectors
+    /// are derived from the driving or placed by hand.
+    @ViewBuilder var sectorsSection: some View {
+        Section("Sectors") {
+            Picker("Split each lap by", selection: sectorField(\.mode)) {
+                ForEach(SectorSpec.Mode.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            switch settings.sectors.mode {
+            case .equalDistance, .cornerAware:
+                Stepper(
+                    "Sectors: \(settings.sectors.count)",
+                    value: Binding(
+                        get: { settings.sectors.count },
+                        set: { v in updateSectors { $0.count = max(1, min(12, v)) } }), in: 1...12)
+                Text(
+                    settings.sectors.mode == .cornerAware
+                        ? "Each boundary moves onto the nearest straight, so a sector never cuts a corner in half."
+                        : "Equal parts of the fastest lap's distance. Works anywhere, including a venue nobody "
+                            + "has mapped."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            case .manual:
+                Button("Add Gate at Preview Position") {
+                    if let here = currentPositionLine { updateSectors { $0.lines.append(here) } }
+                }
+                .disabled(currentPositionLine == nil)
+                ForEach(Array(settings.sectors.lines.enumerated()), id: \.offset) { index, line in
+                    LabeledContent("Gate \(index + 1)") {
+                        HStack {
+                            Text(String(format: "%.5f, %.5f", line.latitude, line.longitude))
+                                .monospacedDigit().foregroundStyle(.secondary)
+                            Button("Remove") { updateSectors { $0.lines.remove(at: index) } }
+                        }
+                    }
+                }
+                Text("Gates are crossed in the order the track runs them; the start/finish line is not one of them.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let analysis = session?.sectors, analysis.count > 1 {
+                let boundaries = analysis.layout.boundaryDistances.map { String(format: "%.0f m", $0) }
+                LabeledContent("Boundaries") {
+                    Text(boundaries.joined(separator: ", ")).foregroundStyle(.secondary)
+                }
+                ForEach(0..<analysis.count, id: \.self) { index in
+                    LabeledContent(SectorLayout.name(of: index)) {
+                        Text(
+                            analysis.best[index].map {
+                                TimeParsing.lapTimeString($0.time, decimals: 2) + "  (lap \($0.lapNumber))"
+                            } ?? "—"
+                        )
+                        .monospacedDigit().foregroundStyle(.secondary)
+                    }
+                }
+                if let theoretical = analysis.theoreticalLapTime {
+                    LabeledContent("Theoretical lap") {
+                        Text(TimeParsing.lapTimeString(theoretical, decimals: 2)).monospacedDigit()
+                    }
+                }
+            } else {
+                Text("Sectors need laps and a distance channel; a GPS file gets one.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    func sectorField<T>(_ keyPath: WritableKeyPath<SectorSpec, T>) -> Binding<T> {
+        Binding(
+            get: { settings.sectors[keyPath: keyPath] }, set: { v in updateSectors { $0[keyPath: keyPath] = v } })
+    }
+
+    func updateSectors(_ change: (inout SectorSpec) -> Void) {
+        update("Edit Sectors") { change(&$0.sectors) }
+    }
+
+    /// Position and heading at the current preview time, mapped through this input's sync.
+    var currentPositionLine: LapLineSpec? {
+        guard let session else { return nil }
+        let inputTime = input.sync.inputTime(forProjectTime: editor.currentTime)
+        guard let line = LapDetector.finishLine(at: inputTime, in: session) else { return nil }
+        return LapLineSpec(latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees)
+    }
+
+    func field<T>(_ keyPath: WritableKeyPath<DataInputSettings, T>, name: String) -> Binding<T> {
+        Binding(get: { settings[keyPath: keyPath] }, set: { value in update(name) { $0[keyPath: keyPath] = value } })
+    }
+
+    func lineField(_ keyPath: WritableKeyPath<LapLineSpec, Double>) -> Binding<Double> {
+        Binding(
+            get: { settings.lapLine?[keyPath: keyPath] ?? 0 }, set: { v in updateLine { $0[keyPath: keyPath] = v } })
+    }
+
+    func updateLine(_ change: (inout LapLineSpec) -> Void) {
+        update("Edit Start/Finish") { settings in
+            guard var line = settings.lapLine else { return }
+            change(&line)
+            settings.lapLine = line
+        }
+    }
+
+    func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
+        var new = settings
+        change(&new)
+        editor.updateInput(input.id, name: name) { $0.kind = .data(new) }
+    }
+}
+
+/// Which circuit the file was recorded at, and naming its corners.
+///
+/// Split out so `DataInputInspector` stays inside SwiftLint's type-body limit: sectors and
+/// circuits arrived from separate branches and together took the struct over it.
+extension DataInputInspector {
     /// Which circuit this file was recorded at, and what the app remembers about it.
     ///
     /// The match is only ever shown, never insisted on: the driver can correct it or clear it,
@@ -191,36 +304,6 @@ struct DataInputInspector: View {
         update(id == nil ? "Clear Circuit" : "Set Circuit") { $0.circuitID = id }
     }
 
-    /// Position and heading at the current preview time, mapped through this input's sync.
-    var currentPositionLine: LapLineSpec? {
-        guard let session else { return nil }
-        let inputTime = input.sync.inputTime(forProjectTime: editor.currentTime)
-        guard let line = LapDetector.finishLine(at: inputTime, in: session) else { return nil }
-        return LapLineSpec(latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees)
-    }
-
-    func field<T>(_ keyPath: WritableKeyPath<DataInputSettings, T>, name: String) -> Binding<T> {
-        Binding(get: { settings[keyPath: keyPath] }, set: { value in update(name) { $0[keyPath: keyPath] = value } })
-    }
-
-    func lineField(_ keyPath: WritableKeyPath<LapLineSpec, Double>) -> Binding<Double> {
-        Binding(
-            get: { settings.lapLine?[keyPath: keyPath] ?? 0 }, set: { v in updateLine { $0[keyPath: keyPath] = v } })
-    }
-
-    func updateLine(_ change: (inout LapLineSpec) -> Void) {
-        update("Edit Start/Finish") { settings in
-            guard var line = settings.lapLine else { return }
-            change(&line)
-            settings.lapLine = line
-        }
-    }
-
-    func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
-        var new = settings
-        change(&new)
-        editor.updateInput(input.id, name: name) { $0.kind = .data(new) }
-    }
 }
 
 /// One imported channel with its role and unit, editable via overrides.
