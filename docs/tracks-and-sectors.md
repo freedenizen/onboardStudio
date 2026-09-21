@@ -41,6 +41,38 @@ session centroid 38.16237, -122.45739
 A 340× margin to the runner-up. Nearest-centroid identification is unambiguous and the list is
 small enough to bundle without thought.
 
+### What was built
+
+`Sources/TelemetryKit/CircuitCatalog.swift`, with the list at
+`Sources/TelemetryKit/Resources/circuits.csv` — **1,290 circuits in 67 KB**, refreshed by
+`Scripts/update-circuits.sh` (which holds the SPARQL query, so the file has provenance rather
+than being a mystery blob). Nothing queries the network at run time; the list ships with the app.
+
+Three things the data forced:
+
+- **Ask for labels in one language and ~130 circuits arrive as `Q12345`.** The query falls back
+  through nineteen languages, which leaves twelve with no usable name at all; those are dropped.
+- **Names are not identities.** Wikidata lists *three* Brazilian circuits called "Autódromo
+  Internacional Ayrton Senna", and nine other names are duplicated. The Wikidata id is what a
+  saved reference stores, and the refresh script sorts by name *then id* or the file is not
+  reproducible between runs.
+- **Some venues share a coordinate exactly.** The Isle of Man's Clypse, Four Inch and Highroads
+  courses sit on one point. A nearest-point match between those is a coin toss, so `Match` carries
+  the runner-up distance and an `isConfident` flag: confident when the file's own track name
+  agrees, or when the runner-up is at least ten times further away. Sonoma passes on both counts;
+  the Isle of Man passes on neither, and the app should ask rather than assert.
+
+The file's track name only ever *confirms* a coordinate — except that a named candidate inside the
+radius beats a nearer unnamed one, which is how a venue listed once per layout resolves to the
+layout the driver says they drove.
+
+`onboard probe` prints the match:
+
+```
+Track:     Sonoma
+Circuit:   Sonoma Raceway (US) [Q112563]  (0.27 km from the session centre, next 92 km, name agrees)
+```
+
 **OpenStreetMap geometry was evaluated and rejected.** Sonoma Raceway is **21 fragmented ways**,
 mostly unnamed, only one closed, mixing the dragstrip, pit road and alternate layouts
 ("Sonoma Raceway 2020", "PWC lower hairpin"). Assembling an outline would mean stitching fragments
