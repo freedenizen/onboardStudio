@@ -182,6 +182,24 @@ What #66 adds:
   projects the trace, so the geometry is there.
 - **A first guess from the data** — the trace shows where laps repeat, so a session opens with
   something workable and the driver corrects rather than authors.
+
+  `Sources/TelemetryKit/StartFinishFinder.swift`. Two routes, in order of how much they know:
+
+  1. **The file's own laps.** A logger that records a lap number already knows where the line is —
+     it is wherever the first complete lap began. Nothing needs deriving. On the reference
+     RaceChrono session this reproduces the hand-found line **exactly**: 38.16155, −122.45467,
+     heading 308°, giving 8 laps whose lengths agree to 0.5%.
+  2. **The trace.** Otherwise try forty points around the circuit, skipping any where the car was
+     below 40% of its top speed — which throws out the pit lane, the paddock and the moments it
+     was parked — and keep the one whose laps come out most consistent.
+
+  Consistency is measured on lap **distances**, not times, as a fraction of the median. And a
+  candidate that finds *more* laps only wins when it is at least as consistent, so a line the car
+  crosses twice a lap cannot buy its way in on count alone.
+
+  A derived line is not the same place as the hand-found one — any point on the circuit is a valid
+  start/finish — and it does not need to be. It needs to give the same laps, which on the
+  reference session (lap numbers stripped) it does: 7+ laps within 5%.
 - **Remember it per circuit**, which is what identification unlocks: set once per venue, not once
   per session.
 - **Export and import track definitions** — line, sectors and circuit name in one file. Since no

@@ -99,6 +99,15 @@ struct Probe: ParsableCommand {
         if !session.laps.isEmpty { printLaps(session) }
         if let analysis = session.sectors, analysis.count > 1 { printSectors(analysis) }
         if corners { printCorners(session) }
+        if let suggestion = StartFinishFinder.suggest(in: session) {
+            let line = suggestion.line
+            print(
+                "\nSuggested start/finish (\(suggestion.source.rawValue)): "
+                    + String(format: "%.5f, %.5f", line.latitude, line.longitude)
+                    + (line.headingDegrees.map { String(format: ", heading %.0f°", $0) } ?? "")
+                    + "  → \(suggestion.laps) laps, lengths within "
+                    + String(format: "%.1f%%", suggestion.spread * 100))
+        }
         if let at { printValues(session, at: at) }
     }
 
