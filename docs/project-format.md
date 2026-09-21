@@ -14,20 +14,52 @@ A project saved by an earlier build keeps the values it had. New defaults, new i
 automatic behaviour apply only to projects created after the change. A driver who opens last
 season's project sees the video they exported, not a reinterpretation of it.
 
-Express that in the migration, not in the decoder:
+There are two ways to hold that line, and the difference between them is worth understanding
+before reaching for either.
+
+### A decode default, for the first change to a key
+
+A non-optional field whose `init(from:)` default differs from its memberwise default does
+distinguish old files from new ones, and the codebase relies on it. `TimerParams.deltaReference`
+is constructed as `.sessionBest` but decodes as `decodeIfPresent(…) ?? .bestLap`; because the
+field is non-optional and the encoder is synthesised, **every build that has the field writes the
+key**, so an absent key can only have come from a build that did not. The shipped test
+`deltaSettingsKeepOldFilesUnchanged` asserts exactly that, and the `timer` row below records the
+resulting behaviour.
+
+Its limit is narrow and absolute: **it works once per key.** After the first change, absence no
+longer identifies a single earlier build — it is ambiguous between every build before the field
+existed — so a second change to that key's default cannot be expressed this way. A nested type's
+`init(from:)` also cannot see the document's `schemaVersion`, so it has nothing else to go on.
+
+Adding a brand-new field is the safe case: absence is unambiguous, and if nothing in an older
+project drew the value, the default cannot change how that project renders at all.
+
+### A migration, for anything else
+
+Anything that changes an existing default, or that a nested decoder cannot decide alone, belongs
+in the migration:
 
 1. Add the new field with the default a *new* project should get — `automatic`, `nil`, inherit.
 2. Step `Project.currentSchemaVersion` by one.
 3. In `migrateIfNeeded()`, for documents at the old version, write the old behaviour in explicitly:
    set the field to the value that build used to apply, so what was implicit becomes stated.
 
-Do not express it as a decode default. `Project.init(from:)` reads absent keys as
-`decodeIfPresent(…) ?? <default>`, and a nested type's `init(from:)` cannot see the document's
-`schemaVersion` at all — so decoding cannot tell an old file from a new one, and both take the new
-default. That is fine while a default never changes and wrong the moment one does.
-
 A change that alters a default ships a fixture project saved before the change, asserting it still
 resolves to the old values.
+
+### This covers `project.json` only
+
+`Project.migrateIfNeeded()` is called from one place, `Project.init(from:)`. Templates
+(`.onboardtemplate`) and object styles (`.onboardstyle`) embed the same `DisplayObject` and params
+types, carry their own `formatVersion`, and have **no migration seam** — nothing inspects that
+version and rewrites old values. Applying a template replaces `displayObjects` wholesale, so a
+template saved by an earlier build can still pick up a new default when it is applied.
+
+That is a real gap rather than a rule, tracked as #124: today the only protection for templates and
+styles is the one-shot decode default above. A change that alters a default on a type reachable
+from a template needs to say what happens to templates saved before it, and may need the seam
+adding first.
 
 ```json
 {
