@@ -59,16 +59,26 @@ public struct TrackMapRenderer: OverlayDrawing {
             let lon = second.sampler.sample(at: second.sync.inputTime(forProjectTime: time))[.longitude]
         {
             let point = projection.point(latitude: lat, longitude: lon, in: bounds)
-            drawDot(
-                at: CGPoint(x: rect.minX + point.x, y: rect.minY + point.y), radius: radius,
-                color: params.secondDotColor, in: cg)
+            drawDot(at: held(point, inside: rect, radius: radius), radius: radius, color: params.secondDotColor, in: cg)
         }
         guard let sample = context.sample(at: time), let lat = sample[.latitude], let lon = sample[.longitude] else {
             return
         }
         let point = projection.point(latitude: lat, longitude: lon, in: bounds)
-        drawDot(
-            at: CGPoint(x: rect.minX + point.x, y: rect.minY + point.y), radius: radius, color: params.dotColor, in: cg)
+        drawDot(at: held(point, inside: rect, radius: radius), radius: radius, color: params.dotColor, in: cg)
+    }
+
+    /// The dot's place in the object, kept inside it.
+    ///
+    /// The outline need not cover everywhere the car went — a reference-lap map draws one lap, and
+    /// a track-only map leaves the pit lane out — so a car that is off the drawn part projects
+    /// outside the object. The dot is not part of the cached trace image and so is not clipped by
+    /// it: unheld, it would be drawn loose over the video. Held at the edge it reads as what it
+    /// is, which is the car being somewhere the map does not show.
+    func held(_ point: CGPoint, inside rect: CGRect, radius: Double) -> CGPoint {
+        CGPoint(
+            x: min(max(rect.minX + point.x, rect.minX + radius), rect.maxX - radius),
+            y: min(max(rect.minY + point.y, rect.minY + radius), rect.maxY - radius))
     }
 
     func drawDot(at dot: CGPoint, radius: Double, color: RGBAColor, in cg: CGContext) {
@@ -99,7 +109,7 @@ public struct TrackMapRenderer: OverlayDrawing {
         cg.setLineWidth(params.lineWidth * scale)
         cg.setLineJoin(.round)
         cg.setLineCap(.round)
-        for run in outlineRuns(count: points.count) {
+        for run in outlineRuns(segments: projection.segments, count: points.count) {
             cg.setStrokeColor(colour(ofSector: run.sector).cgColor)
             cg.move(to: points[run.range.lowerBound])
             for index in (run.range.lowerBound + 1)..<run.range.upperBound { cg.addLine(to: points[index]) }
@@ -122,20 +132,30 @@ public struct TrackMapRenderer: OverlayDrawing {
     }
 
     /// Runs of consecutive trace points that share a sector, so the outline is stroked once per
-    /// colour instead of once per point. A single run covers the whole trace when colouring is
-    /// off or the session has no sectors.
-    func outlineRuns(count: Int) -> [(range: Range<Int>, sector: Int)] {
-        guard params.colorBySector, marks.sectorOfPoint.count == count else { return [(0..<count, -1)] }
-        var runs: [(range: Range<Int>, sector: Int)] = []
-        var start = 0
-        for index in 1...count {
-            // Runs overlap by a point so the colours meet rather than leaving a gap.
-            let ended = index == count || marks.sectorOfPoint[index] != marks.sectorOfPoint[start]
-            guard ended else { continue }
-            if index - start > 1 { runs.append((start..<index, marks.sectorOfPoint[start] ?? -1)) }
-            start = index - 1
+    /// colour instead of once per point.
+    ///
+    /// Sector colours may not run across a break in the trace: `segments` are the stretches the
+    /// car actually drove without leaving, and joining two of them would rule a line straight
+    /// across the circuit from the pit entry to the pit exit. So each segment is split by sector
+    /// rather than the whole trace being split and the breaks forgotten.
+    func outlineRuns(segments: [Range<Int>], count: Int) -> [(range: Range<Int>, sector: Int)] {
+        let drawable = segments.filter { $0.count > 1 }
+        guard params.colorBySector, marks.sectorOfPoint.count == count else {
+            return drawable.map { ($0, -1) }
         }
-        return runs.isEmpty ? [(0..<count, -1)] : runs
+        var runs: [(range: Range<Int>, sector: Int)] = []
+        for segment in drawable {
+            var start = segment.lowerBound
+            for index in (segment.lowerBound + 1)...segment.upperBound {
+                // Runs overlap by a point so the colours meet rather than leaving a gap — but
+                // never across a segment's end, where the gap is the point.
+                let ended = index == segment.upperBound || marks.sectorOfPoint[index] != marks.sectorOfPoint[start]
+                guard ended else { continue }
+                if index - start > 1 { runs.append((start..<index, marks.sectorOfPoint[start] ?? -1)) }
+                start = index - 1
+            }
+        }
+        return runs.isEmpty ? drawable.map { ($0, -1) } : runs
     }
 
     /// The colour for a sector, or the plain line colour for `-1` (no sector, or colouring off).

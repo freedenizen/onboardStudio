@@ -101,7 +101,7 @@ struct TrackMapDisplayTests {
     }
 
     @Test func aPlainMapStrokesTheWholeTraceInOneRun() throws {
-        let runs = renderer(TrackMapParams()).outlineRuns(count: 100)
+        let runs = renderer(TrackMapParams()).outlineRuns(segments: [0..<100], count: 100)
         #expect(runs.count == 1)
         #expect(runs[0].range == 0..<100)
         // −1 means "no sector", which draws in the plain line colour.
@@ -114,14 +114,15 @@ struct TrackMapDisplayTests {
         var params = TrackMapParams()
         params.colorBySector = true
         let panel = renderer(params)
-        let runs = panel.outlineRuns(count: panel.marks.sectorOfPoint.count)
+        let count = panel.marks.sectorOfPoint.count
+        let runs = panel.outlineRuns(segments: [0..<count], count: count)
         #expect(runs.count > 1)
         // Consecutive runs share a point, or the colours would leave a gap between them.
         for (a, b) in zip(runs, runs.dropFirst()) {
             #expect(b.range.lowerBound == a.range.upperBound - 1)
         }
         #expect(runs.first?.range.lowerBound == 0)
-        #expect(runs.last?.range.upperBound == panel.marks.sectorOfPoint.count)
+        #expect(runs.last?.range.upperBound == count)
     }
 
     @Test func everySectorGetsItsOwnColourAndTheyCycle() {
@@ -262,7 +263,116 @@ struct TrackMapDisplayTests {
         let panel = renderer(params, session: SyntheticSession.session)
         #expect(panel.marks.boundaries.isEmpty)
         #expect(panel.projection != nil)
-        #expect(panel.outlineRuns(count: 50).count == 1)
+        #expect(panel.outlineRuns(segments: [0..<50], count: 50).count == 1)
+    }
+
+    // MARK: - The track only
+
+    /// The square, reached down a 200 m access road driven once each way — the shape of a pit lane
+    /// and a paddock. Six laps, so the circuit is plainly the repeated part.
+    /// How many samples `withPitLane` holds, kept beside it so a test need not unwrap a channel.
+    static let pitLaneSampleCount = 100 + 6 * Int(SectorMapSession.lapLength / 2) + 101
+
+    static let withPitLane: TelemetrySession = {
+        let metresPerDegreeEast = 111_320 * cos(SectorMapSession.origin.latitude * .pi / 180)
+        var east: [Double] = []
+        var north: [Double] = []
+        for metre in stride(from: -200.0, to: 0.0, by: 2) {
+            east.append(metre)
+            north.append(0)
+        }
+        for _ in 0..<6 {
+            for metre in stride(from: 0.0, to: SectorMapSession.lapLength, by: 2) {
+                let point = SectorMapSession.point(at: metre)
+                east.append(point.east)
+                north.append(point.north)
+            }
+        }
+        for metre in stride(from: 0.0, through: -200.0, by: -2) {
+            east.append(metre)
+            north.append(0)
+        }
+        let times = (0..<east.count).map { Double($0) * 2 / SectorMapSession.speed }
+        return TelemetrySession(
+            info: SessionInfo(sourceFormat: "synthetic"),
+            channels: [
+                Channel(
+                    role: .latitude, name: "lat", unit: .degrees, times: times,
+                    values: north.map { SectorMapSession.origin.latitude + $0 / 110_540 }),
+                Channel(
+                    role: .longitude, name: "lon", unit: .degrees, times: times,
+                    values: east.map { SectorMapSession.origin.longitude + $0 / metresPerDegreeEast }),
+            ],
+            laps: [])
+    }()
+
+    @Test func theTrackOnlyMapFramesTheCircuitAndNotTheAccessRoad() throws {
+        let whole = try #require(
+            TrackProjection(session: Self.withPitLane, params: TrackMapParams(trace: .wholeSession)))
+        let track = try #require(
+            TrackProjection(session: Self.withPitLane, params: TrackMapParams(trace: .trackOnly)))
+        // This is the whole point of #95. The road is 200 m long and the square 100 m on a side,
+        // so drawing everything makes the map three times wider than the circuit and squashes the
+        // circuit into the right-hand third of the object.
+        let wholeWidth = whole.maxX - whole.minX
+        let trackWidth = track.maxX - track.minX
+        #expect(wholeWidth > trackWidth * 2.5)
+        // The square is 100 m across, and a degree of longitude here is shortened by cosLat, so
+        // the projected span works out in degrees of latitude.
+        #expect(abs(trackWidth * 111_320 - 100) < 30)
+        // The height is the square's side either way: the road is due west and stretches nothing.
+        #expect(abs((whole.maxY - whole.minY) - (track.maxY - track.minY)) < 1e-9)
+    }
+
+    @Test func theOutlineLiftsThePenRatherThanRulingALineAcross() throws {
+        let track = try #require(
+            TrackProjection(session: Self.withPitLane, params: TrackMapParams(trace: .trackOnly)))
+        // Out and back are two separate absences, so what is left is one unbroken stretch. Were
+        // the two ends simply joined, the map would show a line straight across the circuit from
+        // where the car left it to where it came back.
+        #expect(track.segments.count == 1)
+        #expect(try track.points.count < whole(Self.withPitLane).points.count)
+
+        // A trace with a hole in the middle keeps both sides and draws neither into the other.
+        let projection = try #require(
+            TrackProjection(
+                session: Self.withPitLane, rotationDegrees: 0,
+                onTrack: (0..<Self.pitLaneSampleCount).map { $0 < 100 || $0 > 300 }))
+        #expect(projection.segments.count == 2)
+        #expect(projection.segments[0].upperBound == projection.segments[1].lowerBound)
+        let panel = renderer(TrackMapParams(), session: Self.withPitLane)
+        let runs = panel.outlineRuns(segments: projection.segments, count: projection.points.count)
+        #expect(runs.count == 2)
+        // No run spans the join, which is what stroking a single path over the gap would do.
+        #expect(runs.allSatisfy { run in projection.segments.contains { $0 == run.range } })
+    }
+
+    @Test func aSessionWithNothingRepeatedIsDrawnWhole() throws {
+        // `SectorMapSession` never leaves the square, so asking for the track only asks for all of
+        // it — a map that suddenly drew less of an ordinary session would be a bug, not a feature.
+        let all = try #require(
+            TrackProjection(session: SectorMapSession.session, params: TrackMapParams(trace: .wholeSession)))
+        let track = try #require(
+            TrackProjection(session: SectorMapSession.session, params: TrackMapParams(trace: .trackOnly)))
+        #expect(track.points.count == all.points.count)
+        #expect(track.segments == all.segments)
+    }
+
+    @Test func theCarIsHeldInsideTheMapWhenItIsSomewhereTheMapDoesNotShow() {
+        let panel = renderer(TrackMapParams(), session: Self.withPitLane)
+        let rect = CGRect(x: 20, y: 30, width: 100, height: 80)
+        // A point well outside, as the car in the pit lane projects once the pit lane is not drawn.
+        // The dot is not part of the cached trace image, so unheld it draws loose over the video.
+        let held = panel.held(CGPoint(x: -400, y: 500), inside: rect, radius: 5)
+        #expect(held.x == rect.minX + 5)
+        #expect(held.y == rect.maxY - 5)
+        // A point inside is left exactly where it is.
+        let inside = panel.held(CGPoint(x: 40, y: 20), inside: rect, radius: 5)
+        #expect(inside == CGPoint(x: rect.minX + 40, y: rect.minY + 20))
+    }
+
+    func whole(_ session: TelemetrySession) throws -> TrackProjection {
+        try #require(TrackProjection(session: session, params: TrackMapParams(trace: .wholeSession)))
     }
 
     // MARK: - Goldens
