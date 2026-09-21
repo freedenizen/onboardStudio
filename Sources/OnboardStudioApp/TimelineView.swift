@@ -301,7 +301,11 @@ struct VideoLaneView: View {
     private func dragGesture(for video: Input, pixelsPerSecond: CGFloat, barWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                let start = video.sync.offsetInProject
+                // The same clamped start the bar is drawn from. Dragging from the raw offset while
+                // drawing from the clamped one puts them exactly `-offsetInProject` apart: a body
+                // drag would do nothing until the pointer had travelled that far, and a tail drag
+                // would resize the bar the moment it began.
+                let start = video.sync.startInProject
                 let length = max(0, (editor.end(of: video) ?? start) - start)
                 let edge: Edge =
                     drag?.edge

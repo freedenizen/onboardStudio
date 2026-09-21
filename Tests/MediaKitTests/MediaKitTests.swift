@@ -326,6 +326,19 @@ struct ParityTests {
 /// stops recompiling until the nudge is undone.
 @Suite("Sync before the project start")
 struct NegativeOffsetTests {
+    /// Where the composition's first real segment reads from in the source file. This is the
+    /// claim that matters: "the video moved earlier" means project zero shows a later frame.
+    static func sourceStart(of compiled: CompiledComposition) -> Double? {
+        compiled.composition.tracks(withMediaType: .video).first?
+            .segments.first { !$0.isEmpty }?.timeMapping.source.start.seconds
+    }
+
+    /// Where that segment lands on the project timeline.
+    static func targetStart(of compiled: CompiledComposition) -> Double? {
+        compiled.composition.tracks(withMediaType: .video).first?
+            .segments.first { !$0.isEmpty }?.timeMapping.target.start.seconds
+    }
+
     static func build(offset: Double, speed: Double = 1, trim: TrimRange = .none) async throws -> CompiledComposition {
         try await CompositionBuilder.build(
             videos: [
@@ -343,10 +356,8 @@ struct NegativeOffsetTests {
 
         // Not just the right length — the right *content*. Project time zero must show the frame a
         // tenth of a second into the file, which is what "the video moved earlier" means.
-        let track = try #require(compiled.composition.tracks(withMediaType: .video).first)
-        let segment = try #require(track.segments.first { !$0.isEmpty })
-        #expect(abs(segment.timeMapping.target.start.seconds) < 0.01)
-        #expect(abs(segment.timeMapping.source.start.seconds - 0.1) < 0.02)
+        #expect(abs(try #require(Self.targetStart(of: compiled))) < 0.01)
+        #expect(abs(try #require(Self.sourceStart(of: compiled)) - 0.1) < 0.02)
     }
 
     @Test func theDroppedPartIsMeasuredInTheFilesOwnSeconds() async throws {
@@ -356,22 +367,32 @@ struct NegativeOffsetTests {
         let compiled = try await Self.build(offset: -0.1, speed: 2)
         // (3 − 0.2) / 2 = 1.4
         #expect(abs(compiled.duration - 1.4) < 0.02)
-        let track = try #require(compiled.composition.tracks(withMediaType: .video).first)
-        let segment = try #require(track.segments.first { !$0.isEmpty })
-        #expect(abs(segment.timeMapping.source.start.seconds - 0.2) < 0.02)
+        #expect(abs(try #require(Self.sourceStart(of: compiled)) - 0.2) < 0.02)
     }
 
     @Test func nudgingBackPutsBackExactlyWhatItTook() async throws {
         // The reason the stored offset is not clamped: a nudge has to be reversible.
-        let original = SyncSettings(startPositionInInput: 0.25, offsetInProject: 0, playSpeed: 1)
+        let original = SyncSettings(offsetInProject: 0)
         let there = SyncWizard.shifted(original, byProjectSeconds: -0.1)
         let back = SyncWizard.shifted(there, byProjectSeconds: 0.1)
         #expect(back == original)
         #expect(there.offsetInProject == -0.1)
-        // And the composition is the one it was before.
-        let before = try await Self.build(offset: 0)
-        let after = try await Self.build(offset: 0)
+
+        // Through the composition, and **built from the offsets the round trip produced** rather
+        // than from literals — otherwise this compares two identical builds and holds however
+        // wrong `shifted` is.
+        let before = try await Self.build(offset: original.offsetInProject)
+        let nudged = try await Self.build(offset: there.offsetInProject)
+        let after = try await Self.build(offset: back.offsetInProject)
+
+        // The middle step has to have gone somewhere, or coming back proves nothing.
+        #expect(abs((before.duration - nudged.duration) - 0.1) < 0.02)
+        #expect(abs(try #require(Self.sourceStart(of: nudged)) - 0.1) < 0.02)
+
+        // And what it dropped is back: the same length, and project zero showing the first frame
+        // of the file again rather than a tenth of a second into it.
         #expect(abs(before.duration - after.duration) < 1e-9)
+        #expect(abs(try #require(Self.sourceStart(of: after))) < 0.02)
     }
 
     @Test func aVideoEntirelyBeforeTheProjectIsRejectedRatherThanDrawnEmpty() async throws {
@@ -384,9 +405,7 @@ struct NegativeOffsetTests {
         // The ordinary case has to keep working exactly as it did: the clip starts where it says.
         let compiled = try await Self.build(offset: 0.5)
         #expect(abs(compiled.duration - 3.5) < 0.02)
-        let track = try #require(compiled.composition.tracks(withMediaType: .video).first)
-        let segment = try #require(track.segments.first { !$0.isEmpty })
-        #expect(abs(segment.timeMapping.target.start.seconds - 0.5) < 0.02)
-        #expect(abs(segment.timeMapping.source.start.seconds) < 0.02)
+        #expect(abs(try #require(Self.targetStart(of: compiled)) - 0.5) < 0.02)
+        #expect(abs(try #require(Self.sourceStart(of: compiled))) < 0.02)
     }
 }
