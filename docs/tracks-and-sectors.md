@@ -253,12 +253,31 @@ More exists than it appears. `DataInputInspector` already has a "Detect laps fro
 line" toggle, a **"Use Current Preview Position as Start/Finish"** button, and fields for latitude,
 longitude, heading, half-width, heading tolerance and warm-up crossings to ignore.
 
-What #66 adds:
+What #66 adds — all of it shipped:
 
 - **Place and rotate it on the track map**, rather than typing coordinates. The map already
   projects the trace, so the geometry is there.
+
+  The projection is the one thing both sides must agree on, so `TrackProjection` moved to
+  `Sources/RenderKit/TrackProjection.swift`, became public, and gained the inverse
+  (`coordinate(at:in:)`) the editor needs. A second copy of that arithmetic in the app would drift
+  the first time either side changed its padding. `TrackMapEditing` holds the rest as pure
+  functions — where the line's ends are, what a click grabbed, where a drag left it — so the
+  geometry is tested without a window and `GizmoView` is left with nothing but mouse events.
+
+  **The gizmo draws; the renderer does not.** Placing a line is an editing affordance and never
+  reaches the exported video, so turning the mode on cannot change how a project renders.
+
+  Distances use `LapDetector`'s own metres-per-degree constants, so the line drawn is exactly as
+  wide as the line that detects the crossing. **The handles are the exception**: 25 m across a 4 km
+  circuit is a few points on screen and both ends land under one click, so they move out to arm's
+  length while the line keeps its true width.
 - **A first guess from the data** — the trace shows where laps repeat, so a session opens with
   something workable and the driver corrects rather than authors.
+
+  Offered as a button, and applied automatically **only** to a data file just added that brought no
+  laps of its own. A file with lap numbers already knows better, and overruling it would be worse
+  than saying nothing.
 
   `Sources/TelemetryKit/StartFinishFinder.swift`. Two routes, in order of how much they know:
 
@@ -282,6 +301,17 @@ What #66 adds:
 - **Export and import track definitions** — line, sectors and circuit name in one file. Since no
   licence can give us sector data, a definition drivers pass around is the only route to a shared
   library, and being contributor-owned it carries no licensing problem at all.
+
+  `.onboardtrack`, declared as `com.freedenizen.onboardstudio.track`. The library was already a
+  directory of separate files precisely so one could be attached to a message, so export and import
+  are the existing `TrackLibrary.write(_:to:)` and `read(from:)` behind a panel. A venue the
+  bundled list has never heard of — a club circuit, an airfield, a car park — exports under the
+  input's own name and its recorded position, because such a definition is exactly as worth sharing
+  as one for Silverstone.
+
+  **Importing applies on the spot**, where `applyPendingTrackDefinition` deliberately does not:
+  choosing a file from a panel is the driver asking for this project to change, and merely opening
+  a saved project is not.
 
 ## What the formats carry
 

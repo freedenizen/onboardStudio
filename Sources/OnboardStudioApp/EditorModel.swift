@@ -5,6 +5,7 @@ import Foundation
 import MediaKit
 import Observation
 import ProjectModel
+import RenderKit
 import SwiftUI
 import TelemetryKit
 
@@ -129,6 +130,16 @@ final class EditorModel {
     /// The track definitions kept between projects.
     let trackLibrary = TrackLibrary()
 
+    /// The data input whose start/finish line is being dragged about on the track map, if any.
+    ///
+    /// Editing is a mode rather than always-on because the map object is draggable itself: without
+    /// it, reaching for the map would grab the line and reaching for the line would move the map.
+    var startFinishEditing: InputID?
+
+    /// The last map projection built for placing a line, kept so a redraw does not rebuild it.
+    /// Not observed: it is a cache, and a view that read it would redraw for nothing.
+    @ObservationIgnored var cachedProjection: (key: MapProjectionKey, projection: TrackProjection)?
+
     /// Called after every compile: names the circuit a freshly added file was recorded at and,
     /// if that circuit has a saved definition, applies its start/finish line and sectors.
     ///
@@ -144,7 +155,15 @@ final class EditorModel {
                 settings.circuitID = match.circuit.id
                 $0.kind = .data(settings)
             }
-            statusMessage = "Recognised \(match.circuit.displayName)."
+            // A file that brought no laps of its own would otherwise open with nothing to time
+            // against, leaving the driver to author a line from six decimal places. Only ever for
+            // a file just added, and only when there is nothing to overrule.
+            let recognised = "Recognised \(match.circuit.displayName)."
+            if session.laps.isEmpty, suggestStartFinish(for: id) {
+                statusMessage = recognised + " " + (statusMessage ?? "")
+            } else {
+                statusMessage = recognised
+            }
             return
         }
         updateInput(id, name: "Apply Track Definition") {

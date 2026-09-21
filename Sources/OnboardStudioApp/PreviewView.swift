@@ -1,6 +1,7 @@
 import AVKit
 import AppKit
 import ProjectModel
+import RenderKit
 import SwiftUI
 
 /// The video preview with a draggable gizmo layer over it.
@@ -33,6 +34,7 @@ struct PlayerAndGizmo: NSViewRepresentable {
     func updateNSView(_ nsView: PreviewContainerView, context: Context) {
         nsView.gizmo.objects = editor.resolvedObjects
         nsView.gizmo.selectedID = editor.selectedObjectID
+        nsView.gizmo.startFinish = editor.startFinishTarget
         let settings = editor.project.settings
         nsView.gizmo.outputAspect = Double(settings.outputWidth) / Double(max(settings.outputHeight, 1))
         nsView.gizmo.needsDisplay = true
@@ -90,6 +92,24 @@ final class GizmoView: NSView {
 
     private var pan: PanState?
 
+    /// The start/finish line being placed on a track map, or `nil` when nobody is placing one.
+    var startFinish: StartFinishTarget?
+    /// How near the pointer has to be to grab the line or one of its ends, in points.
+    private let lineTolerance = 7.0
+    /// How far apart the two rotation handles are kept, whatever the line's real width works out
+    /// to on screen — comfortably more than twice `lineTolerance`, or one would swallow the other.
+    private let handleReach = 18.0
+    private struct LineDragState {
+        let input: InputID
+        let handle: TrackMapEditing.Handle
+        /// Pointer minus the line's centre when the drag began, so a line grabbed near one end
+        /// travels with the pointer instead of jumping its middle under it.
+        let grab: CGSize
+        var line: LapLineSpec
+    }
+
+    private var lineDrag: LineDragState?
+
     init(editor: EditorModel) {
         self.editor = editor
         super.init(frame: .zero)
@@ -139,6 +159,61 @@ final class GizmoView: NSView {
                 }
             }
         }
+        drawStartFinish(in: context)
+    }
+
+    /// The start/finish line over its track map, while it is being placed.
+    ///
+    /// Drawn here rather than by the renderer on purpose: this is an editing affordance and must
+    /// never reach the exported video. Nothing about how the project renders changes by opening
+    /// this mode.
+    private func drawStartFinish(in context: CGContext) {
+        guard let target = startFinish, let line = currentStartFinishLine(target) else { return }
+        context.setLineCap(.round)
+        // The arms out to the handles, drawn thin: they are reach, not part of the line's width.
+        context.setStrokeColor(NSColor.systemYellow.withAlphaComponent(0.5).cgColor)
+        context.setLineWidth(1)
+        context.move(to: line.leftHandle)
+        context.addLine(to: line.rightHandle)
+        context.strokePath()
+        // The line itself, as wide as it really is, with a dark casing so it reads over a pale map
+        // and over map imagery alike.
+        for (colour, width) in [(NSColor.black.withAlphaComponent(0.7), 5.0), (NSColor.systemYellow, 2.5)] {
+            context.setStrokeColor(colour.cgColor)
+            context.setLineWidth(width)
+            context.move(to: line.left)
+            context.addLine(to: line.right)
+            context.strokePath()
+        }
+        // Which way the car crosses, as a stub off the middle of the line.
+        let across = CGPoint(x: line.right.x - line.centre.x, y: line.right.y - line.centre.y)
+        let length = hypot(across.x, across.y)
+        if length > 0 {
+            let travel = CGPoint(x: across.y / length, y: -across.x / length)
+            context.setStrokeColor(NSColor.systemYellow.cgColor)
+            context.setLineWidth(2)
+            context.move(to: line.centre)
+            context.addLine(to: CGPoint(x: line.centre.x + travel.x * 14, y: line.centre.y + travel.y * 14))
+            context.strokePath()
+        }
+        context.setFillColor(NSColor.systemYellow.cgColor)
+        context.setStrokeColor(NSColor.black.cgColor)
+        context.setLineWidth(1)
+        for end in [line.leftHandle, line.rightHandle] {
+            let box = CGRect(x: end.x - 4, y: end.y - 4, width: 8, height: 8)
+            context.fillEllipse(in: box)
+            context.strokeEllipse(in: box)
+        }
+    }
+
+    /// The line as drawn right now: the one being dragged if a drag is under way, else the saved
+    /// one. Without this the line would jump back to where it was for the length of every drag.
+    private func currentStartFinishLine(_ target: StartFinishTarget) -> TrackMapEditing.Line? {
+        let rect = viewRect(target.object.frame)
+        guard rect.width > 4, rect.height > 4 else { return nil }
+        let spec = lineDrag?.input == target.input ? (lineDrag?.line ?? target.line) : target.line
+        return TrackMapEditing.line(
+            spec, projection: target.projection, in: rect, minimumHandleDistance: handleReach)
     }
 
     private func handlePoints(_ r: CGRect) -> [CGPoint] {
@@ -153,6 +228,17 @@ final class GizmoView: NSView {
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
         let point = convert(event.locationInWindow, from: nil)
+        // The line being placed wins over everything, including the map object under it: while
+        // this mode is on, the gesture the pointer is near is the one that was meant.
+        if let target = startFinish, let line = currentStartFinishLine(target),
+            let handle = TrackMapEditing.handle(at: point, of: line, tolerance: lineTolerance)
+        {
+            lineDrag = LineDragState(
+                input: target.input, handle: handle,
+                grab: CGSize(width: point.x - line.centre.x, height: point.y - line.centre.y),
+                line: target.line)
+            return
+        }
         let unit = unitPoint(point)
         let handleSize = 6 / max(videoRect.width, 1)
         // Selected object's handles win; then topmost object under the pointer.
@@ -187,6 +273,19 @@ final class GizmoView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
+        if let lineDrag, let target = startFinish {
+            let point = convert(event.locationInWindow, from: nil)
+            // Only moving the line keeps the grab offset; an end is being pointed somewhere, and
+            // the pointer is where it should end up.
+            let corrected =
+                lineDrag.handle == .body
+                ? CGPoint(x: point.x - lineDrag.grab.width, y: point.y - lineDrag.grab.height) : point
+            self.lineDrag?.line = TrackMapEditing.dragged(
+                lineDrag.line, handle: lineDrag.handle, to: corrected,
+                projection: target.projection, in: viewRect(target.object.frame))
+            needsDisplay = true
+            return
+        }
         if let pan {
             let unit = unitPoint(convert(event.locationInWindow, from: nil))
             // Moving the pointer right must move the picture right, i.e. the window left; one
@@ -207,6 +306,13 @@ final class GizmoView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        if let lineDrag {
+            self.lineDrag = nil
+            // One undo step per drag, and none at all for a click that moved nothing.
+            if lineDrag.line != startFinish?.line { editor.placeStartFinish(lineDrag.line, for: lineDrag.input) }
+            needsDisplay = true
+            return
+        }
         if let pan {
             self.pan = nil
             NSCursor.pop()

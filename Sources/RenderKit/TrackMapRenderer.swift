@@ -34,11 +34,7 @@ public struct TrackMapRenderer: OverlayDrawing {
         self.second = second
         self.background = background
         let session = context.sampler?.session
-        let built = session.flatMap {
-            TrackProjection(
-                session: $0, rotationDegrees: params.rotation,
-                range: params.trace == .referenceLap ? Sectors.referenceLap(in: $0).flatMap(\.timeRange) : nil)
-        }
+        let built = session.flatMap { TrackProjection(session: $0, params: params) }
         projection = built
         marks = session.map { TrackMapMarks(session: $0, params: params, projection: built) } ?? TrackMapMarks()
     }
@@ -255,86 +251,6 @@ public struct TrackMapRenderer: OverlayDrawing {
     }
 }
 
-/// Local equirectangular projection of the session's positions, rotated, with bounds for fitting.
-struct TrackProjection: Sendable {
-    struct Basis: Sendable {
-        let latitude0: Double
-        let longitude0: Double
-        let cosLat: Double
-        let rotation: Double
-
-        func project(latitude: Double, longitude: Double) -> (x: Double, y: Double) {
-            let x = (longitude - longitude0) * cosLat
-            let y = latitude - latitude0
-            return (x * cos(rotation) - y * sin(rotation), x * sin(rotation) + y * cos(rotation))
-        }
-    }
-
-    let basis: Basis
-    let points: [(x: Double, y: Double)]
-    let minX: Double
-    let maxX: Double
-    let minY: Double
-    let maxY: Double
-
-    /// The sample times the projection was built from, so anything drawn per point can line up
-    /// with it without re-deriving which samples were used.
-    let times: [Double]
-
-    /// `range` restricts the outline to part of the session — one lap, say. The framing follows:
-    /// a reference-lap map fits the lap, not the paddock the car was parked in.
-    init?(session: TelemetrySession, rotationDegrees: Double, range: ClosedRange<Double>? = nil) {
-        guard let lat = session[.latitude], let lon = session[.longitude], lat.count > 1 else { return nil }
-        let indices: [Int] =
-            if let range { lat.times.indices.filter { range.contains(lat.times[$0]) } } else {
-                Array(lat.times.indices)
-            }
-        guard indices.count > 1 else { return nil }
-        let usedLatitudes = indices.map { lat.values[$0] }
-        guard let latMin = usedLatitudes.min(), let latMax = usedLatitudes.max() else { return nil }
-        let sharedAxis0 = lon.times == lat.times
-        let usedLongitudes = indices.map { index in
-            sharedAxis0 ? lon.values[index] : (lon.value(at: lat.times[index]) ?? 0)
-        }
-        guard let lonMin = usedLongitudes.min(), let lonMax = usedLongitudes.max() else { return nil }
-        let latitude0 = (latMin + latMax) / 2
-        let longitude0 = (lonMin + lonMax) / 2
-        basis = Basis(
-            latitude0: latitude0, longitude0: longitude0, cosLat: cos(latitude0 * .pi / 180),
-            rotation: -rotationDegrees * .pi / 180)  // clockwise on screen (y-up maths rotates anticlockwise)
-        var projected: [(x: Double, y: Double)] = []
-        projected.reserveCapacity(indices.count)
-        for (position, index) in indices.enumerated() {
-            projected.append(basis.project(latitude: usedLatitudes[position], longitude: usedLongitudes[position]))
-            _ = index
-        }
-        points = projected
-        times = indices.map { lat.times[$0] }
-        minX = projected.map(\.x).min() ?? 0
-        maxX = projected.map(\.x).max() ?? 1
-        minY = projected.map(\.y).min() ?? 0
-        maxY = projected.map(\.y).max() ?? 1
-    }
-
-    func point(latitude: Double, longitude: Double, in bounds: CGRect) -> CGPoint {
-        let p = basis.project(latitude: latitude, longitude: longitude)
-        return point(x: p.x, y: p.y, in: bounds)
-    }
-
-    /// Maps projected coordinates into `bounds` with 8% padding, preserving aspect; north is up.
-    func point(x: Double, y: Double, in bounds: CGRect) -> CGPoint {
-        let spanX = max(maxX - minX, 1e-9)
-        let spanY = max(maxY - minY, 1e-9)
-        let padding = 0.08
-        let scale = min(bounds.width * (1 - 2 * padding) / spanX, bounds.height * (1 - 2 * padding) / spanY)
-        let drawnWidth = spanX * scale
-        let drawnHeight = spanY * scale
-        let originX = bounds.minX + (bounds.width - drawnWidth) / 2
-        let originY = bounds.minY + (bounds.height - drawnHeight) / 2
-        return CGPoint(x: originX + (x - minX) * scale, y: originY + (maxY - y) * scale)
-    }
-}
-
 /// Sector colouring, sector boundaries and corner apexes for a track map, worked out once when
 /// the renderer is built and reused for every frame the cached trace image serves.
 ///
@@ -380,13 +296,5 @@ struct TrackMapMarks: Sendable {
             }
             labels = session.cornerLabels
         }
-    }
-}
-
-extension Lap {
-    /// The lap as a closed time range, for restricting a projection to it.
-    var timeRange: ClosedRange<Double>? {
-        guard let end, end > start else { return nil }
-        return start...end
     }
 }
