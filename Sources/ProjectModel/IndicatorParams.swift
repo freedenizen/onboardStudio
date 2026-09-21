@@ -326,3 +326,129 @@ public enum LapReference: String, Codable, Sendable, CaseIterable {
         }
     }
 }
+
+/// What a sector time is measured against.
+public enum SectorReference: String, Codable, Sendable, CaseIterable {
+    /// The quickest anyone drove that sector this session, whichever lap it came from. What the
+    /// theoretical best lap is made of, and the reference that answers "how close am I to my own
+    /// best through here".
+    case bestSector
+    /// The same sector on the session's quickest full lap.
+    case sessionBestLap
+    /// The same sector on the lap before this one.
+    case previousLap
+
+    public var displayName: String {
+        switch self {
+        case .bestSector: "Best sector"
+        case .sessionBestLap: "Session best lap"
+        case .previousLap: "Previous lap"
+        }
+    }
+}
+
+/// A strip of sector times for the lap in progress, each against a reference, with the
+/// theoretical best lap on the end.
+public struct SectorPanelParams: Hashable, Codable, Sendable {
+    /// What a finished sector cell shows.
+    public enum Display: String, Codable, Sendable, CaseIterable {
+        case time
+        case delta
+        case both
+
+        public var displayName: String {
+            switch self {
+            case .time: "Time"
+            case .delta: "Delta"
+            case .both: "Time and delta"
+            }
+        }
+
+        public var showsTime: Bool { self != .delta }
+        public var showsDelta: Bool { self != .time }
+    }
+
+    public var display: Display
+    public var reference: SectorReference
+    /// `S1`, `S2`, … over each cell.
+    public var showLabels: Bool
+    /// The sum of every sector's best: the lap the driver has already shown they can do.
+    public var showTheoretical: Bool
+    public var theoreticalLabel: String
+    /// Draws the sector in progress in `currentColor` so the eye finds it without reading.
+    public var highlightCurrent: Bool
+    /// Seconds to keep the lap that has just finished on screen after the line (0 = off).
+    ///
+    /// Without it the final sector is never readable: it completes at the instant the car
+    /// crosses, and by the next frame the panel has moved on to the new lap.
+    public var holdPreviousSeconds: Double
+    public var decimals: Int
+    public var textColor: RGBAColor
+    public var labelColor: RGBAColor
+    public var currentColor: RGBAColor
+    public var aheadColor: RGBAColor
+    public var behindColor: RGBAColor
+    public var backgroundColor: RGBAColor
+    public var outline: Bool
+
+    public init(
+        display: Display = .both,
+        reference: SectorReference = .bestSector,
+        showLabels: Bool = true,
+        showTheoretical: Bool = true,
+        theoreticalLabel: String = "Optimal",
+        highlightCurrent: Bool = true,
+        holdPreviousSeconds: Double = 5,
+        decimals: Int = 2,
+        textColor: RGBAColor = .white,
+        labelColor: RGBAColor = RGBAColor(red: 0.71, green: 0.71, blue: 0.71),
+        currentColor: RGBAColor = RGBAColor(red: 1, green: 0.84, blue: 0.2),
+        aheadColor: RGBAColor = RGBAColor(red: 0.13, green: 0.75, blue: 0.25),
+        behindColor: RGBAColor = RGBAColor(red: 0.88, green: 0.19, blue: 0.19),
+        backgroundColor: RGBAColor = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0),
+        outline: Bool = true
+    ) {
+        self.display = display
+        self.reference = reference
+        self.showLabels = showLabels
+        self.showTheoretical = showTheoretical
+        self.theoreticalLabel = theoreticalLabel
+        self.highlightCurrent = highlightCurrent
+        self.holdPreviousSeconds = holdPreviousSeconds
+        self.decimals = decimals
+        self.textColor = textColor
+        self.labelColor = labelColor
+        self.currentColor = currentColor
+        self.aheadColor = aheadColor
+        self.behindColor = behindColor
+        self.backgroundColor = backgroundColor
+        self.outline = outline
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case display, reference, showLabels, showTheoretical, theoreticalLabel, highlightCurrent
+        case holdPreviousSeconds, decimals
+        case textColor, labelColor, currentColor, aheadColor, behindColor, backgroundColor, outline
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = SectorPanelParams()
+        display = try c.decodeIfPresent(Display.self, forKey: .display) ?? d.display
+        reference = try c.decodeIfPresent(SectorReference.self, forKey: .reference) ?? d.reference
+        showLabels = try c.decodeIfPresent(Bool.self, forKey: .showLabels) ?? d.showLabels
+        showTheoretical = try c.decodeIfPresent(Bool.self, forKey: .showTheoretical) ?? d.showTheoretical
+        theoreticalLabel = try c.decodeIfPresent(String.self, forKey: .theoreticalLabel) ?? d.theoreticalLabel
+        highlightCurrent = try c.decodeIfPresent(Bool.self, forKey: .highlightCurrent) ?? d.highlightCurrent
+        holdPreviousSeconds =
+            try c.decodeIfPresent(Double.self, forKey: .holdPreviousSeconds) ?? d.holdPreviousSeconds
+        decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? d.decimals
+        textColor = try c.decodeIfPresent(RGBAColor.self, forKey: .textColor) ?? d.textColor
+        labelColor = try c.decodeIfPresent(RGBAColor.self, forKey: .labelColor) ?? d.labelColor
+        currentColor = try c.decodeIfPresent(RGBAColor.self, forKey: .currentColor) ?? d.currentColor
+        aheadColor = try c.decodeIfPresent(RGBAColor.self, forKey: .aheadColor) ?? d.aheadColor
+        behindColor = try c.decodeIfPresent(RGBAColor.self, forKey: .behindColor) ?? d.behindColor
+        backgroundColor = try c.decodeIfPresent(RGBAColor.self, forKey: .backgroundColor) ?? d.backgroundColor
+        outline = try c.decodeIfPresent(Bool.self, forKey: .outline) ?? d.outline
+    }
+}

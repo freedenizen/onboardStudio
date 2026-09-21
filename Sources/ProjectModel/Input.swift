@@ -167,13 +167,21 @@ public struct LapLineSpec: Hashable, Codable, Sendable {
 /// logger format surveyed carries it (`docs/tracks-and-sectors.md`) — so it is derived from the
 /// driving or drawn here.
 public struct SectorSpec: Hashable, Codable, Sendable {
-    public enum Mode: String, Hashable, Codable, Sendable {
+    public enum Mode: String, Hashable, Codable, Sendable, CaseIterable {
         /// Equal parts of the reference lap's distance.
         case equalDistance
         /// Equal parts, with each boundary moved onto the nearest straight.
         case cornerAware
         /// The gate lines in `lines`.
         case manual
+
+        public var displayName: String {
+            switch self {
+            case .equalDistance: "Equal distances"
+            case .cornerAware: "On the straights"
+            case .manual: "Gates I place"
+            }
+        }
     }
 
     public var mode: Mode
