@@ -248,10 +248,17 @@ public enum CompositionBuilder {
     {
         let (clips, sequenceDuration) = try await loadClips(spec)
         guard let first = clips.first else { throw CompositionError.noVideoTrack(spec.url) }
-        let inputStart = max(spec.trim.start ?? 0, spec.sync.startPositionInInput)
+        // A negative offset puts the head of the input before the project starts. Nothing can be
+        // inserted at a negative time — AVFoundation rejects the whole composition with -11800 and
+        // an underlying -12780 — so the part that falls off the front is dropped and the rest
+        // begins at zero. The stored offset is left alone, so nudging back the other way restores
+        // exactly what this took.
+        let offset = spec.sync.startInProject
+        let inputStart =
+            max(spec.trim.start ?? 0, spec.sync.startPositionInInput) + spec.sync.inputSecondsBeforeProjectStart
         let inputEnd = min(spec.trim.end ?? sequenceDuration, sequenceDuration)
         guard inputEnd > inputStart else { throw CompositionError.emptyRange(spec.url) }
-        let insertAt = CMTime(seconds: spec.sync.offsetInProject, preferredTimescale: timescale)
+        let insertAt = CMTime(seconds: offset, preferredTimescale: timescale)
         let unscaled = CMTimeRange(
             start: insertAt, duration: CMTime(seconds: inputEnd - inputStart, preferredTimescale: timescale))
         let scaledDuration = CMTime(
@@ -272,7 +279,7 @@ public enum CompositionBuilder {
                 start: CMTime(
                     seconds: clip.fileStart + (from - clip.start) * clip.speed, preferredTimescale: timescale),
                 end: CMTime(seconds: clip.fileStart + (to - clip.start) * clip.speed, preferredTimescale: timescale))
-            let at = CMTime(seconds: spec.sync.offsetInProject + (from - inputStart), preferredTimescale: timescale)
+            let at = CMTime(seconds: offset + (from - inputStart), preferredTimescale: timescale)
             try videoTrack.insertTimeRange(range, of: clip.video, at: at)
             if spec.includeAudio {
                 audioTrack = try await insertAudio(
@@ -287,7 +294,7 @@ public enum CompositionBuilder {
             }
             let transform = Self.ciTransform(clip.transform)
             if transform != spans.last?.transform ?? .identity || spans.isEmpty {
-                let projectStart = spec.sync.offsetInProject + (from - inputStart) / spec.sync.playSpeed
+                let projectStart = offset + (from - inputStart) / spec.sync.playSpeed
                 spans.append(OrientationSpan(start: projectStart, transform: transform))
             }
         }
@@ -302,7 +309,7 @@ public enum CompositionBuilder {
             trackID: videoTrack.trackID, frame: spec.frame, sourceTransform: Self.ciTransform(first.transform))
         return InsertedInput(
             layer: layer, audioTrack: audioTrack, spans: spans,
-            end: spec.sync.offsetInProject + scaledDuration.seconds)
+            end: offset + scaledDuration.seconds)
     }
 
     /// One file of a clip sequence and where its played part sits on the sequence's own time axis.

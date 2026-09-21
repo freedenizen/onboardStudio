@@ -89,6 +89,35 @@ final class SyncUITests: OnboardStudioUITestCase {
         XCTAssertTrue(offset.waitForExistence(timeout: Self.timeout))
         expect(offset, toRead: "1")
     }
+
+    /// #131: nudging the video earlier than the project's start used to fail the whole compile
+    /// with an AVFoundation `-11800`, because nothing can be inserted at a negative time. The part
+    /// before the start is dropped instead, and the panel says how much.
+    @MainActor
+    func testNudgingTheVideoBeforeTheStartIsAllowedAndExplained() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        app.buttons["toolbar.sync"].click()
+        XCTAssertTrue(app.buttons["sync.done"].waitForExistence(timeout: Self.timeout))
+
+        let readout = app.staticTexts["sync.panelOffset.video"]
+        XCTAssertTrue(readout.waitForExistence(timeout: Self.timeout), "No video offset readout")
+        // One press from zero is enough to go negative, which is all it ever took.
+        app.buttons["sync.video-1s"].click()
+        expect(readout, toContain: "unused")
+
+        // The project is still usable: the compile that used to fail now succeeds, so the sidebar
+        // and the timeline still respond.
+        sidebarInput("test-3s").click()
+        let offset = app.textFields["sync.offset"]
+        XCTAssertTrue(offset.waitForExistence(timeout: Self.timeout), "The window stopped responding")
+        expect(offset, toRead: "-1")
+
+        // And it is reversible: the nudge back puts the offset exactly where it was.
+        app.buttons["sync.video+1s"].click()
+        expect(offset, toRead: "0")
+    }
 }
 
 /// J5 and J6: objects and their inspectors.

@@ -42,6 +42,26 @@ struct SyncSettingsTests {
         #expect(sync.projectTime(forInputTime: 12) == 3)
     }
 
+    @Test func anInputNudgedBeforeTheProjectStartsLosesItsHead() {
+        // #131: nudging a video earlier is how you sync a camera that started before the logger,
+        // and one press from zero goes negative. Nothing can be placed before the project starts —
+        // AVFoundation fails the whole composition if asked — so that part is not used.
+        let early = SyncSettings(offsetInProject: -0.1)
+        #expect(early.startInProject == 0)
+        #expect(abs(early.inputSecondsBeforeProjectStart - 0.1) < 1e-12)
+        // In the file's own seconds: at double speed a tenth of the timeline is two tenths of it.
+        let fast = SyncSettings(offsetInProject: -0.1, playSpeed: 2)
+        #expect(abs(fast.inputSecondsBeforeProjectStart - 0.2) < 1e-12)
+        // The stored offset is untouched, so a nudge the other way puts back what it took.
+        #expect(early.offsetInProject == -0.1)
+        // An ordinary offset keeps its place and loses nothing.
+        let ordinary = SyncSettings(offsetInProject: 1.5)
+        #expect(ordinary.startInProject == 1.5)
+        #expect(ordinary.inputSecondsBeforeProjectStart == 0)
+        #expect(SyncSettings.identity.startInProject == 0)
+        #expect(SyncSettings.identity.inputSecondsBeforeProjectStart == 0)
+    }
+
     @Test func roundTripsThroughJSON() throws {
         let sync = SyncSettings(startPositionInInput: 1.5, offsetInProject: 0.25, playSpeed: 0.5)
         let data = try JSONEncoder().encode(sync)

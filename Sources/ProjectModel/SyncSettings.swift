@@ -23,6 +23,25 @@ public struct SyncSettings: Hashable, Codable, Sendable {
     public func projectTime(forInputTime inputTime: Double) -> Double {
         (inputTime - startPositionInInput) / playSpeed + offsetInProject
     }
+
+    // MARK: - Falling off the front
+
+    /// Where this input begins on the project timeline, which is never before the project does.
+    ///
+    /// A negative `offsetInProject` means the head of the input sits before the project starts.
+    /// The timeline does not stretch backwards to meet it — nothing can be placed before zero, and
+    /// AVFoundation fails the entire composition if asked to — so that part is simply not used.
+    ///
+    /// **The offset itself keeps the value it was given.** Nudging the sync one way and back again
+    /// has to put back exactly what it took, and clamping the stored value would quietly make the
+    /// first nudge unrepeatable.
+    public var startInProject: Double { max(0, offsetInProject) }
+
+    /// Seconds of the *input file* that fall before the project begins, and so are not used.
+    ///
+    /// In input seconds rather than project seconds: at double speed a tenth of a second off the
+    /// front of the timeline is two tenths of the file.
+    public var inputSecondsBeforeProjectStart: Double { max(0, -offsetInProject) * playSpeed }
 }
 
 /// Optional start/end trim of an input in the input's own time.

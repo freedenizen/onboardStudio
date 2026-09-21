@@ -91,12 +91,28 @@ struct SyncPanelView: View {
             Divider().frame(height: 16)
             nudgeRow("Video", input: videoInput, identifier: "video")
             Spacer(minLength: 0)
-            if let data = dataInput {
-                Text("offset \(String(format: "%+.3f s", data.sync.offsetInProject))")
-                    .font(.caption).monospacedDigit().foregroundStyle(.secondary)
-                    .accessibilityIdentifier("sync.panelOffset")
+            // Both offsets, because either row can be the one being nudged and a nudge with no
+            // number attached to it is a guess.
+            VStack(alignment: .trailing, spacing: 1) {
+                if let data = dataInput { offsetReadout("data", data.sync) }
+                if let video = videoInput { offsetReadout("video", video.sync) }
             }
         }
+    }
+
+    private func offsetReadout(_ identifier: String, _ sync: SyncSettings) -> some View {
+        let dropped = sync.inputSecondsBeforeProjectStart
+        return Text(
+            dropped > 0
+                ? "\(identifier) \(String(format: "%+.3f s", sync.offsetInProject))  "
+                    + String(format: "(first %.3f s unused)", dropped)
+                : "\(identifier) \(String(format: "%+.3f s", sync.offsetInProject))"
+        )
+        .font(.caption).monospacedDigit()
+        // Said plainly rather than prevented: moving an input earlier than the project's start is
+        // a reasonable thing to ask for, and the part before the start simply cannot be shown.
+        .foregroundStyle(dropped > 0 ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+        .accessibilityIdentifier("sync.panelOffset.\(identifier)")
     }
 
     /// Moving the video against the data is the same job seen from the other side, and is the

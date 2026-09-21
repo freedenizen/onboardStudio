@@ -317,3 +317,76 @@ struct ParityTests {
         #expect(ProjectCompiler.needsRecompile(from: loaded.project, to: moved))
     }
 }
+
+/// #131: a sync nudge that puts a video before the project's start.
+///
+/// Nudging the video earlier is how you sync when the camera started before the logger, and from
+/// an offset of zero one press makes it negative. `insertTimeRange(_:of:at:)` cannot take a
+/// negative time and fails the **whole** composition with `-11800` / `-12780`, so the preview
+/// stops recompiling until the nudge is undone.
+@Suite("Sync before the project start")
+struct NegativeOffsetTests {
+    static func build(offset: Double, speed: Double = 1, trim: TrimRange = .none) async throws -> CompiledComposition {
+        try await CompositionBuilder.build(
+            videos: [
+                VideoInputSpec(
+                    url: try MediaFixtures.video, sync: SyncSettings(offsetInProject: offset, playSpeed: speed),
+                    trim: trim, includeAudio: false)
+            ], overlays: [], outputWidth: 64, outputHeight: 36, frameRate: 30)
+    }
+
+    @Test func aVideoNudgedBeforeZeroComposesWithItsHeadDropped() async throws {
+        // The exact report: one −0.1 nudge from an offset of zero.
+        let compiled = try await Self.build(offset: -0.1)
+        // Three seconds of clip, a tenth of it before the project starts, so 2.9 remain.
+        #expect(abs(compiled.duration - 2.9) < 0.02)
+
+        // Not just the right length — the right *content*. Project time zero must show the frame a
+        // tenth of a second into the file, which is what "the video moved earlier" means.
+        let track = try #require(compiled.composition.tracks(withMediaType: .video).first)
+        let segment = try #require(track.segments.first { !$0.isEmpty })
+        #expect(abs(segment.timeMapping.target.start.seconds) < 0.01)
+        #expect(abs(segment.timeMapping.source.start.seconds - 0.1) < 0.02)
+    }
+
+    @Test func theDroppedPartIsMeasuredInTheFilesOwnSeconds() async throws {
+        // At double speed a tenth of a second of timeline is two tenths of the file, so the same
+        // nudge eats twice as much of it. Getting this backwards would desync the very thing the
+        // nudge was for.
+        let compiled = try await Self.build(offset: -0.1, speed: 2)
+        // (3 − 0.2) / 2 = 1.4
+        #expect(abs(compiled.duration - 1.4) < 0.02)
+        let track = try #require(compiled.composition.tracks(withMediaType: .video).first)
+        let segment = try #require(track.segments.first { !$0.isEmpty })
+        #expect(abs(segment.timeMapping.source.start.seconds - 0.2) < 0.02)
+    }
+
+    @Test func nudgingBackPutsBackExactlyWhatItTook() async throws {
+        // The reason the stored offset is not clamped: a nudge has to be reversible.
+        let original = SyncSettings(startPositionInInput: 0.25, offsetInProject: 0, playSpeed: 1)
+        let there = SyncWizard.shifted(original, byProjectSeconds: -0.1)
+        let back = SyncWizard.shifted(there, byProjectSeconds: 0.1)
+        #expect(back == original)
+        #expect(there.offsetInProject == -0.1)
+        // And the composition is the one it was before.
+        let before = try await Self.build(offset: 0)
+        let after = try await Self.build(offset: 0)
+        #expect(abs(before.duration - after.duration) < 1e-9)
+    }
+
+    @Test func aVideoEntirelyBeforeTheProjectIsRejectedRatherThanDrawnEmpty() async throws {
+        // Pushed further back than it is long there is nothing left to show, which is the same
+        // situation as a trim that empties the input and gets the same answer.
+        await #expect(throws: CompositionError.self) { _ = try await Self.build(offset: -5) }
+    }
+
+    @Test func aPositiveOffsetIsUntouched() async throws {
+        // The ordinary case has to keep working exactly as it did: the clip starts where it says.
+        let compiled = try await Self.build(offset: 0.5)
+        #expect(abs(compiled.duration - 3.5) < 0.02)
+        let track = try #require(compiled.composition.tracks(withMediaType: .video).first)
+        let segment = try #require(track.segments.first { !$0.isEmpty })
+        #expect(abs(segment.timeMapping.target.start.seconds - 0.5) < 0.02)
+        #expect(abs(segment.timeMapping.source.start.seconds) < 0.02)
+    }
+}

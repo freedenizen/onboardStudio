@@ -231,8 +231,11 @@ struct VideoLaneView: View {
             Rectangle().fill(Color(nsColor: .windowBackgroundColor))
             ForEach(editor.project.videoInputs) { video in
                 let live = drag?.id == video.id ? drag : nil
-                let offset = live?.offset ?? video.sync.offsetInProject
-                let length = live?.length ?? max(0, (editor.end(of: video) ?? offset) - video.sync.offsetInProject)
+                // `startInProject`, not the raw offset: a clip nudged before the project's start
+                // renders from zero with its head dropped, and the bar has to show that rather
+                // than hanging off the left edge claiming length it will not have.
+                let offset = live?.offset ?? video.sync.startInProject
+                let length = live?.length ?? max(0, (editor.end(of: video) ?? offset) - offset)
                 let selected = editor.selectedInputID == video.id && editor.selectedObjectID == nil
                 bar(
                     video, selected: selected, width: max(length * pixelsPerSecond - 2, 6),

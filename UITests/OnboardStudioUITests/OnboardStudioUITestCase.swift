@@ -161,6 +161,17 @@ class OnboardStudioUITestCase: XCTestCase {
         XCTAssertEqual(result, .completed, "Expected “\(text)”, got \(element.value ?? "nil")", file: file, line: line)
     }
 
+    /// Waits until the element's value or label contains `text`, for readouts that carry a number
+    /// alongside their wording.
+    func expect(_ element: XCUIElement, toContain text: String, file: StaticString = #filePath, line: UInt = #line) {
+        let predicate = NSPredicate(format: "value CONTAINS %@ OR label CONTAINS %@", text, text)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+        let result = XCTWaiter().wait(for: [expectation], timeout: Self.timeout)
+        XCTAssertEqual(
+            result, .completed, "Expected something containing “\(text)”, got \(element.value ?? "nil")",
+            file: file, line: line)
+    }
+
     /// Scrolls the nearest scroll view until `element` is inside it (forms in sheets and the
     /// inspector are longer than their window).
     func reveal(_ element: XCUIElement) {
