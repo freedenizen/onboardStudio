@@ -1,6 +1,7 @@
 import AVFoundation
 import CryptoKit
 import Foundation
+import ProjectModel
 
 /// Optional bridge to an external `ffmpeg` for containers AVFoundation cannot open (MTS/M2TS,
 /// MKV, some AVI). Never required: when ffmpeg is absent, `prepare` reports why.
@@ -22,7 +23,8 @@ public enum FFmpegBridge {
     /// Candidate ffmpeg locations, first match wins. `ONBOARD_FFMPEG` overrides.
     public static var executable: URL? {
         let env = ProcessInfo.processInfo.environment["ONBOARD_FFMPEG"]
-        let preference = UserDefaults.standard.string(forKey: "ffmpegPath").flatMap { $0.isEmpty ? nil : $0 }
+        let chosen = UserDefaults.standard.value(for: Preferences.ffmpegPath)
+        let preference = chosen.isEmpty ? nil : chosen
         let candidates = [env, preference, "/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
             .compactMap { $0 }
         return candidates.map(URL.init(fileURLWithPath:)).first {

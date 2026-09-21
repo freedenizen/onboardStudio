@@ -4,15 +4,13 @@ import SwiftUI
 
 /// What the app does when it starts with no project to restore.
 enum LaunchOptions {
-    static let showAtLaunchKey = "showLauncherAtLaunch"
-
     /// The welcome window unless the user turned it off (then a blank project opens instead).
-    /// The UI tests pass `-skipLauncher YES` to start on a blank project.
+    /// The UI tests pass `-skipLauncher YES` to start on a blank project; that is a launch
+    /// argument rather than a setting, so it is not one of the `Preferences`.
     static var showLauncher: Bool {
         let defaults = UserDefaults.standard
         if defaults.bool(forKey: "skipLauncher") { return false }
-        // `bool(forKey:)` also understands "NO" from a launch argument; unset means show.
-        return defaults.object(forKey: showAtLaunchKey) == nil ? true : defaults.bool(forKey: showAtLaunchKey)
+        return defaults.value(for: Preferences.showLauncherAtLaunch)
     }
 
     /// Set once the welcome window has made its launch-time decision.
@@ -32,7 +30,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// The welcome window: a blank project, a project from a template, or an existing project.
 struct LauncherView: View {
     @Environment(\.dismissWindow) private var dismissWindow
-    @AppStorage(LaunchOptions.showAtLaunchKey) private var showAtLaunch = true
+    @AppStorage(Preferences.showLauncherAtLaunch.key) private var showAtLaunch = Preferences
+        .showLauncherAtLaunch.unset
     @State private var recents: [URL] = []
     @State private var userTemplates: [TemplateStore.Entry] = []
 

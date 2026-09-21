@@ -1,4 +1,5 @@
 import AppKit
+import ProjectModel
 import SwiftUI
 import YouTubeKit
 
@@ -11,7 +12,7 @@ struct UploadSheet: View {
     @State private var descriptionText = ""
     @State private var tags = ""
     @State private var privacy = VideoMetadata.Privacy.private
-    @AppStorage("youtubeClientID") private var clientID = ""
+    @AppStorage(Preferences.youTubeClientID.key) private var clientID = Preferences.youTubeClientID.unset
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

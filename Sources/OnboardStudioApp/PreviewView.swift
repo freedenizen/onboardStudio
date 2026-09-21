@@ -373,15 +373,13 @@ final class GizmoView: NSView {
 /// The plain step is a preference so it can be matched to how fine the user's layouts are; ⇧
 /// multiplies it, which is the gesture every editor uses for "the same thing, but coarser".
 enum NudgeStep {
-    static let defaultPixels = 1.0
     static let shiftMultiplier = 10.0
 
     static func pixels(shift: Bool, defaults: UserDefaults = .standard) -> Double {
-        let step = defaults.double(forKey: "nudgeStepPixels").nonZero(default: defaultPixels)
+        // Read through `Preferences` like every other setting. It used to be `double(forKey:)`
+        // here and `@AppStorage` in Settings — two mechanisms for one key, and this one needed a
+        // "treat zero as unset" guard to make up for `double(forKey:)` returning zero for both.
+        let step = defaults.value(for: Preferences.nudgeStepPixels)
         return shift ? step * shiftMultiplier : step
     }
-}
-
-extension Double {
-    fileprivate func nonZero(default value: Double) -> Double { self == 0 ? value : self }
 }

@@ -103,7 +103,7 @@ struct EditorCommands: Commands {
             Button("Welcome to Onboard Studio") { openWindow(id: "launcher") }
             Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
             Button("Take the Tour") { editor?.tourStep = 0 }.disabled(editor == nil)
-            Button("Show Getting Started") { UserDefaults.standard.set(true, forKey: "showGettingStarted") }
+            Button("Show Getting Started") { UserDefaults.standard.set(true, for: Preferences.showGettingStarted) }
             Divider()
             Button("Open the Sample Project") { SampleProject.open() }.disabled(!SampleProject.isAvailable)
         }
