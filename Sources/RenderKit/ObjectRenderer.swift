@@ -11,10 +11,15 @@ public struct ObjectContext: Sendable {
     public let sampler: TelemetrySampler?
     public let sync: SyncSettings
     public let cache: RenderCache
+    /// The speed unit this object actually draws in, already resolved through #75's chain
+    /// (object → project → app → the data). Renderers take it from here rather than from their
+    /// params, because a params value may still say `automatic`, and `automatic` has no
+    /// conversion factor — resolving is `RenderPlanner`'s job and doing it here would scatter it.
+    public let speedUnit: SpeedDisplayUnit
 
     public init(
         objectID: DisplayObjectID, frame: UnitRect, opacity: Double, sampler: TelemetrySampler?, sync: SyncSettings,
-        cache: RenderCache
+        cache: RenderCache, speedUnit: SpeedDisplayUnit = UnitResolver.lastResort
     ) {
         self.objectID = objectID
         self.frame = frame
@@ -22,6 +27,7 @@ public struct ObjectContext: Sendable {
         self.sampler = sampler
         self.sync = sync
         self.cache = cache
+        self.speedUnit = speedUnit
     }
 
     /// Pixel rectangle of the object for an output of `size`.

@@ -213,7 +213,12 @@ public enum ProjectCompiler {
             let overlays = RenderPlanner.overlays(
                 for: project, objects: objects, sessions: loaded.sessions, images: loaded.images, cache: cache,
                 scriptRenderer: { params, context in ScriptedRenderer(context: context, params: params) },
-                mapBackgrounds: loaded.mapBackgrounds)
+                mapBackgrounds: loaded.mapBackgrounds,
+                // The app-wide level of #75's chain. Read here rather than in `RenderPlanner` so
+                // the planner stays a pure function of what it is given, which is what lets the
+                // render tests pin a unit without touching the running app's settings.
+                appSpeedUnit: SpeedUnitSetting(
+                    rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic)
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
             let plan = RenderPlan(

@@ -167,7 +167,7 @@ public struct LapPanelRenderer: OverlayDrawing {
         inputTime: Double
     ) {
         drawScale(in: cg, layout: layout, from: a, to: b)
-        let factor = params.speedUnit.factorFromMetersPerSecond
+        let factor = context.speedUnit.factorFromMetersPerSecond
         let speed = sample?[.speed].map { $0 * factor }
         let delta = session.flatMap { LapComparison.speedDelta(at: inputTime, session: $0, reference: reference) }
             .map { $0 * factor }
@@ -197,7 +197,7 @@ public struct LapPanelRenderer: OverlayDrawing {
             speedText, at: CGPoint(x: a + layout.mid * 1.9, y: layout.rowY), alignment: .trailing, size: layout.mid,
             color: params.textColor, in: cg)
         text(
-            params.speedUnit.rawValue, at: CGPoint(x: a + layout.mid * 2.05, y: layout.rowY + layout.mid * 0.45),
+            context.speedUnit.rawValue, at: CGPoint(x: a + layout.mid * 2.05, y: layout.rowY + layout.mid * 0.45),
             alignment: .leading,
             size: layout.label, color: params.labelColor, in: cg)
         if let delta {

@@ -235,7 +235,7 @@ public struct LapPanelParams: Hashable, Codable, Sendable {
     public var speedDeltaRange: Double
     /// Full scale of the time-delta lane in seconds (± this).
     public var timeDeltaRange: Double
-    public var speedUnit: SpeedDisplayUnit
+    public var speedUnit: SpeedUnitSetting
     public var decimals: Int
     public var textColor: RGBAColor
     public var labelColor: RGBAColor
@@ -249,7 +249,7 @@ public struct LapPanelParams: Hashable, Codable, Sendable {
         bestLabel: String = "Best", previousLabel: String = "Previous", currentLabel: String = "Current",
         showLapNumbers: Bool = true, reference: LapReference = .sessionBest, showSpeedDelta: Bool = true,
         showTimeDelta: Bool = true, speedDeltaRange: Double = 10, timeDeltaRange: Double = 2,
-        speedUnit: SpeedDisplayUnit = .mph,
+        speedUnit: SpeedUnitSetting = .automatic,
         decimals: Int = 1, textColor: RGBAColor = .white,
         labelColor: RGBAColor = RGBAColor(red: 0.71, green: 0.71, blue: 0.71),
         aheadColor: RGBAColor = RGBAColor(red: 0.13, green: 0.75, blue: 0.25),
@@ -299,7 +299,7 @@ public struct LapPanelParams: Hashable, Codable, Sendable {
         showTimeDelta = try c.decodeIfPresent(Bool.self, forKey: .showTimeDelta) ?? d.showTimeDelta
         speedDeltaRange = try c.decodeIfPresent(Double.self, forKey: .speedDeltaRange) ?? d.speedDeltaRange
         timeDeltaRange = try c.decodeIfPresent(Double.self, forKey: .timeDeltaRange) ?? d.timeDeltaRange
-        speedUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .speedUnit) ?? d.speedUnit
+        speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? .mph
         decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? d.decimals
         textColor = try c.decodeIfPresent(RGBAColor.self, forKey: .textColor) ?? d.textColor
         labelColor = try c.decodeIfPresent(RGBAColor.self, forKey: .labelColor) ?? d.labelColor

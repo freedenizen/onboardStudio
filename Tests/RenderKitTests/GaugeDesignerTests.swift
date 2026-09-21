@@ -31,9 +31,13 @@ struct GaugeDesignerGoldenTests {
         _ kind: DisplayObjectKind, frame: UnitRect = UnitRect(x: 0.05, y: 0.05, width: 0.9, height: 0.9),
         time: Double, session: TelemetrySession = SyntheticSession.withDistance, image: LoadedImage? = nil
     ) throws -> CVPixelBuffer {
+        // Resolve the object's own setting the way `RenderPlanner` does, so a params value of
+        // `.kph` reaches the renderer and an `.automatic` one falls through to the same default
+        // every object used to assert.
         let context = ObjectContext(
             objectID: DisplayObjectID(UUID(uuidString: "00000000-0000-0000-0000-000000000002") ?? UUID()), frame: frame,
-            opacity: 1, sampler: TelemetrySampler(session: session), sync: .identity, cache: RenderCache())
+            opacity: 1, sampler: TelemetrySampler(session: session), sync: .identity, cache: RenderCache(),
+            speedUnit: UnitResolver().speed(kind.speedUnit))
         let renderer = try #require(RenderPlanner.renderer(for: kind, context: context, image: image))
         let plan = RenderPlan(
             outputWidth: Int(size.width), outputHeight: Int(size.height), frameRate: 30, videoLayers: [],
@@ -272,10 +276,12 @@ extension GoldenImage {
 
 @Suite("Designer behaviour")
 struct DesignerBehaviourTests {
-    func context(session: TelemetrySession = SyntheticSession.withDistance) -> ObjectContext {
+    func context(
+        session: TelemetrySession = SyntheticSession.withDistance, speedUnit: SpeedDisplayUnit = UnitResolver.lastResort
+    ) -> ObjectContext {
         ObjectContext(
             objectID: DisplayObjectID(), frame: .full, opacity: 1, sampler: TelemetrySampler(session: session),
-            sync: .identity, cache: RenderCache())
+            sync: .identity, cache: RenderCache(), speedUnit: speedUnit)
     }
 
     @Test func counterClockwiseReversesTheSweep() {

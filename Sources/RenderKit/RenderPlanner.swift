@@ -38,6 +38,19 @@ public enum RenderPlanner {
     /// stays free of JavaScriptCore.
     public typealias ScriptRendererFactory = @Sendable (ScriptedParams, ObjectContext) -> any OverlayDrawing
 
+    /// The unit the session's speed was recorded in, which is what *Automatic* resolves to.
+    ///
+    /// Only the three the app can display; anything else — or no speed channel at all — has no
+    /// opinion, and the chain falls through to its last resort.
+    static func recordedSpeedUnit(of session: TelemetrySession) -> SpeedDisplayUnit? {
+        switch session[.speed]?.unit {
+        case .milesPerHour: .mph
+        case .kilometersPerHour: .kph
+        case .metersPerSecond: .metersPerSecond
+        default: nil
+        }
+    }
+
     /// Overlay drawings in draw order for all visible non-video objects.
     public static func overlays(
         for project: Project,
@@ -46,7 +59,8 @@ public enum RenderPlanner {
         images: [InputID: LoadedImage] = [:],
         cache: RenderCache = RenderCache(),
         scriptRenderer: ScriptRendererFactory? = nil,
-        mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:]
+        mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:],
+        appSpeedUnit: SpeedUnitSetting = .automatic
     ) -> [any OverlayDrawing] {
         (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
@@ -55,9 +69,13 @@ public enum RenderPlanner {
             let dataInputID: InputID? = object.kind.needsImage ? project.dataInputs.first?.id : object.inputID
             let sampler = dataInputID.flatMap { sessions[$0] }.map(TelemetrySampler.init)
             let sync = (object.kind.needsImage ? project.dataInputs.first?.sync : input?.sync) ?? .identity
+            // #75's chain, resolved here so every renderer is handed a unit it can convert with.
+            let resolver = UnitResolver(
+                app: appSpeedUnit, project: project.settings.speedUnit,
+                automatic: sampler.flatMap { Self.recordedSpeedUnit(of: $0.session) })
             let context = ObjectContext(
                 objectID: object.id, frame: object.frame, opacity: object.opacity, sampler: sampler, sync: sync,
-                cache: cache)
+                cache: cache, speedUnit: resolver.speed(object.kind.speedUnit))
             let image =
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }

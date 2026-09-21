@@ -24,7 +24,7 @@ public struct BarParams: Hashable, Codable, Sendable {
     public var segments: Int
     public var showValue: Bool
     public var decimals: Int
-    public var speedUnit: SpeedDisplayUnit
+    public var speedUnit: SpeedUnitSetting
     public var unitLabel: String
     /// Corner radius as a fraction of the bar thickness.
     public var cornerRadius: Double
@@ -46,7 +46,7 @@ public struct BarParams: Hashable, Codable, Sendable {
         segments: Int = 0,
         showValue: Bool = true,
         decimals: Int = 0,
-        speedUnit: SpeedDisplayUnit = .mph,
+        speedUnit: SpeedUnitSetting = .automatic,
         unitLabel: String = "",
         cornerRadius: Double = 0.25,
         fillFromZero: Bool = false
@@ -86,7 +86,7 @@ public struct BarParams: Hashable, Codable, Sendable {
         segments = try c.decodeIfPresent(Int.self, forKey: .segments) ?? d.segments
         showValue = try c.decodeIfPresent(Bool.self, forKey: .showValue) ?? d.showValue
         decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? d.decimals
-        speedUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .speedUnit) ?? d.speedUnit
+        speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? .mph
         unitLabel = try c.decodeIfPresent(String.self, forKey: .unitLabel) ?? d.unitLabel
         cornerRadius = try c.decodeIfPresent(Double.self, forKey: .cornerRadius) ?? d.cornerRadius
         fillFromZero = try c.decodeIfPresent(Bool.self, forKey: .fillFromZero) ?? d.fillFromZero
@@ -137,7 +137,7 @@ public struct GraphParams: Hashable, Codable, Sendable {
     /// Fixed vertical range, or `nil` to fit the visible data.
     public var minValue: Double?
     public var maxValue: Double?
-    public var speedUnit: SpeedDisplayUnit
+    public var speedUnit: SpeedUnitSetting
     public var label: String
     public var backgroundColor: RGBAColor
     public var gridColor: RGBAColor
@@ -160,7 +160,7 @@ public struct GraphParams: Hashable, Codable, Sendable {
         window: Double = 10,
         minValue: Double? = nil,
         maxValue: Double? = nil,
-        speedUnit: SpeedDisplayUnit = .mph,
+        speedUnit: SpeedUnitSetting = .automatic,
         label: String = "",
         backgroundColor: RGBAColor = .faceDark,
         gridColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.25),
@@ -198,7 +198,7 @@ public struct GraphParams: Hashable, Codable, Sendable {
         window = try c.decodeIfPresent(Double.self, forKey: .window) ?? d.window
         minValue = try c.decodeIfPresent(Double.self, forKey: .minValue)
         maxValue = try c.decodeIfPresent(Double.self, forKey: .maxValue)
-        speedUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .speedUnit) ?? d.speedUnit
+        speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? .mph
         label = try c.decodeIfPresent(String.self, forKey: .label) ?? d.label
         backgroundColor = try c.decodeIfPresent(RGBAColor.self, forKey: .backgroundColor) ?? d.backgroundColor
         gridColor = try c.decodeIfPresent(RGBAColor.self, forKey: .gridColor) ?? d.gridColor

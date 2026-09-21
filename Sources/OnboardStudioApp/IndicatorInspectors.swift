@@ -187,6 +187,22 @@ struct OverlayOpacitySection: View {
             Text("Fades every gauge, map and readout together, on top of each object's own opacity.")
                 .font(.caption).foregroundStyle(.secondary)
         }
+        Section("Units") {
+            Picker(
+                "Speed",
+                selection: Binding(
+                    get: { editor.project.settings.speedUnit },
+                    set: { value in editor.edit("Change Speed Unit") { $0.settings.speedUnit = value } })
+            ) {
+                ForEach(SpeedUnitSetting.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            .accessibilityIdentifier("project.speedUnit")
+            Text(
+                "For every object in this project that has not chosen its own. Automatic follows "
+                    + "Settings, which follows the data file."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+        }
     }
 }
 
