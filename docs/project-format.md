@@ -17,7 +17,7 @@ season's project sees the video they exported, not a reinterpretation of it.
 There are two ways to hold that line, and the difference between them is worth understanding
 before reaching for either.
 
-### A decode default, for the first change to a key
+### A decode default, for a field being introduced
 
 A non-optional field whose `init(from:)` default differs from its memberwise default does
 distinguish old files from new ones, and the codebase relies on it. `TimerParams.deltaReference`
@@ -27,13 +27,26 @@ key**, so an absent key can only have come from a build that did not. The shippe
 `deltaSettingsKeepOldFilesUnchanged` asserts exactly that, and the `timer` row below records the
 resulting behaviour.
 
-Its limit is narrow and absolute: **it works once per key.** After the first change, absence no
-longer identifies a single earlier build — it is ambiguous between every build before the field
-existed — so a second change to that key's default cannot be expressed this way. A nested type's
-`init(from:)` also cannot see the document's `schemaVersion`, so it has nothing else to go on.
+What it carries is **one bit**: this file predates the field. That bit never becomes ambiguous —
+but it is also all there is, and the fallback is a single slot holding one prior value. Three
+things follow.
 
-Adding a brand-new field is the safe case: absence is unambiguous, and if nothing in an older
-project drew the value, the default cannot change how that project renders at all.
+- **A later change to the memberwise default is fine.** Files written since the field existed
+  carry the key explicitly, so they are unaffected, and the fallback goes on meaning what it
+  always meant.
+- **Changing the fallback itself is not.** It is the only record of how the app behaved before
+  the field existed; rewriting it retroactively changes what every pre-field project resolves to,
+  which is the thing this section exists to prevent.
+- **It cannot tell two post-field builds apart.** They both wrote the key. Anything that needs to
+  treat, say, a 0.20 file differently from a 0.22 one has nowhere to put that, and a nested type's
+  `init(from:)` cannot see the document's `schemaVersion` either.
+
+The field must also be genuinely always-written. An optional property, or a custom `encode(to:)`
+that omits defaults, makes absence mean two things at once and the mechanism stops working.
+
+Introducing a field is therefore the safe case, and the common one: absence is unambiguous, and
+if nothing in an older project drew the value, the default cannot change how that project renders
+at all.
 
 ### A migration, for anything else
 
@@ -50,16 +63,22 @@ resolves to the old values.
 
 ### This covers `project.json` only
 
-`Project.migrateIfNeeded()` is called from one place, `Project.init(from:)`. Templates
-(`.onboardtemplate`) and object styles (`.onboardstyle`) embed the same `DisplayObject` and params
-types, carry their own `formatVersion`, and have **no migration seam** — nothing inspects that
-version and rewrites old values. Applying a template replaces `displayObjects` wholesale, so a
-template saved by an earlier build can still pick up a new default when it is applied.
+`Project.migrateIfNeeded()` is called from one place: the static `Project.decode(_:)`. It is
+`mutating`, so it cannot run inside `init(from:)` at all — which means **decoding a `Project` any
+other way skips migration entirely**. Nothing does today; everything goes through
+`Project.decode(_:)` or `ProjectPackage`. Reaching for `JSONDecoder().decode(Project.self, …)`
+directly would quietly opt out.
 
-That is a real gap rather than a rule, tracked as #124: today the only protection for templates and
-styles is the one-shot decode default above. A change that alters a default on a type reachable
-from a template needs to say what happens to templates saved before it, and may need the seam
-adding first.
+Templates (`.onboardtemplate`) and object styles (`.onboardstyle`) embed the same `DisplayObject`
+and params types, carry their own `formatVersion`, and have **no migration seam** — nothing
+inspects that version and rewrites old values. Applying a template replaces `displayObjects`
+wholesale, so a template saved by an earlier build can still pick up a new default when it is
+applied.
+
+That is a real gap rather than a rule, tracked as #124: today the only thing protecting templates
+and styles is the decode default above, which covers a field being introduced and nothing else. A
+change that alters a default on a type reachable from a template needs to say what happens to
+templates saved before it, and may need the seam adding first.
 
 ```json
 {
