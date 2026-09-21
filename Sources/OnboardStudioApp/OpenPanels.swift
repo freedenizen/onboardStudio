@@ -62,6 +62,29 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
+    /// A track definition: one circuit's start/finish line, sectors and corner names.
+    ///
+    /// Worth its own file type because no licence can give us sector geometry, so a definition one
+    /// driver works out and hands to another is the only route there is to a shared library.
+    static let trackType = UTType(exportedAs: "com.freedenizen.onboardstudio.track", conformingTo: .json)
+
+    static func chooseTrack() -> URL? {
+        let panel = NSOpenPanel()
+        panel.title = "Import Track Definition"
+        panel.allowedContentTypes = [trackType, .json]
+        panel.allowsMultipleSelection = false
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    static func chooseTrackDestination(suggestedName: String) -> URL? {
+        let panel = NSSavePanel()
+        panel.title = "Export Track Definition"
+        panel.allowedContentTypes = [trackType]
+        panel.nameFieldStringValue = suggestedName + "." + TrackLibrary.fileExtension
+        panel.canCreateDirectories = true
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
     static let templateType = UTType(exportedAs: "com.freedenizen.onboardstudio.template", conformingTo: .json)
     /// Templates exported under the app's former name, OverlayGen.
     static let legacyTemplateType = UTType(

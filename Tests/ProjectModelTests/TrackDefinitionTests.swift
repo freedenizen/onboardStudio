@@ -79,6 +79,24 @@ struct TrackLibraryTests {
         #expect(read.modified.timeIntervalSinceNow > -60)
     }
 
+    @Test func exportingToAFileAndImportingItBack() throws {
+        // The share gesture: a definition written wherever the driver chose to put it, not into
+        // the library, and read back by whoever they sent it to. Sector geometry and corner
+        // numbering exist nowhere else, so this file is the only route to a shared library.
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "shared-\(UUID().uuidString).\(TrackLibrary.fileExtension)")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let original = TrackDefinitionTests.sonoma()
+        try TrackLibrary.write(original, to: url)
+        let received = try TrackLibrary.read(from: url)
+        #expect(received.circuitID == original.circuitID)
+        #expect(received.startFinish == original.startFinish)
+        #expect(received.sectors == original.sectors)
+        #expect(received.cornerLabels == original.cornerLabels)
+        // It files itself the same way for the person who received it.
+        #expect(received.id == original.id)
+    }
+
     @Test func savingTwiceReplacesRatherThanDuplicating() throws {
         let library = temporaryLibrary()
         defer { try? FileManager.default.removeItem(at: library.directory) }
