@@ -241,12 +241,18 @@ final class MultiCameraUITests: OnboardStudioUITestCase {
         app.buttons["transport.stepForward"].click()
         app.buttons["transport.stepForward"].click()
         let segments = app.staticTexts.matching(NSPredicate(format: "value BEGINSWITH 'Segment '"))
-        XCTAssertEqual(segments.count, 0, "Only the implicit start segment before adding one")
+        XCTAssertEqual(segments.count, 0, "No segments before adding one")
+        // The lane is not there at all until there is a segment to put in it (#105): a project
+        // with none used to show a full-width grey bar labelled "Start".
+        XCTAssertFalse(app.staticTexts["Start"].exists, "No segment lane before there are segments")
         toolbarMenu("toolbar.layout", "Add Segment at Playhead")
         XCTAssertTrue(segments.firstMatch.waitForExistence(timeout: Self.timeout), "Segment on the strip")
         XCTAssertTrue(app.staticTexts["Segment"].waitForExistence(timeout: Self.timeout), "Segment inspector")
+        // Not asserting the "Start" span here on purpose: two frame steps in leaves it a couple of
+        // pixels wide, so whether its label is in the tree depends on the fixture's duration.
         app.typeKey("z", modifierFlags: .command)
         XCTAssertTrue(segments.firstMatch.waitForNonExistence(timeout: Self.timeout), "Undo removes the segment")
+        XCTAssertTrue(app.staticTexts["Start"].waitForNonExistence(timeout: Self.timeout), "And the lane with it")
     }
 }
 

@@ -33,7 +33,9 @@ struct TimelineView: View {
                             DataLaneView(editor: editor, width: contentWidth)
                             Divider()
                         }
-                        SegmentLaneView(editor: editor, width: contentWidth)
+                        if !editor.project.timeline.segments.isEmpty {
+                            SegmentLaneView(editor: editor, width: contentWidth)
+                        }
                     }
                     .frame(width: contentWidth)
                 }
@@ -104,6 +106,12 @@ struct TimelineRuler: View {
 }
 
 /// Timeline segments: click to seek, click a segment to select it, drag its left edge to move it.
+///
+/// Shown only once a project has a segment, like the video and data lanes above it. A project with
+/// none used to get a full-width grey bar labelled "Start" — the stretch before the first segment,
+/// stretched over a timeline that had no first segment to be before (#105). Nothing is lost by
+/// hiding it: **Add Segment at Playhead** is on the layout toolbar menu and in the menu bar, not
+/// only in this lane's context menu.
 struct SegmentLaneView: View {
     @Bindable var editor: EditorModel
     let width: CGFloat
@@ -116,8 +124,13 @@ struct SegmentLaneView: View {
         let segments = editor.project.timeline.segments
         ZStack(alignment: .topLeading) {
             Rectangle().fill(Color(nsColor: .controlBackgroundColor))
-            let firstStart = segments.first?.start ?? duration
-            span(label: "Start", x: 0, width: width * firstStart / duration, selected: false, color: .secondary)
+            // The stretch before the first segment, where the project's own layout is what draws.
+            // Only when there is one: a segment starting at zero leaves nothing in front of it,
+            // and a two-pixel sliver with a clipped label is not a label.
+            let firstStart = segments.first?.start ?? 0
+            if firstStart > 0 {
+                span(label: "Start", x: 0, width: width * firstStart / duration, selected: false, color: .secondary)
+            }
             ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
                 let start = dragging?.id == segment.id ? (dragging?.start ?? segment.start) : segment.start
                 let end = index + 1 < segments.count ? segments[index + 1].start : duration
