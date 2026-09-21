@@ -26,6 +26,8 @@ public enum SessionBuilder {
         /// How laps are split into sectors. Three equal parts is the convention and costs a
         /// binary search per boundary per lap, so it is always measured rather than asked for.
         public var sectorMode: SectorMode
+        /// What the circuit calls its corners, in driving order. Empty leaves them unnamed.
+        public var cornerLabels: [String]
         /// Ignore samples before this point in the file's own time (`nil` = from the beginning).
         ///
         /// Applied before anything else, so the session behaves as if the recording had started
@@ -47,6 +49,7 @@ public enum SessionBuilder {
             finishLine: FinishLine? = nil,
             ignoreFirstCrossings: Int = 0,
             sectorMode: SectorMode = .equalDistance(count: SectorMode.defaultCount),
+            cornerLabels: [String] = [],
             trimStart: Double? = nil,
             trimEnd: Double? = nil
         ) {
@@ -63,6 +66,7 @@ public enum SessionBuilder {
             self.finishLine = finishLine
             self.ignoreFirstCrossings = ignoreFirstCrossings
             self.sectorMode = sectorMode
+            self.cornerLabels = cornerLabels
         }
     }
 
@@ -122,6 +126,7 @@ public enum SessionBuilder {
         for channel in LapDeltas.channels(for: session) { session.add(channel) }
         // After the demotion, so an out-lap cannot be the lap the sectors are measured on.
         session.sectors = Sectors.analyse(mode: options.sectorMode, session: session)
+        session.cornerLabels = options.cornerLabels
         return session
     }
 

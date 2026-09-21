@@ -168,6 +168,41 @@ struct TrackMapDisplayTests {
 
     // MARK: - Corners
 
+    @Test func withoutNamesTheMapCountsTheCorners() throws {
+        var params = TrackMapParams()
+        params.showCornerNumbers = true
+        let marks = renderer(params).marks
+        #expect(marks.labels.isEmpty)
+        // A count, deliberately: the circuit's own numbering is not derivable and Sonoma runs
+        // 3, 3a, 4, 4a, so 1…N would be wrong if it claimed to be the real thing.
+        #expect(marks.cornerLabel(0) == "1")
+        #expect(marks.cornerLabel(3) == "4")
+    }
+
+    @Test func theCircuitsOwnNamesAreUsedWhenThereAreSome() throws {
+        var session = SectorMapSession.session
+        session.cornerLabels = ["1", "2", "3", "3a"]
+        var params = TrackMapParams()
+        params.showCornerNumbers = true
+        let marks = renderer(params, session: session).marks
+        #expect(marks.cornerLabel(2) == "3")
+        // The case this whole thing exists for.
+        #expect(marks.cornerLabel(3) == "3a")
+    }
+
+    @Test func aMissingOrBlankNameFallsBackToTheCount() throws {
+        var session = SectorMapSession.session
+        // Shorter than the corner list, and with a gap in it.
+        session.cornerLabels = ["1", "", "3"]
+        var params = TrackMapParams()
+        params.showCornerNumbers = true
+        let marks = renderer(params, session: session).marks
+        #expect(marks.cornerLabel(0) == "1")
+        #expect(marks.cornerLabel(1) == "2")  // blank
+        #expect(marks.cornerLabel(2) == "3")
+        #expect(marks.cornerLabel(9) == "10")  // past the end of the list
+    }
+
     @Test func cornerMarksMatchTheDetector() throws {
         var params = TrackMapParams()
         params.showCornerNumbers = true

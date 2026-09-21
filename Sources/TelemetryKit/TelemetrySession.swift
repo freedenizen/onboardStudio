@@ -37,6 +37,12 @@ public struct TelemetrySession: Sendable {
     /// Sector times, measured once when the session was built. `nil` when the file has no laps
     /// or no distance to divide, which is every session recorded without GPS.
     public var sectors: SectorAnalysis?
+    /// What the circuit calls its corners, in driving order from the start/finish.
+    ///
+    /// Strings, not numbers: Sonoma runs 1, 2, 3, **3a**, 4, **4a**, … and letter suffixes are
+    /// common. Empty until the driver sets them — no open source publishes corner numbering
+    /// (`docs/tracks-and-sectors.md`), so like sector geometry it is drawn, never fetched.
+    public var cornerLabels: [String] = []
 
     public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info

@@ -120,7 +120,7 @@ public struct TrackMapRenderer: OverlayDrawing {
         if params.showCornerNumbers {
             for (index, corner) in marks.corners.enumerated() {
                 let point = projection.point(latitude: corner.latitude, longitude: corner.longitude, in: bounds)
-                label("\(index + 1)", at: point, size: labelSize, in: cg)
+                label(marks.cornerLabel(index), at: point, size: labelSize, in: cg)
             }
         }
     }
@@ -333,6 +333,19 @@ struct TrackMapMarks: Sendable {
     var boundaries: [LapComparison.LapPoint] = []
     /// Each corner's apex on the reference lap, in the order they are driven.
     var corners: [LapComparison.LapPoint] = []
+    /// What the circuit calls them, if the driver has said. Shorter than `corners` is fine: the
+    /// rest fall back to their position round the lap.
+    var labels: [String] = []
+
+    /// The label for the `index`-th corner of the lap.
+    ///
+    /// Falling back to `index + 1` is a **count**, not the circuit's own number — Sonoma runs
+    /// 3, 3a, 4, 4a and a sequential count is wrong there. It is the honest answer until
+    /// somebody says otherwise, and the inspector is where they say it.
+    func cornerLabel(_ index: Int) -> String {
+        guard index < labels.count, !labels[index].isEmpty else { return "\(index + 1)" }
+        return labels[index]
+    }
 
     init() {}
 
@@ -350,6 +363,7 @@ struct TrackMapMarks: Sendable {
             corners = CornerDetector.corners(of: reference, in: session).compactMap {
                 LapComparison.point(atDistanceInto: reference, metres: $0.apexDistance, session: session)
             }
+            labels = session.cornerLabels
         }
     }
 }

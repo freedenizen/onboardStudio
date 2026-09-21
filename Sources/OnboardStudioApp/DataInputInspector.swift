@@ -10,6 +10,7 @@ struct DataInputInspector: View {
 
     @State private var showChannels = false
     @State private var circuitSearch = ""
+    @State private var showCorners = false
 
     var session: TelemetrySession? { editor.sessions[input.id] }
 
@@ -266,12 +267,10 @@ extension DataInputInspector {
                     }
                 }
                 if !match.isConfident {
-                    Text(
-                        "Another circuit is about as close, so this is a guess. Correct it below if it is wrong."
-                    )
-                    .font(.caption).foregroundStyle(.secondary)
+                    Text("Another circuit is about as close, so this is a guess. Correct it below if it is wrong.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-                Button("Save Start/Finish and Sectors for This Track") {
+                Button("Save Start/Finish, Sectors and Corner Names for This Track") {
                     editor.saveTrackDefinition(for: input.id)
                 }
                 if editor.trackLibrary.definition(id: match.circuit.id) != nil {
@@ -292,6 +291,49 @@ extension DataInputInspector {
                 }
             }
         }
+        cornerSection
+    }
+
+    /// Names for the corners the detector found, in driving order.
+    ///
+    /// Circuits number their own corners and rarely do it 1…N — Sonoma runs 3, 3a, 4, 4a — and no
+    /// source publishes the numbering, so the driver supplies it once and the track definition
+    /// keeps it. Names attach to the corners *found*, which are the ones numbered on the map, so
+    /// it does not matter that a curvature detector and a circuit's official count disagree.
+    @ViewBuilder var cornerSection: some View {
+        Section("Corners") {
+            let corners = editor.corners(for: input.id)
+            if corners.isEmpty {
+                Text("Naming corners needs laps and a GPS trace to find them in.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                DisclosureGroup("\(corners.count) found", isExpanded: $showCorners) {
+                    ForEach(Array(corners.enumerated()), id: \.offset) { index, corner in
+                        LabeledContent("Corner \(index + 1)") {
+                            HStack {
+                                Text(corner.turnsRight ? "right" : "left").foregroundStyle(.secondary)
+                                TextField(
+                                    "\(index + 1)",
+                                    text: Binding(
+                                        get: { label(at: index) },
+                                        set: { editor.setCornerLabel($0, at: index, for: input.id) })
+                                )
+                                .frame(width: 70)
+                            }
+                        }
+                    }
+                }
+                Text(
+                    "The map numbers these 1…\(corners.count), which is a count and not what the circuit calls "
+                        + "them. Type the real names — 3a and the like — and they are kept with the track."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    func label(at index: Int) -> String {
+        index < settings.cornerLabels.count ? settings.cornerLabels[index] : ""
     }
 
     func confidence(_ match: CircuitCatalog.Match) -> String {

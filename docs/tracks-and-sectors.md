@@ -136,6 +136,34 @@ project saved before them draws the outline it always drew:
   separate for #95.
 - **`showCornerNumbers`** numbers the corners from the reference lap's curvature.
 
+### Corner numbering is the circuit's, and it is not sequential
+
+Numbering detected corners 1…N is wrong at most venues. **Sonoma runs 1, 2, 3, 3a, 4, 4a, …** and
+letter suffixes are normal — Watkins Glen, Road America and most club circuits have at least one.
+So a corner label is a **string**, and the count of official turns is not the count of corners a
+curvature detector finds.
+
+**Nothing publishes it.** Checked, not assumed:
+
+| Source | Licence | Corner data |
+|---|---|---|
+| Wikidata | CC0 | **None.** `P361` / `P131` / `P527` against Sonoma, Suzuka, Silverstone, Laguna Seca, Road America and Watkins Glen returns 27 items — all circuit *layouts* ("Silverstone 1991 Grand Prix layout") and facilities ("Suzuka Circuit Onsen"). Not one corner, no coordinates. |
+| OpenStreetMap | ODbL | **Effectively none.** Overpass over Sonoma returns 13 named elements: `Dragstrip`, `Pit Road`, `Sonoma Raceway`, `Sonoma Raceway 2020`, a karting centre and one informally-named way, `PWC lower hairpin`. No turn numbers — and ODbL is rejected here anyway. The public Overpass endpoint refused the request and a mirror was needed, the same fragility the earlier evaluation found. |
+
+So corner numbering lands where sector geometry landed: **derived or drawn, never fetched.**
+
+`TelemetrySession.cornerLabels` carries them, filled from `DataInputSettings.cornerLabels` the
+same way sectors are, and `TrackDefinition.cornerLabels` remembers them per circuit — which is the
+point of a shareable definition, since one driver working out that Sonoma goes 3, 3a, 4, 4a saves
+everyone else doing it.
+
+**Labels attach to the corners the detector found**, which are the ones numbered on the map. That
+sidesteps the count mismatch entirely: the driver assigns `3a` to whichever corner it is, rather
+than the app trying to reconcile twelve detected corners with fourteen official turns.
+
+Until labels are set the map shows `1…N`, and the inspector says in as many words that this is a
+count and not what the circuit calls them.
+
 ### The corner on the start/finish line
 
 Numbering the corners of a square found three of four. The missing one sat on the start/finish

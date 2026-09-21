@@ -118,6 +118,7 @@ Data input settings (all optional):
 | `lapLine` | `{ "latitude", "longitude", "headingDegrees" (or null), "halfWidthMeters", "headingToleranceDegrees", "ignoreFirstCrossings" }`; when present, laps come from line crossings instead of the file |
 | `sectors` | `{ "mode": "equalDistance" / "cornerAware" / "manual", "count": 3, "lines": [ … ] }`: how each lap is split for sector times. `count` applies to the two automatic modes; `lines` holds `lapLine`-shaped gates for `manual`. Absent in files saved before sectors existed, and read as three equal sectors — safe as a decode default only because nothing in such a project draws a sector time, so measuring them cannot change how it renders |
 | `circuitID` | Wikidata id (`Q112563`) of the circuit this file was recorded at, or a track-definition key for a venue the bundled list does not have. Set when the file is **added** and correctable in the inspector. Absent in older files and left `nil` on open — never worked out or applied when a saved project is opened, or a definition saved since would change how that project renders |
+| `cornerLabels` | What the circuit calls its corners, in driving order from the start/finish, one per corner the detector finds (`["1","2","3","3a","4","4a"]`). Strings, because circuits number 3, 3a, 4, 4a; a blank or missing entry leaves the map counting that corner instead. No source publishes this, so it is set by hand and kept in the track definition |
 
 Video input settings (all optional; older files decode as neutral):
 

@@ -19,6 +19,11 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     public var longitude: Double
     public var startFinish: LapLineSpec?
     public var sectors: SectorSpec
+    /// What the circuit calls its corners, in driving order from the start/finish.
+    ///
+    /// The reason a definition is worth sharing: no source publishes corner numbering, so one
+    /// driver working out that Sonoma goes 3, 3a, 4, 4a saves everyone else doing it.
+    public var cornerLabels: [String]
     /// When it was last written. Two drivers swapping definitions need to know which is newer.
     public var modified: Date
 
@@ -29,6 +34,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         longitude: Double,
         startFinish: LapLineSpec? = nil,
         sectors: SectorSpec = SectorSpec(),
+        cornerLabels: [String] = [],
         modified: Date = Date()
     ) {
         self.circuitID = circuitID
@@ -37,6 +43,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         self.longitude = longitude
         self.startFinish = startFinish
         self.sectors = sectors
+        self.cornerLabels = cornerLabels
         self.modified = modified
     }
 
@@ -64,7 +71,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case circuitID, name, latitude, longitude, startFinish, sectors, modified
+        case circuitID, name, latitude, longitude, startFinish, sectors, cornerLabels, modified
     }
 
     public init(from decoder: any Decoder) throws {
@@ -75,6 +82,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         longitude = try c.decodeIfPresent(Double.self, forKey: .longitude) ?? 0
         startFinish = try c.decodeIfPresent(LapLineSpec.self, forKey: .startFinish)
         sectors = try c.decodeIfPresent(SectorSpec.self, forKey: .sectors) ?? SectorSpec()
+        cornerLabels = try c.decodeIfPresent([String].self, forKey: .cornerLabels) ?? []
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? Date(timeIntervalSince1970: 0)
     }
 }

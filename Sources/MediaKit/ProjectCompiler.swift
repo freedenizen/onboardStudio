@@ -246,6 +246,7 @@ public enum ProjectCompiler {
             },
             ignoreFirstCrossings: settings.lapLine?.ignoreFirstCrossings ?? 0,
             sectorMode: sectorMode(settings.sectors),
+            cornerLabels: settings.cornerLabels,
             trimStart: settings.trim.start, trimEnd: settings.trim.end)
         if let importerID = settings.importerID {
             guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {
