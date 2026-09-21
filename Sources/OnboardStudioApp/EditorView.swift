@@ -6,7 +6,7 @@ struct EditorView: View {
     @State private var editor: EditorModel
     @Environment(\.undoManager) private var undoManager
     @Environment(\.dismissWindow) private var dismissWindow
-    @AppStorage("tourSeen") private var tourSeen = false
+    @AppStorage(Preferences.tourSeen.key) private var tourSeen = false
 
     init(document: ProjectDocument, fileURL: URL?) {
         _editor = State(initialValue: EditorModel(document: document, fileURL: fileURL))

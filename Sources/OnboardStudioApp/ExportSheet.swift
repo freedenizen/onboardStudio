@@ -6,7 +6,7 @@ import TelemetryKit
 struct ExportSheet: View {
     @Bindable var editor: EditorModel
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("defaultExportPreset") private var defaultPreset = "project"
+    @AppStorage(Preferences.defaultExportPreset.key) private var defaultPreset = Preferences.defaultExportPreset.unset
     @State private var preset = "project"
     @State private var settings = ExportSettings()
     @State private var rangeMode = "whole"

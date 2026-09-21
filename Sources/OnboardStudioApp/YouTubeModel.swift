@@ -1,4 +1,5 @@
 import Foundation
+import ProjectModel
 import SwiftUI
 import YouTubeKit
 
@@ -23,8 +24,8 @@ final class YouTubeModel {
 
     static var credentials: YouTubeCredentials {
         YouTubeCredentials(
-            clientID: UserDefaults.standard.string(forKey: "youtubeClientID") ?? "",
-            clientSecret: UserDefaults.standard.string(forKey: "youtubeClientSecret") ?? "")
+            clientID: UserDefaults.standard.value(for: Preferences.youTubeClientID),
+            clientSecret: UserDefaults.standard.value(for: Preferences.youTubeClientSecret))
     }
 
     var hasCredentials: Bool { Self.credentials.isComplete }

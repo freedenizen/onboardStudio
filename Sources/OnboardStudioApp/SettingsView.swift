@@ -4,11 +4,13 @@ import SwiftUI
 /// The Preferences window.
 struct SettingsView: View {
     @Environment(UpdaterModel.self) private var updater
-    @AppStorage("defaultExportPreset") private var defaultExportPreset = "project"
-    @AppStorage("ffmpegPath") private var ffmpegPath = ""
-    @AppStorage("nudgeStepPixels") private var nudgeStep = NudgeStep.defaultPixels
-    @AppStorage("youtubeClientID") private var youtubeClientID = ""
-    @AppStorage("youtubeClientSecret") private var youtubeClientSecret = ""
+    @AppStorage(Preferences.defaultExportPreset.key) private var defaultExportPreset = Preferences
+        .defaultExportPreset.unset
+    @AppStorage(Preferences.ffmpegPath.key) private var ffmpegPath = Preferences.ffmpegPath.unset
+    @AppStorage(Preferences.nudgeStepPixels.key) private var nudgeStep = Preferences.nudgeStepPixels.unset
+    @AppStorage(Preferences.youTubeClientID.key) private var youtubeClientID = Preferences.youTubeClientID.unset
+    @AppStorage(Preferences.youTubeClientSecret.key) private var youtubeClientSecret = Preferences
+        .youTubeClientSecret.unset
     @Environment(YouTubeModel.self) private var youtube
 
     var body: some View {

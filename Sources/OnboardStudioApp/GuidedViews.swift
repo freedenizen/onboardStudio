@@ -55,7 +55,7 @@ struct CameraFramingSection: View {
 /// The guided checklist shown while a project is being put together.
 struct GettingStartedSection: View {
     @Bindable var editor: EditorModel
-    @AppStorage("showGettingStarted") private var show = true
+    @AppStorage(Preferences.showGettingStarted.key) private var show = true
 
     var body: some View {
         if show {
