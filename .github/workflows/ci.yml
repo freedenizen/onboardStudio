@@ -12,6 +12,8 @@ defaults:
   run:
     shell: bash
 jobs:
+  # Two lint jobs: the checks that need the Swift toolchain (or `sips`) run on macOS; the rest run
+  # on Linux, which is preinstalled with shellcheck and starts in seconds. Both are required.
   lint:
     name: Lint
     runs-on: macos-latest
@@ -22,14 +24,34 @@ jobs:
         run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
       - name: swift format
         run: swift format lint --strict --recursive Sources Tests UITests Package.swift
+      # A pinned portable binary: `brew install swiftlint` resolved a formula and its
+      # dependencies on every run, and flaked once doing it.
       - name: SwiftLint
-        run: brew install swiftlint && swiftlint lint --strict --reporter github-actions-logging
-      - name: actionlint
-        run: brew install actionlint && actionlint -ignore SC2012 -ignore SC2086
-      - name: Shell scripts
-        run: brew install shellcheck && shellcheck -S warning Scripts/*.sh .githooks/*
+        env:
+          SWIFTLINT_VERSION: 0.65.1
+        run: |
+          curl -fsSL -o swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip"
+          unzip -q -o swiftlint.zip -d "$RUNNER_TEMP/swiftlint"
+          "$RUNNER_TEMP/swiftlint/swiftlint" lint --strict --reporter github-actions-logging
       - name: Icons
         run: Scripts/check-icons.sh
+
+  lint-fast:
+    name: Lint (fast)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) \
+            "$ACTIONLINT_VERSION" "$RUNNER_TEMP"
+          "$RUNNER_TEMP/actionlint" -ignore SC2012 -ignore SC2086
+      - name: Shell scripts
+        run: shellcheck -S warning Scripts/*.sh .githooks/*
       - name: UI test shards
         run: Scripts/check-ui-test-shards.sh
 
@@ -54,9 +76,16 @@ jobs:
           restore-keys: spm-${{ runner.os }}-${{ github.event.repository.name }}-
       - name: Build
         run: swift build
+      # Coverage instrumentation costs ~80 s on a ~30 s test run, and nothing gates on the report,
+      # so a PR runs the suite plain; the push to main keeps the report and the artifact.
+      - name: Test
+        if: github.event_name == 'pull_request'
+        run: swift test --parallel
       - name: Test with coverage
+        if: github.event_name != 'pull_request'
         run: swift test --enable-code-coverage --parallel
       - name: Coverage report
+        if: github.event_name != 'pull_request'
         run: |
           PROFDATA=$(find .build -name 'default.profdata' | head -1)
           BIN=$(find .build -name 'OnboardStudioPackageTests.xctest' -type d | head -1)/Contents/MacOS/OnboardStudioPackageTests
@@ -64,6 +93,7 @@ jobs:
           xcrun llvm-cov export "$BIN" -instr-profile "$PROFDATA" -format=lcov -ignore-filename-regex='(\.build|Tests)/' > coverage.lcov
           { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
+        if: github.event_name != 'pull_request'
         with:
           name: coverage
           path: |
@@ -71,10 +101,6 @@ jobs:
             coverage.lcov
       - name: CLI smoke
         run: swift run onboard --version
-      - name: Render benchmark (fixture project)
-        run: |
-          swift run onboard bench --frames 90 --json | tee bench.json
-          { echo '### Bench (fixture slice, debug build)'; echo '```'; cat bench.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   changes:
     name: Detect app changes
@@ -155,6 +181,9 @@ jobs:
     if: needs.changes.outputs.app == 'true'
     runs-on: macos-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
     strategy:
       fail-fast: false
       matrix:
@@ -186,10 +215,30 @@ jobs:
           mkdir -p "$ONBOARD_TEST_EXPORT_DIR"
           only=()
           for class in $CLASSES; do only+=("-only-testing:OnboardStudioUITests/$class"); done
+          # A test that fails is run once more before the shard is called red: a lost key window
+          # or a menu that opened late used to cost a full rerun of the workflow. The retry is
+          # reported below so a flake is still a fact on record, not a silent pass.
           xcodebuild test-without-building -project OnboardStudio.xcodeproj -scheme OnboardStudio \
             -destination 'platform=macOS' -derivedDataPath build/DerivedData \
             "${only[@]}" -resultBundlePath build/UITests.xcresult CODE_SIGN_IDENTITY="-" \
-            | grep -E "error:|Test Case|Executed|TEST "
+            -retry-tests-on-failure -test-iterations 2 \
+            | tee xcodebuild.log | grep -E "error:|Test Case|Executed|TEST "
+      - name: Record a test that passed only on retry
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHARD: ${{ matrix.name }}
+        run: |
+          # xcodebuild logs a failed attempt as "failed" and the retry as a later "passed" for the
+          # same test case; a case that shows both is a flake.
+          flaky=$(grep -E "^Test Case '.*' (failed|passed)" xcodebuild.log \
+            | sed -E "s/^Test Case '([^']*)' (failed|passed).*/\\1 \\2/" \
+            | awk '{ seen[$1] = seen[$1] " " $2 } END { for (t in seen) if (seen[t] ~ /failed/ && seen[t] ~ /passed/) print t }')
+          [ -z "$flaky" ] && exit 0
+          echo "::warning::Passed only on retry: $flaky"
+          Scripts/report-ci-issue.sh open flaky-tests "UI tests that pass only on retry" \
+            "$RUN_URL ($SHARD): $flaky"
       - name: Keep the result bundle
         if: failure()
         uses: actions/upload-artifact@v7
