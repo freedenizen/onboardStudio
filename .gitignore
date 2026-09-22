@@ -11,8 +11,7 @@ xcuserdata/
 sparkle_private_key*
 build/
 
-# Claude Code configuration is local-only — never published to the public repo
-.claude/
+# Claude Code project rules and hooks are committed so the review bot and every clone share
+# them; only the per-machine files stay local.
 .claude/settings.local.json
-CLAUDE.md
 CLAUDE.local.md
