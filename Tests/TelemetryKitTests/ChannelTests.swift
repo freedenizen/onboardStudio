@@ -75,6 +75,26 @@ struct UnitTests {
         #expect(TelemetryUnit.feet.conversionFactor(to: .meters) == 0.3048)
     }
 
+    /// RaceChrono Pro writes a full stop where the degree sign would be. Before this was read, a
+    /// coolant temperature from the most common logger in this project's audience parsed as
+    /// `custom`, belonged to no family, and so could be converted to nothing and offered nothing.
+    @Test(
+        arguments: [
+            (".C", TelemetryUnit.celsius), (".c", .celsius), ("degC", .celsius), ("°C", .celsius),
+            (".F", .fahrenheit), ("deg F", .fahrenheit), ("deg/s", .degreesPerSecond), ("DPS", .degreesPerSecond),
+        ])
+    func parsesTheSpellingsLoggersActuallyWrite(text: String, expected: TelemetryUnit) {
+        #expect(TelemetryUnit(parsing: text) == expected)
+        #expect(TelemetryUnit(parsing: text).family != nil, "an understood unit must belong to a family")
+    }
+
+    /// The point of reading `.C`: a temperature can now be shown in °F.
+    @Test func aRaceChronoTemperatureConverts() throws {
+        let coolant = TelemetryUnit(parsing: ".C")
+        #expect(try #require(coolant.convert(100, to: .fahrenheit)).isApproximately(212))
+        #expect(coolant.convertibleUnits == [.celsius, .fahrenheit])
+    }
+
     @Test(arguments: [("bar", TelemetryUnit.bar), ("BAR", .bar), ("bars", .bar), ("kPa", .kilopascal)])
     func parsesPressureSpellings(text: String, expected: TelemetryUnit) {
         #expect(TelemetryUnit(parsing: text) == expected)

@@ -10,6 +10,7 @@ public enum UnitFamily: String, Hashable, Sendable, CaseIterable {
     case speed
     case acceleration
     case rotation
+    case angularRate
     case ratio
     case temperature
     case pressure
@@ -24,6 +25,7 @@ public enum UnitFamily: String, Hashable, Sendable, CaseIterable {
         case .speed: .metersPerSecond
         case .acceleration: .gForce
         case .rotation: .rpm
+        case .angularRate: .degreesPerSecond
         case .ratio: .percent
         case .temperature: .celsius
         case .pressure: .kilopascal
@@ -39,6 +41,7 @@ public enum UnitFamily: String, Hashable, Sendable, CaseIterable {
         case .speed: [.metersPerSecond, .kilometersPerHour, .milesPerHour]
         case .acceleration: [.gForce]
         case .rotation: [.rpm]
+        case .angularRate: [.degreesPerSecond]
         case .ratio: [.percent]
         case .temperature: [.celsius, .fahrenheit]
         case .pressure: [.kilopascal, .bar, .psi]
@@ -61,6 +64,8 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
     case milesPerHour
     case gForce
     case rpm
+    /// Rate of rotation, as the gyro channels of a phone-based logger report it.
+    case degreesPerSecond
     case percent
     case count
     case celsius
@@ -85,6 +90,7 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case .milesPerHour: "mph"
         case .gForce: "G"
         case .rpm: "rpm"
+        case .degreesPerSecond: "deg/s"
         case .percent: "%"
         case .count: ""
         case .celsius: "°C"
@@ -113,8 +119,12 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case "g", "gs": self = .gForce
         case "rpm": self = .rpm
         case "%", "percent": self = .percent
-        case "c", "°c", "celsius": self = .celsius
-        case "f", "°f", "fahrenheit": self = .fahrenheit
+        // RaceChrono Pro writes `.C` and `.F` — a full stop where the degree sign would be — so
+        // the spellings below are not decoration: without them every temperature that logger
+        // records parses as `custom`, which belongs to no family and so converts to nothing.
+        case "c", "°c", ".c", "degc", "deg c", "celsius": self = .celsius
+        case "f", "°f", ".f", "degf", "deg f", "fahrenheit": self = .fahrenheit
+        case "deg/s", "deg/sec", "°/s", "dps": self = .degreesPerSecond
         case "kpa": self = .kilopascal
         case "bar", "bars": self = .bar
         case "psi": self = .psi
@@ -146,6 +156,7 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case .metersPerSecond, .kilometersPerHour, .milesPerHour: .speed
         case .gForce: .acceleration
         case .rpm: .rotation
+        case .degreesPerSecond: .angularRate
         case .percent: .ratio
         case .celsius, .fahrenheit: .temperature
         case .kilopascal, .bar, .psi: .pressure
@@ -162,7 +173,8 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
     /// one pair here that a bare multiplier cannot express.
     private var toBase: (scale: Double, offset: Double)? {
         switch self {
-        case .seconds, .meters, .degrees, .metersPerSecond, .gForce, .rpm, .percent, .celsius, .kilopascal:
+        case .seconds, .meters, .degrees, .metersPerSecond, .gForce, .rpm, .degreesPerSecond, .percent,
+            .celsius, .kilopascal:
             (1, 0)
         case .feet: (0.3048, 0)
         case .kilometers: (1000, 0)
