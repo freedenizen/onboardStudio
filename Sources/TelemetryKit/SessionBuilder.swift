@@ -164,6 +164,7 @@ public enum SessionBuilder {
 
         var session = TelemetrySession(info: table.info, channels: channels)
         session.recordedUnits = recordedUnits
+        session.sourceColumns = table.columns.map(\.name)
         addDerivedChannels(to: &session, options: options)
         for field in options.calculatedFields {
             try? session.addCalculatedField(field)

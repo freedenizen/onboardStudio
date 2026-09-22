@@ -47,6 +47,39 @@ struct AttributeMappingTests {
         #expect(empty.level(of: .displayUnit, for: "speed") == .automatic)
     }
 
+    /// What a control at one level edits, and what it would fall back to if cleared.
+    @Test func eachLevelIsReadableOnItsOwn() {
+        #expect(resolver[.input]["brake"].source == "Brake press")
+        #expect(resolver[.input]["brake"].displayUnit == nil)
+        #expect(resolver[.project]["brake"].displayUnit == "psi")
+        #expect(resolver[.global]["brake"].sourceUnit == "kPa")
+        #expect(resolver[.automatic]["brake"].isAutomatic)
+    }
+
+    @Test func inheritedIsWhatClearingALevelWouldLeave() {
+        let below = resolver.inherited("brake", below: .input)
+        #expect(below.source == "canbus:front_brake_pressure")  // the global's, the project is silent
+        #expect(below.displayUnit == "psi")  // the project's
+
+        #expect(resolver.inherited("brake", below: .project).displayUnit == "bar")
+        #expect(resolver.inherited("brake", below: .global).isAutomatic)
+    }
+
+    /// Clearing a field really does produce what `inherited` promised.
+    @Test func clearingAFieldFallsBackToWhatWasPromised() {
+        var resolver = resolver
+        let promised = resolver.inherited("brake", below: .input)
+        resolver[.input]["brake"] = AttributeMapping()
+        #expect(resolver.resolved("brake") == promised)
+    }
+
+    @Test func writingThroughALevelSticks() {
+        var resolver = AttributeMappingResolver()
+        resolver[.global]["speed"] = AttributeMapping(displayUnit: "kph")
+        #expect(resolver.resolved("speed").displayUnit == "kph")
+        #expect(resolver.level(of: .displayUnit, for: "speed") == .global)
+    }
+
     @Test func clearingEveryFieldRemovesTheRow() {
         var table = AttributeMappingTable(["speed": AttributeMapping(displayUnit: "mph")])
         #expect(table.rows.count == 1)

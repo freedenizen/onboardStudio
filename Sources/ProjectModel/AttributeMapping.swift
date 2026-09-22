@@ -166,6 +166,37 @@ public struct AttributeMappingResolver: Hashable, Sendable {
         return .automatic
     }
 
+    /// The table one level stores, on its own — what a control editing that level reads and
+    /// writes. `automatic` stores nothing, so it reads empty and ignores a write.
+    public subscript(level: AttributeMappingLevel) -> AttributeMappingTable {
+        get {
+            switch level {
+            case .input: input
+            case .project: project
+            case .global: global
+            case .automatic: AttributeMappingTable()
+            }
+        }
+        set {
+            switch level {
+            case .input: input = newValue
+            case .project: project = newValue
+            case .global: global = newValue
+            case .automatic: break
+            }
+        }
+    }
+
+    /// What the chain would say if `level` had no opinion: the value a control at that level shows
+    /// as its placeholder, and exactly what clearing it back to automatic will produce.
+    public func inherited(_ role: String, below level: AttributeMappingLevel) -> AttributeMapping {
+        switch level {
+        case .input: project[role].resolved(under: global[role])
+        case .project: global[role]
+        case .global, .automatic: AttributeMapping()
+        }
+    }
+
     /// Every attribute any level has an opinion about — the rows a table view has to show on top
     /// of the ones the loaded data suggests.
     public var mappedRoles: Set<String> {

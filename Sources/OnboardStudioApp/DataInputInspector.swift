@@ -16,6 +16,7 @@ struct DataInputInspector: View {
     var session: TelemetrySession? { editor.sessions[input.id] }
 
     var body: some View {
+        DataInputAttributesSection(editor: editor, input: input, settings: settings, session: session)
         Section {
             if let session {
                 DisclosureGroup(isExpanded: $showChannels) {

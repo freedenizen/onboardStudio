@@ -104,6 +104,43 @@ extension ChannelRole {
         self = standard
     }
 
+    /// How the attribute is named to a person. Channels the file named itself — OBD, CAN bus and
+    /// anything else — keep that name, because it is what the user recognises in their logger.
+    public var displayName: String {
+        switch self {
+        case .time: "Time"
+        case .latitude: "Latitude"
+        case .longitude: "Longitude"
+        case .altitude: "Altitude"
+        case .gpsUpdate: "GPS update"
+        case .gpsDelay: "GPS delay"
+        case .accuracy: "GPS accuracy"
+        case .speed: "Speed"
+        case .heading: "Heading"
+        case .lap: "Lap"
+        case .distance: "Distance"
+        case .rpm: "RPM"
+        case .gear: "Gear"
+        case .throttle: "Throttle"
+        case .brake: "Brake"
+        case .longitudinalG: "Longitudinal G"
+        case .lateralG: "Lateral G"
+        case .lapDelta: "Lap delta"
+        case .speedDelta: "Speed delta"
+        case .obd, .canbus, .aux: identifier
+        }
+    }
+
+    /// The attributes a person points at a column and gives units to (#111).
+    ///
+    /// Everything read from a column and shown with a unit. `time` and `lap` are structure rather
+    /// than data, the GPS diagnostics are not displayed, and the two deltas are computed from the
+    /// session rather than read from a column — none of them has a source column to choose.
+    public static let mappableAttributes: [ChannelRole] = [
+        .speed, .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG,
+        .altitude, .distance, .heading, .latitude, .longitude, .accuracy,
+    ]
+
     public static let standardRoles: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .speed, .heading, .lap, .distance,
         .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG, .lapDelta, .speedDelta,

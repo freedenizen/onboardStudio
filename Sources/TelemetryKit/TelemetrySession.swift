@@ -49,6 +49,11 @@ public struct TelemetrySession: Sendable {
     /// unit chain means. Kept on the session rather than the channel so that resampling and
     /// smoothing, which rebuild channels, cannot lose it.
     public var recordedUnits: [ChannelRole: TelemetryUnit] = [:]
+    /// Every column the file offered, in file order — including the ones no channel was built
+    /// from. The session keeps only the columns it could make sense of, so without this there is
+    /// no way to offer a user a column the importer ignored, which is exactly the column they
+    /// most often need to point an attribute at (#111).
+    public var sourceColumns: [String] = []
 
     public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info
