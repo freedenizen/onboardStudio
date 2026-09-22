@@ -11,6 +11,7 @@ public enum UnitFamily: String, Hashable, Sendable, CaseIterable {
     case acceleration
     case rotation
     case angularRate
+    case voltage
     case ratio
     case temperature
     case pressure
@@ -26,6 +27,7 @@ public enum UnitFamily: String, Hashable, Sendable, CaseIterable {
         case .acceleration: .gForce
         case .rotation: .rpm
         case .angularRate: .degreesPerSecond
+        case .voltage: .volts
         case .ratio: .percent
         case .temperature: .celsius
         case .pressure: .kilopascal
@@ -38,10 +40,11 @@ public enum UnitFamily: String, Hashable, Sendable, CaseIterable {
         case .time: [.seconds]
         case .length: [.meters, .kilometers, .feet, .miles]
         case .angle: [.degrees]
-        case .speed: [.metersPerSecond, .kilometersPerHour, .milesPerHour]
+        case .speed: [.metersPerSecond, .kilometersPerHour, .milesPerHour, .knots]
         case .acceleration: [.gForce]
         case .rotation: [.rpm]
         case .angularRate: [.degreesPerSecond]
+        case .voltage: [.volts]
         case .ratio: [.percent]
         case .temperature: [.celsius, .fahrenheit]
         case .pressure: [.kilopascal, .bar, .psi]
@@ -62,10 +65,15 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
     case metersPerSecond
     case kilometersPerHour
     case milesPerHour
+    /// Nautical miles per hour. Racelogic's VBOX logs `velocity knots` as readily as
+    /// `velocity kmh`, and reading one as the other is wrong by a factor of 1.852.
+    case knots
     case gForce
     case rpm
     /// Rate of rotation, as the gyro channels of a phone-based logger report it.
     case degreesPerSecond
+    /// Battery and sensor voltages, which VBOX logs name `V`.
+    case volts
     case percent
     case count
     case celsius
@@ -88,9 +96,11 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case .metersPerSecond: "m/s"
         case .kilometersPerHour: "km/h"
         case .milesPerHour: "mph"
+        case .knots: "kn"
         case .gForce: "G"
         case .rpm: "rpm"
         case .degreesPerSecond: "deg/s"
+        case .volts: "V"
         case .percent: "%"
         case .count: ""
         case .celsius: "°C"
@@ -116,6 +126,7 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case "m/s", "mps": self = .metersPerSecond
         case "km/h", "kph", "kmh": self = .kilometersPerHour
         case "mph", "mi/h": self = .milesPerHour
+        case "kn", "kt", "kts", "knot", "knots": self = .knots
         case "g", "gs": self = .gForce
         case "rpm": self = .rpm
         case "%", "percent": self = .percent
@@ -125,6 +136,7 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case "c", "°c", ".c", "degc", "deg c", "celsius": self = .celsius
         case "f", "°f", ".f", "degf", "deg f", "fahrenheit": self = .fahrenheit
         case "deg/s", "deg/sec", "°/s", "dps": self = .degreesPerSecond
+        case "v", "volt", "volts": self = .volts
         case "kpa": self = .kilopascal
         case "bar", "bars": self = .bar
         case "psi": self = .psi
@@ -153,10 +165,11 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case .seconds: .time
         case .meters, .feet, .kilometers, .miles: .length
         case .degrees: .angle
-        case .metersPerSecond, .kilometersPerHour, .milesPerHour: .speed
+        case .metersPerSecond, .kilometersPerHour, .milesPerHour, .knots: .speed
         case .gForce: .acceleration
         case .rpm: .rotation
         case .degreesPerSecond: .angularRate
+        case .volts: .voltage
         case .percent: .ratio
         case .celsius, .fahrenheit: .temperature
         case .kilopascal, .bar, .psi: .pressure
@@ -173,7 +186,7 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
     /// one pair here that a bare multiplier cannot express.
     private var toBase: (scale: Double, offset: Double)? {
         switch self {
-        case .seconds, .meters, .degrees, .metersPerSecond, .gForce, .rpm, .degreesPerSecond, .percent,
+        case .seconds, .meters, .degrees, .metersPerSecond, .gForce, .rpm, .degreesPerSecond, .volts, .percent,
             .celsius, .kilopascal:
             (1, 0)
         case .feet: (0.3048, 0)
@@ -181,6 +194,7 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case .miles: (1609.344, 0)
         case .kilometersPerHour: (1 / 3.6, 0)
         case .milesPerHour: (0.44704, 0)
+        case .knots: (0.514_444_444, 0)
         case .fahrenheit: (5 / 9, -160 / 9)
         case .bar: (100, 0)
         case .psi: (6.894_757, 0)

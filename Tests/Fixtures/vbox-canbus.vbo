@@ -1,0 +1,39 @@
+File created on 22/09/2026 @ 12:00:00
+
+[header]
+satellites
+time
+latitude
+longitude
+velocity knots
+heading
+height
+vertical velocity m/s
+sampleperiod
+Brake Pressure
+Coolant Temperature
+Engine Speed
+Gear
+Battery Voltage
+
+[channel units]
+s
+bar
+°C
+rpm
+(null)
+V
+
+[comments]
+Synthetic OnboardStudio fixture, modelled on a VBOX CAN log.
+Log Rate (Hz) : 10.00
+
+[column names]
+sats time lat long velocity heading height vert-vel Tsample Brake_Pressure Coolant_Temperature Engine_Speed Gear Battery_Voltage 
+
+[data]
+012 120000.000 +2372.204862 +7339.917306 015.130 211.782 +00094.61 -0000.06 0.100 0.090 84.700 1011 3 13.400
+012 120000.100 +2372.204562 +7339.917456 016.827 215.042 +00095.08 -0000.04 0.100 4.310 84.900 1220 3 13.500
+012 120000.200 +2372.204212 +7339.917601 018.402 218.310 +00095.44 -0000.02 0.100 12.660 85.100 1388 4 13.500
+012 120000.300 +2372.203901 +7339.917744 019.775 221.564 +00095.79 +0000.01 0.100 19.760 85.300 1502 4 13.600
+012 120000.400 +2372.203555 +7339.917902 020.940 224.811 +00096.12 +0000.03 0.100 8.420 85.500 1540 4 13.600

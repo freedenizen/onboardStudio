@@ -87,8 +87,33 @@ quality, satellites and HDOP; void (`V`) sentences are skipped; midnight rollove
 
 `[header]` (or `[column names]`) lists the channels; `[data]` rows are space separated. Time is
 `hhmmss.ss`; `lat`/`long` are in minutes with west positive (VBO convention) and are converted to
-signed degrees; `velocity` is km/h. Known channels: sats, heading, height, lapnumber, rpm,
-throttle, brake, gear, distance, latacc/longacc.
+signed degrees. Known channels: sats, heading, height, lapnumber, rpm, throttle, brake, gear,
+distance, latacc/longacc.
+
+A file states its units in two places, and both are easy to get wrong:
+
+- **`[channel units]` is right-aligned with `[header]`.** It carries one line per *extra* channel
+  and none for the leading GPS ones, so a 35-channel VBVDHD2 log lists 25 units and they belong to
+  the last 25. Aligning from the top gives every CAN channel its neighbour's unit — bar for a
+  temperature, rpm for a pressure — which is worse than no unit at all, because it looks right.
+  Verified against two unrelated real files (35 channels/25 units and 15/4). The section may also
+  be present and empty.
+- **The `[header]` name carries the unit where `[column names]` does not**: `velocity kmh`,
+  `velocity knots`, `vertical velocity m/s`, `yaw rate deg/s` all collapse to one word in
+  `[column names]`. `velocity` alone still means km/h, the VBO default, but reading a knots file
+  as km/h is wrong by a factor of 1.852 and silent.
+
+`(null)` is how the format writes "no unit": it means the file declares nothing, so the importer's
+own reading of the name stands. A declared unit otherwise beats the name-based guess — a Video
+VBOX `Brake` channel is often a pressure in psi, not the percentage the name suggests.
+
+Sections the importer does not read yet: `[laptiming]` (start/split/finish gates, each two
+lat/long pairs and a label after a `¬`; #71), `[avi]` (the video file this log accompanies) and
+`[comments]` (device type, serial, firmware, log rate).
+
+Real logger files are not committed — provenance is third-party. `Tests/Fixtures/vbox-canbus.vbo`
+is synthetic and reproduces the shapes above; the tests in `VBOSampleTests` run against real files
+when `ONBOARD_SAMPLES_DIR` points at a folder containing `vbo/`, and skip otherwise.
 
 ## Generic CSV (`generic-csv`)
 
