@@ -81,6 +81,7 @@ struct UITestCommands: Commands {
             Divider()
             Button("Add Fixture Data (RaceRender)") { add(data: "racerender-basic.csv") }
             Button("Add Fixture Data (RaceChrono)") { add(data: "racechrono-v3.csv") }
+            Button("Add Fixture Data (Noisy CAN)") { add(data: "racechrono-v3-noisy.csv") }
             Button("Add Fixture Data (GPX)") { add(data: "track.gpx") }
             Button("Add Fixture Image") {
                 if let url = UITestSupport.fixture("arrow.png") { editor?.addImage(at: url) }

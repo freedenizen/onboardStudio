@@ -54,6 +54,9 @@ public struct TelemetrySession: Sendable {
     /// no way to offer a user a column the importer ignored, which is exactly the column they
     /// most often need to point an attribute at (#111).
     public var sourceColumns: [String] = []
+    /// What became of every column of the file (#149). Kept on the session because the decisions
+    /// are made while it is built and cannot be reconstructed from the channels that survived.
+    public var importReport = ImportReport()
 
     public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info
