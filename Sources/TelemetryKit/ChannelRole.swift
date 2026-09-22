@@ -24,6 +24,46 @@ public enum ChannelRole: Hashable, Sendable, Codable {
     case lapDelta
     /// Speed minus the best lap's speed at the same distance into the lap (m/s; + = faster).
     case speedDelta
+
+    // MARK: - Vehicle attributes
+    //
+    // Universal, not the source's wiring: a file may or may not supply one, but what it means
+    // does not change with the file. The same brake pressure is `brake_pressure_front` in a
+    // RaceChrono CSV and channel `66569` in the same session's `.rcz`, and both map to
+    // `brakePressureFront` here.
+
+    /// Brake line pressure, as distinct from `brake` — pedal position in percent. A car often
+    /// logs both, and they are different attributes.
+    case brakePressureFront
+    case brakePressureRear
+    case oilPressure
+    case oilTemperature
+    case coolantTemperature
+    /// Intake or ambient air temperature.
+    case intakeTemperature
+    case exhaustTemperature
+    /// Manifold pressure above atmospheric.
+    case boostPressure
+    /// Positive to the right; loggers disagree, and `TurnDirection` measures which way this one
+    /// means from the session itself.
+    case steeringAngle
+    case clutch
+    /// Roll angle of a motorcycle, or of a car's body.
+    case leanAngle
+    case airFuelRatio
+    case fuelLevel
+    case batteryVoltage
+    case engineLoad
+
+    // MARK: - Vehicle states
+    //
+    // On or off rather than measured. A logger rarely records them as a boolean — the reference
+    // session carries ABS as a raw analog channel reading 512…2800 — so a state attribute is
+    // mapped with a threshold rather than a unit.
+
+    case absActive
+    case tractionControlActive
+    case pitLimiter
     /// A channel from an OBD-II source that may update at a different rate than GPS.
     case obd(String)
     /// A channel decoded straight off the vehicle's CAN bus. Distinct from `obd`: loggers read
@@ -35,6 +75,24 @@ public enum ChannelRole: Hashable, Sendable, Codable {
     /// A stable, human-readable identifier such as `speed` or `aux:engine_load`.
     public var identifier: String {
         switch self {
+        case .brakePressureFront: "brakePressureFront"
+        case .brakePressureRear: "brakePressureRear"
+        case .oilPressure: "oilPressure"
+        case .oilTemperature: "oilTemperature"
+        case .coolantTemperature: "coolantTemperature"
+        case .intakeTemperature: "intakeTemperature"
+        case .exhaustTemperature: "exhaustTemperature"
+        case .boostPressure: "boostPressure"
+        case .steeringAngle: "steeringAngle"
+        case .clutch: "clutch"
+        case .leanAngle: "leanAngle"
+        case .airFuelRatio: "airFuelRatio"
+        case .fuelLevel: "fuelLevel"
+        case .batteryVoltage: "batteryVoltage"
+        case .engineLoad: "engineLoad"
+        case .absActive: "absActive"
+        case .tractionControlActive: "tractionControlActive"
+        case .pitLimiter: "pitLimiter"
         case .time: "time"
         case .latitude: "latitude"
         case .longitude: "longitude"
@@ -108,6 +166,24 @@ extension ChannelRole {
     /// anything else — keep that name, because it is what the user recognises in their logger.
     public var displayName: String {
         switch self {
+        case .brakePressureFront: "Brake pressure (front)"
+        case .brakePressureRear: "Brake pressure (rear)"
+        case .oilPressure: "Oil pressure"
+        case .oilTemperature: "Oil temperature"
+        case .coolantTemperature: "Coolant temperature"
+        case .intakeTemperature: "Intake temperature"
+        case .exhaustTemperature: "Exhaust temperature"
+        case .boostPressure: "Boost pressure"
+        case .steeringAngle: "Steering angle"
+        case .clutch: "Clutch"
+        case .leanAngle: "Lean angle"
+        case .airFuelRatio: "Air/fuel ratio"
+        case .fuelLevel: "Fuel level"
+        case .batteryVoltage: "Battery voltage"
+        case .engineLoad: "Engine load"
+        case .absActive: "ABS"
+        case .tractionControlActive: "Traction control"
+        case .pitLimiter: "Pit limiter"
         case .time: "Time"
         case .latitude: "Latitude"
         case .longitude: "Longitude"
@@ -131,18 +207,50 @@ extension ChannelRole {
         }
     }
 
-    /// The attributes a person points at a column and gives units to (#111).
+    /// Whether an attribute is measured or is simply on or off.
+    public enum Kind: String, Hashable, Sendable {
+        /// Has a source unit and a display unit, and converts between them.
+        case measurement
+        /// Has a threshold instead. A logger rarely records a state as a boolean — the reference
+        /// session carries ABS as a raw analog channel reading 512…2800 — so what a state needs
+        /// is a level to cross, not a unit to be shown in.
+        case state
+    }
+
+    public var kind: Kind {
+        switch self {
+        case .absActive, .tractionControlActive, .pitLimiter: .state
+        default: .measurement
+        }
+    }
+
+    /// The vocabulary a person maps their file's columns onto (#111, #191).
     ///
-    /// Everything read from a column and shown with a unit. `time` and `lap` are structure rather
-    /// than data, the GPS diagnostics are not displayed, and the two deltas are computed from the
-    /// session rather than read from a column — none of them has a source column to choose.
+    /// Universal by construction: these say what a value *means*, never where it came from. A
+    /// file may or may not supply any of them, and the same attribute is a differently named
+    /// column in every logger — which is exactly why `obd`, `canbus` and `aux` are absent here.
+    /// Those carry the source's own name for a channel, so they are what an attribute is mapped
+    /// *to*, never a row in the table.
+    ///
+    /// `time` and `lap` are structure rather than data, the GPS diagnostics are not displayed,
+    /// and the two deltas are computed from the session rather than read from a column — none of
+    /// them has a source column to choose.
     public static let mappableAttributes: [ChannelRole] = [
-        .speed, .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG,
+        .speed, .rpm, .gear, .throttle, .brake, .clutch, .steeringAngle,
+        .longitudinalG, .lateralG, .leanAngle,
+        .brakePressureFront, .brakePressureRear, .oilPressure, .boostPressure,
+        .oilTemperature, .coolantTemperature, .intakeTemperature, .exhaustTemperature,
+        .airFuelRatio, .fuelLevel, .batteryVoltage, .engineLoad,
+        .absActive, .tractionControlActive, .pitLimiter,
         .altitude, .distance, .heading, .latitude, .longitude, .accuracy,
     ]
 
     public static let standardRoles: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .speed, .heading, .lap, .distance,
         .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG, .lapDelta, .speedDelta,
+        .brakePressureFront, .brakePressureRear, .oilPressure, .oilTemperature, .coolantTemperature,
+        .intakeTemperature, .exhaustTemperature, .boostPressure, .steeringAngle, .clutch, .leanAngle,
+        .airFuelRatio, .fuelLevel, .batteryVoltage, .engineLoad,
+        .absActive, .tractionControlActive, .pitLimiter,
     ]
 }

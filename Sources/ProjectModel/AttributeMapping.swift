@@ -23,18 +23,32 @@ public struct AttributeMapping: Hashable, Codable, Sendable {
     public var sourceUnit: String?
     /// What every object shows this attribute in unless it pins its own. `nil` shows it in the
     /// source unit, which is what *Automatic* means for an attribute (#89).
+    ///
+    /// Meaningless for a `state` attribute, which has no unit to be shown in; that is what
+    /// `threshold` is for.
     public var displayUnit: String?
+    /// The level at or above which a **state** attribute reads as on (#191).
+    ///
+    /// A logger rarely records a state as a boolean — the reference session carries ABS as a raw
+    /// analog channel reading 512…2800 — so what a state attribute needs is a level to cross, not
+    /// a unit. `nil` leaves it to the suggestion derived from the channel's own range.
+    public var threshold: Double?
 
-    public init(source: String? = nil, sourceUnit: String? = nil, displayUnit: String? = nil) {
+    public init(
+        source: String? = nil, sourceUnit: String? = nil, displayUnit: String? = nil, threshold: Double? = nil
+    ) {
         self.source = source
         self.sourceUnit = sourceUnit
         self.displayUnit = displayUnit
+        self.threshold = threshold
     }
 
     /// True when the row says nothing — every field is automatic. Such a row is dropped on the way
     /// into a table so that "the user cleared every field" and "the user never touched this
     /// attribute" are the same saved document.
-    public var isAutomatic: Bool { source == nil && sourceUnit == nil && displayUnit == nil }
+    public var isAutomatic: Bool {
+        source == nil && sourceUnit == nil && displayUnit == nil && threshold == nil
+    }
 
     /// This row's opinions, with `fallback` filling in every field this row leaves automatic.
     /// Field by field, deliberately: pinning a display unit must not also pin the source column.
@@ -42,14 +56,15 @@ public struct AttributeMapping: Hashable, Codable, Sendable {
         AttributeMapping(
             source: source ?? fallback.source,
             sourceUnit: sourceUnit ?? fallback.sourceUnit,
-            displayUnit: displayUnit ?? fallback.displayUnit)
+            displayUnit: displayUnit ?? fallback.displayUnit,
+            threshold: threshold ?? fallback.threshold)
     }
 }
 
 /// Which field of a mapping a caller is asking about, so that a control can report where the value
 /// it is showing came from without three near-identical lookups.
 public enum AttributeMappingField: String, Hashable, Sendable, CaseIterable {
-    case source, sourceUnit, displayUnit
+    case source, sourceUnit, displayUnit, threshold
 }
 
 /// The whole table: one row per attribute, keyed by `ChannelRole.identifier` (`speed`, `brake`,
@@ -208,6 +223,9 @@ public struct AttributeMappingResolver: Hashable, Sendable {
         case .source: \.source
         case .sourceUnit: \.sourceUnit
         case .displayUnit: \.displayUnit
+        // A threshold is a number, so it has no `String?` to report a level for. Asking which
+        // level set it is not a question any control needs to ask.
+        case .threshold: \.source
         }
     }
 }

@@ -153,7 +153,11 @@ public enum TelemetryUnit: Hashable, Sendable, Codable {
         case .heading, .latitude, .longitude: .degrees
         case .longitudinalG, .lateralG: .gForce
         case .rpm: .rpm
-        case .throttle, .brake: .percent
+        case .throttle, .brake, .clutch, .engineLoad, .fuelLevel: .percent
+        case .steeringAngle, .leanAngle: .degrees
+        // Pressures and temperatures are deliberately absent: a car logs them in kPa or bar or
+        // psi, in °C or °F, and converting them to one canonical unit on import would throw away
+        // what the file said. They are stored as read and converted for display (#89).
         default: nil
         }
     }

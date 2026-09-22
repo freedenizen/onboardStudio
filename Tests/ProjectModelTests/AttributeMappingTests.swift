@@ -173,3 +173,34 @@ struct ObjectDisplayUnitTests {
         #expect(DisplayObjectKind.gear(GearParams()).displayChannels.isEmpty)
     }
 }
+
+@Suite("A state attribute's threshold")
+struct AttributeThresholdTests {
+    /// A state has no unit to be shown in; what it needs is the level its channel counts as on at.
+    @Test func aThresholdResolvesThroughTheChainLikeAnyOtherField() {
+        let resolver = AttributeMappingResolver(
+            global: AttributeMappingTable(["absActive": AttributeMapping(source: "analog_1", threshold: 1500)]),
+            project: AttributeMappingTable(["absActive": AttributeMapping(threshold: 2000)]))
+        #expect(resolver.resolved("absActive").threshold == 2000)
+        #expect(resolver.resolved("absActive").source == "analog_1", "field by field, as ever")
+        #expect(resolver.inherited("absActive", below: .project).threshold == 1500)
+    }
+
+    /// A row with only a threshold is still a row; it must not be dropped as "says nothing".
+    @Test func aThresholdAloneIsAnOpinion() throws {
+        var table = AttributeMappingTable()
+        table["absActive"] = AttributeMapping(threshold: 1500)
+        #expect(!table.isEmpty)
+        #expect(!table["absActive"].isAutomatic)
+        let reopened = try JSONDecoder().decode(AttributeMappingTable.self, from: try JSONEncoder().encode(table))
+        #expect(reopened["absActive"].threshold == 1500)
+    }
+
+    /// Absent in every project saved before states existed, and absent means automatic.
+    @Test func anOlderRowHasNoThreshold() throws {
+        let table = try JSONDecoder().decode(
+            AttributeMappingTable.self, from: Data(#"{"brake":{"sourceUnit":"kPa"}}"#.utf8))
+        #expect(table["brake"].threshold == nil)
+        #expect(table["brake"].sourceUnit == "kPa")
+    }
+}
