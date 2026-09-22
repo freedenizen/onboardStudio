@@ -10,8 +10,12 @@ swift build && swift test
 
 ## Workflow
 
-- Work on a branch and open a pull request against `main`. `main` is protected: CI must pass,
-  history is linear, and every commit must be signed.
+- Work on a branch and open a pull request against `main`. `main` is protected: the required
+  checks must pass, history is linear, and every commit must be signed. A PR does **not** have
+  to be up to date with `main` to merge — two PRs that are each green can still conflict once
+  combined, so the push run on `main` is what proves `main` itself. When it is red, the **`main
+  health`** job opens (or adds to) the issue labelled `main-red` and closes it on the next green
+  push; the fix is to fix forward promptly, never to leave `main` red.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org):
   `feat(importers): add RaceChrono CSV v3`, `fix(mediakit): …`, `ci: …`, `docs: …`, `test: …`.
 - Every behaviour change ships with unit tests. Parsers and renderers are tested against fixtures
