@@ -37,6 +37,10 @@ lap timer or GPS logger. Onboard Studio puts them together.
 - **Drop gauges on top.** Speedometer, tachometer, track map, g-force plot, lap timer,
   bar and line graphs, gear indicator, lap counter and free text. Start from a template
   and move things around, or design a gauge face from scratch.
+- **Say what your channels mean, once.** Your logger names things its own way — one car's ABS
+  is `canbus:analog_1`. Tell Onboard Studio which column feeds Brake pressure, that it is
+  logged in kPa, and that you want it shown in bar, and every file you import afterwards
+  follows. Units convert for display; the numbers stay as the file recorded them.
 - **Cut between cameras.** Put a second camera picture-in-picture, split the screen, or
   switch between angles partway through.
 - **Export a finished video.** Up to 4K, including vertical for phones. Upload straight to
@@ -101,7 +105,7 @@ If something looks wrong, the guide's
 
 Release notes for every version are on the
 [Releases page](https://github.com/freedenizen/onboardStudio/releases), newest first. The
-app is at **v0.21.1**; version numbers below 1.0 mean the file format and the interface can
+app is at **v0.22.0**; version numbers below 1.0 mean the file format and the interface can
 still change between releases.
 
 ## For developers
