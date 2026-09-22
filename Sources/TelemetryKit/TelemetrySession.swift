@@ -57,6 +57,9 @@ public struct TelemetrySession: Sendable {
     /// What became of every column of the file (#149). Kept on the session because the decisions
     /// are made while it is built and cannot be reconstructed from the channels that survived.
     public var importReport = ImportReport()
+    /// Start/finish and sector gates the file carried (#71). Empty for the formats that carry
+    /// none, which is all of them but Racelogic's VBO.
+    public var lapGeometry = LapGeometry()
 
     public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info

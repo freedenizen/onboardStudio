@@ -48,6 +48,8 @@ public struct RawTable: Sendable {
     public var times: [Double]
     public var columns: [RawColumn]
     public var lapMarkers: [RawLapMarker]
+    /// Start/finish and sector gates the file carried, if it carried any (#71).
+    public var lapGeometry = LapGeometry()
 
     public init(info: SessionInfo, times: [Double], columns: [RawColumn], lapMarkers: [RawLapMarker] = []) {
         self.info = info

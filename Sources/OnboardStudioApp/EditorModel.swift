@@ -148,6 +148,9 @@ final class EditorModel {
     func applyPendingTrackDefinition() {
         guard let id = pendingTrackLookup, let session = sessions[id] else { return }
         pendingTrackLookup = nil
+        // The file's own gates outrank both a saved definition and anything derived from the
+        // trace: the logger recorded where the line actually is, and no guess beats that (#71).
+        if applyLapGeometry(of: session, to: id) { return }
         guard let match = CircuitCatalog.identify(session) else { return }
         guard let definition = trackLibrary.definition(id: match.circuit.id) else {
             updateInput(id, name: "Identify Circuit") {

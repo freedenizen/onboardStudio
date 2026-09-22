@@ -20,32 +20,13 @@ public struct VBOImporter: TelemetryImporter {
 
     public func importFile(at url: URL) throws -> RawTable {
         let text = try CSVReader.loadText(from: url)
-        var section = ""
-        var headerNames: [String] = []
-        var columnNames: [String] = []
-        var unitLines: [String] = []
-        var rows: [[String]] = []
-        var created: Date?
-        for rawLine in CSVReader.lines(of: text[...]) {
-            let line = rawLine.trimmingCharacters(in: .whitespaces)
-            if line.isEmpty { continue }
-            if line.hasPrefix("[") {
-                section = line.lowercased()
-                continue
-            }
-            switch section {
-            case "[header]": headerNames.append(line)
-            case "[channel units]": unitLines.append(line)
-            case "[column names]":
-                columnNames = line.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
-            case "[data]": rows.append(line.split(separator: " ", omittingEmptySubsequences: true).map(String.init))
-            default:
-                if section.isEmpty, created == nil, line.lowercased().hasPrefix("file created on") {
-                    created = Self.creationDate(line)
-                }
-            }
-        }
-        let names = columnNames.isEmpty ? headerNames : columnNames
+        let file = Self.sections(of: text)
+        let headerNames = file.headerNames
+        let unitLines = file.unitLines
+        let gates = file.gates
+        let rows = file.rows
+        let created = file.created
+        let names = file.columnNames.isEmpty ? headerNames : file.columnNames
         guard !names.isEmpty else { throw ImportError.missingHeader("[header]") }
         let declared = Self.declaredUnits(header: headerNames, units: unitLines, columns: names.count)
         guard let timeIndex = names.firstIndex(where: { $0.lowercased() == "time" }) else {
@@ -76,7 +57,75 @@ public struct VBOImporter: TelemetryImporter {
         }
         var info = SessionInfo(sourceFormat: Self.displayName, sourceFileName: url.lastPathComponent)
         info.createdAt = created
-        return RawTable(info: info, times: relative, columns: columns)
+        var table = RawTable(info: info, times: relative, columns: columns)
+        table.lapGeometry = LapGeometry(gates: gates)
+        return table
+    }
+
+    /// Everything the bracketed sections hold, read in one pass.
+    struct Sections {
+        var headerNames: [String] = []
+        var columnNames: [String] = []
+        var unitLines: [String] = []
+        var gates: [LapGate] = []
+        var rows: [[String]] = []
+        var created: Date?
+    }
+
+    static func sections(of text: String) -> Sections {
+        var file = Sections()
+        var section = ""
+        for rawLine in CSVReader.lines(of: text[...]) {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if line.isEmpty { continue }
+            if line.hasPrefix("[") {
+                section = line.lowercased()
+                continue
+            }
+            switch section {
+            case "[header]": file.headerNames.append(line)
+            case "[channel units]": file.unitLines.append(line)
+            case "[laptiming]":
+                if let gate = gate(line) { file.gates.append(gate) }
+            case "[column names]":
+                file.columnNames = line.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+            case "[data]":
+                file.rows.append(line.split(separator: " ", omittingEmptySubsequences: true).map(String.init))
+            default:
+                if section.isEmpty, file.created == nil, line.lowercased().hasPrefix("file created on") {
+                    file.created = creationDate(line)
+                }
+            }
+        }
+        return file
+    }
+
+    /// One line of `[laptiming]`: a gate across the track (#71).
+    ///
+    /// ```
+    /// Start        +7339.870600 +2372.308780 +7339.871030 +2372.314290 ¬  Start / Finish
+    /// ```
+    ///
+    /// **Longitude first, then latitude** — the opposite order to `[data]`, whose `[column names]`
+    /// reads `lat long`. Settled against two real VBVDHD2 logs: the session sits at 39.537 N,
+    /// 122.332 W, and 7339.87 minutes is 122.331°, which can only be the longitude. Secondary
+    /// descriptions of the format say "lat/long pairs" and are wrong. Both are in minutes with
+    /// west positive, as the data section is.
+    ///
+    /// A `¬` separates the coordinates from the label, which may be empty and may contain spaces.
+    static func gate(_ line: String) -> LapGate? {
+        let kinds: [String: LapGate.Kind] = ["start": .start, "split": .split, "finish": .finish]
+        let halves = line.components(separatedBy: "¬")
+        let fields = halves[0].split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+        guard fields.count >= 5, let kind = kinds[fields[0].lowercased()] else { return nil }
+        let numbers = fields.dropFirst().prefix(4).compactMap(Double.init)
+        guard numbers.count == 4 else { return nil }
+        let label = halves.count > 1 ? halves[1].trimmingCharacters(in: .whitespaces) : ""
+        // Minutes to degrees, and west-positive to signed, exactly as a data column is read.
+        return LapGate(
+            kind: kind, label: label,
+            startLatitude: numbers[1] / 60, startLongitude: -numbers[0] / 60,
+            endLatitude: numbers[3] / 60, endLongitude: -numbers[2] / 60)
     }
 
     /// The unit the file declares for each column, or `nil` where it declares none.

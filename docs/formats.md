@@ -107,8 +107,26 @@ A file states its units in two places, and both are easy to get wrong:
 own reading of the name stands. A declared unit otherwise beats the name-based guess — a Video
 VBOX `Brake` channel is often a pressure in psi, not the percentage the name suggests.
 
-Sections the importer does not read yet: `[laptiming]` (start/split/finish gates, each two
-lat/long pairs and a label after a `¬`; #71), `[avi]` (the video file this log accompanies) and
+`[laptiming]` carries the only start/finish and sector geometry in any format surveyed — every
+other one records lap *times*, or a single point at best. A line reads:
+
+```
+Start        +7339.870600 +2372.308780 +7339.871030 +2372.314290 ¬  Start / Finish
+```
+
+`Start`, `Split` (a sector boundary) or `Finish` (the end of a point-to-point run), then two gate
+endpoints, then the label after a `¬`. **Longitude comes first, then latitude** — the opposite
+order to `[data]`, whose `[column names]` reads `lat long`. Settled against two real VBVDHD2 logs:
+the session sits at 39.537 N, 122.332 W, and 7339.87 minutes is 122.331°, which can only be the
+longitude. Descriptions of the format elsewhere say "lat/long pairs" and are wrong. Both are in
+minutes with west positive, as the data section is.
+
+A gate gives the lap detector a centre and a half-width — half the line's own length, which is
+better than the 25 m it otherwise assumes. It gives no heading: a gate says where the line is and
+not which way the car crosses it, and the two perpendiculars fit equally, so any direction is
+accepted rather than a guess being invented.
+
+Sections the importer still does not read: `[avi]` (the video file this log accompanies) and
 `[comments]` (device type, serial, firmware, log rate).
 
 Real logger files are not committed — provenance is third-party. `Tests/Fixtures/vbox-canbus.vbo`

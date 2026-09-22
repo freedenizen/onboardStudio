@@ -24,6 +24,12 @@ rpm
 (null)
 V
 
+[laptiming]
+Start        +7339.870600 +2372.308780 +7339.871030 +2372.314290 ¬  Start / Finish
+Split        +7339.880000 +2372.320000 +7339.881000 +2372.325000 ¬  Split 1
+Split        +7339.890000 +2372.330000 +7339.891000 +2372.335000 ¬
+Finish       +7339.900000 +2372.340000 +7339.901000 +2372.345000 ¬  End
+
 [comments]
 Synthetic OnboardStudio fixture, modelled on a VBOX CAN log.
 Log Rate (Hz) : 10.00
