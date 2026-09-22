@@ -1,0 +1,100 @@
+name: Nightly
+
+# What is too slow, too noisy or too rarely failing to gate a pull request, run once a night on
+# main: the media tests that need ffprobe (never installed on a PR runner, so they silently skip
+# there), the headless render of the fixture project, an unsigned app bundle (otherwise first
+# built when a release is tagged), and the overlay benchmark against a budget. Red opens or
+# updates the issue labelled `nightly-red`; green closes it.
+on:
+  schedule:
+    - cron: "0 11 * * *" # 04:00 Pacific
+  workflow_dispatch:
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  nightly:
+    name: Nightly checks
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+      - uses: actions/cache@v6
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ github.event.repository.name }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-${{ github.event.repository.name }}-
+      # The MediaKit tests cross-check exports with ffprobe when it sits at /opt/homebrew/bin.
+      - name: ffprobe
+        run: |
+          brew install ffmpeg
+          # The tests return quietly when it is missing, so prove it sits where they look before
+          # running them — otherwise this job would pass with the point of it silently skipped.
+          test -x /opt/homebrew/bin/ffprobe || test -x /usr/local/bin/ffprobe
+      - name: Test with coverage and ffprobe
+        run: swift test --enable-code-coverage --parallel
+      - name: Render the fixture project headlessly
+        run: |
+          swift run onboard render --project Tests/Fixtures/slice.onboardproj --out "$RUNNER_TEMP/slice.mp4" \
+            --range 0:2 --preset 720p --fps 10
+          test -s "$RUNNER_TEMP/slice.mp4"
+      - name: Overlay benchmark against a budget
+        env:
+          BUDGET_MS: "20" # the runner measured 7.35 ms/frame on 2026-09-22 (debug build)
+        run: |
+          swift run onboard bench --frames 90 --json | tee bench.json
+          { echo '### Bench (fixture slice, debug build)'; echo '```'; cat bench.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          python3 - "$BUDGET_MS" <<'PY'
+          import json, sys
+          budget = float(sys.argv[1])
+          ms = json.load(open("bench.json"))["overlayMsPerFrame"]
+          print(f"overlays: {ms:.2f} ms/frame (budget {budget} ms)")
+          sys.exit(1 if ms > budget else 0)
+          PY
+      - name: Unsigned app bundle
+        run: brew install xcodegen && Scripts/bundle-app.sh && test -d dist/OnboardStudio.app
+      - name: Coverage report
+        run: |
+          PROFDATA=$(find .build -name 'default.profdata' | head -1)
+          BIN=$(find .build -name 'OnboardStudioPackageTests.xctest' -type d | head -1)/Contents/MacOS/OnboardStudioPackageTests
+          xcrun llvm-cov report "$BIN" -instr-profile "$PROFDATA" -ignore-filename-regex='(\.build|Tests)/' | tee coverage.txt
+          { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  report:
+    name: Nightly report
+    needs: nightly
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Open or update the nightly-red issue
+        if: needs.nightly.result != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          RESULT: ${{ needs.nightly.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          Scripts/report-ci-issue.sh open nightly-red \
+            "The nightly is red as of ${SHA:0:7}" \
+            "$RUN_URL: $RESULT on \`${SHA:0:7}\`. This issue closes itself when a nightly passes."
+      - name: Close it once green
+        if: needs.nightly.result == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: Scripts/report-ci-issue.sh close nightly-red "Green again at \`${SHA:0:7}\`."
