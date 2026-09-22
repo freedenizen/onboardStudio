@@ -101,7 +101,7 @@ If something looks wrong, the guide's
 
 Release notes for every version are on the
 [Releases page](https://github.com/freedenizen/onboardStudio/releases), newest first. The
-app is at **v0.20.0**; version numbers below 1.0 mean the file format and the interface can
+app is at **v0.21.1**; version numbers below 1.0 mean the file format and the interface can
 still change between releases.
 
 ## For developers
@@ -127,6 +127,10 @@ open OnboardStudio.xcodeproj
 
 Or from the command line — `Scripts/bundle-app.sh` builds `dist/OnboardStudio.app`, and
 `Scripts/make-dmg.sh` packages it into a DMG.
+
+A pull request is gated by lint, the package tests and the XCUITest journeys; the slower checks
+— CodeQL's Swift analysis, coverage, the ffprobe-backed media tests, a headless render and an
+app bundle — run on `main` after the merge and nightly, and file an issue when they fail.
 
 Further reading: [CONTRIBUTING.md](CONTRIBUTING.md) to get set up,
 [docs/architecture.md](docs/architecture.md) for how it fits together,

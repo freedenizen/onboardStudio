@@ -20,8 +20,15 @@ swift test --filter "RaceChrono"            # tests whose name matches
   composition, export, then decode a frame of the *output* and check the overlay is there. When
   `ffprobe` is installed the output is cross-checked with it; otherwise that test is skipped.
 
-CI runs the same suite on every pull request together with lint, an app build and the commit
-signature check; a PR cannot merge until all four pass.
+CI runs the same suite on every pull request together with the two lint jobs, the XCUITest
+journeys and the commit signature check; those are the required checks, and a PR cannot merge
+until they pass. What a PR does not wait for runs afterwards: the push to `main` repeats the
+suite with coverage and, when red, opens the issue labelled `main-red`; the **Nightly** workflow
+runs the ffprobe-backed media tests (no PR runner has ffprobe, so they skip there), a headless
+`onboard render` of the fixture project, an unsigned app bundle and the overlay benchmark
+against a budget, and opens `nightly-red` when it fails. CodeQL's Swift analysis runs on every
+PR but does not block it. Locally, `Scripts/test.sh quick` skips the two-hour session and the
+fuzz suites; `Scripts/test.sh full` is what CI runs.
 
 Fuzz suites mutate every fixture (byte flips, truncation, inserted garbage, digit storms) with a
 fixed seed and feed them to every importer, the GPMF/MP4 readers, the expression parser and the
@@ -89,9 +96,14 @@ before tagging a release.
 | 0.16.2 adding videos | `InputPlanningTests` (first recording opens a lane, duplicates skipped, a second recording opens its own lane, later chapters join the recording they continue, template objects bind to the inputs that arrive), `RecordingGapsTests` (no clock = no gap; real GoPro chapters butt together and recordings are minutes apart, gated on `ONBOARD_SAMPLES_DIR`) | New from Template shows its gauges, they bind to the video and data added afterwards; two recordings play in sequence on their own lanes instead of stacking |
 | M16 timeline editing | `docs/qa-m16.md`; `ClipModelTests` (both clip forms decode, chapter grouping, snapping), `ClipEditingTests` (per-clip trim and gap shape the track and render black gaps; a rotated chapter keeps its orientation end to end) | Dragging a bar's edge trims it; the magnet snaps to edges and the playhead; ⌘= zooms the timeline; dropped GoPro chapters become one input |
 | M17 viewer pan / clip speed / overview | `docs/qa-m17.md`; `ClipSpeedTests` (a double-speed clip takes half the sequence and shows the right frame; speed decodes) | Dragging the zoomed picture pans it; a clip's Speed field shortens the bar; the overview strip scrolls the zoomed timeline |
+| 0.19 launcher, CAN bus, steering auto-detect | `TurnDirectionTests` (yaw rate from GPS heading, correlated with the steering channel, picks the sign), `LauncherUITests` | A RaceChrono CAN export files channels as `canbus:`; the steering wheel turns the way the car does without being told |
+| 0.20 the timeline works like an editor | `docs/qa-m*.md` is superseded by the XCUITest journeys J3a–J3e and J8 (`MarkerUITests`, `TrimUITests`, `SplitUITests`, `DataEditingUITests`, `TimelineUITests`, `SyncUITests`); model: `MarkerTests`, `VideoSplitTests`, `SessionTrimTests`, `LapNavigationTests` | A split makes a trimmed first half, a second input, a hidden second object and a segment that swaps them; the sync panel stays under the preview |
+| 0.21 knowing the track | `SectorsTests`, `CornerDetectorTests` (12 corners on Sonoma), `CircuitCatalogTests`, `StartFinishFinderTests`, `TrackExtentTests`, `TrackMapDisplayTests` goldens, `SectorPanelTests`; `LapUITests`, the sector-panel journey in `ObjectEditingUITests`; `onboard probe` prints the circuit match, the sector table and `--corners` | The start/finish suggestion lands on the line the logger used; the pit lane drops off the map; sector deltas that round to 0.00 draw in the text colour |
+| 0.21.x units | `SpeedUnitInheritanceTests`, `RecordedSpeedUnitTests` (a kph file through `SessionBuilder` answers kph, not the canonical m/s), `GraphSeriesScaleTests` | A new object shows "Automatic" and says what that resolves to; throttle and brake pressure share one graph legibly |
 | M18 native RaceRender objects | `docs/qa-m18.md`; `IndicatorPanelTests` (ABS light off/on goldens, hold time, timing panel golden, text-data zones), `SpeedDeltaTests`, `IndicatorParamsTests` (channel/threshold suggestions, template adaptation, panel decode defaults), `ReferenceLapTests` (best vs previous lap) | The ABS light lights amber when the channel crosses its level; the timing panel shows best/previous/current and both delta lanes; water/oil readouts turn amber/red at their thresholds |
 
 ## Release smoke test
 
-Before tagging: `Scripts/release.sh`, install the DMG, launch the app, check "Check for Updates…"
-opens the Sparkle dialog, and run the current milestone's QA script.
+Before tagging: check the nightly is green (it built the bundle and ran the render), then
+`Scripts/release.sh`, install the DMG, launch the app, check "Check for Updates…" opens the
+Sparkle dialog, and run the current milestone's QA script.
