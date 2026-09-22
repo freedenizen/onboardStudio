@@ -20,6 +20,9 @@ public struct GraphRenderer: OverlayDrawing {
         var color: RGBAColor
         var lineWidth: Double
         var isGhost: Bool
+        /// Which of `params.series` this trace draws, so the ghost and live traces of one series
+        /// can be recognised as the same series.
+        var seriesIndex: Int
         /// Set when the series scales on its own, in which case this trace is drawn through this
         /// range and takes no part in the graph's shared fit (#145).
         var ownRange: ClosedRange<Double>?
@@ -189,11 +192,11 @@ public struct GraphRenderer: OverlayDrawing {
         case .time:
             let window = max(params.window, 0.1)
             let start = now - window
-            let traces = params.series.map { series in
+            let traces = params.series.indices.map { index in
                 trace(
-                    series, sampler: sampler, times: linspace(start, now, pointBudget), x: { $0 - start }, ghost: false)
+                    index, sampler: sampler, times: linspace(start, now, pointBudget), x: { $0 - start }, ghost: false)
             }
-            return Layout(xRange: 0...window, traces: traces)
+            return layout(xRange: 0...window, traces: traces)
 
         case .distance:
             let window = max(params.window, 1)
@@ -205,12 +208,12 @@ public struct GraphRenderer: OverlayDrawing {
                 LapComparison.time(
                     atDistance: startDistance, in: distance, between: distance.firstTime ?? now, and: now)
                 ?? (distance.firstTime ?? now)
-            let traces = params.series.map { series in
+            let traces = params.series.indices.map { index in
                 trace(
-                    series, sampler: sampler, times: linspace(start, now, pointBudget),
+                    index, sampler: sampler, times: linspace(start, now, pointBudget),
                     x: { (distance.value(at: $0) ?? here) - startDistance }, ghost: false)
             }
-            return Layout(xRange: 0...window, traces: traces)
+            return layout(xRange: 0...window, traces: traces)
 
         case .lap:
             return lapLayout(now: now, sampler: sampler, timing: timing, distance: distance, pointBudget: pointBudget)
@@ -225,12 +228,12 @@ public struct GraphRenderer: OverlayDrawing {
         guard let distance, let startDistance = distance.value(at: lapStart) else {
             // Without distance, show time into the lap instead.
             let best = timing.bestLapTime ?? max(now - lapStart, 1)
-            let traces = params.series.map { series in
+            let traces = params.series.indices.map { index in
                 trace(
-                    series, sampler: sampler, times: linspace(lapStart, now, pointBudget), x: { $0 - lapStart },
+                    index, sampler: sampler, times: linspace(lapStart, now, pointBudget), x: { $0 - lapStart },
                     ghost: false)
             }
-            return Layout(xRange: 0...max(best, now - lapStart, 1), traces: traces)
+            return layout(xRange: 0...max(best, now - lapStart, 1), traces: traces)
         }
         var traces: [Trace] = []
         var xMax = max((distance.value(at: now) ?? startDistance) - startDistance, 1)
@@ -239,37 +242,39 @@ public struct GraphRenderer: OverlayDrawing {
             let bestStartDistance = distance.value(at: best.start)
         {
             xMax = max(xMax, LapComparison.length(of: best, distance: distance) ?? 0)
-            for series in params.series {
+            for index in params.series.indices {
                 var ghost = trace(
-                    series, sampler: sampler, times: linspace(best.start, bestEnd, pointBudget),
+                    index, sampler: sampler, times: linspace(best.start, bestEnd, pointBudget),
                     x: { (distance.value(at: $0) ?? bestStartDistance) - bestStartDistance }, ghost: true)
                 ghost.color = params.ghostColor
                 traces.append(ghost)
             }
         }
-        for series in params.series {
+        for index in params.series.indices {
             traces.append(
                 trace(
-                    series, sampler: sampler, times: linspace(lapStart, now, pointBudget),
+                    index, sampler: sampler, times: linspace(lapStart, now, pointBudget),
                     x: { (distance.value(at: $0) ?? startDistance) - startDistance }, ghost: false))
         }
-        return Layout(xRange: 0...xMax, traces: traces)
+        return layout(xRange: 0...xMax, traces: traces)
     }
 
     private func fallbackTime(now: Double, window: Double, sampler: TelemetrySampler, pointBudget: Int) -> Layout {
         let seconds = max(window / 20, 1)  // ~20 m/s: a rough metres → seconds guess
         let start = now - seconds
-        let traces = params.series.map { series in
-            trace(series, sampler: sampler, times: linspace(start, now, pointBudget), x: { $0 - start }, ghost: false)
+        let traces = params.series.indices.map { index in
+            trace(index, sampler: sampler, times: linspace(start, now, pointBudget), x: { $0 - start }, ghost: false)
         }
-        return Layout(xRange: 0...seconds, traces: traces)
+        return layout(xRange: 0...seconds, traces: traces)
     }
 
     private func trace(
-        _ series: GraphSeries, sampler: TelemetrySampler, times: [Double], x: (Double) -> Double, ghost: Bool
+        _ index: Int, sampler: TelemetrySampler, times: [Double], x: (Double) -> Double, ghost: Bool
     ) -> Trace {
+        let series = params.series[index]
         guard let role = ChannelValue.role(series.channel) else {
-            return Trace(points: [], color: series.color, lineWidth: series.lineWidth, isGhost: ghost)
+            return Trace(
+                points: [], color: series.color, lineWidth: series.lineWidth, isGhost: ghost, seriesIndex: index)
         }
         let factor = role == .speed || role == .speedDelta ? context.speedUnit.factorFromMetersPerSecond : 1
         var points: [CGPoint] = []
@@ -279,8 +284,7 @@ public struct GraphRenderer: OverlayDrawing {
             points.append(CGPoint(x: x(t), y: v * factor))
         }
         return Trace(
-            points: points, color: series.color, lineWidth: series.lineWidth, isGhost: ghost,
-            ownRange: Self.ownRange(of: series, points: points))
+            points: points, color: series.color, lineWidth: series.lineWidth, isGhost: ghost, seriesIndex: index)
     }
 
     private func linspace(_ a: Double, _ b: Double, _ count: Int) -> [Double] {
@@ -290,6 +294,21 @@ public struct GraphRenderer: OverlayDrawing {
 }
 
 extension GraphRenderer {
+    /// A layout whose own-scale series have their ranges fitted. One range per *series*, over
+    /// every trace of it: the best lap's ghost and the live lap are two traces of the same series,
+    /// and fitting each to itself would put both peaks on the top line however different they
+    /// were — the comparison the lap axis exists to draw — while the live one rescaled under
+    /// itself as the lap filled in.
+    func layout(xRange: ClosedRange<Double>, traces: [Trace]) -> Layout {
+        var traces = traces
+        for (index, series) in params.series.enumerated() where series.usesOwnScale {
+            let points = traces.filter { $0.seriesIndex == index }.flatMap(\.points)
+            let range = Self.ownRange(of: series, points: points)
+            for i in traces.indices where traces[i].seriesIndex == index { traces[i].ownRange = range }
+        }
+        return Layout(xRange: xRange, traces: traces)
+    }
+
     /// The range a series is drawn through when it scales on its own: what it was given, falling
     /// back per-bound to this series' own data. `nil` when it follows the graph's shared range.
     static func ownRange(of series: GraphSeries, points: [CGPoint]) -> ClosedRange<Double>? {

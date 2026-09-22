@@ -19,7 +19,63 @@ struct GraphSeriesScaleTests {
     func trace(_ ys: [Double], ownRange: ClosedRange<Double>? = nil) -> GraphRenderer.Trace {
         GraphRenderer.Trace(
             points: ys.enumerated().map { CGPoint(x: Double($0.offset), y: $0.element) },
-            color: .accent, lineWidth: 1, isGhost: false, ownRange: ownRange)
+            color: .accent, lineWidth: 1, isGhost: false, seriesIndex: 0, ownRange: ownRange)
+    }
+
+    /// Two laps of a brake-pressure channel: the first, which will be the best, peaks at
+    /// 14,470 kPa; the second, in progress, at 9,000. Distance runs at 100 m/s.
+    var twoLaps: TelemetrySession {
+        let times = Array(stride(from: 0.0, through: 20, by: 0.5))
+        func brake(_ t: Double) -> Double {
+            let peak = t < 10 ? 14470.0 : 9000
+            let phase = (t.truncatingRemainder(dividingBy: 10)) / 10 * .pi
+            return peak * sin(phase)
+        }
+        var session = TelemetrySession(
+            info: SessionInfo(sourceFormat: "test"),
+            channels: [
+                Channel(
+                    role: .canbus("brake_pressure_front"), name: "brake", unit: .custom("kPa"), times: times,
+                    values: times.map(brake)),
+                Channel(role: .distance, name: "distance", unit: .meters, times: times, values: times.map { $0 * 100 }),
+            ])
+        session.laps = [
+            Lap(number: 1, start: 0, end: 10, isComplete: true), Lap(number: 2, start: 10, end: nil, isComplete: false),
+        ]
+        return session
+    }
+
+    @Test("On the lap axis the best lap's ghost and the live lap share one scale")
+    func ghostAndLiveShareOneRange() throws {
+        var series = GraphSeries(channel: "canbus:brake_pressure_front", usesOwnScale: true)
+        series.minValue = nil
+        series.maxValue = nil
+        var params = GraphParams(series: [series], axis: .lap)
+        params.compareBestLap = true
+        let renderer = GraphRenderer(
+            context: ObjectContext(
+                objectID: DisplayObjectID(), frame: .full, opacity: 1, sampler: TelemetrySampler(session: twoLaps),
+                sync: .identity, cache: RenderCache()),
+            params: params)
+
+        // Halfway round lap 2: the live trace has reached its 9,000 peak, the ghost holds 14,470.
+        let layout = renderer.layout(at: 15, pointBudget: 200)
+        let ghost = try #require(layout.traces.first { $0.isGhost })
+        let live = try #require(layout.traces.first { !$0.isGhost })
+        #expect((ghost.points.map(\.y).max() ?? 0) > 14000)
+        #expect((live.points.map(\.y).max() ?? 0) < 9500)
+
+        // One range for the series, fitted over both traces — not one each.
+        let range = try #require(live.ownRange)
+        #expect(ghost.ownRange == range)
+        #expect(range.upperBound > 14470, "the live lap's range must hold the best lap's peak")
+
+        // So the live peak sits visibly below the ghost's, which is what the comparison is for.
+        let plot = GraphRenderer.Plot(
+            rect: CGRect(x: 0, y: 0, width: 100, height: 100), xRange: layout.xRange, yRange: 0...1, scale: 1)
+        let ghostTop = ghost.points.map { plot.map($0, using: ghost.ownRange).y }.min() ?? 0
+        let liveTop = live.points.map { plot.map($0, using: live.ownRange).y }.min() ?? 0
+        #expect(liveTop > ghostTop + 25, "live peak \(liveTop) should sit well below the ghost's \(ghostTop)")
     }
 
     @Test("A series on its own scale is kept out of the shared fit")
