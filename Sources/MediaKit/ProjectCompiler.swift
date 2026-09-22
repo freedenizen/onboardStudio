@@ -68,9 +68,14 @@ public enum ProjectCompiler {
         var loaded = LoadedProject(project: project, location: location, sessions: [:], mediaInfo: [:])
         for input in project.inputs {
             let url = location.resolve(input.source)
+            // A cached session is only still right if nothing that shaped it changed. The
+            // project-level attribute mapping shapes it and does not live on the input, so it is
+            // compared here too — without this, correcting a project mapping would leave every
+            // already-imported session reading its old columns and units.
+            let mappingsUnchanged = previous?.project.settings.attributeMappings == project.settings.attributeMappings
             let unchanged =
                 previous?.project.input(input.id).map { $0.source == input.source && $0.kind == input.kind } ?? false
-                && previous?.problems[input.id] == nil
+                && previous?.problems[input.id] == nil && mappingsUnchanged
             do {
                 guard FileManager.default.fileExists(atPath: url.path) else { throw LoadError.missingFile(url) }
                 switch input.kind {
@@ -78,7 +83,8 @@ public enum ProjectCompiler {
                     if unchanged, let cached = previous?.sessions[input.id] {
                         loaded.sessions[input.id] = cached
                     } else {
-                        loaded.sessions[input.id] = try importData(at: url, settings: settings)
+                        loaded.sessions[input.id] = try importData(
+                            at: url, settings: settings, mappings: attributeMappings(for: settings, in: project))
                     }
                 case .video, .audio:
                     if unchanged, let cached = previous?.mediaInfo[input.id] {
@@ -229,39 +235,6 @@ public enum ProjectCompiler {
         }
     }
 
-    static func importData(at url: URL, settings: DataInputSettings) throws -> TelemetrySession {
-        var overrides: [String: ChannelRole] = [:]
-        for (column, identifier) in settings.roleOverrides {
-            if let role = ChannelRole(identifier: identifier) { overrides[column] = role }
-        }
-        let options = SessionBuilder.Options(
-            roleOverrides: overrides,
-            deriveSpeedFromPosition: settings.deriveSpeedFromPosition,
-            deriveHeadingFromPosition: settings.deriveHeadingFromPosition,
-            unitOverrides: settings.unitOverrides.mapValues { TelemetryUnit(parsing: $0) },
-            resampleHertz: settings.resampleHertz,
-            smoothingSeconds: settings.smoothingSeconds,
-            calculatedFields: settings.calculatedFields.map {
-                CalculatedField(name: $0.name, expression: $0.expression, unit: $0.unit)
-            },
-            finishLine: settings.lapLine.map {
-                FinishLine(
-                    latitude: $0.latitude, longitude: $0.longitude, headingDegrees: $0.headingDegrees,
-                    halfWidthMeters: $0.halfWidthMeters, headingToleranceDegrees: $0.headingToleranceDegrees)
-            },
-            ignoreFirstCrossings: settings.lapLine?.ignoreFirstCrossings ?? 0,
-            sectorMode: sectorMode(settings.sectors),
-            cornerLabels: settings.cornerLabels,
-            trimStart: settings.trim.start, trimEnd: settings.trim.end)
-        if let importerID = settings.importerID {
-            guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {
-                throw ImportError.unrecognisedFormat
-            }
-            return try importer.importSession(at: url, options: options)
-        }
-        return try FormatDetector.importSession(at: url, options: options)
-    }
-
     /// Builds the composition: video inputs become tracks and layers; data objects become overlays.
     public static func compile(_ loaded: LoadedProject) async throws -> CompiledComposition {
         let project = loaded.project
@@ -321,22 +294,5 @@ extension ProjectCompiler.LoadedProject {
         let words = (channel.role.identifier + " " + channel.name).lowercased()
             .split { !$0.isLetter && !$0.isNumber }.map(String.init)
         return words.contains { $0.hasPrefix("steer") || $0 == "swa" }
-    }
-}
-
-extension ProjectCompiler {
-    /// The project's sector settings as TelemetryKit understands them.
-    static func sectorMode(_ spec: SectorSpec) -> SectorMode {
-        switch spec.mode {
-        case .equalDistance: .equalDistance(count: spec.count)
-        case .cornerAware: .cornerAware(count: spec.count)
-        case .manual:
-            .manual(
-                lines: spec.lines.map {
-                    FinishLine(
-                        latitude: $0.latitude, longitude: $0.longitude, headingDegrees: $0.headingDegrees,
-                        halfWidthMeters: $0.halfWidthMeters, headingToleranceDegrees: $0.headingToleranceDegrees)
-                })
-        }
     }
 }

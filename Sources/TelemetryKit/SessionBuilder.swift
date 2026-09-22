@@ -14,6 +14,16 @@ public enum SessionBuilder {
         public var deriveDistanceFromPosition: Bool
         /// Column name → unit override (e.g. a bare "Speed" column that is really km/h).
         public var unitOverrides: [String: TelemetryUnit]
+        /// Attribute → the column that supplies it (#111): the reverse of `roleOverrides`, and the
+        /// direction the user asks in — "Brake comes from canbus:front_brake_pressure" rather than
+        /// "what is this column?". An attribute named here keeps its column even when an earlier
+        /// column in the file would have been guessed into the same role.
+        public var sourceColumns: [ChannelRole: String]
+        /// Attribute → the unit its numbers are to be *read* in (#111), whatever the file declared.
+        /// Attribute-keyed rather than column-keyed so that a unit can be corrected without also
+        /// having to name the column, which is the common case: the column was matched correctly
+        /// and only its unit is missing or wrong.
+        public var sourceUnits: [ChannelRole: TelemetryUnit]
         /// Resample every linear channel to this rate before smoothing (`nil` = keep as recorded).
         public var resampleHertz: Double?
         /// Centred moving-average window applied to linear channels (0 = none).
@@ -43,6 +53,8 @@ public enum SessionBuilder {
             deriveHeadingFromPosition: Bool = true,
             deriveDistanceFromPosition: Bool = true,
             unitOverrides: [String: TelemetryUnit] = [:],
+            sourceColumns: [ChannelRole: String] = [:],
+            sourceUnits: [ChannelRole: TelemetryUnit] = [:],
             resampleHertz: Double? = nil,
             smoothingSeconds: Double = 0,
             calculatedFields: [CalculatedField] = [],
@@ -60,6 +72,8 @@ public enum SessionBuilder {
             self.deriveHeadingFromPosition = deriveHeadingFromPosition
             self.deriveDistanceFromPosition = deriveDistanceFromPosition
             self.unitOverrides = unitOverrides
+            self.sourceColumns = sourceColumns
+            self.sourceUnits = sourceUnits
             self.resampleHertz = resampleHertz
             self.smoothingSeconds = smoothingSeconds
             self.calculatedFields = calculatedFields
@@ -70,32 +84,66 @@ public enum SessionBuilder {
         }
     }
 
-    public static func build(_ rawTable: RawTable, options: Options = Options()) -> TelemetrySession {
-        let table = trimmed(sanitised(rawTable), from: options.trimStart, to: options.trimEnd)
-        var channels: [Channel] = []
-        var recordedUnits: [ChannelRole: TelemetryUnit] = [:]
-        var usedRoles = Set<ChannelRole>()
+    /// Decides what each column of a file becomes: which attribute it supplies, and the unit its
+    /// numbers are to be read in.
+    ///
+    /// Two directions of mapping meet here (#111). `roleOverrides` / `unitOverrides` are keyed by
+    /// column — "what is this column?" — and `sourceColumns` / `sourceUnits` are keyed by attribute
+    /// — "where does Brake come from?". The column-keyed pair is consulted first throughout: it
+    /// names a column in this very file, so it is the most specific thing there is, and it means a
+    /// project saved before the attribute table existed keeps exactly the mapping it had.
+    private struct ColumnMapper {
+        let options: Options
+        /// Which column each attribute was explicitly pointed at, so that a *guess* on an earlier
+        /// column cannot take a role its named owner is waiting for.
+        let claimedBy: [ChannelRole: String]
+        private var usedRoles = Set<ChannelRole>()
 
-        for column in table.columns {
-            let override = options.roleOverrides.first {
-                $0.key.caseInsensitiveCompare(column.name) == .orderedSame
-            }?.value
-            guard let role = override ?? column.suggestedRole else { continue }
-            // First column wins for a given role; later duplicates become aux channels.
+        init(options: Options) {
+            self.options = options
+            var claimedBy: [ChannelRole: String] = [:]
+            for (column, role) in options.roleOverrides { claimedBy[role] = column }
+            for (role, column) in options.sourceColumns where claimedBy[role] == nil { claimedBy[role] = column }
+            self.claimedBy = claimedBy
+        }
+
+        /// The role this column takes and the column as it should be read, or `nil` to drop it
+        /// because nothing claims it and nothing guessed it.
+        mutating func map(_ column: RawColumn) -> (role: ChannelRole, column: RawColumn)? {
+            let named = { (candidate: String) in candidate.caseInsensitiveCompare(column.name) == .orderedSame }
+            let explicitRole =
+                options.roleOverrides.first { named($0.key) }?.value
+                ?? options.sourceColumns.first { named($0.value) }?.key
+            guard let role = explicitRole ?? column.suggestedRole else { return nil }
+            // First column wins for a given role; later duplicates become aux channels. A guessed
+            // role whose attribute is explicitly mapped to some other column loses it outright,
+            // whichever column the file happens to list first.
+            let takenByItsOwner = explicitRole == nil && claimedBy[role].map { !named($0) } == true
             let finalRole: ChannelRole
-            if usedRoles.contains(role) {
-                let suffix = column.source.map { " (\($0))" } ?? ""
-                finalRole = .aux(column.name + suffix)
+            if usedRoles.contains(role) || takenByItsOwner {
+                finalRole = .aux(column.name + (column.source.map { " (\($0))" } ?? ""))
             } else {
                 finalRole = role
             }
             usedRoles.insert(finalRole)
             var effectiveColumn = column
-            if let unit = options.unitOverrides.first(where: {
-                $0.key.caseInsensitiveCompare(column.name) == .orderedSame
-            })?.value {
+            if let unit = options.unitOverrides.first(where: { named($0.key) })?.value
+                ?? options.sourceUnits[finalRole]
+            {
                 effectiveColumn.unit = unit
             }
+            return (finalRole, effectiveColumn)
+        }
+    }
+
+    public static func build(_ rawTable: RawTable, options: Options = Options()) -> TelemetrySession {
+        let table = trimmed(sanitised(rawTable), from: options.trimStart, to: options.trimEnd)
+        var channels: [Channel] = []
+        var recordedUnits: [ChannelRole: TelemetryUnit] = [:]
+        var mapper = ColumnMapper(options: options)
+
+        for column in table.columns {
+            guard let (finalRole, effectiveColumn) = mapper.map(column) else { continue }
             guard var channel = makeChannel(role: finalRole, column: effectiveColumn, times: table.times) else {
                 continue
             }

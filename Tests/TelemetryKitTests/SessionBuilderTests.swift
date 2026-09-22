@@ -2,6 +2,90 @@ import Testing
 
 @testable import TelemetryKit
 
+@Suite("Attribute-first mapping")
+struct AttributeMappingBuildTests {
+    /// A file where the importer's guess and the user's mapping disagree, and the guess comes
+    /// first in the file — the case the column-order rule used to get wrong.
+    func table() -> RawTable {
+        RawTable(
+            info: SessionInfo(sourceFormat: "test"),
+            times: [0, 1],
+            columns: [
+                RawColumn(name: "Brake", unit: .percent, suggestedRole: .brake, values: [10, 20]),
+                RawColumn(name: "canbus:front_brake_pressure", unit: .none, values: [100, 200]),
+            ])
+    }
+
+    @Test func anAttributeTakesTheColumnItIsPointedAt() throws {
+        let session = SessionBuilder.build(
+            table(), options: .init(sourceColumns: [.brake: "canbus:front_brake_pressure"]))
+        let brake = try #require(session[.brake])
+        #expect(brake.name == "canbus:front_brake_pressure")
+        #expect(brake.values == [100, 200])
+    }
+
+    /// The column that lost the role is kept as an aux channel rather than dropped: it is still
+    /// data the user can bind an object to.
+    @Test func theGuessThatLosesTheRoleBecomesAux() {
+        let session = SessionBuilder.build(
+            table(), options: .init(sourceColumns: [.brake: "canbus:front_brake_pressure"]))
+        #expect(session[.aux("Brake")] != nil)
+    }
+
+    @Test func theColumnIsMatchedWithoutRegardToCase() throws {
+        let session = SessionBuilder.build(
+            table(), options: .init(sourceColumns: [.brake: "CANBUS:FRONT_BRAKE_PRESSURE"]))
+        #expect(try #require(session[.brake]).values == [100, 200])
+    }
+
+    /// The milestone's example: the file says nothing about the unit, the user says kPa. Reading
+    /// changes; the stored numbers do not, because brake's canonical unit does not accept kPa.
+    @Test func anAttributeIsReadInTheUnitTheUserGives() throws {
+        let session = SessionBuilder.build(
+            table(),
+            options: .init(
+                sourceColumns: [.brake: "canbus:front_brake_pressure"], sourceUnits: [.brake: .kilopascal]))
+        let brake = try #require(session[.brake])
+        #expect(brake.unit == .kilopascal)
+        #expect(brake.values == [100, 200])
+    }
+
+    /// A source unit needs no source column: the usual case is a column matched correctly whose
+    /// unit is missing or wrong.
+    @Test func aSourceUnitAloneCorrectsTheColumnThatWasMatched() throws {
+        let raw = RawTable(
+            info: SessionInfo(sourceFormat: "test"), times: [0, 1],
+            columns: [RawColumn(name: "Speed", unit: .none, suggestedRole: .speed, values: [36, 72])])
+        let session = SessionBuilder.build(raw, options: .init(sourceUnits: [.speed: .kilometersPerHour]))
+        let speed = try #require(session[.speed])
+        #expect(speed.unit == .metersPerSecond)
+        #expect(abs(speed.values[0] - 10) < 1e-9)
+        #expect(session.recordedUnit(of: .speed) == .kilometersPerHour)
+    }
+
+    /// The column-keyed overrides name a column in this very file, so they stay the most specific
+    /// thing there is — a project saved before the table existed keeps the mapping it had.
+    @Test func theColumnKeyedOverridesStillWin() throws {
+        let session = SessionBuilder.build(
+            table(),
+            options: .init(
+                roleOverrides: ["Brake": .brake], unitOverrides: ["Brake": .percent],
+                sourceColumns: [.brake: "canbus:front_brake_pressure"], sourceUnits: [.brake: .kilopascal]))
+        let brake = try #require(session[.brake])
+        #expect(brake.name == "Brake")
+        #expect(brake.unit == .percent)
+    }
+
+    /// Nothing mapped must build exactly the session it always built.
+    @Test func noMappingChangesNothing() throws {
+        let plain = SessionBuilder.build(table())
+        let empty = SessionBuilder.build(table(), options: .init(sourceColumns: [:], sourceUnits: [:]))
+        #expect(try #require(plain[.brake]).name == "Brake")
+        #expect(try #require(empty[.brake]).name == "Brake")
+        #expect(plain.channels.mapValues(\.name) == empty.channels.mapValues(\.name))
+    }
+}
+
 @Suite("SessionBuilder")
 struct SessionBuilderTests {
     func table(lapValues: [Double?]? = nil, markers: [RawLapMarker] = []) -> RawTable {
