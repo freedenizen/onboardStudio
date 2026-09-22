@@ -14,6 +14,7 @@ public enum FormatDetector {
     public static let importers: [any TelemetryImporter] = [
         RaceRenderCSVImporter(),
         RaceChronoCSVImporter(),
+        RCZImporter(),
         GPXImporter(),
         TCXImporter(),
         NMEAImporter(),
