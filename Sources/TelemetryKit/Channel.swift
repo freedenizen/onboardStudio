@@ -73,12 +73,20 @@ public struct Channel: Sendable, Equatable {
             interpolation: interpolation)
     }
 
+    /// Returns a copy with every value converted to `newUnit`, or `self` when the units are not
+    /// dimensionally compatible. Goes through `TelemetryUnit.convert(_:to:)` rather than a
+    /// multiplier so that an offset conversion — °C to °F — is right.
+    public func converted(to newUnit: TelemetryUnit) -> Channel {
+        guard newUnit != unit, unit.convert(0, to: newUnit) != nil else { return self }
+        return Channel(
+            role: role, name: name, unit: newUnit, times: times,
+            values: values.map { unit.convert($0, to: newUnit) ?? $0 }, interpolation: interpolation)
+    }
+
     /// Returns a copy converted to the canonical unit for its role when a conversion exists.
     public func convertedToCanonicalUnit() -> Channel {
-        guard let target = TelemetryUnit.canonical(for: role), target != unit,
-            let factor = unit.conversionFactor(to: target)
-        else { return self }
-        return scaled(by: factor, unit: target)
+        guard let target = TelemetryUnit.canonical(for: role) else { return self }
+        return converted(to: target)
     }
 }
 
