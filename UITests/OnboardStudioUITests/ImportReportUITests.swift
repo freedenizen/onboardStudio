@@ -1,18 +1,40 @@
 import XCTest
 
-/// #149: a file that imports badly explains itself, and one that does not stays quiet.
+/// #149 and #192: a file that imports badly explains itself, in the window that has room to.
 final class ImportReportUITests: OnboardStudioUITestCase {
+    /// Adds the noisy fixture, opens the attribute window and points it at that input.
     @MainActor
-    func testExplainsWhatBecameOfEachColumn() throws {
-        launch()
+    func openWindowOnTheNoisyFixture() {
         testing("Add Fixture Data (Noisy CAN)")
         XCTAssertTrue(
             sidebarInput("racechrono-v3-noisy").waitForExistence(timeout: Self.timeout), "Data not listed")
         sidebarInput("racechrono-v3-noisy").click()
+        let open = app.buttons["import.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: Self.timeout), "No way to open the report")
+        reveal(open)
+        open.click()
+        let scope = app.popUpButtons["attributes.scope"]
+        XCTAssertTrue(scope.waitForExistence(timeout: Self.timeout), "The attribute window did not open")
+        choosePopUpItem("racechrono-v3-noisy", in: scope)
+    }
+
+    /// The tab strip is a segmented control, whose segments are radio buttons rather than the
+    /// pop-up menu `choosePopUpItem` drives.
+    @MainActor
+    func selectTab(_ name: String) {
+        let segment = app.radioButtons[name].exists ? app.radioButtons[name] : app.buttons[name]
+        XCTAssertTrue(segment.waitForExistence(timeout: Self.timeout), "No “\(name)” tab")
+        segment.click()
+    }
+
+    @MainActor
+    func testExplainsWhatBecameOfEachColumn() throws {
+        launch()
+        openWindowOnTheNoisyFixture()
+        selectTab("Import")
 
         let summary = app.staticTexts["import.summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: Self.timeout), "No import summary")
-        reveal(summary)
         let text = text(of: summary)
         XCTAssertTrue(text.contains("31 columns"), "Summary did not count the columns: \(text)")
         XCTAssertTrue(text.contains("worth a look"), "Summary did not flag anything: \(text)")
@@ -20,44 +42,33 @@ final class ImportReportUITests: OnboardStudioUITestCase {
         // By default only the columns with something to say; the rest are simply fine.
         let showAll = app.descendants(matching: .any).matching(identifier: "import.showAll").firstMatch
         XCTAssertTrue(showAll.waitForExistence(timeout: Self.timeout), "No way to see every column")
-        let shownByDefault = app.staticTexts.matching(
-            NSPredicate(format: "identifier BEGINSWITH 'import.'")
-        ).count
-        reveal(showAll)
+        let before = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'import.'")).count
         showAll.click()
-        let shownAfter = app.staticTexts.matching(
-            NSPredicate(format: "identifier BEGINSWITH 'import.'")
-        ).count
-        XCTAssertGreaterThan(shownAfter, shownByDefault, "Showing every column revealed nothing new")
+        let after = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'import.'")).count
+        XCTAssertGreaterThan(after, before, "Showing every column revealed nothing new")
     }
 
     /// The milestone's own example, end to end under the vocabulary of #191: the attribute is
-    /// **Brake pressure (front)**, and `brake_pressure_front` is the column it is mapped to. The
-    /// column is not itself an attribute, which is what this used to assume.
+    /// **Brake pressure (front)** and `brake_pressure_front` is the column it is mapped to.
     @MainActor
     func testAPressureAttributeIsMappedToAColumnAndShownInBar() throws {
         launch()
-        testing("Add Fixture Data (Noisy CAN)")
-        XCTAssertTrue(sidebarInput("racechrono-v3-noisy").waitForExistence(timeout: Self.timeout))
-        sidebarInput("racechrono-v3-noisy").click()
+        openWindowOnTheNoisyFixture()
 
         // Nothing maps it yet and the file does not supply it by name, so its row waits until
         // every attribute is asked for.
         let showAll = app.descendants(matching: .any).matching(identifier: "attributes.showAll").firstMatch
         XCTAssertTrue(showAll.waitForExistence(timeout: Self.timeout), "No way to see every attribute")
-        reveal(showAll)
         showAll.click()
 
         let source = app.popUpButtons["attribute.brakePressureFront.source"]
         XCTAssertTrue(source.waitForExistence(timeout: Self.timeout), "No Brake pressure (front) row")
-        reveal(source)
         choosePopUpItem("brake_pressure_front", in: source)
 
         // Once it is mapped, the unit the file declared for that column is what it reads in, and
         // bar is one of the units it can then be shown in.
         let shows = app.popUpButtons["attribute.brakePressureFront.displayUnit"]
         XCTAssertTrue(shows.waitForExistence(timeout: Self.timeout), "No display unit for the pressure")
-        reveal(shows)
         choosePopUpItem("bar", in: shows)
 
         let row = app.staticTexts["attribute.brakePressureFront"]
@@ -69,18 +80,14 @@ final class ImportReportUITests: OnboardStudioUITestCase {
     @MainActor
     func testASourceChannelIsNotListedAsAnAttribute() throws {
         launch()
-        testing("Add Fixture Data (Noisy CAN)")
-        XCTAssertTrue(sidebarInput("racechrono-v3-noisy").waitForExistence(timeout: Self.timeout))
-        sidebarInput("racechrono-v3-noisy").click()
+        openWindowOnTheNoisyFixture()
 
         let showAll = app.descendants(matching: .any).matching(identifier: "attributes.showAll").firstMatch
         XCTAssertTrue(showAll.waitForExistence(timeout: Self.timeout))
-        reveal(showAll)
         showAll.click()
         XCTAssertFalse(
             app.staticTexts["attribute.canbus:analog_1"].exists,
             "One logger's wiring is listed as though it were part of the vocabulary")
         XCTAssertFalse(app.staticTexts["attribute.canbus:brake_pressure_front"].exists)
     }
-
 }

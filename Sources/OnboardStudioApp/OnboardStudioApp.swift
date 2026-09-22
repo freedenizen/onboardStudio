@@ -54,6 +54,10 @@ struct OnboardStudioApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultLaunchBehavior(LaunchOptions.showLauncher ? .presented : .suppressed)
         .restorationBehavior(.disabled)
+        Window("Attributes", id: AttributeMappingWindow.windowID) {
+            AttributeMappingWindow()
+        }
+        .defaultSize(width: 900, height: 560)
         Window("Keyboard Shortcuts", id: "shortcuts") {
             ShortcutsView()
         }
