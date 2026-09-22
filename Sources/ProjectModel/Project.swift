@@ -14,10 +14,15 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     /// Speed unit for every object in this project that has not pinned its own (#75). `automatic`
     /// follows the app-wide preference, which in turn follows the data.
     public var speedUnit: SpeedUnitSetting
+    /// This project's attribute mapping (#111, #89): where each attribute comes from, what its
+    /// numbers are in and what objects show it in. Deviations from the global mapping in
+    /// preferences; a single input can deviate again.
+    public var attributeMappings: AttributeMappingTable
 
     public init(
         outputWidth: Int = 1920, outputHeight: Int = 1080, frameRate: Double = 30, duration: Double? = nil,
-        framing: CameraFraming = .none, overlayOpacity: Double = 1, speedUnit: SpeedUnitSetting = .automatic
+        framing: CameraFraming = .none, overlayOpacity: Double = 1, speedUnit: SpeedUnitSetting = .automatic,
+        attributeMappings: AttributeMappingTable = AttributeMappingTable()
     ) {
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
@@ -26,10 +31,12 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         self.framing = framing
         self.overlayOpacity = overlayOpacity
         self.speedUnit = speedUnit
+        self.attributeMappings = attributeMappings
     }
 
     private enum CodingKeys: String, CodingKey {
         case outputWidth, outputHeight, frameRate, duration, framing, overlayOpacity, speedUnit
+        case attributeMappings
     }
 
     public init(from decoder: any Decoder) throws {
@@ -46,6 +53,10 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         // default and the right reading of an absent key: it changes nothing, because every object
         // in such a file pins its own unit anyway.
         speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? .automatic
+        // Absent before the attribute table existed. An empty table is automatic on every field,
+        // and automatic on every field is precisely what such a project already did.
+        attributeMappings =
+            try c.decodeIfPresent(AttributeMappingTable.self, forKey: .attributeMappings) ?? AttributeMappingTable()
     }
 
     /// The same settings with the framing removed (framing is applied by the compositor, so it

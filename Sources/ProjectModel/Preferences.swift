@@ -74,6 +74,14 @@ public enum Preferences {
     /// else pins it for every project and object that has not pinned its own.
     public static let speedUnit = Preference(key: "speedUnit", unset: SpeedUnitSetting.automatic.rawValue)
 
+    /// The global attribute mapping (#111): where each attribute comes from, what the file's
+    /// numbers are in, and what objects show it in. The level a project and then an input deviate
+    /// from — set once, applied to every later import.
+    ///
+    /// Stored as JSON text because `@AppStorage` carries property-list values and a table of rows
+    /// is not one. `AttributeMappingTable(json:)` reads it.
+    public static let attributeMappings = Preference(key: "attributeMappings", unset: "")
+
     // MARK: - Editing
 
     /// How far one arrow-key press moves the selected object, in pixels of the exported frame.
@@ -97,7 +105,8 @@ public enum Preferences {
 
     /// All of them, for the test that no two share a key.
     public static let allKeys: [String] = [
-        defaultExportPreset.key, speedUnit.key, nudgeStepPixels.key, ffmpegPath.key, youTubeClientID.key,
+        defaultExportPreset.key, speedUnit.key, attributeMappings.key, nudgeStepPixels.key, ffmpegPath.key,
+        youTubeClientID.key,
         youTubeClientSecret.key, showLauncherAtLaunch.key, tourSeen.key, showGettingStarted.key,
     ]
 }

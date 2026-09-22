@@ -213,6 +213,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     public var roleOverrides: [String: String]
     /// Column name → unit text (`km/h`, `mph`, `ft`, …) when the file's unit is missing or wrong.
     public var unitOverrides: [String: String]
+    /// This input's deviations from the project's attribute mapping (#111) — the bottom level of
+    /// the chain, for when one file is the exception. Attribute-keyed, where `roleOverrides` and
+    /// `unitOverrides` above are column-keyed; both are applied, and this one wins.
+    public var attributeMappings: AttributeMappingTable
     public var deriveSpeedFromPosition: Bool
     public var deriveHeadingFromPosition: Bool
     /// Resample linear channels to this rate (Hz); `nil` keeps the recorded rate.
@@ -239,6 +243,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         importerID: String? = nil,
         roleOverrides: [String: String] = [:],
         unitOverrides: [String: String] = [:],
+        attributeMappings: AttributeMappingTable = AttributeMappingTable(),
         deriveSpeedFromPosition: Bool = true,
         deriveHeadingFromPosition: Bool = true,
         resampleHertz: Double? = nil,
@@ -253,6 +258,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         self.importerID = importerID
         self.roleOverrides = roleOverrides
         self.unitOverrides = unitOverrides
+        self.attributeMappings = attributeMappings
         self.deriveSpeedFromPosition = deriveSpeedFromPosition
         self.deriveHeadingFromPosition = deriveHeadingFromPosition
         self.resampleHertz = resampleHertz
@@ -266,7 +272,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case importerID, roleOverrides, unitOverrides, deriveSpeedFromPosition, deriveHeadingFromPosition
+        case importerID, roleOverrides, unitOverrides, attributeMappings
+        case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID
         case cornerLabels, trim
     }
@@ -276,6 +283,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         importerID = try c.decodeIfPresent(String.self, forKey: .importerID)
         roleOverrides = try c.decodeIfPresent([String: String].self, forKey: .roleOverrides) ?? [:]
         unitOverrides = try c.decodeIfPresent([String: String].self, forKey: .unitOverrides) ?? [:]
+        // Absent before the attribute table existed. An empty table is automatic on every field,
+        // which is exactly what such a project did: only `roleOverrides` and `unitOverrides` spoke.
+        attributeMappings =
+            try c.decodeIfPresent(AttributeMappingTable.self, forKey: .attributeMappings) ?? AttributeMappingTable()
         deriveSpeedFromPosition = try c.decodeIfPresent(Bool.self, forKey: .deriveSpeedFromPosition) ?? true
         deriveHeadingFromPosition = try c.decodeIfPresent(Bool.self, forKey: .deriveHeadingFromPosition) ?? true
         resampleHertz = try c.decodeIfPresent(Double.self, forKey: .resampleHertz)
