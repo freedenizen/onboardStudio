@@ -17,7 +17,11 @@ struct GaugeDesignerInspector: View {
             NumberField("Major tick", value: field(\.majorTick))
             NumberField("Minor tick", value: field(\.minorTick))
             if ChannelRole(identifier: params.channel) == .speed {
-                SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit))
+                if object.usesSpeedUnitPicker {
+                    SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit))
+                } else {
+                    DisplayUnitPicker(editor: editor, object: object)
+                }
             } else {
                 TextField("Unit label", text: field(\.unitLabel))
                 NumberField("Divide value by", value: field(\.valueDivisor))

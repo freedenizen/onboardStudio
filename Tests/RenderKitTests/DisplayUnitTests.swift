@@ -119,13 +119,68 @@ struct DisplayUnitTests {
         #expect(units(project()).label(for: "speed") == "kph", "the file recorded km/h")
     }
 
-    /// A unit the values cannot be converted into leaves them alone: a wrong number is worse than
-    /// an unconverted one.
+    /// A unit the values cannot be converted into leaves them alone — and, just as importantly,
+    /// does not relabel them: a number drawn in kPa under an "mph" label is worse than either.
     @Test func anImpossibleConversionChangesNothing() {
         let table = AttributeMappingTable([
             "canbus:front_brake_pressure": AttributeMapping(displayUnit: "mph")
         ])
-        #expect(units(project(projectMappings: table)).value(100, of: "canbus:front_brake_pressure") == 100)
+        let units = units(project(projectMappings: table))
+        #expect(units.value(100, of: "canbus:front_brake_pressure") == 100)
+        #expect(units.label(for: "canbus:front_brake_pressure") == nil)
+    }
+
+    // MARK: - The object's own unit
+
+    /// The bottom of the chain: this one object, whatever the project and the global mapping said.
+    @Test func anObjectsOwnUnitOutranksTheTable() {
+        let table = AttributeMappingTable([
+            "canbus:front_brake_pressure": AttributeMapping(displayUnit: "bar")
+        ])
+        var pinned = object(.bar(BarParams(channel: "canbus:front_brake_pressure", label: "B")))
+        pinned.displayUnit = "psi"
+        let units = units(project(projectMappings: table), object: pinned)
+        #expect(units.label(for: "canbus:front_brake_pressure") == "psi")
+        #expect(abs(units.value(100, of: "canbus:front_brake_pressure") - 14.503_774) < 1e-5)
+    }
+
+    /// The pin applies to what this object draws and to nothing else, so two objects reading the
+    /// same channel can show it differently.
+    @Test func thePinReachesOnlyTheObjectsOwnChannels() {
+        let table = AttributeMappingTable([
+            "canbus:front_brake_pressure": AttributeMapping(displayUnit: "bar")
+        ])
+        var speedObject = object(.textData(TextDataParams(channel: "speed", label: "S")))
+        speedObject.displayUnit = "psi"
+        let units = units(project(projectMappings: table), object: speedObject)
+        #expect(units.label(for: "canbus:front_brake_pressure") == "bar", "the other channel still follows the table")
+    }
+
+    /// A graph pinned to mph means mph for its speed trace; an rpm trace is simply not convertible
+    /// into it and is left alone, unconverted and unrelabelled.
+    @Test func aPinOnlyReachesTheSeriesItCanConvert() {
+        var graph = object(
+            .graph(
+                GraphParams(
+                    series: [
+                        GraphSeries(channel: "speed"), GraphSeries(channel: "canbus:front_brake_pressure"),
+                    ], label: "G")))
+        graph.displayUnit = "bar"
+        let units = units(project(), object: graph)
+        #expect(abs(units.value(100, of: "canbus:front_brake_pressure") - 1) < 1e-9)
+        #expect(units.label(for: "speed") == "kph", "speed is not convertible to bar, so #75 still answers")
+    }
+
+    /// An object that pinned nothing follows the levels above it, which is every object in every
+    /// project saved before this existed.
+    @Test func anUnpinnedObjectFollowsTheTable() {
+        let table = AttributeMappingTable([
+            "canbus:front_brake_pressure": AttributeMapping(displayUnit: "bar")
+        ])
+        let plain = object(.bar(BarParams(channel: "canbus:front_brake_pressure", label: "B")))
+        #expect(plain.displayUnit == nil)
+        #expect(
+            units(project(projectMappings: table), object: plain).label(for: "canbus:front_brake_pressure") == "bar")
     }
 
     /// An object reading an input with no session at all must not crash or invent conversions.

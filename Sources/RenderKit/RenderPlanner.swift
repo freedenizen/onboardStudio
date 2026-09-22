@@ -91,13 +91,25 @@ public enum RenderPlanner {
             input: project.input(inputID)?.dataSettings?.attributeMappings ?? AttributeMappingTable())
         let speed = unitResolver(for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit)
 
+        // What this object pinned for its own channels, which outranks the table. Applied per
+        // channel rather than to the whole session: a graph of speed and rpm drawing "mph" means
+        // mph for the speed trace, and the rpm trace is simply not convertible into it.
+        let ownChannels = Set(object.kind.displayChannels)
+        let pinnedByObject = object.displayUnit.map { TelemetryUnit(parsing: $0) }
+
         var conversions: [String: DisplayUnits.Conversion] = [:]
         for channel in session.channels.values {
             let identifier = channel.role.identifier
-            let chosen = mappings.resolved(identifier).displayUnit.map { TelemetryUnit(parsing: $0) }
+            let own = ownChannels.contains(identifier) ? pinnedByObject : nil
+            let requested = own ?? mappings.resolved(identifier).displayUnit.map { TelemetryUnit(parsing: $0) }
+            // Only a unit these values can actually become. A pin that does not apply — "bar" on
+            // the speed trace of a graph whose other series is a pressure — has to fall through
+            // rather than relabel a number that never converted.
+            let chosen = requested.flatMap { channel.unit.convert(0, to: $0) != nil ? $0 : nil }
             if ChannelValue.isSpeed(identifier) {
                 // The object's own pin outranks the table, as it always has; below it the table
-                // speaks, and below that #75's project and app preferences.
+                // speaks, and below that #75's project and app preferences. A speed object still
+                // pins through `speedUnit`, so that the label keeps the spelling it was saved with.
                 let pinned = object.kind.speedUnit.pinned
                 let unit = pinned.map(TelemetryUnit.init(speed:)) ?? chosen
                 let fallback = speed.speed(object.kind.speedUnit)
