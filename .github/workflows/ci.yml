@@ -3,9 +3,12 @@ on:
   push:
     branches: [main]
   pull_request:
+# A newer push to a branch supersedes the run in progress; a push to main never does — a
+# cancelled main run reports its shards as failed and `main health` would call main red
+# for a commit nothing was wrong with.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
 defaults:
