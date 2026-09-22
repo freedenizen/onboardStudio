@@ -13,6 +13,7 @@ set -euo pipefail
 mode=${1:?open|close}
 label=${2:?label}
 
+# Fails loudly: a transient API error must not read as "nothing is open".
 current() {
   gh issue list --label "$label" --state open --limit 1 --json number --jq '.[0].number // empty'
 }
@@ -21,7 +22,8 @@ case "$mode" in
   open)
     title=${3:?title}
     body=${4:?body}
-    if existing=$(current) && [ -n "$existing" ]; then
+    existing=$(current)
+    if [ -n "$existing" ]; then
       gh issue comment "$existing" --body "$body"
       echo "commented on #$existing"
     else
@@ -30,7 +32,8 @@ case "$mode" in
     ;;
   close)
     comment=${3:?comment}
-    if existing=$(current) && [ -n "$existing" ]; then
+    existing=$(current)
+    if [ -n "$existing" ]; then
       gh issue close "$existing" --comment "$comment"
       echo "closed #$existing"
     else
