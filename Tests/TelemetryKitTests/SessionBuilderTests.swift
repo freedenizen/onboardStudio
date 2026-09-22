@@ -76,6 +76,24 @@ struct AttributeMappingBuildTests {
         #expect(brake.unit == .percent)
     }
 
+    /// Without this the table can only offer columns the importer already understood — and the
+    /// column a user most needs to point an attribute at is the one it ignored.
+    @Test func everyColumnTheFileOfferedIsRemembered() {
+        let session = SessionBuilder.build(table())
+        #expect(session.sourceColumns == ["Brake", "canbus:front_brake_pressure"])
+        #expect(session.channels.count == 1)
+    }
+
+    @Test func attributeNamesAreReadable() {
+        #expect(ChannelRole.lateralG.displayName == "Lateral G")
+        #expect(ChannelRole.canbus("front_brake_pressure").displayName == "canbus:front_brake_pressure")
+        #expect(ChannelRole.mappableAttributes.contains(.brake))
+        // Structure and computed channels have no source column to choose.
+        #expect(!ChannelRole.mappableAttributes.contains(.time))
+        #expect(!ChannelRole.mappableAttributes.contains(.lapDelta))
+        #expect(Set(ChannelRole.mappableAttributes).isSubset(of: Set(ChannelRole.standardRoles)))
+    }
+
     /// Nothing mapped must build exactly the session it always built.
     @Test func noMappingChangesNothing() throws {
         let plain = SessionBuilder.build(table())
