@@ -21,6 +21,10 @@ struct AttributeMappingTableView: View {
     var columns: [String] = []
     /// Every attribute that could have a row, in the order to show them.
     let attributes: [ChannelRole]
+    /// The unit the file itself declared for each attribute, keyed by role identifier. This is
+    /// what *Automatic* means in the "Reads" column, and what the "Shows" column's choices are
+    /// derived from when nobody has overridden it.
+    var detectedUnits: [String: TelemetryUnit] = [:]
     /// Attributes worth showing before the user asks for the rest — the ones this file supplies or
     /// somebody has already mapped.
     let interesting: Set<ChannelRole>
@@ -38,7 +42,7 @@ struct AttributeMappingTableView: View {
         ForEach(shown, id: \.identifier) { role in
             AttributeMappingRow(
                 role: role, level: level, resolver: resolver, columns: columns,
-                write: { write(role, $0) })
+                detected: detectedUnits[role.identifier], write: { write(role, $0) })
         }
         if shown.count < attributes.count || showAll {
             Toggle("Show every attribute", isOn: $showAll)
@@ -53,6 +57,8 @@ private struct AttributeMappingRow: View {
     let level: AttributeMappingLevel
     let resolver: AttributeMappingResolver
     let columns: [String]
+    /// What the file said this attribute's numbers are in, if anything.
+    let detected: TelemetryUnit?
     let write: (AttributeMapping) -> Void
 
     /// This level's own opinions — what the pop-ups edit.
@@ -62,9 +68,15 @@ private struct AttributeMappingRow: View {
     private var inherited: AttributeMapping { resolver.inherited(role.identifier, below: level) }
     private var resolved: AttributeMapping { mine.resolved(under: inherited) }
 
-    /// The unit the numbers are read in once the chain has had its say. What the third column may
-    /// offer follows from it: a value in kPa can be shown in bar or psi and in nothing else.
-    private var sourceUnit: TelemetryUnit? { resolved.sourceUnit.map { TelemetryUnit(parsing: $0) } }
+    /// The unit the numbers are read in once the chain has had its say — and, failing that, what
+    /// the file declared. What the third column may offer follows from it: a value in kPa can be
+    /// shown in bar or psi and in nothing else.
+    ///
+    /// Falling back to the file matters: otherwise a channel the importer read perfectly well as
+    /// kPa offers no display units at all until the user redundantly tells the app it is kPa.
+    private var sourceUnit: TelemetryUnit? {
+        resolved.sourceUnit.map { TelemetryUnit(parsing: $0) } ?? detected
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -88,7 +100,7 @@ private struct AttributeMappingRow: View {
     private var summary: String {
         var parts: [String] = []
         if let source = resolved.source { parts.append(source) }
-        if let unit = resolved.sourceUnit {
+        if let unit = sourceUnit?.symbol, !unit.isEmpty {
             parts.append(resolved.displayUnit.map { "\(unit) → \($0)" } ?? unit)
         } else if let display = resolved.displayUnit {
             parts.append("shown in \(display)")
@@ -117,7 +129,10 @@ private struct AttributeMappingRow: View {
     /// both what the row will do and what choosing it again would restore.
     private func popUp(_ field: AttributeMappingField, automatic: String) -> some View {
         let mine = value(of: field, in: mine)
-        let above = value(of: field, in: inherited)
+        // For the source unit, "what the level above said" is the file itself when no level spoke.
+        let above =
+            value(of: field, in: inherited)
+            ?? (field == .sourceUnit ? detected.map(\.symbol).flatMap { $0.isEmpty ? nil : $0 } : nil)
         let options = options(field)
         return Picker(field.rawValue, selection: binding(field)) {
             Text(above.map { "Automatic (\($0))" } ?? automatic).tag("")
@@ -192,11 +207,21 @@ struct DataInputAttributesSection: View {
         return (ChannelRole.mappableAttributes + Array(interesting)).filter { seen.insert($0).inserted }
     }
 
+    /// What the file declared for each attribute. The *recorded* unit, not the channel's own:
+    /// speed is stored in m/s whatever the file wrote, and the table's "Reads" column is about
+    /// what the file wrote.
+    private var detectedUnits: [String: TelemetryUnit] {
+        guard let session else { return [:] }
+        return session.channels.reduce(into: [:]) { units, entry in
+            units[entry.key.identifier] = session.recordedUnit(of: entry.key)
+        }
+    }
+
     var body: some View {
         Section {
             AttributeMappingTableView(
                 level: .input, resolver: mappings, columns: session?.sourceColumns ?? [],
-                attributes: attributes, interesting: interesting,
+                attributes: attributes, detectedUnits: detectedUnits, interesting: interesting,
                 write: { role, mapping in
                     var new = settings
                     new.attributeMappings[role.identifier] = mapping

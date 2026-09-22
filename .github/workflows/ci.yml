@@ -194,7 +194,7 @@ jobs:
           - name: shard 1
             classes: ObjectEditingUITests TrimUITests MarkerUITests DataEditingUITests AttributeMappingUITests
           - name: shard 2
-            classes: JourneyUITests TemplateUITests LauncherUITests SplitUITests
+            classes: JourneyUITests TemplateUITests LauncherUITests SplitUITests ImportReportUITests
           - name: shard 3
             classes: FirstLaunchUITests SyncUITests MultiCameraUITests LapUITests ProjectUITests TimelineUITests
     steps:
