@@ -73,7 +73,9 @@ enum Fuzz {
 
     static let fixtures = [
         "racerender-basic.csv", "racechrono-v3.csv", "racechrono-v2.csv", "generic.csv", "harrys.csv", "track.gpx",
-        "activity.tcx", "track.nmea", "session.vbo", "dji-mavic.srt", "dji-osmo.srt",
+        "activity.tcx", "track.nmea", "session.vbo", "vbox-canbus.vbo", "dji-mavic.srt", "dji-osmo.srt",
+        // A zip read by hand is the likeliest thing here to walk off the end of a buffer.
+        "session.rcz",
     ]
 
     static func fixtureURL(_ name: String) throws -> URL {
