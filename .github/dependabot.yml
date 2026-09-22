@@ -1,9 +1,8 @@
 version: 2
 updates:
-  - package-ecosystem: github-actions
-    directory: /
-    schedule: { interval: weekly }
-    commit-message: { prefix: "ci" }
+  # No github-actions ecosystem: CodeQL default setup never analyses Dependabot's commits, so
+  # the required Analyze (*) checks cannot report and its PRs could never merge (#147). Action
+  # versions are bumped by hand in a signed commit instead.
   - package-ecosystem: swift
     directory: /
     schedule: { interval: weekly }
