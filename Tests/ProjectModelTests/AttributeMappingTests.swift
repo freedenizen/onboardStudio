@@ -136,3 +136,40 @@ struct AttributeMappingDocumentTests {
         #expect(reopenedProject.attributeMappings["speed"].displayUnit == "kph")
     }
 }
+
+@Suite("An object's own display unit")
+struct ObjectDisplayUnitTests {
+    /// Absent in every project saved before this existed, and `nil` is what such an object did:
+    /// follow the levels above it. So there is nothing for a schema step to pin.
+    @Test func anObjectWithoutTheKeyFollowsTheLevelsAboveIt() throws {
+        let json =
+            #"{"id":"11111111-1111-1111-1111-111111111111","label":"B","frame":"#
+            + #"{"x":0,"y":0,"width":1,"height":1},"opacity":1,"isVisible":true,"#
+            + #""kind":{"gear":{"_0":{}}}}"#
+        let object = try JSONDecoder().decode(DisplayObject.self, from: Data(json.utf8))
+        #expect(object.displayUnit == nil)
+    }
+
+    @Test func theUnitSurvivesASaveAndReopen() throws {
+        var object = DisplayObject(
+            label: "Brake", inputID: nil, frame: UnitRect(x: 0, y: 0, width: 1, height: 1),
+            kind: .bar(BarParams(channel: "canbus:brake", label: "B")))
+        object.displayUnit = "bar"
+        let reopened = try JSONDecoder().decode(DisplayObject.self, from: try JSONEncoder().encode(object))
+        #expect(reopened.displayUnit == "bar")
+    }
+
+    /// Which channels an object-level unit reaches: the ones it draws a number for. A light and a
+    /// steering wheel read a channel but draw no number, so neither has a unit to choose.
+    @Test func onlyObjectsThatDrawANumberHaveChannels() {
+        #expect(DisplayObjectKind.bar(BarParams(channel: "brake", label: "B")).displayChannels == ["brake"])
+        #expect(DisplayObjectKind.gauge(GaugeParams.speedometer()).displayChannels == ["speed"])
+        #expect(
+            DisplayObjectKind.graph(GraphParams(series: [GraphSeries(channel: "speed")], label: "G"))
+                .displayChannels == ["speed"])
+        #expect(DisplayObjectKind.lapPanel(LapPanelParams()).displayChannels == ["speed", "speedDelta"])
+        #expect(DisplayObjectKind.indicator(.abs).displayChannels.isEmpty)
+        #expect(DisplayObjectKind.steeringWheel(SteeringWheelParams()).displayChannels.isEmpty)
+        #expect(DisplayObjectKind.gear(GearParams()).displayChannels.isEmpty)
+    }
+}
