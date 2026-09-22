@@ -43,12 +43,24 @@ public struct TelemetrySession: Sendable {
     /// common. Empty until the driver sets them — no open source publishes corner numbering
     /// (`docs/tracks-and-sectors.md`), so like sector geometry it is drawn, never fetched.
     public var cornerLabels: [String] = []
+    /// The unit a channel was *recorded* in, for every role the builder converted to its canonical
+    /// unit. `channels[.speed].unit` is always m/s by the time anyone reads it, so this is the
+    /// only record of whether the file said mph or kph — which is what *Automatic* in the speed
+    /// unit chain means. Kept on the session rather than the channel so that resampling and
+    /// smoothing, which rebuild channels, cannot lose it.
+    public var recordedUnits: [ChannelRole: TelemetryUnit] = [:]
 
     public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info
         self.channels = Dictionary(channels.map { ($0.role, $0) }, uniquingKeysWith: { first, _ in first })
         self.laps = laps
         self.sectors = sectors
+    }
+
+    /// The unit `role` was recorded in: what the file said before canonicalisation, or the
+    /// channel's own unit when nothing was converted.
+    public func recordedUnit(of role: ChannelRole) -> TelemetryUnit? {
+        recordedUnits[role] ?? self[role]?.unit
     }
 
     /// Falls back to the role's `legacyAlias`, so a project saved when CAN channels were filed

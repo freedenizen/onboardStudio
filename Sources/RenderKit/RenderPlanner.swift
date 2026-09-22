@@ -42,13 +42,34 @@ public enum RenderPlanner {
     ///
     /// Only the three the app can display; anything else — or no speed channel at all — has no
     /// opinion, and the chain falls through to its last resort.
-    static func recordedSpeedUnit(of session: TelemetrySession) -> SpeedDisplayUnit? {
-        switch session[.speed]?.unit {
+    ///
+    /// Asks the session, not the channel: `SessionBuilder` converts every speed channel to m/s
+    /// on import, so the channel's own unit would answer m/s for every file ever loaded.
+    public static func recordedSpeedUnit(of session: TelemetrySession) -> SpeedDisplayUnit? {
+        switch session.recordedUnit(of: .speed) {
         case .milesPerHour: .mph
         case .kilometersPerHour: .kph
         case .metersPerSecond: .metersPerSecond
         default: nil
         }
+    }
+
+    /// The data input an object reads: its own, except that an image object takes its picture
+    /// from an image input and its data from the first data input.
+    static func dataInputID(for object: DisplayObject, in project: Project) -> InputID? {
+        object.kind.needsImage ? project.dataInputs.first?.id : object.inputID
+    }
+
+    /// #75's chain for one object — object → project → app → the data it reads — so the
+    /// renderer and the inspector describing what the renderer will do agree by construction.
+    public static func unitResolver(
+        for object: DisplayObject, in project: Project, sessions: [InputID: TelemetrySession],
+        appSpeedUnit: SpeedUnitSetting
+    ) -> UnitResolver {
+        let session = dataInputID(for: object, in: project).flatMap { sessions[$0] }
+        return UnitResolver(
+            app: appSpeedUnit, project: project.settings.speedUnit,
+            automatic: session.flatMap(recordedSpeedUnit(of:)))
     }
 
     /// Overlay drawings in draw order for all visible non-video objects.
@@ -65,14 +86,11 @@ public enum RenderPlanner {
         (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
             let input = object.inputID.flatMap(project.input)
-            // Image objects take their picture from an image input and data from the first data input.
-            let dataInputID: InputID? = object.kind.needsImage ? project.dataInputs.first?.id : object.inputID
+            let dataInputID = dataInputID(for: object, in: project)
             let sampler = dataInputID.flatMap { sessions[$0] }.map(TelemetrySampler.init)
             let sync = (object.kind.needsImage ? project.dataInputs.first?.sync : input?.sync) ?? .identity
             // #75's chain, resolved here so every renderer is handed a unit it can convert with.
-            let resolver = UnitResolver(
-                app: appSpeedUnit, project: project.settings.speedUnit,
-                automatic: sampler.flatMap { Self.recordedSpeedUnit(of: $0.session) })
+            let resolver = unitResolver(for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit)
             let context = ObjectContext(
                 objectID: object.id, frame: object.frame, opacity: object.opacity, sampler: sampler, sync: sync,
                 cache: cache, speedUnit: resolver.speed(object.kind.speedUnit))

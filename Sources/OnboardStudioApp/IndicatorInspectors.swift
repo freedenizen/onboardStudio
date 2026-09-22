@@ -90,7 +90,7 @@ struct LapPanelInspector: View {
             }
             Toggle("Speed lane", isOn: field(\.showSpeedDelta))
             if params.showSpeedDelta {
-                SpeedUnitPicker(selection: field(\.speedUnit))
+                SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit))
                 NumberField("Speed scale (± units)", value: field(\.speedDeltaRange))
             }
             Toggle("Time lane", isOn: field(\.showTimeDelta))
