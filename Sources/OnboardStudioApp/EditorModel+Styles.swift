@@ -89,6 +89,18 @@ extension EditorModel {
         if case .steeringWheel(let params) = kind {
             kind = .steeringWheel(params.adapted(to: channelSummaries(for: dataInput)))
         }
+        // A gauge and a bar *are* a scale, and the template's is written for a percentage. Fit it
+        // to what the channel actually reads, now, while the object is being made — never later,
+        // when it would be changing a scale somebody chose.
+        switch kind {
+        case .gauge(let params): kind = .gauge(params.fitted(to: channelSummaries(for: dataInput)))
+        case .speedometer(let params): kind = .speedometer(params.fitted(to: channelSummaries(for: dataInput)))
+        case .tachometer(let params): kind = .tachometer(params.fitted(to: channelSummaries(for: dataInput)))
+        default: break
+        }
+        if case .bar(let params) = kind {
+            kind = .bar(params.fitted(to: channelSummaries(for: dataInput)))
+        }
         let object = DisplayObject.makeDefault(
             kind: kind, inputID: kind.needsData ? dataInput : videoInput, index: project.displayObjects.count)
         edit("Add \(kind.typeName)") { $0.displayObjects.append(object) }

@@ -279,8 +279,8 @@ extension ProjectCompiler.LoadedProject {
             // could plausibly carry a steering angle or a lateral acceleration are measured.
             session.orderedChannels.map { channel in
                 ChannelSummary(
-                    identifier: channel.role.identifier, name: channel.name, minValue: channel.minValue,
-                    maxValue: channel.maxValue,
+                    identifier: channel.role.identifier, name: channel.name, unit: channel.unit.symbol,
+                    minValue: channel.minValue, maxValue: channel.maxValue,
                     rightTurnCorrelation: Self.turnsWith(channel) == true
                         ? TurnDirection.reading(for: channel, in: session)?.correlation : nil)
             }

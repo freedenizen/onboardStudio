@@ -219,3 +219,52 @@ extension DisplayObject {
         ("Text", .text(TextParams())),
     ]
 }
+
+extension GaugeParams {
+    /// The same gauge, scaled to what its channel actually reads in this data (#180).
+    ///
+    /// Applied when an object is **created**, never when a project is opened: a saved project
+    /// keeps the scale it was saved with, whatever the data now says.
+    ///
+    /// A gauge carrying zones keeps its authored scale. A redline at 6500 of 8000 is a statement
+    /// about the scale it was drawn against, and moving the scale underneath it would leave the
+    /// zone somewhere its author never put it — possibly off the dial entirely.
+    public func fitted(to channels: [ChannelSummary]) -> GaugeParams {
+        guard zones.isEmpty, let summary = channels.first(where: { $0.identifier == channel }),
+            !summary.isConvertedForDisplay, let bounds = summary.suggestedBounds
+        else { return self }
+        var result = self
+        result.minValue = bounds.min
+        result.maxValue = bounds.max
+        result.majorTick = GaugeParams.tick(over: bounds.max - bounds.min, parts: 5)
+        result.minorTick = GaugeParams.tick(over: bounds.max - bounds.min, parts: 10)
+        // The template's label states a unit the channel may not be in; the channel's own is right
+        // whenever it has one. An empty unit leaves the label alone rather than blanking it.
+        if !summary.unit.isEmpty { result.unitLabel = summary.unit }
+        return result
+    }
+
+    /// A tick that divides `span` into roughly `parts`, rounded to something a person would write.
+    static func tick(over span: Double, parts: Int) -> Double {
+        guard span > 0, parts > 0 else { return 1 }
+        let raw = span / Double(parts)
+        let step = pow(10, floor(log10(raw)))
+        guard step > 0, step.isFinite else { return raw }
+        return [1.0, 2.0, 2.5, 5.0, 10.0].first { raw <= $0 * step }.map { $0 * step } ?? 10 * step
+    }
+}
+
+extension BarParams {
+    /// The same bar, scaled to what its channel actually reads in this data (#180). Zones pin the
+    /// scale here for the same reason they do on a gauge — the delta bars are built from them.
+    public func fitted(to channels: [ChannelSummary]) -> BarParams {
+        guard zones.isEmpty, let summary = channels.first(where: { $0.identifier == channel }),
+            !summary.isConvertedForDisplay, let bounds = summary.suggestedBounds
+        else { return self }
+        var result = self
+        result.minValue = bounds.min
+        result.maxValue = bounds.max
+        if !summary.unit.isEmpty { result.unitLabel = summary.unit }
+        return result
+    }
+}

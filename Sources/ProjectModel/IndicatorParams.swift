@@ -126,33 +126,6 @@ public struct IndicatorParams: Hashable, Codable, Sendable {
         showWhenOff: true, glow: true, holdSeconds: 0)
 }
 
-/// What the editor knows about one channel of a data input; enough to adapt a template to it.
-public struct ChannelSummary: Hashable, Sendable {
-    public var identifier: String
-    public var name: String
-    public var minValue: Double?
-    public var maxValue: Double?
-    /// How this channel relates to a right turn measured from the session itself, −1…1, or `nil`
-    /// when the session could not say. Negative means the channel is positive for a *left* turn
-    /// and wants inverting. Computed where the samples live (`TurnDirection`), because this type
-    /// is deliberately dependency-free.
-    public var rightTurnCorrelation: Double?
-
-    public init(
-        identifier: String,
-        name: String,
-        minValue: Double? = nil,
-        maxValue: Double? = nil,
-        rightTurnCorrelation: Double? = nil
-    ) {
-        self.identifier = identifier
-        self.name = name
-        self.minValue = minValue
-        self.maxValue = maxValue
-        self.rightTurnCorrelation = rightTurnCorrelation
-    }
-}
-
 extension IndicatorParams {
     /// Words loggers use in the name of the channel that carries each event.
     static let glyphKeywords: [IndicatorGlyph: [String]] = [
