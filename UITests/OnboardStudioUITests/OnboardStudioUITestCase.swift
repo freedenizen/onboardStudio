@@ -116,8 +116,15 @@ class OnboardStudioUITestCase: XCTestCase {
         reveal(popUp)
         popUp.click()
         let entry = popUp.menus.menuItems[item]
-        XCTAssertTrue(entry.waitForExistence(timeout: Self.timeout), "No pop-up item “\(item)”")
-        entry.click()
+        if entry.waitForExistence(timeout: 3) {
+            entry.click()
+            return
+        }
+        // A menu of thirty-odd columns scrolls, and what is scrolled out is not in the tree. An
+        // open NSMenu takes type-select, which reaches an item wherever it is.
+        app.typeText(item)
+        app.typeKey(.return, modifierFlags: [])
+        XCTAssertEqual(popUp.value as? String, item, "Type-select did not reach “\(item)”")
     }
 
     /// Chooses `item` in the pop-up button whose current value is `value`.

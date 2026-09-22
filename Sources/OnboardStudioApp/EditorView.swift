@@ -72,6 +72,9 @@ struct EditorView: View {
         .onAppear {
             editor.undoManager = undoManager
             dismissWindow(id: "launcher")  // a project is open; the welcome window has done its job
+            // The attribute window is its own scene, so `@FocusedValue` cannot reach this editor
+            // from it; this is how it follows whichever project is in front.
+            ActiveEditor.shared.editor = editor
             UITestSupport.editorAppeared(editor)
             if !tourSeen {
                 tourSeen = true

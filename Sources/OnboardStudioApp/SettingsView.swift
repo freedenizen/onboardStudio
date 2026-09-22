@@ -9,23 +9,11 @@ struct SettingsView: View {
         .defaultExportPreset.unset
     @AppStorage(Preferences.ffmpegPath.key) private var ffmpegPath = Preferences.ffmpegPath.unset
     @AppStorage(Preferences.speedUnit.key) private var speedUnit = Preferences.speedUnit.unset
-    @AppStorage(Preferences.attributeMappings.key) private var attributeMappings = Preferences
-        .attributeMappings.unset
     @AppStorage(Preferences.nudgeStepPixels.key) private var nudgeStep = Preferences.nudgeStepPixels.unset
     @AppStorage(Preferences.youTubeClientID.key) private var youtubeClientID = Preferences.youTubeClientID.unset
     @AppStorage(Preferences.youTubeClientSecret.key) private var youtubeClientSecret = Preferences
         .youTubeClientSecret.unset
     @Environment(YouTubeModel.self) private var youtube
-
-    private var globalMappings: AttributeMappingTable { AttributeMappingTable(json: attributeMappings) }
-
-    /// No file is open here, so the rows are the standard attributes plus any the user has already
-    /// mapped — including channels their logger names itself, which are not standard roles.
-    private var globalAttributes: [ChannelRole] {
-        let mapped = globalMappings.rows.keys.compactMap(ChannelRole.init(identifier:))
-        var seen = Set<ChannelRole>()
-        return (ChannelRole.mappableAttributes + mapped).filter { seen.insert($0).inserted }
-    }
 
     var body: some View {
         Form {
@@ -47,21 +35,14 @@ struct SettingsView: View {
                 .font(.caption).foregroundStyle(.secondary)
             }
             Section {
-                AttributeMappingTableView(
-                    level: .global, resolver: AttributeMappingResolver(global: globalMappings),
-                    attributes: globalAttributes, interesting: Set(globalAttributes),
-                    write: { role, mapping in
-                        var table = globalMappings
-                        table[role.identifier] = mapping
-                        attributeMappings = table.json
-                    })
+                OpenAttributeWindowButton("Map Attributes…")
             } header: {
                 Text("Attributes")
             } footer: {
                 Text(
-                    "Set once here and every later import follows: which column of your files "
-                        + "supplies each attribute, the unit its numbers are in, and the unit every "
-                        + "object shows it in. A project, an input or a single object can still differ."
+                    "Set once and every later import follows: which column of your files supplies "
+                        + "each attribute, the unit its numbers are in, and the unit every object "
+                        + "shows it in. A project, an input or a single object can still differ."
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }
