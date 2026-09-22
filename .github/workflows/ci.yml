@@ -231,10 +231,11 @@ jobs:
           SHARD: ${{ matrix.name }}
         run: |
           # xcodebuild logs a failed attempt as "failed" and the retry as a later "passed" for the
-          # same test case; a case that shows both is a flake.
+          # same test case; a case that shows both is a flake. The identifier is "-[Class method]",
+          # with a space inside it, so the fields are tab-separated rather than split on blanks.
           flaky=$(grep -E "^Test Case '.*' (failed|passed)" xcodebuild.log \
-            | sed -E "s/^Test Case '([^']*)' (failed|passed).*/\\1 \\2/" \
-            | awk '{ seen[$1] = seen[$1] " " $2 } END { for (t in seen) if (seen[t] ~ /failed/ && seen[t] ~ /passed/) print t }')
+            | sed -E $'s/^Test Case \'([^\']*)\' (failed|passed).*/\\1\t\\2/' \
+            | awk -F'\t' '{ seen[$1] = seen[$1] " " $2 } END { for (t in seen) if (seen[t] ~ /failed/ && seen[t] ~ /passed/) print t }')
           [ -z "$flaky" ] && exit 0
           echo "::warning::Passed only on retry: $flaky"
           Scripts/report-ci-issue.sh open flaky-tests "UI tests that pass only on retry" \
@@ -316,7 +317,7 @@ jobs:
   # to fix forward, not to leave it. Only on push: a PR's failures are visible on the PR.
   main-health:
     name: main health
-    needs: [lint, test, ui-tests, verify-signatures]
+    needs: [lint, lint-fast, test, ui-tests, verify-signatures]
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
