@@ -206,6 +206,14 @@ public struct SectorSpec: Hashable, Codable, Sendable {
     }
 }
 
+extension Input {
+    /// This input's data settings, or `nil` when it is not a data input.
+    public var dataSettings: DataInputSettings? {
+        if case .data(let settings) = kind { return settings }
+        return nil
+    }
+}
+
 public struct DataInputSettings: Hashable, Codable, Sendable {
     /// Importer id to force (e.g. `racechrono-csv`); `nil` auto-detects.
     public var importerID: String?

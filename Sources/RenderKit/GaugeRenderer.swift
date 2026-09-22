@@ -61,7 +61,7 @@ public struct GaugeRenderer: OverlayDrawing {
     func displayValue(of channel: String, at time: Double) -> Double? {
         let smoothing = params.needle.smoothingSeconds
         guard smoothing > 0, let sampler = context.sampler, let role = ChannelValue.role(channel) else {
-            let raw = ChannelValue.display(channel, in: context.sample(at: time), speedUnit: context.speedUnit)
+            let raw = ChannelValue.display(channel, in: context.sample(at: time), units: context.units)
             return raw.map { $0 / params.valueDivisor }
         }
         let steps = 8
@@ -76,12 +76,12 @@ public struct GaugeRenderer: OverlayDrawing {
         }
         guard count > 0 else { return nil }
         let mean = total / Double(count)
-        let converted = role == .speed ? mean * context.speedUnit.factorFromMetersPerSecond : mean
+        let converted = context.units.value(mean, of: channel)
         return converted / params.valueDivisor
     }
 
     var unitText: String {
-        ChannelValue.role(params.channel) == .speed ? context.speedUnit.rawValue : params.unitLabel
+        context.units.label(for: params.channel) ?? params.unitLabel
     }
 
     /// Colour of the needle or arc for `value`, honouring zone colouring.
