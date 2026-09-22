@@ -224,7 +224,11 @@ public enum ProjectCompiler {
                 // the planner stays a pure function of what it is given, which is what lets the
                 // render tests pin a unit without touching the running app's settings.
                 appSpeedUnit: SpeedUnitSetting(
-                    rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic)
+                    rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic,
+                // #89's global level, read here for the same reason, so the planner stays a pure
+                // function of what it is given.
+                globalAttributeMappings: AttributeMappingTable(
+                    json: UserDefaults.standard.value(for: Preferences.attributeMappings)))
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
             let plan = RenderPlan(

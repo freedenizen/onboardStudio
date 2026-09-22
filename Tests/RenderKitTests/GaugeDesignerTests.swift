@@ -135,7 +135,10 @@ struct GaugeDesignerGoldenTests {
         #expect(PixelBuffers.pixel(in: behind, x: 350, y: 200).r < 60, "empty beyond the value")
         // A speed difference is shown in the object's speed unit like a speed.
         let sample = TelemetrySampler(session: session).sample(at: 5)
-        let mph = ChannelValue.display("speedDelta", in: sample, speedUnit: .mph)
+        let units = DisplayUnits([
+            "speedDelta": DisplayUnits.Conversion(from: .metersPerSecond, to: .milesPerHour, label: "mph")
+        ])
+        let mph = ChannelValue.display("speedDelta", in: sample, units: units)
         #expect(abs((mph ?? 0) - 22.369) < 0.01)
         #expect(ChannelValue.isSpeed("speedDelta") && !ChannelValue.isSpeed("lapDelta"))
         // Without the option the same bar fills from its minimum.

@@ -72,6 +72,47 @@ public enum RenderPlanner {
             automatic: session.flatMap(recordedSpeedUnit(of:)))
     }
 
+    /// #89's chain for every channel of one object's data input: which unit each is drawn in, and
+    /// what it is labelled with.
+    ///
+    /// Speed keeps the chain #75 gave it — the object's own pin still wins — with the attribute
+    /// table slotted in beneath it, so that a display unit set for Speed in the table is honoured
+    /// while a project saved before the table existed resolves exactly as it always did. Every
+    /// other attribute has no object-level pin yet, so the table is the whole of its chain.
+    public static func displayUnits(
+        for object: DisplayObject, in project: Project, sessions: [InputID: TelemetrySession],
+        appSpeedUnit: SpeedUnitSetting, globalAttributeMappings: AttributeMappingTable
+    ) -> DisplayUnits {
+        guard let inputID = dataInputID(for: object, in: project), let session = sessions[inputID] else {
+            return DisplayUnits()
+        }
+        let mappings = AttributeMappingResolver(
+            global: globalAttributeMappings, project: project.settings.attributeMappings,
+            input: project.input(inputID)?.dataSettings?.attributeMappings ?? AttributeMappingTable())
+        let speed = unitResolver(for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit)
+
+        var conversions: [String: DisplayUnits.Conversion] = [:]
+        for channel in session.channels.values {
+            let identifier = channel.role.identifier
+            let chosen = mappings.resolved(identifier).displayUnit.map { TelemetryUnit(parsing: $0) }
+            if ChannelValue.isSpeed(identifier) {
+                // The object's own pin outranks the table, as it always has; below it the table
+                // speaks, and below that #75's project and app preferences.
+                let pinned = object.kind.speedUnit.pinned
+                let unit = pinned.map(TelemetryUnit.init(speed:)) ?? chosen
+                let fallback = speed.speed(object.kind.speedUnit)
+                conversions[identifier] = DisplayUnits.Conversion(
+                    from: channel.unit, to: unit ?? TelemetryUnit(speed: fallback),
+                    // `SpeedDisplayUnit` spells km/h "kph" and always has. Keep that wherever the
+                    // legacy chain answered, so no saved project's speedometer changes its label.
+                    label: unit == nil || pinned != nil ? fallback.rawValue : nil)
+            } else if let chosen {
+                conversions[identifier] = DisplayUnits.Conversion(from: channel.unit, to: chosen)
+            }
+        }
+        return DisplayUnits(conversions)
+    }
+
     /// Overlay drawings in draw order for all visible non-video objects.
     public static func overlays(
         for project: Project,
@@ -81,7 +122,8 @@ public enum RenderPlanner {
         cache: RenderCache = RenderCache(),
         scriptRenderer: ScriptRendererFactory? = nil,
         mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:],
-        appSpeedUnit: SpeedUnitSetting = .automatic
+        appSpeedUnit: SpeedUnitSetting = .automatic,
+        globalAttributeMappings: AttributeMappingTable = AttributeMappingTable()
     ) -> [any OverlayDrawing] {
         (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
@@ -89,11 +131,15 @@ public enum RenderPlanner {
             let dataInputID = dataInputID(for: object, in: project)
             let sampler = dataInputID.flatMap { sessions[$0] }.map(TelemetrySampler.init)
             let sync = (object.kind.needsImage ? project.dataInputs.first?.sync : input?.sync) ?? .identity
-            // #75's chain, resolved here so every renderer is handed a unit it can convert with.
+            // #75's and #89's chains, resolved here so every renderer is handed units it can
+            // convert with rather than settings that may still say "automatic".
             let resolver = unitResolver(for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit)
             let context = ObjectContext(
                 objectID: object.id, frame: object.frame, opacity: object.opacity, sampler: sampler, sync: sync,
-                cache: cache, speedUnit: resolver.speed(object.kind.speedUnit))
+                cache: cache, speedUnit: resolver.speed(object.kind.speedUnit),
+                units: displayUnits(
+                    for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit,
+                    globalAttributeMappings: globalAttributeMappings))
             let image =
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }

@@ -167,10 +167,12 @@ public struct LapPanelRenderer: OverlayDrawing {
         inputTime: Double
     ) {
         drawScale(in: cg, layout: layout, from: a, to: b)
-        let factor = context.speedUnit.factorFromMetersPerSecond
-        let speed = sample?[.speed].map { $0 * factor }
+        let speed = sample?[.speed].map { context.units.value($0, of: "speed") }
+        // The delta is a difference of speeds, so it converts as a speed does. That is only true
+        // while every speed unit is a pure scaling of m/s; an offset unit would need the
+        // difference converting rather than the endpoints, and there is no such speed unit.
         let delta = session.flatMap { LapComparison.speedDelta(at: inputTime, session: $0, reference: reference) }
-            .map { $0 * factor }
+            .map { context.units.value($0, of: "speed") }
         let centre = (a + b) / 2
         if let delta {
             let f = max(-1, min(1, delta / max(params.speedDeltaRange, 0.001)))
@@ -197,7 +199,8 @@ public struct LapPanelRenderer: OverlayDrawing {
             speedText, at: CGPoint(x: a + layout.mid * 1.9, y: layout.rowY), alignment: .trailing, size: layout.mid,
             color: params.textColor, in: cg)
         text(
-            context.speedUnit.rawValue, at: CGPoint(x: a + layout.mid * 2.05, y: layout.rowY + layout.mid * 0.45),
+            context.units.label(for: "speed") ?? context.speedUnit.rawValue,
+            at: CGPoint(x: a + layout.mid * 2.05, y: layout.rowY + layout.mid * 0.45),
             alignment: .leading,
             size: layout.label, color: params.labelColor, in: cg)
         if let delta {
