@@ -6,6 +6,11 @@ free; inventing our own costs the user a translation step every time they reach 
 DaVinci Resolve is the primary reference, Premiere Pro and Final Cut Pro secondary. Where the three
 disagree, that is said explicitly rather than papered over.
 
+This file is about how an *editor* behaves. How the app should look and feel as a Mac application —
+the Human Interface Guidelines, and what following them means here — is `.claude/rules/appui.md`.
+Where an editor convention and the HIG disagree, the HIG wins for chrome and controls, and the
+editor convention wins for the timeline and the verbs that act on it.
+
 ## Vocabulary
 
 These five terms are standardised across Resolve, Premiere, Final Cut and the editing literature

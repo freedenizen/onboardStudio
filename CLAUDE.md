@@ -78,6 +78,14 @@ swift run onboard bench --export --codec hevc --seconds 60
 
 ## IMPORTANT — project rules
 
+- **It should feel like a native, premium utility Apple shipped.** Follow the Apple Human
+  Interface Guidelines. Standard controls and system metrics before anything hand-rolled, semantic
+  colours so dark mode and Increase Contrast work without a second code path, everything undoable
+  with a name that reads in the Edit menu, full keyboard access and VoiceOver labels, and empty
+  states that explain rather than blank panes. A control that works but does not belong on a Mac
+  is not finished. Details and the mistakes this app has already made are in
+  `.claude/rules/appui.md`, which loads whenever `Sources/OnboardStudioApp` is touched.
+
 - **Never hard-code the user's logger channels, thresholds or units.** Templates bind to whatever
   data is loaded (`IndicatorParams.adapted(to:)`, `Project.bindEmptyChannels`,
   `Project.bindOrphanObjects`); everything else is a parameter with a sensible default. This is
@@ -109,7 +117,8 @@ Deeper docs, read on demand: `docs/architecture.md`, `docs/formats.md`, `docs/pr
 `docs/user-guide.md`, `docs/youtube.md`.
 
 Path-scoped rules load automatically when you work in those areas:
-`.claude/rules/renderkit.md`, `.claude/rules/importers.md`, `.claude/rules/uitests.md`.
+`.claude/rules/renderkit.md`, `.claude/rules/importers.md`, `.claude/rules/uitests.md`,
+`.claude/rules/appui.md`.
 
 ## Compact instructions
 
