@@ -59,10 +59,13 @@ struct RendererGoldenTests {
         _ kind: DisplayObjectKind, frame: UnitRect = UnitRect(x: 0.05, y: 0.05, width: 0.9, height: 0.9), time: Double,
         sync: SyncSettings = .identity
     ) throws -> CVPixelBuffer {
+        // Resolved the way `RenderPlanner` resolves it, so a pinned params unit still reaches
+        // the renderer through the context.
         let context = ObjectContext(
             objectID: DisplayObjectID(UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()), frame: frame,
             opacity: 1,
-            sampler: TelemetrySampler(session: SyntheticSession.session), sync: sync, cache: RenderCache())
+            sampler: TelemetrySampler(session: SyntheticSession.session), sync: sync, cache: RenderCache(),
+            speedUnit: UnitResolver().speed(kind.speedUnit))
         let renderer = try #require(RenderPlanner.renderer(for: kind, context: context))
         let plan = RenderPlan(
             outputWidth: Int(size.width), outputHeight: Int(size.height), frameRate: 30, videoLayers: [],

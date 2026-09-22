@@ -37,7 +37,7 @@ struct BarInspector: View {
             Toggle("Show value", isOn: field(\.showValue))
             Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 0...3)
             if ChannelRole(identifier: params.channel) == .speed {
-                SpeedUnitPicker(selection: field(\.speedUnit))
+                SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit))
             } else {
                 TextField("Unit label", text: field(\.unitLabel))
             }
@@ -98,7 +98,7 @@ struct GraphInspector: View {
                             $0.maxValue = auto ? nil : 100
                         }
                     }))
-            SpeedUnitPicker(selection: field(\.speedUnit))
+            SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit))
         }
         Section("Series") {
             ForEach(params.series) { series in
@@ -280,7 +280,7 @@ struct TextDataInspector: View {
                 Text("Trailing").tag(ProjectModel.TextAlignment.trailing)
             }
             if ChannelRole(identifier: params.channel) == .speed {
-                SpeedUnitPicker(selection: field(\.speedUnit))
+                SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit))
             } else {
                 TextField("Unit label", text: field(\.unitLabel))
             }

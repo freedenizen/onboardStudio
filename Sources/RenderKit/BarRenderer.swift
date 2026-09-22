@@ -24,7 +24,7 @@ public struct BarRenderer: OverlayDrawing {
         let rect = context.rect(in: size)
         guard rect.width > 2, rect.height > 2 else { return }
         cg.setAlpha(context.opacity)
-        let value = ChannelValue.display(params.channel, in: context.sample(at: time), speedUnit: params.speedUnit)
+        let value = ChannelValue.display(params.channel, in: context.sample(at: time), speedUnit: context.speedUnit)
         let (bar, caption) = layout(in: rect, value: value)
         let horizontal = params.orientation == .horizontal
         let thickness = horizontal ? bar.height : bar.width
@@ -41,7 +41,7 @@ public struct BarRenderer: OverlayDrawing {
     /// Caption and value share the object with the bar: on the leading edge of a horizontal bar,
     /// below a vertical one. The font shrinks so the text always fits.
     func layout(in rect: CGRect, value: Double?) -> (bar: CGRect, caption: Caption?) {
-        let unit = ChannelValue.isSpeed(params.channel) ? params.speedUnit.rawValue : params.unitLabel
+        let unit = ChannelValue.isSpeed(params.channel) ? context.speedUnit.rawValue : params.unitLabel
         var pieces: [String] = []
         if !params.label.isEmpty { pieces.append(params.label) }
         if params.showValue {

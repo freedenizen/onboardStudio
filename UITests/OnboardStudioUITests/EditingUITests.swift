@@ -136,8 +136,10 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         app.typeKey("a", modifierFlags: .command)
         label.typeText("Speedo\n")
         XCTAssertTrue(sidebarObject("Speedo").waitForExistence(timeout: Self.timeout), "Rename not reflected")
-        // Speed unit mph → kph.
-        choose("kph", inPopUpShowing: "mph")
+        // Speed unit: a new object inherits (#75), and says what that amounts to; pin it to kph.
+        XCTAssertTrue(app.staticTexts["object.speedUnitResolved"].waitForExistence(timeout: Self.timeout))
+        choose("kph", inPopUpShowing: "Automatic")
+        XCTAssertTrue(app.staticTexts["object.speedUnitResolved"].waitForNonExistence(timeout: Self.timeout))
         XCTAssertTrue(
             app.popUpButtons.matching(NSPredicate(format: "value == 'kph'")).firstMatch.waitForExistence(
                 timeout: Self.timeout))

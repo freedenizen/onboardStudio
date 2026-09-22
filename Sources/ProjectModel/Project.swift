@@ -11,10 +11,13 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     /// Opacity of the whole overlay layer (every object except videos), on top of each object's
     /// own opacity: one knob for a more see-through dashboard.
     public var overlayOpacity: Double
+    /// Speed unit for every object in this project that has not pinned its own (#75). `automatic`
+    /// follows the app-wide preference, which in turn follows the data.
+    public var speedUnit: SpeedUnitSetting
 
     public init(
         outputWidth: Int = 1920, outputHeight: Int = 1080, frameRate: Double = 30, duration: Double? = nil,
-        framing: CameraFraming = .none, overlayOpacity: Double = 1
+        framing: CameraFraming = .none, overlayOpacity: Double = 1, speedUnit: SpeedUnitSetting = .automatic
     ) {
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
@@ -22,10 +25,11 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         self.duration = duration
         self.framing = framing
         self.overlayOpacity = overlayOpacity
+        self.speedUnit = speedUnit
     }
 
     private enum CodingKeys: String, CodingKey {
-        case outputWidth, outputHeight, frameRate, duration, framing, overlayOpacity
+        case outputWidth, outputHeight, frameRate, duration, framing, overlayOpacity, speedUnit
     }
 
     public init(from decoder: any Decoder) throws {
@@ -37,6 +41,11 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         duration = try c.decodeIfPresent(Double.self, forKey: .duration)
         framing = try c.decodeIfPresent(CameraFraming.self, forKey: .framing) ?? .none
         overlayOpacity = try c.decodeIfPresent(Double.self, forKey: .overlayOpacity) ?? 1
+        // A project saved before the chain existed had every object asserting its own unit, so
+        // there was nothing for a project level to mean. `automatic` is therefore both the new
+        // default and the right reading of an absent key: it changes nothing, because every object
+        // in such a file pins its own unit anyway.
+        speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? .automatic
     }
 
     /// The same settings with the framing removed (framing is applied by the compositor, so it

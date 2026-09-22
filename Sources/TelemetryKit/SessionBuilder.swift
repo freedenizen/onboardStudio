@@ -73,6 +73,7 @@ public enum SessionBuilder {
     public static func build(_ rawTable: RawTable, options: Options = Options()) -> TelemetrySession {
         let table = trimmed(sanitised(rawTable), from: options.trimStart, to: options.trimEnd)
         var channels: [Channel] = []
+        var recordedUnits: [ChannelRole: TelemetryUnit] = [:]
         var usedRoles = Set<ChannelRole>()
 
         for column in table.columns {
@@ -98,7 +99,9 @@ public enum SessionBuilder {
             guard var channel = makeChannel(role: finalRole, column: effectiveColumn, times: table.times) else {
                 continue
             }
+            let recordedUnit = channel.unit
             channel = channel.convertedToCanonicalUnit()
+            if channel.unit != recordedUnit { recordedUnits[finalRole] = recordedUnit }
             if let hertz = options.resampleHertz, channel.interpolation == .linear {
                 channel = Resampler.resample(channel, hertz: hertz)
             }
@@ -112,6 +115,7 @@ public enum SessionBuilder {
         }
 
         var session = TelemetrySession(info: table.info, channels: channels)
+        session.recordedUnits = recordedUnits
         addDerivedChannels(to: &session, options: options)
         for field in options.calculatedFields {
             try? session.addCalculatedField(field)

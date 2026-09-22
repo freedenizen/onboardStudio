@@ -333,7 +333,7 @@ public struct TextDataParams: Hashable, Codable, Sendable {
     public var channel: String
     public var label: String
     public var decimals: Int
-    public var speedUnit: SpeedDisplayUnit
+    public var speedUnit: SpeedUnitSetting
     public var unitLabel: String
     public var alignment: TextAlignment
     public var textColor: RGBAColor
@@ -362,7 +362,7 @@ public struct TextDataParams: Hashable, Codable, Sendable {
         channel: String,
         label: String,
         decimals: Int = 0,
-        speedUnit: SpeedDisplayUnit = .mph,
+        speedUnit: SpeedUnitSetting = .automatic,
         unitLabel: String = "",
         alignment: TextAlignment = .leading,
         textColor: RGBAColor = .white,
@@ -412,7 +412,7 @@ public struct TextDataParams: Hashable, Codable, Sendable {
         channel = try c.decode(String.self, forKey: .channel)
         label = try c.decodeIfPresent(String.self, forKey: .label) ?? ""
         decimals = try c.decodeIfPresent(Int.self, forKey: .decimals) ?? d.decimals
-        speedUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .speedUnit) ?? d.speedUnit
+        speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? .mph
         unitLabel = try c.decodeIfPresent(String.self, forKey: .unitLabel) ?? d.unitLabel
         alignment = try c.decodeIfPresent(TextAlignment.self, forKey: .alignment) ?? d.alignment
         textColor = try c.decodeIfPresent(RGBAColor.self, forKey: .textColor) ?? d.textColor

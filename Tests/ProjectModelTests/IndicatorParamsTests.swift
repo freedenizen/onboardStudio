@@ -65,8 +65,16 @@ struct IndicatorParamsTests {
 
     @Test func lapPanelDefaultsFillMissingKeys() throws {
         let decoded = try JSONDecoder().decode(LapPanelParams.self, from: Data("{}".utf8))
-        #expect(decoded == LapPanelParams())
         #expect(decoded.bestLabel == "Best" && decoded.reference == .sessionBest && decoded.showLapNumbers)
+        // Everything except the speed unit is the memberwise default. That one deliberately is
+        // not: a panel saved before #75 drew mph, so an absent key keeps mph, while a panel made
+        // today defers to the project. Asserted rather than assumed, because the two being equal
+        // is the normal case and this is the exception to it.
+        var expected = LapPanelParams()
+        expected.speedUnit = .mph
+        #expect(decoded == expected)
+        #expect(decoded.speedUnit == .mph)
+        #expect(LapPanelParams().speedUnit == .automatic)
         let custom = try JSONDecoder().decode(
             LapPanelParams.self, from: Data(#"{"reference":"previousLap","currentLabel":"Now"}"#.utf8))
         #expect(custom.reference == .previousLap && custom.currentLabel == "Now")

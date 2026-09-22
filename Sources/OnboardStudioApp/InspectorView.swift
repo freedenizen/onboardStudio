@@ -436,16 +436,6 @@ struct ChannelPicker: View {
     }
 }
 
-struct SpeedUnitPicker: View {
-    @Binding var selection: SpeedDisplayUnit
-
-    var body: some View {
-        Picker("Speed unit", selection: $selection) {
-            ForEach(SpeedDisplayUnit.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-        }
-    }
-}
-
 private func fmt(_ value: Double) -> String {
     value == value.rounded() ? String(format: "%.0f", value) : String(format: "%.2f", value)
 }

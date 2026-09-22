@@ -70,6 +70,10 @@ public enum Preferences {
     /// `"project"` means "whatever size this project is set to" rather than a named preset.
     public static let defaultExportPreset = Preference(key: "defaultExportPreset", unset: "project")
 
+    /// App-wide speed unit (#75). `automatic` means "whatever the data was recorded in"; anything
+    /// else pins it for every project and object that has not pinned its own.
+    public static let speedUnit = Preference(key: "speedUnit", unset: SpeedUnitSetting.automatic.rawValue)
+
     // MARK: - Editing
 
     /// How far one arrow-key press moves the selected object, in pixels of the exported frame.
@@ -93,7 +97,7 @@ public enum Preferences {
 
     /// All of them, for the test that no two share a key.
     public static let allKeys: [String] = [
-        defaultExportPreset.key, nudgeStepPixels.key, ffmpegPath.key, youTubeClientID.key,
+        defaultExportPreset.key, speedUnit.key, nudgeStepPixels.key, ffmpegPath.key, youTubeClientID.key,
         youTubeClientSecret.key, showLauncherAtLaunch.key, tourSeen.key, showGettingStarted.key,
     ]
 }

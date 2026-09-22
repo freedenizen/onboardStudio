@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.defaultExportPreset.key) private var defaultExportPreset = Preferences
         .defaultExportPreset.unset
     @AppStorage(Preferences.ffmpegPath.key) private var ffmpegPath = Preferences.ffmpegPath.unset
+    @AppStorage(Preferences.speedUnit.key) private var speedUnit = Preferences.speedUnit.unset
     @AppStorage(Preferences.nudgeStepPixels.key) private var nudgeStep = Preferences.nudgeStepPixels.unset
     @AppStorage(Preferences.youTubeClientID.key) private var youtubeClientID = Preferences.youTubeClientID.unset
     @AppStorage(Preferences.youTubeClientSecret.key) private var youtubeClientSecret = Preferences
@@ -20,6 +21,17 @@ struct SettingsView: View {
                     Text("Project size").tag("project")
                     ForEach(ExportSettings.namedPresets, id: \.key) { Text($0.name).tag($0.key) }
                 }
+            }
+            Section("Units") {
+                Picker("Speed", selection: $speedUnit) {
+                    ForEach(SpeedUnitSetting.allCases, id: \.self) { Text($0.displayName).tag($0.rawValue) }
+                }
+                .accessibilityIdentifier("settings.speedUnit")
+                Text(
+                    "Automatic shows speed in whatever unit the data file recorded it in. A project, "
+                        + "and any single object, can still choose its own."
+                )
+                .font(.caption).foregroundStyle(.secondary)
             }
             Section("Editing") {
                 Picker("Arrow keys move objects by", selection: $nudgeStep) {

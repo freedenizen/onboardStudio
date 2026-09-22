@@ -31,6 +31,24 @@ struct SessionBuilderTests {
         #expect(session[.rpm]?.values == [1, 2, 3, 4])
     }
 
+    /// Canonicalisation rewrites the channel's unit, so the session must remember the file's own —
+    /// and still remember it after resampling and smoothing have rebuilt the channel.
+    @Test func rememberTheUnitAChannelWasRecordedIn() {
+        let plain = SessionBuilder.build(table())
+        #expect(plain[.speed]?.unit == .metersPerSecond)
+        #expect(plain.recordedUnit(of: .speed) == .kilometersPerHour)
+        #expect(plain.recordedUnits[.aux("Ignored")] == nil)
+
+        let processed = SessionBuilder.build(table(), options: .init(resampleHertz: 10, smoothingSeconds: 0.5))
+        #expect(processed.recordedUnit(of: .speed) == .kilometersPerHour)
+
+        var raw = table()
+        raw.columns[0].unit = .metersPerSecond
+        let native = SessionBuilder.build(raw)
+        #expect(native.recordedUnits[.speed] == nil, "Nothing was converted, so there is nothing to remember")
+        #expect(native.recordedUnit(of: .speed) == .metersPerSecond)
+    }
+
     @Test func duplicateRolesBecomeAuxChannels() {
         var raw = table()
         raw.columns.append(

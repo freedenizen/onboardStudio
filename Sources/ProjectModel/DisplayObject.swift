@@ -175,7 +175,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
     public var minValue: Double
     public var maxValue: Double
     /// For speed channels, the unit shown; ignored otherwise.
-    public var speedUnit: SpeedDisplayUnit
+    public var speedUnit: SpeedUnitSetting
     /// Text appended to the value readout (e.g. `rpm`); for speed the unit name is used.
     public var unitLabel: String
     public var majorTick: Double
@@ -215,7 +215,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         title: String,
         minValue: Double,
         maxValue: Double,
-        speedUnit: SpeedDisplayUnit = .mph,
+        speedUnit: SpeedUnitSetting = .automatic,
         unitLabel: String = "",
         majorTick: Double,
         minorTick: Double,
@@ -286,7 +286,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
         minValue = try c.decodeIfPresent(Double.self, forKey: .minValue) ?? 0
         maxValue = try c.decodeIfPresent(Double.self, forKey: .maxValue) ?? 100
-        speedUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .speedUnit) ?? d.speedUnit
+        speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? .mph
         unitLabel = try c.decodeIfPresent(String.self, forKey: .unitLabel) ?? d.unitLabel
         majorTick = try c.decodeIfPresent(Double.self, forKey: .majorTick) ?? (maxValue - minValue) / 5
         minorTick = try c.decodeIfPresent(Double.self, forKey: .minorTick) ?? majorTick / 2
@@ -356,7 +356,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         zones.first { $0.to == nil }?.from
     }
 
-    public static func speedometer(unit: SpeedDisplayUnit = .mph, max: Double = 160) -> GaugeParams {
+    public static func speedometer(unit: SpeedUnitSetting = .automatic, max: Double = 160) -> GaugeParams {
         GaugeParams(
             channel: "speed", title: "SPEED", minValue: 0, maxValue: max, speedUnit: unit, majorTick: 20, minorTick: 10)
     }
@@ -429,6 +429,19 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         switch self {
         case .speedometer(let p), .tachometer(let p), .gauge(let p): p
         default: nil
+        }
+    }
+
+    /// What this object's own speed-unit setting says, or `automatic` for a kind that has none
+    /// to say it with. The five kinds that draw a speed are the five that carry the setting.
+    public var speedUnit: SpeedUnitSetting {
+        switch self {
+        case .speedometer(let p), .tachometer(let p), .gauge(let p): p.speedUnit
+        case .bar(let p): p.speedUnit
+        case .graph(let p): p.speedUnit
+        case .textData(let p): p.speedUnit
+        case .lapPanel(let p): p.speedUnit
+        default: .automatic
         }
     }
 
