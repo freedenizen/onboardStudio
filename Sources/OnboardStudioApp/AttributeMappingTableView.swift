@@ -88,9 +88,15 @@ private struct AttributeMappingRow: View {
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("attribute.\(role.identifier)")
             popUp(.source, automatic: "Any column")
-            HStack(spacing: 6) {
-                popUp(.sourceUnit, automatic: "File's unit")
-                popUp(.displayUnit, automatic: "As read")
+            if role.kind == .state {
+                // A state has no unit to be shown in; what it needs is the level at which the
+                // channel it is mapped to counts as on.
+                thresholdField
+            } else {
+                HStack(spacing: 6) {
+                    popUp(.sourceUnit, automatic: "File's unit")
+                    popUp(.displayUnit, automatic: "As read")
+                }
             }
         }
     }
@@ -100,6 +106,13 @@ private struct AttributeMappingRow: View {
     private var summary: String {
         var parts: [String] = []
         if let source = resolved.source { parts.append(source) }
+        // A state has no unit to report; what it has is the level it counts as on at.
+        if role.kind == .state {
+            parts.append(resolved.threshold.map { "on at \($0)" } ?? "on automatically")
+            return parts.isEmpty ? "Automatic" : parts.joined(separator: " · ")
+        }
+        // The effective source unit, so a file that declared one is reported even when no level
+        // of the chain has overridden it (#187).
         if let unit = sourceUnit?.symbol, !unit.isEmpty {
             parts.append(resolved.displayUnit.map { "\(unit) → \($0)" } ?? unit)
         } else if let display = resolved.displayUnit {
@@ -117,11 +130,30 @@ private struct AttributeMappingRow: View {
     /// offers only *Automatic*.
     private var displayUnitSymbols: [String] { (sourceUnit?.convertibleUnits ?? []).map(\.symbol) }
 
+    /// The level a state attribute's channel counts as on at or above. Left empty it follows the
+    /// suggestion an indicator derives from the channel's own range.
+    private var thresholdField: some View {
+        LabeledContent("On at or above") {
+            TextField(
+                "Automatic",
+                text: Binding(
+                    get: { mine.threshold.map { "\($0)" } ?? "" },
+                    set: { text in
+                        var mapping = mine
+                        mapping.threshold = text.isEmpty ? nil : Double(text)
+                        write(mapping)
+                    })
+            )
+            .accessibilityIdentifier("attribute.\(role.identifier).threshold")
+        }
+    }
+
     private func options(_ field: AttributeMappingField) -> [String] {
         switch field {
         case .source: columns
         case .sourceUnit: unitSymbols
         case .displayUnit: displayUnitSymbols
+        case .threshold: []
         }
     }
 
@@ -161,6 +193,7 @@ private struct AttributeMappingRow: View {
                 case .source: mapping.source = value
                 case .sourceUnit: mapping.sourceUnit = value
                 case .displayUnit: mapping.displayUnit = value
+                case .threshold: mapping.threshold = value.flatMap(Double.init)
                 }
                 write(mapping)
             })
@@ -171,6 +204,7 @@ private struct AttributeMappingRow: View {
         case .source: mapping.source
         case .sourceUnit: mapping.sourceUnit
         case .displayUnit: mapping.displayUnit
+        case .threshold: mapping.threshold.map { "\($0)" }
         }
     }
 }
@@ -193,19 +227,21 @@ struct DataInputAttributesSection: View {
             input: settings.attributeMappings)
     }
 
-    /// Worth showing before the user asks for every attribute: what this file actually supplies,
-    /// and anything somebody has already mapped.
+    /// Worth showing before the user asks for every attribute: the ones this file already
+    /// supplies, and the ones somebody has mapped.
+    ///
+    /// Only ever a *subset of the vocabulary*. A channel the file names itself — `canbus:analog_1`
+    /// — is something an attribute is mapped **to**, never an attribute (#191); listing those made
+    /// one car's wiring look like part of the vocabulary.
     private var interesting: Set<ChannelRole> {
-        Set(session?.orderedChannels.map(\.role) ?? [])
-            .union(mappings.mappedRoles.compactMap(ChannelRole.init(identifier:)))
+        let fromData = Set(session?.orderedChannels.map(\.role) ?? [])
+        let mapped = Set(mappings.mappedRoles.compactMap(ChannelRole.init(identifier:)))
+        return Set(ChannelRole.mappableAttributes).intersection(fromData.union(mapped))
     }
 
-    /// One row per attribute: the standard ones, so an attribute the importer failed to find still
-    /// has a row to fix it in, plus whatever this file or some level adds to them.
-    private var attributes: [ChannelRole] {
-        var seen = Set<ChannelRole>()
-        return (ChannelRole.mappableAttributes + Array(interesting)).filter { seen.insert($0).inserted }
-    }
+    /// One row per attribute in the vocabulary, so an attribute the importer failed to find still
+    /// has a row to fix it in.
+    private var attributes: [ChannelRole] { ChannelRole.mappableAttributes }
 
     /// What the file declared for each attribute. The *recorded* unit, not the channel's own:
     /// speed is stored in m/s whatever the file wrote, and the table's "Reads" column is about

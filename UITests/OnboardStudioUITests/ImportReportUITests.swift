@@ -31,26 +31,56 @@ final class ImportReportUITests: OnboardStudioUITestCase {
         XCTAssertGreaterThan(shownAfter, shownByDefault, "Showing every column revealed nothing new")
     }
 
-    /// The brake pressure this fixture logs in kPa is the milestone's own example, and the only
-    /// committed fixture channel with more than one unit to choose between.
+    /// The milestone's own example, end to end under the vocabulary of #191: the attribute is
+    /// **Brake pressure (front)**, and `brake_pressure_front` is the column it is mapped to. The
+    /// column is not itself an attribute, which is what this used to assume.
     @MainActor
-    func testAPressureChannelCanBeShownInBar() throws {
+    func testAPressureAttributeIsMappedToAColumnAndShownInBar() throws {
         launch()
         testing("Add Fixture Data (Noisy CAN)")
         XCTAssertTrue(sidebarInput("racechrono-v3-noisy").waitForExistence(timeout: Self.timeout))
         sidebarInput("racechrono-v3-noisy").click()
 
-        let reads = app.popUpButtons["attribute.canbus:brake_pressure_front.sourceUnit"]
-        XCTAssertTrue(reads.waitForExistence(timeout: Self.timeout), "No brake pressure row in the attribute table")
-        let shows = app.popUpButtons["attribute.canbus:brake_pressure_front.displayUnit"]
+        // Nothing maps it yet and the file does not supply it by name, so its row waits until
+        // every attribute is asked for.
+        let showAll = app.descendants(matching: .any).matching(identifier: "attributes.showAll").firstMatch
+        XCTAssertTrue(showAll.waitForExistence(timeout: Self.timeout), "No way to see every attribute")
+        reveal(showAll)
+        showAll.click()
+
+        let source = app.popUpButtons["attribute.brakePressureFront.source"]
+        XCTAssertTrue(source.waitForExistence(timeout: Self.timeout), "No Brake pressure (front) row")
+        reveal(source)
+        choosePopUpItem("brake_pressure_front", in: source)
+
+        // Once it is mapped, the unit the file declared for that column is what it reads in, and
+        // bar is one of the units it can then be shown in.
+        let shows = app.popUpButtons["attribute.brakePressureFront.displayUnit"]
         XCTAssertTrue(shows.waitForExistence(timeout: Self.timeout), "No display unit for the pressure")
         reveal(shows)
-        shows.click()
-        let bar = shows.menus.menuItems["bar"]
-        XCTAssertTrue(bar.waitForExistence(timeout: Self.timeout), "kPa was not offered bar")
-        bar.click()
+        choosePopUpItem("bar", in: shows)
 
-        let row = app.staticTexts["attribute.canbus:brake_pressure_front"]
-        XCTAssertTrue(text(of: row).contains("kPa → bar"), "The row does not report the conversion: \(text(of: row))")
+        let row = app.staticTexts["attribute.brakePressureFront"]
+        XCTAssertTrue(
+            text(of: row).contains("kPa → bar"), "The row does not report the conversion: \(text(of: row))")
     }
+
+    /// A channel the file names itself is a source to map to, never a row of its own (#191).
+    @MainActor
+    func testASourceChannelIsNotListedAsAnAttribute() throws {
+        launch()
+        testing("Add Fixture Data (Noisy CAN)")
+        XCTAssertTrue(sidebarInput("racechrono-v3-noisy").waitForExistence(timeout: Self.timeout))
+        sidebarInput("racechrono-v3-noisy").click()
+
+        let showAll = app.descendants(matching: .any).matching(identifier: "attributes.showAll").firstMatch
+        XCTAssertTrue(showAll.waitForExistence(timeout: Self.timeout))
+        reveal(showAll)
+        showAll.click()
+        XCTAssertFalse(
+            app.staticTexts["attribute.canbus:analog_1"].exists,
+            "One logger's wiring is listed as though it were part of the vocabulary")
+        XCTAssertFalse(app.staticTexts["attribute.canbus:brake_pressure_front"].exists)
+    }
+
 }

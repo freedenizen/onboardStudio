@@ -54,16 +54,6 @@ final class AttributeMappingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(brake.waitForExistence(timeout: Self.timeout), "Showing every attribute left Brake out")
     }
 
-    /// Chooses an item in a pop-up found by identifier rather than by the value it happens to show.
-    @MainActor
-    private func choosePopUpItem(_ item: String, in popUp: XCUIElement) {
-        XCTAssertTrue(popUp.waitForExistence(timeout: Self.timeout), "No pop-up to choose “\(item)” in")
-        popUp.click()
-        let entry = popUp.menus.menuItems[item]
-        XCTAssertTrue(entry.waitForExistence(timeout: Self.timeout), "No pop-up item “\(item)”")
-        entry.click()
-    }
-
     /// The caption on the right of a row, which states the mapping in force.
     @MainActor
     private func summary(of identifier: String) -> String {

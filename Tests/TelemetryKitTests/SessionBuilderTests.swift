@@ -237,3 +237,83 @@ struct DerivedChannelsTests {
         #expect(off[.heading] == nil && off[.distance] == nil)
     }
 }
+
+/// #191: an attribute says what a value *means*. Where it came from is a different question.
+@Suite("The attribute vocabulary")
+struct AttributeVocabularyTests {
+    /// The rule the table broke: a channel the source named itself is something an attribute is
+    /// mapped *to*, never an attribute. One car's `canbus:analog_1` is not part of a vocabulary
+    /// every file shares.
+    @Test func noSourceNamedChannelIsAnAttribute() {
+        for role in ChannelRole.mappableAttributes {
+            switch role {
+            case .obd(let name), .canbus(let name), .aux(let name):
+                Issue.record("\(role.identifier) names a source channel (\(name)), so it is not an attribute")
+            default: continue
+            }
+        }
+    }
+
+    /// The same value from the same session arrives under different source names depending on how
+    /// it was exported — `canbus:brake_pressure_front` from the CSV, `canbus:66569` from the
+    /// archive. Both map to one attribute, which is the point of having one.
+    @Test func oneAttributeCoversEveryNameASourceGivesIt() {
+        #expect(ChannelRole.mappableAttributes.contains(.brakePressureFront))
+        #expect(ChannelRole(identifier: "brakePressureFront") == .brakePressureFront)
+        #expect(ChannelRole.canbus("brake_pressure_front") != ChannelRole.canbus("66569"))
+    }
+
+    @Test func everyAttributeRoundTripsThroughItsIdentifier() {
+        for role in ChannelRole.mappableAttributes {
+            #expect(ChannelRole(identifier: role.identifier) == role, "\(role.identifier) does not round-trip")
+            #expect(!role.displayName.isEmpty)
+            #expect(role.displayName != role.identifier, "\(role.identifier) has no readable name")
+        }
+    }
+
+    @Test func identifiersAreUnique() {
+        let identifiers = ChannelRole.standardRoles.map(\.identifier)
+        #expect(Set(identifiers).count == identifiers.count)
+    }
+
+    /// A state is on or off; a measurement has units. The two need different things from the
+    /// mapping, which is why they are told apart at all.
+    @Test func statesAreToldFromMeasurements() {
+        #expect(ChannelRole.absActive.kind == .state)
+        #expect(ChannelRole.tractionControlActive.kind == .state)
+        #expect(ChannelRole.speed.kind == .measurement)
+        #expect(ChannelRole.brakePressureFront.kind == .measurement)
+    }
+
+    /// A state has no unit to be shown in, so nothing should try to canonicalise one.
+    @Test func aStateHasNoCanonicalUnit() {
+        for role in ChannelRole.mappableAttributes where role.kind == .state {
+            #expect(TelemetryUnit.canonical(for: role) == nil, "\(role.identifier)")
+        }
+    }
+
+    /// A pressure or a temperature is kept in whatever unit the file wrote it, because converting
+    /// on import would throw away what the file said — #89 converts for display instead.
+    @Test func pressuresAndTemperaturesAreNotCanonicalised() {
+        for role in [
+            ChannelRole.brakePressureFront, .oilPressure, .boostPressure, .coolantTemperature,
+            .oilTemperature, .intakeTemperature, .exhaustTemperature,
+        ] {
+            #expect(TelemetryUnit.canonical(for: role) == nil, "\(role.identifier)")
+        }
+        #expect(TelemetryUnit.canonical(for: .clutch) == .percent, "a percentage is a percentage anywhere")
+        #expect(TelemetryUnit.canonical(for: .steeringAngle) == .degrees)
+    }
+
+    /// An attribute mapped to a column takes that column's data, whatever the column is called —
+    /// which is the whole point, and works for the new vocabulary as it did for the old.
+    @Test func aStateCanBeMappedToARawAnalogChannel() throws {
+        let raw = RawTable(
+            info: SessionInfo(sourceFormat: "test"), times: [0, 1],
+            columns: [RawColumn(name: "analog_1", suggestedRole: .canbus("analog_1"), values: [512, 2800])])
+        let session = SessionBuilder.build(raw, options: .init(sourceColumns: [.absActive: "analog_1"]))
+        let abs = try #require(session[.absActive])
+        #expect(abs.values == [512, 2800])
+        #expect(session[.canbus("analog_1")] == nil, "it is the ABS attribute now, not a raw channel")
+    }
+}
