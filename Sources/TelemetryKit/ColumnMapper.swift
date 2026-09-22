@@ -71,41 +71,57 @@ struct ColumnMapper {
     /// The column that kept `role`, for a column that was renamed out of it.
     func columnKeeping(_ role: ChannelRole) -> String? { tookRole[role] }
 
+    /// Roles that are a count or an identifier rather than a measurement, so having no unit is
+    /// their normal state and not worth warning about.
+    static let unitlessRoles: Set<ChannelRole> = [.gear, .lap, .gpsUpdate, .gpsDelay]
+
     /// One line of the import report (#149): what this column became, and anything about it worth
-    /// the user's attention. `mapping` is `nil` when no channel was built from the column.
+    /// the user's attention.
+    ///
+    /// `mapping` is `nil` when nothing claimed the column; `built` is false when something did but
+    /// no channel came of it. The two are different failures and read differently, so they are
+    /// separate arguments rather than one nil.
     static func reportedColumn(
-        _ index: Int, _ column: RawColumn, mapping: Mapping?, mapper: ColumnMapper
+        _ index: Int, _ column: RawColumn, mapping: Mapping?, built: Bool, mapper: ColumnMapper
     ) -> ImportReport.Column {
         var notes: [ImportReport.Note] = []
         if let mapping {
             if mapping.wasNamed { notes.append(.mapped) }
             if let wanted = mapping.demotedFrom {
-                notes.append(.roleTaken(by: mapper.columnKeeping(wanted) ?? column.name, role: wanted))
+                // `tookRole` only knows the winner once the loop has reached it, and a column the
+                // user named can sit later in the file than the guess it displaces. `claimedBy`
+                // knows it whatever the order — without which a demoted column names itself.
+                let winner = mapper.columnKeeping(wanted) ?? mapper.claimedBy[wanted] ?? column.name
+                notes.append(.roleTaken(by: winner, role: wanted))
             }
             // An `aux` channel nobody named is one the importer could make nothing of: it is in
             // the session under its own name and no object picker will suggest it for anything.
             if case .aux = mapping.role, mapping.demotedFrom == nil, !mapping.wasNamed {
                 notes.append(.noMeaning)
             }
-            let values = column.values.compactMap { $0 }
-            if values.isEmpty {
-                notes.append(.empty)
-            } else if let first = values.first, values.allSatisfy({ $0 == first }) {
-                notes.append(.constant(first))
-            }
         } else {
-            notes.append(column.values.contains { $0 != nil } ? .noMeaning : .empty)
+            notes.append(.noMeaning)
         }
-        switch column.unit {
-        case .custom(let text): notes.append(.unknownUnit(text))
-        // Only worth raising for a channel the app could not identify. A gear or a lap number is
-        // measured in nothing, and saying so about every one of them buries the real warnings.
-        case .none where mapping.map { !ChannelRole.standardRoles.contains($0.role) } ?? true:
-            notes.append(.noUnit)
-        default: break
+        if mapping != nil && !built {
+            // Something claimed the column and no channel came of it, which `makeChannel` only
+            // does when nothing in it is a usable number — every sample empty, or NaN, or
+            // infinite. `compactMap` alone would not notice the last two.
+            notes.append(.empty)
+        }
+        if built {
+            let values = column.values.compactMap { $0 }.filter(\.isFinite)
+            if let first = values.first, values.allSatisfy({ $0 == first }) { notes.append(.constant(first)) }
+            switch column.unit {
+            case .custom(let text): notes.append(.unknownUnit(text))
+            // Worth raising for anything that is actually measured in something. A gear or a lap
+            // number is not, and saying so about every one of them buries the real warnings.
+            case .none where !unitlessRoles.contains(mapping?.role ?? .time):
+                notes.append(.noUnit)
+            default: break
+            }
         }
         return ImportReport.Column(
             id: index, name: column.name, source: column.source, unit: column.unit,
-            role: mapping?.role, notes: notes)
+            role: built ? mapping?.role : nil, notes: notes)
     }
 }

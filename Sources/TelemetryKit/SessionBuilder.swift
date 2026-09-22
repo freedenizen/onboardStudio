@@ -94,15 +94,18 @@ public enum SessionBuilder {
 
         for (index, column) in table.columns.enumerated() {
             guard let mapping = mapper.map(column) else {
-                report.columns.append(ColumnMapper.reportedColumn(index, column, mapping: nil, mapper: mapper))
+                report.columns.append(
+                    ColumnMapper.reportedColumn(index, column, mapping: nil, built: false, mapper: mapper))
                 continue
             }
             let (finalRole, effectiveColumn) = (mapping.role, mapping.column)
-            guard var channel = makeChannel(role: finalRole, column: effectiveColumn, times: table.times) else {
-                report.columns.append(ColumnMapper.reportedColumn(index, effectiveColumn, mapping: nil, mapper: mapper))
-                continue
-            }
-            report.columns.append(ColumnMapper.reportedColumn(index, effectiveColumn, mapping: mapping, mapper: mapper))
+            // A column something claimed but no channel came of is a different story from one
+            // nothing claimed, so the report is told which happened rather than being handed nil.
+            let made = makeChannel(role: finalRole, column: effectiveColumn, times: table.times)
+            report.columns.append(
+                ColumnMapper.reportedColumn(
+                    index, effectiveColumn, mapping: mapping, built: made != nil, mapper: mapper))
+            guard var channel = made else { continue }
             let recordedUnit = channel.unit
             channel = channel.convertedToCanonicalUnit()
             if channel.unit != recordedUnit { recordedUnits[finalRole] = recordedUnit }
