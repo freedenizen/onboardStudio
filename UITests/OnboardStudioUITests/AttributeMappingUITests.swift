@@ -66,10 +66,32 @@ final class AttributeMappingUITests: OnboardStudioUITestCase {
 
         let scope = app.popUpButtons["attributes.scope"]
         choosePopUpItem("All projects", in: scope)
-        // No file is in view for the global mapping, so no column can be offered for a source.
-        let source = app.popUpButtons["attribute.speed.source"]
-        XCTAssertTrue(source.waitForExistence(timeout: Self.timeout))
+        // The global mapping is still editable: a column can be typed even for a file that is
+        // not open, which is what a mapping meant to apply to every later import needs.
+        XCTAssertTrue(app.textFields["attribute.speed.source"].waitForExistence(timeout: Self.timeout))
         choosePopUpItem("This project", in: scope)
         XCTAssertTrue(app.popUpButtons["attribute.speed.sourceUnit"].waitForExistence(timeout: Self.timeout))
+    }
+
+    /// #196: a row nobody has pinned is still being fed by a column, and the table has to say
+    /// which. The fixture's Speed comes from a column called `Speed`, and nothing is mapped.
+    @MainActor
+    func testARowSaysWhichColumnItIsFedBy() throws {
+        launch()
+        addFixtureData()
+        openWindowOnTheFixtureInput()
+
+        let row = app.staticTexts["attribute.speed"]
+        XCTAssertTrue(row.waitForExistence(timeout: Self.timeout), "No Speed row")
+        XCTAssertTrue(
+            text(of: row).lowercased().contains("speed"),
+            "The row does not name the column it comes from: \(text(of: row))")
+
+        // And the field's placeholder names it, rather than a bare "Automatic".
+        let source = app.textFields["attribute.speed.source"]
+        XCTAssertTrue(source.waitForExistence(timeout: Self.timeout))
+        XCTAssertTrue(
+            (source.placeholderValue ?? "").contains("Automatic ("),
+            "Automatic does not say what it resolves to: \(source.placeholderValue ?? "nil")")
     }
 }

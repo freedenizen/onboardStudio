@@ -53,10 +53,19 @@ struct DataInputAttributesSection: View {
         }
     }
 
+    /// The column the importer matched to each attribute, so a row that pins only a unit still
+    /// says where its numbers come from (#196).
+    private var detectedSources: [String: String] {
+        guard let session else { return [:] }
+        return session.channels.reduce(into: [:]) { sources, entry in
+            sources[entry.key.identifier] = entry.value.name
+        }
+    }
+
     private func summary(of role: ChannelRole) -> String {
         let resolved = mappings.resolved(role.identifier)
         var parts: [String] = []
-        if let source = resolved.source { parts.append(source) }
+        if let source = resolved.source ?? detectedSources[role.identifier] { parts.append(source) }
         if role.kind == .state {
             parts.append(resolved.threshold.map { "on at \($0)" } ?? "on automatically")
         } else if let unit = resolved.sourceUnit {

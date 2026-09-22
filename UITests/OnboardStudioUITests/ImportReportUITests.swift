@@ -61,9 +61,10 @@ final class ImportReportUITests: OnboardStudioUITestCase {
         XCTAssertTrue(showAll.waitForExistence(timeout: Self.timeout), "No way to see every attribute")
         showAll.click()
 
-        let source = app.popUpButtons["attribute.brakePressureFront.source"]
-        XCTAssertTrue(source.waitForExistence(timeout: Self.timeout), "No Brake pressure (front) row")
-        choosePopUpItem("brake_pressure_front", in: source)
+        XCTAssertTrue(
+            app.staticTexts["attribute.brakePressureFront"].waitForExistence(timeout: Self.timeout),
+            "No Brake pressure (front) row")
+        setSource(of: "brakePressureFront", to: "brake_pressure_front")
 
         // Once it is mapped, the unit the file declared for that column is what it reads in, and
         // bar is one of the units it can then be shown in.

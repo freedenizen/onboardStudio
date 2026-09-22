@@ -25,8 +25,10 @@ struct AttributeMappingGrid: View {
                 ForEach(rows, id: \.identifier) { role in
                     AttributeRow(
                         role: role, level: level, resolver: resolver, columns: sourceColumns,
-                        detected: detectedUnits[role.identifier], sourceWidth: Self.sourceWidth,
-                        unitWidth: Self.unitWidth, write: { write(role, $0) })
+                        detected: detectedUnits[role.identifier],
+                        detectedSource: detectedSources[role.identifier],
+                        sourceWidth: Self.sourceWidth, unitWidth: Self.unitWidth,
+                        write: { write(role, $0) })
                 }
             }
             .listStyle(.inset(alternatesRowBackgrounds: true))
@@ -56,12 +58,21 @@ struct AttributeMappingGrid: View {
         .padding(.horizontal, 16).padding(.vertical, 8)
     }
 
+    /// What this scope does, and — where the scope covers more than one file — which file the
+    /// automatic values in the table are being read from, so they are not mistaken for something
+    /// true of every file.
     private var explanation: String {
+        let readingFrom = readFileName.map { " Reading from \($0)." } ?? ""
         switch scope {
-        case .global: "Set once here and every later import follows."
-        case .project: "This project only; inputs and objects can still differ."
-        case .input: "This file only, when it is the exception."
+        case .global: return "Set once here and every later import follows." + readingFrom
+        case .project: return "This project only; inputs and objects can still differ." + readingFrom
+        case .input: return "This file only, when it is the exception."
         }
+    }
+
+    private var readFileName: String? {
+        guard session != nil else { return nil }
+        return editor?.project.dataInputs.first?.label
     }
 
     // MARK: - What the chain looks like from here
@@ -96,10 +107,19 @@ struct AttributeMappingGrid: View {
             input: settings?.attributeMappings ?? AttributeMappingTable())
     }
 
-    /// The columns of the file being mapped. Empty for the global mapping, where no file is in
-    /// view and the column a logger always writes has to be typed rather than picked.
-    private var sourceColumns: [String] {
-        scope == .global ? [] : (session?.sourceColumns ?? [])
+    /// The columns to offer as sources. Taken from whichever file is in view even at the wider
+    /// scopes: a logger writes the same columns every time, so the open file is the best list
+    /// there is for saying what every later import should do.
+    private var sourceColumns: [String] { session?.sourceColumns ?? [] }
+
+    /// The column the importer actually matched to each attribute — the channel's own name. This
+    /// is what *Automatic* means in the source column, and without it a row nobody has pinned
+    /// reads as though nothing were feeding it (#196).
+    private var detectedSources: [String: String] {
+        guard let session else { return [:] }
+        return session.channels.reduce(into: [:]) { sources, entry in
+            sources[entry.key.identifier] = entry.value.name
+        }
     }
 
     private var detectedUnits: [String: TelemetryUnit] {
@@ -147,6 +167,8 @@ struct AttributeRow: View {
     let columns: [String]
     /// What the file said this attribute's numbers are in, if anything.
     let detected: TelemetryUnit?
+    /// The column the importer matched to this attribute, if it matched one.
+    let detectedSource: String?
     let sourceWidth: CGFloat
     let unitWidth: CGFloat
     let write: (AttributeMapping) -> Void
@@ -177,7 +199,16 @@ struct AttributeRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("attribute.\(role.identifier)")
-            popUp(.source, automatic: "Any column").frame(width: sourceWidth)
+            SourceColumnField(
+                pinned: mine.source, detected: detectedSource, columns: columns,
+                identifier: "attribute.\(role.identifier).source",
+                write: { column in
+                    var mapping = mine
+                    mapping.source = column
+                    write(mapping)
+                }
+            )
+            .frame(width: sourceWidth)
             if role.kind == .state {
                 // A state has no unit to be shown in; what it needs is the level at which the
                 // channel it is mapped to counts as on. One field, spanning both unit columns.
@@ -194,7 +225,9 @@ struct AttributeRow: View {
     /// reading and a row somebody has is obvious.
     private var summary: String {
         var parts: [String] = []
-        if let source = resolved.source { parts.append(source) }
+        // The source in force, however it was arrived at. A row that pins nothing is still being
+        // fed by something, and saying so is the point (#196).
+        if let source = resolved.source ?? detectedSource { parts.append(source) }
         // A state has no unit to report; what it has is the level it counts as on at.
         if role.kind == .state {
             parts.append(resolved.threshold.map { "on at \($0)" } ?? "on automatically")
@@ -249,9 +282,18 @@ struct AttributeRow: View {
     private func popUp(_ field: AttributeMappingField, automatic: String) -> some View {
         let mine = value(of: field, in: mine)
         // For the source unit, "what the level above said" is the file itself when no level spoke.
+        // What the level above said, falling back to what the file itself gives — the unit it
+        // declared, and the column the importer matched. Without these, *Automatic* is a word
+        // rather than an answer.
         let above =
             value(of: field, in: inherited)
-            ?? (field == .sourceUnit ? detected.map(\.symbol).flatMap { $0.isEmpty ? nil : $0 } : nil)
+            ?? {
+                switch field {
+                case .sourceUnit: detected.map(\.symbol).flatMap { $0.isEmpty ? nil : $0 }
+                case .source: detectedSource
+                default: nil
+                }
+            }()
         let options = options(field)
         return Picker(field.rawValue, selection: binding(field)) {
             Text(above.map { "Automatic (\($0))" } ?? automatic).tag("")

@@ -116,15 +116,20 @@ class OnboardStudioUITestCase: XCTestCase {
         reveal(popUp)
         popUp.click()
         let entry = popUp.menus.menuItems[item]
-        if entry.waitForExistence(timeout: 3) {
-            entry.click()
-            return
-        }
-        // A menu of thirty-odd columns scrolls, and what is scrolled out is not in the tree. An
-        // open NSMenu takes type-select, which reaches an item wherever it is.
-        app.typeText(item)
-        app.typeKey(.return, modifierFlags: [])
-        XCTAssertEqual(popUp.value as? String, item, "Type-select did not reach “\(item)”")
+        XCTAssertTrue(entry.waitForExistence(timeout: Self.timeout), "No pop-up item “\(item)”")
+        entry.click()
+    }
+
+    /// Types the column an attribute is read from. A field rather than a pop-up because a list of
+    /// forty columns is not something to hunt through, and because a menu that long scrolls its
+    /// items out of the accessibility tree (#195).
+    func setSource(of attribute: String, to column: String) {
+        let field = app.textFields["attribute.\(attribute).source"]
+        XCTAssertTrue(field.waitForExistence(timeout: Self.timeout), "No source field for \(attribute)")
+        reveal(field)
+        field.click()
+        app.typeKey("a", modifierFlags: .command)
+        field.typeText(column + "\n")
     }
 
     /// Chooses `item` in the pop-up button whose current value is `value`.
@@ -191,17 +196,34 @@ class OnboardStudioUITestCase: XCTestCase {
             file: file, line: line)
     }
 
-    /// Scrolls the nearest scroll view until `element` is inside it (forms in sheets and the
-    /// inspector are longer than their window).
+    /// Scrolls until `element` can be clicked (forms in sheets and the inspector are longer than
+    /// their window).
+    ///
+    /// The nearest scroll view first, which is what most callers need. Failing that, every scroll
+    /// view in the app: an element in a *different window* — the attribute table has its own —
+    /// is not in the first window's scroll view at all, and a lazy list leaves an off-screen row
+    /// with no frame to compare against, so `isHittable` is the only honest test.
     func reveal(_ element: XCUIElement) {
         let sheet = app.sheets.firstMatch
-        let scrollView = (sheet.exists ? sheet : app.windows.firstMatch).scrollViews.firstMatch
-        guard scrollView.exists else { return }
-        var attempts = 0
-        while attempts < 8, !scrollView.frame.contains(element.frame) {
-            let delta = element.frame.midY < scrollView.frame.midY ? 120.0 : -120.0
-            scrollView.scroll(byDeltaX: 0, deltaY: delta)
-            attempts += 1
+        let nearest = (sheet.exists ? sheet : app.windows.firstMatch).scrollViews.firstMatch
+        if nearest.exists {
+            var attempts = 0
+            while attempts < 8, !nearest.frame.contains(element.frame) {
+                let delta = element.frame.midY < nearest.frame.midY ? 120.0 : -120.0
+                nearest.scroll(byDeltaX: 0, deltaY: delta)
+                attempts += 1
+            }
+        }
+        guard !element.isHittable else { return }
+        for scrollView in app.scrollViews.allElementsBoundByIndex {
+            for _ in 0..<12 {
+                if element.isHittable { return }
+                scrollView.scroll(byDeltaX: 0, deltaY: -80)
+            }
+            for _ in 0..<12 {
+                if element.isHittable { return }
+                scrollView.scroll(byDeltaX: 0, deltaY: 80)
+            }
         }
     }
 
