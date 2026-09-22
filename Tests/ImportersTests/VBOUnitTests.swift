@@ -132,6 +132,17 @@ struct VBOSampleTests {
         #expect(try column(table, "RPM").unit == .rpm)
     }
 
+    /// The two VBVDHD2 logs carry a real `[laptiming]` line, and it is what settled the
+    /// coordinate order: read the other way round this gate lands at latitude 122.
+    @Test func aRealLogsStartLineIsWhereTheSessionIs() throws {
+        guard let table = try sample("vbvdhd2-VBOX0133.vbo") else { return }
+        let start = try #require(table.lapGeometry.start)
+        #expect(abs(start.centreLatitude - 39.5385) < 0.001, "the session runs at 39.537 N")
+        #expect(abs(start.centreLongitude - -122.3312) < 0.001, "and 122.332 W")
+        #expect(start.label == "Start / Finish")
+        #expect(table.lapGeometry.splits.isEmpty, "this logger recorded no sector gates")
+    }
+
     /// Every sample file must at least import, whatever its vintage and spacing.
     @Test(arguments: [
         "racelogic-pro-lite-2004.vbo", "vbvdhd2-VBOX0133.vbo", "vbvdhd2-VBOX0134.vbo",
@@ -141,5 +152,57 @@ struct VBOSampleTests {
         guard let table = try sample(name) else { return }
         #expect(!table.columns.isEmpty, "\(name) produced no columns")
         #expect(!table.times.isEmpty, "\(name) produced no samples")
+    }
+}
+
+/// #71: `[laptiming]` is the only place in any surveyed format where start/finish and sector
+/// geometry is stored as geometry rather than as lap times.
+@Suite("VBO lap timing gates")
+struct VBOLapTimingTests {
+    func geometry() throws -> LapGeometry {
+        try VBOImporter().importFile(at: try Fixtures.url("vbox-canbus.vbo")).lapGeometry
+    }
+
+    /// **Longitude first, then latitude** — the reverse of `[data]`. Settled against two real
+    /// VBVDHD2 logs: the session sits at 39.537 N, 122.332 W, so 7339.87 minutes (122.331°) can
+    /// only be the longitude. Read the other way round the gate lands at latitude 122, which does
+    /// not exist.
+    @Test func coordinatesAreLongitudeThenLatitude() throws {
+        let start = try #require(try geometry().start)
+        #expect(abs(start.startLatitude - 39.538_480) < 1e-5)
+        #expect(abs(start.startLongitude - -122.331_177) < 1e-5, "minutes, west positive, negated")
+        #expect(abs(start.endLatitude - 39.538_571) < 1e-5)
+        #expect(start.label == "Start / Finish")
+    }
+
+    /// The gate's own width beats any default: a logger draws the line as wide as the track is.
+    @Test func theGateKnowsItsOwnWidth() throws {
+        let start = try #require(try geometry().start)
+        // The endpoints are ~10 m apart, so the line reaches about 5 m either side of centre.
+        #expect(start.halfWidthMeters > 3 && start.halfWidthMeters < 8, "\(start.halfWidthMeters)")
+        #expect(abs(start.centreLatitude - 39.538_525) < 1e-5)
+    }
+
+    @Test func splitsAreSectorsAndKeepTheirOrder() throws {
+        let geometry = try geometry()
+        #expect(geometry.gates.count == 4)
+        #expect(geometry.splits.count == 2, "the start/finish is not a sector boundary")
+        #expect(geometry.splits.first?.label == "Split 1")
+        #expect(geometry.splits.last?.label.isEmpty == true, "a gate the logger named nothing")
+        #expect(geometry.gates.last?.kind == .finish)
+    }
+
+    @Test func aFileWithNoSectionCarriesNoGates() throws {
+        let plain = try VBOImporter().importFile(at: try Fixtures.url("session.vbo"))
+        #expect(plain.lapGeometry.isEmpty)
+    }
+
+    /// Garbage in that section must be skipped, not guessed at.
+    @Test func unreadableLinesAreIgnored() {
+        #expect(VBOImporter.gate("Start +1 +2 +3 ¬ short") == nil, "too few numbers")
+        #expect(VBOImporter.gate("Middle +1 +2 +3 +4 ¬ x") == nil, "not a kind this format has")
+        #expect(VBOImporter.gate("") == nil)
+        #expect(VBOImporter.gate("Start a b c d ¬ x") == nil, "not numbers")
+        #expect(VBOImporter.gate("Start +7339.87 +2372.30 +7339.88 +2372.31") != nil, "no label is fine")
     }
 }

@@ -7,6 +7,39 @@ import TelemetryKit
 // MARK: - The start/finish line, and track definitions as files
 
 extension EditorModel {
+    /// Uses the start/finish and sector gates a file carried, for a file just added that has no
+    /// line of its own yet (#71). Returns whether it had any.
+    ///
+    /// Only for a file *being added*: opening a saved project must keep the line it was saved
+    /// with, whatever the file says.
+    @discardableResult
+    func applyLapGeometry(of session: TelemetrySession, to id: InputID) -> Bool {
+        guard let start = session.lapGeometry.start else { return false }
+        guard case .data(let existing)? = project.input(id)?.kind, existing.lapLine == nil else { return false }
+        let splits = session.lapGeometry.splits
+        updateInput(id, name: "Use the File's Start/Finish") {
+            guard case .data(var settings) = $0.kind else { return }
+            settings.lapLine = Self.lapLine(from: start)
+            if !splits.isEmpty {
+                settings.sectors = SectorSpec(
+                    mode: .manual, count: splits.count + 1, lines: splits.map(Self.lapLine(from:)))
+            }
+            $0.kind = .data(settings)
+        }
+        let sectors = splits.isEmpty ? "" : " and \(splits.count + 1) sectors"
+        statusMessage = "Used the start/finish line\(sectors) this file was recorded with."
+        return true
+    }
+
+    /// A gate as the lap detector wants it: the middle of the line, and how far it reaches either
+    /// side. The heading is deliberately left unset — a gate says where the line is and not which
+    /// way the car crosses it, and the two perpendiculars are equally consistent with it.
+    static func lapLine(from gate: LapGate) -> LapLineSpec {
+        LapLineSpec(
+            latitude: gate.centreLatitude, longitude: gate.centreLongitude,
+            halfWidthMeters: gate.halfWidthMeters)
+    }
+
     /// Offers the line the data itself suggests, so a session opens with something workable rather
     /// than with nothing.
     ///

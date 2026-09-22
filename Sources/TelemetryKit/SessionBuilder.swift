@@ -125,6 +125,7 @@ public enum SessionBuilder {
         session.recordedUnits = recordedUnits
         session.sourceColumns = table.columns.map(\.name)
         session.importReport = report
+        session.lapGeometry = rawTable.lapGeometry
         addDerivedChannels(to: &session, options: options)
         for field in options.calculatedFields {
             try? session.addCalculatedField(field)

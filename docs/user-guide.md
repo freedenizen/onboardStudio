@@ -151,6 +151,11 @@ number all session (usually one that is not connected), and which units the app 
 It shows only the columns worth a look; *Show every column* gives the rest. A file where
 everything read cleanly says so in one line.
 
+**A file that knows where the line is.** Racelogic VBO files record the start/finish line, and
+any sector gates, as actual geometry — the only format that does. Add one and the line and sectors
+come with it, and the app says so rather than guessing from the trace. Opening a project you saved
+earlier never changes its line, whatever the file says.
+
 **The circuit.** Onboard Studio recognises where you were driving from the GPS trace, against a
 bundled list of 1,290 motorsport venues — nothing is fetched and nothing is sent anywhere. The
 *Track* section names it, says how sure it is, and lets you search for the right one if it guessed
