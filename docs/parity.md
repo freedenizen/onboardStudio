@@ -20,7 +20,8 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 
 | RaceRender | Onboard Studio | Notes |
 |---|---|---|
-| Column → channel mapping with fallbacks, unit factors | ✅ | Role and unit overrides per column |
+| Column → channel mapping with fallbacks, unit factors | ✅ | Attribute-first mapping: one row per attribute, set globally / per project / per input |
+| Unit conversion for display | ✅ | Source unit and display unit per attribute, overridable per object; pressure, temperature, speed, length and angle families |
 | Sample-rate boost with GPS-aware interpolation | ✅ | Resample + GPS-update-aware policy |
 | Smoothing | ✅ | |
 | Speed / heading from position, heading offset | ◐ | Derived speed/heading/distance; no heading offset field |
@@ -90,7 +91,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | RaceRender CSV, GPX, TCX, FIT, NMEA, VBO, generic CSV/TSV (TrackAddict, Harry's, RaceChrono, AIM, MoTeC…) | ✅ | Own FIT decoder; header profiles for common apps |
-| RaceChrono `.rcz` archives | ❌ | Export CSV v3 from RaceChrono instead |
+| RaceChrono `.rcz` archives | ✅ | Imports on its own, with the logger's own lap list |
 | GoPro GPMF embedded GPS | ✅ | Own MP4/GPMF reader (AVFoundation hides the track) |
 | Sony / DJI / Garmin camera metadata | ◐ | DJI SRT and Garmin FIT sidecars, Sony XML clock; Sony `rtmd` embedded GPS not read |
 

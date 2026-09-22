@@ -95,7 +95,7 @@ can carry; the answer is a migration pinning the old value, never regenerating t
   "schemaVersion": 1,
   "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null,
                 "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } },
-                "overlayOpacity": 1 },
+                "overlayOpacity": 1, "speedUnit": "automatic", "attributeMappings": {} },
   "export": { "codec": "h264", "width": 1920, "height": 1080, "frameRate": 30, "videoBitrate": 16000000,
               "audioBitrate": 192000, "audioSampleRate": 48000, "audioChannels": 2 },
   "inputs": [ … ],
@@ -121,6 +121,7 @@ Data input settings (all optional):
 | `importerID` | force an importer (`racechrono-csv`, `gpx`, …) instead of auto-detection |
 | `roleOverrides` | column name → channel role identifier (`speed`, `rpm`, `canbus:Coolant`, `obd:Coolant`, `aux:Oil temp`) |
 | `unitOverrides` | column name → unit text (`km/h`, `mph`, `ft`, …) |
+| `attributeMappings` | this input's attribute mapping — see below. The bottom level of the chain; `roleOverrides` and `unitOverrides` are column-keyed and still win over it, so a project saved before attributes existed keeps the mapping it had |
 | `deriveSpeedFromPosition`, `deriveHeadingFromPosition` | derive from GPS when the file lacks the channel |
 | `resampleHertz` | resample linear channels to this rate (`null` = as recorded) |
 | `smoothingSeconds` | moving-average window (0 = off) |
@@ -151,10 +152,49 @@ installed (`brew install ffmpeg`, or set `ONBOARD_FFMPEG`); the converted copy l
 
 Image inputs: `{ "image": { "_0": {} } }` with `source.path` pointing at a PNG/JPEG/HEIC/TIFF.
 
+## Attribute mappings
+
+Attributes are the app's own vocabulary for what a value means — `speed`, `brakePressureFront`,
+`absActive` — and never the source's name for a channel. `canbus:…`, `obd:…` and `aux:…` carry the
+logger's own name, so they are what an attribute is mapped **to**, never a key here.
+
+The same table appears in three places, each deviating from the one above it: app preferences
+(`attributeMappings`, JSON text), `settings.attributeMappings` on the project, and
+`attributeMappings` on a data input. Each field resolves on its own, so pinning a display unit
+does not also pin the source column.
+
+```json
+"attributeMappings": {
+  "brakePressureFront": { "source": "brake_pressure_front", "sourceUnit": "kPa", "displayUnit": "bar" },
+  "absActive": { "source": "analog_1", "threshold": 1500 }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `source` | the file column this attribute is read from; absent = whichever column the importer matched |
+| `sourceUnit` | what that column's numbers are in; absent = what the file declared. Changes how values are *read*, never how they are shown |
+| `displayUnit` | what objects show it in; absent = the source unit |
+| `threshold` | for a **state** attribute (ABS, traction control, pit limiter), the level it counts as on at. Such attributes have no unit to be shown in |
+
+Units are text (`kPa`, `°C`) rather than an enum, so a unit a later build understands survives
+being saved by this one. A row with every field absent is dropped, so "cleared" and "never touched"
+are the same document.
+
+An absent table is automatic on every field, which is exactly what a project saved before this
+existed did — so there is no migration, and such a project renders unchanged.
+
 ## Display objects
 
 Every object has `id`, `label`, `inputID`, `frame` (unit rectangle, top-left origin, 0…1 of the
 output), `opacity`, `isVisible`, and a `kind`. Draw order is array order (first = bottom).
+
+`displayUnit` (optional) pins the unit this one object draws its channel in — `"bar"`, `"°F"`,
+`"ft"` — whatever the attribute's own display unit says. Absent means follow the attribute, which
+is what every project saved before it existed did, so there is no migration. It reaches only the
+channels the object draws a *number* for, and a unit the values cannot be converted into is
+ignored rather than relabelling them. Speed keeps its own `speedUnit` on the params, because that
+is what older projects carry and it spells km/h `kph` where this would spell it `km/h`.
 
 | kind | params |
 |---|---|

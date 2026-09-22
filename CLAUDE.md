@@ -61,6 +61,12 @@ swift run onboard bench --export --codec hevc --seconds 60
   bench against a budget; red opens the `nightly-red` issue.
 - Every commit is SSH-signed (key lives in the 1Password agent; `SSH_AUTH_SOCK` must point at it).
 - Conventional Commits subjects: `feat(importers): …`, `fix(mediakit): …`, `test(ui): …`, `ci: …`.
+- **Every user-visible change is documented in the same PR that makes it.** A feature nobody can
+  find is not finished. `docs/user-guide.md` for what it does and where it is; a journey in
+  `docs/user-journeys.md` (numbered, naming the XCUITest that drives it) when it is a new thing a
+  user *does*; `docs/formats.md` for anything about a file format; `docs/project-format.md` for a
+  new field in the document; `docs/parity.md` when it changes what we do or do not have against
+  RaceRender. Say what changed for the user, not what changed in the code.
 - Every behaviour change ships unit tests. Parsers and renderers test against `Tests/Fixtures`;
   renderers additionally use golden images.
 - `swift format` (`.swift-format`) and SwiftLint (`.swiftlint.yml`) are enforced by the pre-commit
