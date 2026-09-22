@@ -173,6 +173,9 @@ struct RaceChronoCSVImporterTests {
         let table = try RaceChronoCSVImporter().importFile(at: try Fixtures.url("racechrono-v3-canbus.csv"))
         #expect(table.column(named: "steering_angle")?.suggestedRole == .canbus("steering_angle"))
         #expect(table.column(named: "coolant_temp")?.suggestedRole == .canbus("coolant_temp"))
+        // RaceChrono spells it `.C`. Reading it is what lets the coolant temperature be shown in
+        // °F at all — an unrecognised spelling belongs to no family and converts to nothing.
+        #expect(table.column(named: "coolant_temp")?.unit == .celsius)
         let canSpeed = table.columns.last { $0.name == "speed" }
         #expect(canSpeed?.source == "200: canbus" && canSpeed?.suggestedRole == .canbus("speed"))
 
@@ -316,7 +319,9 @@ struct RaceChronoV2Tests {
         #expect(table.column(named: "lateral_acc")?.suggestedRole == .lateralG)
         #expect(table.column(named: "trap_name")?.values.allSatisfy { $0 == nil } == true)
         #expect(table.column(named: "steering_angle")?.unit == .degrees)
-        #expect(table.column(named: "x_gyro")?.unit == .custom("deg/s"))
+        // Was `custom("deg/s")` until the spelling was read; a custom unit belongs to no family
+        // and so converts to nothing.
+        #expect(table.column(named: "x_gyro")?.unit == .degreesPerSecond)
     }
 
     @Test func v2SessionHasLapsAndCanonicalChannels() throws {
