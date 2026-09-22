@@ -107,9 +107,49 @@ role (speed, RPM, latitude…) with a unit; fix a misdetected column here. *Proc
 resampling, smoothing, speed/heading from GPS and calculated fields (`kph = speed * 3.6`).
 *Laps* come from the file when it has them, or from a start/finish line you pick on the map.
 
-Supported files: RaceChrono (CSV v2/v3), RaceRender CSV, GPX, TCX, Garmin FIT, NMEA, Racelogic
-VBO, DJI SRT, GoPro GPMF (inside the video) and generic CSV/TSV from most logging apps. Details
-and column names are in [formats.md](formats.md).
+Supported files: RaceChrono (CSV v2/v3 and `.rcz` archives), RaceRender CSV, GPX, TCX, Garmin FIT,
+NMEA, Racelogic VBO, DJI SRT, GoPro GPMF (inside the video) and generic CSV/TSV from most logging
+apps. Details and column names are in [formats.md](formats.md).
+
+### Attributes: what your channels mean
+
+Your logger names its channels its own way. One car's ABS light is `canbus:analog_1`; the same
+brake sensor is `brake_pressure_front` in a RaceChrono CSV and `66569` in the `.rcz` of the very
+same session. **Attributes** are the app's names for what those numbers *mean* — Speed, Brake
+pressure (front), Coolant temperature, ABS — and they are the same whatever file you opened.
+
+**Map Attributes…** in the data inspector (or in Settings) opens the attribute window. One row per
+attribute, three columns:
+
+| Column | What it sets |
+| --- | --- |
+| **From** | which column of your file feeds this attribute. Type to filter; the placeholder shows the column the app matched on its own. |
+| **Reads** | what the file's numbers are in. Usually the file says, and the app shows it; set it when the file is silent or wrong. This changes how numbers are *read*, never how they are shown. |
+| **Shows** | what every object displays it in. Brake pressure logged in kPa, shown in bar. Only units it can actually convert to are offered. |
+
+An attribute that is either on or off — ABS, traction control, pit limiter — has no unit to be
+shown in. Its row asks for the level it counts as on at instead, because a logger usually records
+these as a raw analog channel rather than a yes or no.
+
+**Applies to** at the top chooses who the mapping is for:
+
+- **All projects** — set once, and every file you import afterwards follows it. This is the one to
+  use for your own car: tell the app once that Brake pressure comes from `brake_pressure_front` in
+  kPa and should be shown in bar.
+- **This project** — where one project differs.
+- **A data input** — where one file is the exception.
+
+Each level follows the one above unless you set it, so changing the global mapping moves
+everything that has not been pinned and leaves what you did pin alone. A single object can differ
+again — see *Units* under [Objects](#5-objects).
+
+### What the import read
+
+The attribute window's **Import** tab says what became of every column of the file: which ones
+became channels, which of three columns called `speed` kept the role, which sensor read the same
+number all session (usually one that is not connected), and which units the app did not recognise.
+It shows only the columns worth a look; *Show every column* gives the rest. A file where
+everything read cleanly says so in one line.
 
 **The circuit.** Onboard Studio recognises where you were driving from the GPS trace, against a
 bundled list of 1,290 motorsport venues — nothing is fetched and nothing is sent anywhere. The
@@ -182,6 +222,22 @@ a tenth of the way up for analogue levels behind a plain light. Any channel and 
 condition can be ≥, ≤, = or ≠.
 
 The timing panel's headings, lap numbers and comparison lap (best or previous) are settings too.
+
+### Units on an object
+
+An object shows its channel in whatever the attribute's *Shows* unit says, and a **Unit** picker
+on the object overrides it for that one object — a second brake bar in psi beside one in bar, an
+altitude readout in feet in a project working in metres. *Automatic* follows the attribute, and
+the caption says what that currently amounts to. Only units the channel can actually be converted
+into are offered, so a temperature gauge is never asked whether it would like to be in bar.
+
+Speed keeps its own picker (mph, kph, m/s), which is what projects saved before attributes existed
+already use.
+
+A gauge or bar **added** while a data file is loaded takes its scale and unit label from what that
+channel actually reads, rather than the template's 0–100 %. A brake pressure running to 1900 kPa
+gets a 0–1900 kPa scale instead of a bar pinned at full all lap. Opening a saved project never
+rescales anything: it renders the way you left it.
 
 ## 6. Timeline segments
 

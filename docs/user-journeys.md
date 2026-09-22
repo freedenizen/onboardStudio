@@ -236,6 +236,38 @@ The upload sheet needs a Google sign-in, so the UI test only checks that **Uploa
 appears after an export and opens the sheet; the upload itself is covered by `YouTubeKitTests`
 against a mock server.
 
+### J13 Tell the app what your channels mean
+*Source: #111, #89, #191, #192 — attributes are the app's words for what a value means, and every
+logger names its channels differently.*
+
+1. Add a data file and open **Map Attributes…** from its inspector. The window lists one row per
+   attribute, not per column, so nothing in it depends on which logger wrote the file.
+2. *Applies to* chooses the level: all projects, this project, or this input.
+3. A row nobody has touched still says which column feeds it — the placeholder reads
+   `Automatic (speed)` — so it is clear what the importer matched.
+4. Point **Brake pressure (front)** at the `brake_pressure_front` column by typing into *From*,
+   set *Shows* to `bar`, and the row reports `kPa → bar`.
+5. An attribute the file does not supply stays out of the way until *Show every attribute*.
+6. A channel the file names itself — `canbus:analog_1` — is offered as a **source**, never as a
+   row of its own.
+
+Tests: `AttributeMappingUITests` (mapping units, hiding unsupplied attributes, the scope picker,
+the resolved source), `ImportReportUITests.testAPressureAttributeIsMappedToAColumnAndShownInBar`,
+`testASourceChannelIsNotListedAsAnAttribute`. Model: `AttributeMappingTests`,
+`AttributeVocabularyTests`, `DisplayUnitTests`.
+
+### J14 Find out why a file imported badly
+*Source: #149 — the channel list shows what survived and says nothing about what did not.*
+
+1. Add a file whose columns are awkward — repeated names, unnamed analog inputs, sensors that
+   never move — and open the attribute window's **Import** tab.
+2. It shows only the columns worth a look: which of three columns called `speed` kept the role,
+   which read the same number all session, which units were not recognised.
+3. *Show every column* lists the rest; a file that read cleanly says so in one line.
+
+Tests: `ImportReportUITests.testExplainsWhatBecameOfEachColumn`. Model: `ImportReportTests`,
+`ImportReportNotesTests`.
+
 ## What stays manual
 
 Open and save panels, drag-and-drop from Finder, the Apple Maps background (network), Sparkle

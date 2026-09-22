@@ -115,6 +115,32 @@ Real logger files are not committed — provenance is third-party. `Tests/Fixtur
 is synthetic and reproduces the shapes above; the tests in `VBOSampleTests` run against real files
 when `ONBOARD_SAMPLES_DIR` points at a folder containing `vbo/`, and skip otherwise.
 
+## RaceChrono archive (`racechrono-rcz`)
+
+A zip. `session.json` carries the track name, RaceChrono's own track id, the best and optimal lap
+times, and a lap list with each lap's `isInvalid` flag; `sessionfragment.json` says which device
+produced which streams (type 1 GPS, 2 accelerometer, 3 gyro, 12 CAN bus).
+
+Channel members are named `channel_<deviceType>_<deviceId>_<canId>_<channelId>_<kind>`.
+
+- **GPS and IMU devices** write one file per channel, all with the same record count. Channel 1 is
+  that device's time axis as `int64` milliseconds; channel 2 is distance travelled in millimetres
+  (also `int64` — reading it as `int32` truncates it and makes every lap delta nonsense); channel
+  3 is position, an `int32` pair over **6,000,000** — degrees × 60 × 10⁵, minutes rather than the
+  1e7 most formats use. Everything else is an `int32` scalar over a fixed power of ten: speed,
+  altitude, heading, accuracy and battery over 1000, accelerometer over 10 000, gyro over 1000,
+  satellites and fix type unscaled.
+- **CAN channels** are logged at their own rates, so each has three members: `…_1_1` its
+  timestamps, `…_2_1` the distance at each sample, and `channel2_…_3` the values as `float64`.
+  The distance member only repeats the GPS device's and is ignored.
+
+The archive carries **no names** for CAN channels, so one imports as `canbus:<id>` and the user
+says what it is in the attribute table. Every device samples on its own clock, so the table's time
+axis is the union of all of them and each channel keeps the times it was really recorded at.
+
+Scales were derived by importing one session both ways and matching the archive against the CSV
+export; `RCZReferenceTests` keeps that comparison as a test.
+
 ## Generic CSV (`generic-csv`)
 
 For apps without a dedicated importer. The header is the first row with at least three fields and a
