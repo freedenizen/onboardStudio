@@ -41,12 +41,22 @@ points at that agent when committing.
 ## Tests
 
 ```sh
-swift test                                   # everything
+Scripts/test.sh quick                        # everything but the two-hour session and the fuzz suites
 swift test --filter ImportersTests           # one target
+swift test                                   # everything, as CI runs it
 UPDATE_GOLDENS=1 swift test --filter RenderKitTests   # regenerate golden images
 ```
 
-Media tests use `ffprobe` when it is installed and skip otherwise.
+Media tests use `ffprobe` when it is installed and skip otherwise; the nightly workflow is the
+one place in CI where they run.
+
+## Project rules
+
+`CLAUDE.md` and `.claude/rules/` hold the working conventions — commands, repo etiquette, the
+rules that must never be broken (no hard-coded logger channels; a saved project never renders
+differently) and the rendering, importer and UI-test pitfalls that have each cost a build cycle.
+They are written for the AI assistant and the review bot but apply to everyone; read them before
+a first change.
 
 ## Releases
 

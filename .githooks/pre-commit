@@ -1,16 +1,32 @@
 #!/usr/bin/env bash
-# Runs formatting and lint checks on staged Swift files before every commit.
+# Runs the cheap checks on what is staged before every commit: formatting and lint on Swift
+# files, actionlint when a workflow is touched, the shard check when a UI test is. Each is what
+# CI's Lint jobs would otherwise fail on ten minutes later.
 # Compatible with the bash 3.2 that ships with macOS.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
 files=()
 while IFS= read -r f; do
   [[ -n "$f" ]] && files+=("$f")
-done < <(git diff --cached --name-only --diff-filter=ACMR -- '*.swift')
-[[ ${#files[@]} -eq 0 ]] && exit 0
-echo "pre-commit: swift format lint (${#files[@]} files)"
-swift format lint --strict "${files[@]}"
-if command -v swiftlint >/dev/null; then
-  echo "pre-commit: swiftlint"
-  swiftlint lint --quiet --strict "${files[@]}"
+done < <(grep '\.swift$' <<< "$staged" || true)
+if [[ ${#files[@]} -gt 0 ]]; then
+  echo "pre-commit: swift format lint (${#files[@]} files)"
+  swift format lint --strict "${files[@]}"
+  if command -v swiftlint >/dev/null; then
+    echo "pre-commit: swiftlint"
+    swiftlint lint --quiet --strict "${files[@]}"
+  fi
+fi
+
+if grep -q '^\.github/workflows/' <<< "$staged" && command -v actionlint >/dev/null; then
+  echo "pre-commit: actionlint"
+  actionlint -ignore SC2012 -ignore SC2086
+fi
+
+# A new XCUITest class that is on no shard runs nowhere and every shard still passes.
+if grep -q '^UITests/\|^\.github/workflows/ci\.yml$' <<< "$staged"; then
+  echo "pre-commit: UI test shards"
+  Scripts/check-ui-test-shards.sh
 fi
