@@ -128,9 +128,10 @@ open OnboardStudio.xcodeproj
 Or from the command line — `Scripts/bundle-app.sh` builds `dist/OnboardStudio.app`, and
 `Scripts/make-dmg.sh` packages it into a DMG.
 
-A pull request is gated by lint, the package tests and the XCUITest journeys; the slower checks
-— CodeQL's Swift analysis, coverage, the ffprobe-backed media tests, a headless render and an
-app bundle — run on `main` after the merge and nightly, and file an issue when they fail.
+A pull request is gated by lint, the package tests, the XCUITest journeys and the commit
+signature check. CodeQL's Swift analysis runs on every PR without blocking it, and the slower
+checks — coverage, the ffprobe-backed media tests, a headless render and an app bundle — run on
+`main` after the merge and nightly, and file an issue when they fail.
 
 Further reading: [CONTRIBUTING.md](CONTRIBUTING.md) to get set up,
 [docs/architecture.md](docs/architecture.md) for how it fits together,
