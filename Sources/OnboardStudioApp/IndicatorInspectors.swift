@@ -8,34 +8,36 @@ struct IndicatorInspector: View {
 
     var body: some View {
         Section("Indicator") {
-            Picker("Symbol", selection: field(\.glyph)) {
+            Picker("Symbol", selection: field(\.glyph, "Symbol")) {
                 ForEach(IndicatorGlyph.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            CommittingTextField("Label", text: field(\.label))
-            ChannelPicker(editor: editor, object: object, selection: field(\.channel))
-            Picker("On when", selection: field(\.condition)) {
+            CommittingTextField("Label", text: field(\.label, "Label"))
+            ChannelPicker(editor: editor, object: object, selection: field(\.channel, "Channel"))
+            Picker("On when", selection: field(\.condition, "Condition")) {
                 ForEach(IndicatorCondition.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            NumberField("Threshold", value: field(\.threshold)).accessibilityIdentifier("indicator.threshold")
+            NumberField("Threshold", value: field(\.threshold, "Threshold")).accessibilityIdentifier(
+                "indicator.threshold")
             if let summary, let low = summary.minValue, let high = summary.maxValue {
                 HStack {
                     Text("In this file: \(fmt(low)) … \(fmt(high))").font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     if let suggested = params.suggestedThreshold(for: summary) {
-                        Button("Suggest \(fmt(suggested))") { update { $0.threshold = suggested } }
+                        Button("Suggest \(fmt(suggested))") { update("Threshold") { $0.threshold = suggested } }
                             .font(.caption).accessibilityIdentifier("indicator.suggest")
                     }
                 }
             }
-            NumberField("Hold on (s)", value: field(\.holdSeconds), fractionDigits: 0...2, step: 0.1)
-            NumberField("Flash (Hz, 0 = steady)", value: field(\.flashHertz), fractionDigits: 0...1, step: 0.1)
+            NumberField("Hold on (s)", value: field(\.holdSeconds, "Hold On"), fractionDigits: 0...2, step: 0.1)
+            NumberField(
+                "Flash (Hz, 0 = steady)", value: field(\.flashHertz, "Flash Rate"), fractionDigits: 0...1, step: 0.1)
         }
         Section("Look") {
-            ColorPicker("Lit", selection: color(\.onColor))
-            ColorPicker("Dim", selection: color(\.offColor))
-            Toggle("Show dim symbol when off", isOn: field(\.showWhenOff))
-            Toggle("Glow when lit", isOn: field(\.glow))
-            Toggle("Black outline", isOn: field(\.outline))
+            ColorPicker("Lit", selection: color(\.onColor, "Lit Colour"))
+            ColorPicker("Dim", selection: color(\.offColor, "Dim Colour"))
+            Toggle("Show dim symbol when off", isOn: field(\.showWhenOff, "Dim Symbol"))
+            Toggle("Glow when lit", isOn: field(\.glow, "Glow"))
+            Toggle("Black outline", isOn: field(\.outline, "Outline"))
             Text(
                 "ABS, traction/stability and brake lights need no script: pick the channel your logger "
                     + "records the event on (names differ between loggers) and the level that means \"active\"."
@@ -53,18 +55,20 @@ struct IndicatorInspector: View {
         value == value.rounded() ? String(format: "%.0f", value) : String(format: "%.2f", value)
     }
 
-    func field<T>(_ keyPath: WritableKeyPath<IndicatorParams, T>) -> Binding<T> {
-        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    func field<T>(_ keyPath: WritableKeyPath<IndicatorParams, T>, _ name: String) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update(name) { $0[keyPath: keyPath] = v } })
     }
 
-    func color(_ keyPath: WritableKeyPath<IndicatorParams, RGBAColor>) -> Binding<Color> {
-        Binding(get: { Color(params[keyPath: keyPath]) }, set: { v in update { $0[keyPath: keyPath] = RGBAColor(v) } })
+    func color(_ keyPath: WritableKeyPath<IndicatorParams, RGBAColor>, _ name: String) -> Binding<Color> {
+        Binding(
+            get: { Color(params[keyPath: keyPath]) }, set: { v in update(name) { $0[keyPath: keyPath] = RGBAColor(v) } }
+        )
     }
 
-    func update(_ change: (inout IndicatorParams) -> Void) {
+    func update(_ name: String, _ change: (inout IndicatorParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Indicator") { $0.kind = .indicator(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .indicator(new) }
     }
 }
 
@@ -75,31 +79,34 @@ struct LapPanelInspector: View {
 
     var body: some View {
         Section("Timing Panel") {
-            Toggle("Best lap", isOn: field(\.showBest))
-            if params.showBest { CommittingTextField("Heading", text: field(\.bestLabel)) }
-            Toggle("Previous lap", isOn: field(\.showPrevious))
-            if params.showPrevious { CommittingTextField("Heading", text: field(\.previousLabel)) }
-            Toggle("Current lap", isOn: field(\.showCurrent))
-            if params.showCurrent { CommittingTextField("Heading", text: field(\.currentLabel)) }
-            Toggle("Lap numbers", isOn: field(\.showLapNumbers))
-            Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 1...3)
+            Toggle("Best lap", isOn: field(\.showBest, "Best Lap"))
+            if params.showBest { CommittingTextField("Heading", text: field(\.bestLabel, "Best Lap Heading")) }
+            Toggle("Previous lap", isOn: field(\.showPrevious, "Previous Lap"))
+            if params.showPrevious {
+                CommittingTextField("Heading", text: field(\.previousLabel, "Previous Lap Heading"))
+            }
+            Toggle("Current lap", isOn: field(\.showCurrent, "Current Lap"))
+            if params.showCurrent { CommittingTextField("Heading", text: field(\.currentLabel, "Current Lap Heading")) }
+            Toggle("Lap numbers", isOn: field(\.showLapNumbers, "Lap Numbers"))
+            Stepper("Decimals: \(params.decimals)", value: field(\.decimals, "Decimals"), in: 1...3)
         }
         Section("Deltas") {
-            Picker("Compare with", selection: field(\.reference)) {
+            Picker("Compare with", selection: field(\.reference, "Compare With")) {
                 ForEach(LapReference.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            Toggle("Speed lane", isOn: field(\.showSpeedDelta))
+            Toggle("Speed lane", isOn: field(\.showSpeedDelta, "Speed Lane"))
             if params.showSpeedDelta {
                 if object.usesSpeedUnitPicker {
-                    SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit))
+                    SpeedUnitPicker(editor: editor, object: object, selection: field(\.speedUnit, "Speed Unit"))
                 } else {
                     DisplayUnitPicker(editor: editor, object: object)
                 }
-                NumberField("Speed scale (± units)", value: field(\.speedDeltaRange))
+                NumberField("Speed scale (± units)", value: field(\.speedDeltaRange, "Speed Scale"))
             }
-            Toggle("Time lane", isOn: field(\.showTimeDelta))
+            Toggle("Time lane", isOn: field(\.showTimeDelta, "Time Lane"))
             if params.showTimeDelta {
-                NumberField("Time scale (± s)", value: field(\.timeDeltaRange), fractionDigits: 0...2, step: 0.1)
+                NumberField(
+                    "Time scale (± s)", value: field(\.timeDeltaRange, "Time Scale"), fractionDigits: 0...2, step: 0.1)
             }
             Text(
                 "Both lanes compare with the chosen lap at the same distance into the lap "
@@ -108,27 +115,29 @@ struct LapPanelInspector: View {
             .font(.caption).foregroundStyle(.secondary)
         }
         Section("Look") {
-            ColorPicker("Text", selection: color(\.textColor))
-            ColorPicker("Labels", selection: color(\.labelColor))
-            ColorPicker("Ahead", selection: color(\.aheadColor))
-            ColorPicker("Behind", selection: color(\.behindColor))
-            ColorPicker("Background", selection: color(\.backgroundColor), supportsOpacity: true)
-            Toggle("Black outline", isOn: field(\.outline))
+            ColorPicker("Text", selection: color(\.textColor, "Text Colour"))
+            ColorPicker("Labels", selection: color(\.labelColor, "Label Colour"))
+            ColorPicker("Ahead", selection: color(\.aheadColor, "Ahead Colour"))
+            ColorPicker("Behind", selection: color(\.behindColor, "Behind Colour"))
+            ColorPicker("Background", selection: color(\.backgroundColor, "Background Colour"), supportsOpacity: true)
+            Toggle("Black outline", isOn: field(\.outline, "Outline"))
         }
     }
 
-    func field<T>(_ keyPath: WritableKeyPath<LapPanelParams, T>) -> Binding<T> {
-        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    func field<T>(_ keyPath: WritableKeyPath<LapPanelParams, T>, _ name: String) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update(name) { $0[keyPath: keyPath] = v } })
     }
 
-    func color(_ keyPath: WritableKeyPath<LapPanelParams, RGBAColor>) -> Binding<Color> {
-        Binding(get: { Color(params[keyPath: keyPath]) }, set: { v in update { $0[keyPath: keyPath] = RGBAColor(v) } })
+    func color(_ keyPath: WritableKeyPath<LapPanelParams, RGBAColor>, _ name: String) -> Binding<Color> {
+        Binding(
+            get: { Color(params[keyPath: keyPath]) }, set: { v in update(name) { $0[keyPath: keyPath] = RGBAColor(v) } }
+        )
     }
 
-    func update(_ change: (inout LapPanelParams) -> Void) {
+    func update(_ name: String, _ change: (inout LapPanelParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Timing Panel") { $0.kind = .lapPanel(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .lapPanel(new) }
     }
 }
 
@@ -139,20 +148,22 @@ struct SteeringWheelInspector: View {
 
     var body: some View {
         Section("Steering Wheel") {
-            ChannelPicker(editor: editor, object: object, selection: field(\.channel))
-            NumberField("Degrees per unit", value: field(\.degreesPerUnit))
+            ChannelPicker(editor: editor, object: object, selection: field(\.channel, "Channel"))
+            NumberField("Degrees per unit", value: field(\.degreesPerUnit, "Degrees Per Unit"))
                 .help("1 for a channel in degrees, 57.3 for radians, the lock angle for a −1…1 channel")
-            Toggle("Invert direction", isOn: field(\.invert))
-            NumberField("Limit (°, 0 = none)", value: field(\.maxDegrees), fractionDigits: 0...0)
+            Toggle("Invert direction", isOn: field(\.invert, "Direction Inversion"))
+            NumberField("Limit (°, 0 = none)", value: field(\.maxDegrees, "Limit"), fractionDigits: 0...0)
         }
         Section("Look") {
-            ColorPicker("Rim", selection: color(\.rimColor), supportsOpacity: true)
-            ColorPicker("Rim edge", selection: color(\.edgeColor), supportsOpacity: true)
-            PercentSlider("Rim thickness", value: field(\.rimWidth), range: 0.04...0.4)
-            ColorPicker("Marker", selection: color(\.markerColor), supportsOpacity: true)
-            PercentSlider("Marker width", value: field(\.markerWidth), range: 0.01...0.15)
-            Toggle("Spokes", isOn: field(\.showSpokes))
-            if params.showSpokes { ColorPicker("Spokes", selection: color(\.spokeColor), supportsOpacity: true) }
+            ColorPicker("Rim", selection: color(\.rimColor, "Rim Colour"), supportsOpacity: true)
+            ColorPicker("Rim edge", selection: color(\.edgeColor, "Rim Edge Colour"), supportsOpacity: true)
+            PercentSlider("Rim thickness", value: field(\.rimWidth, "Rim Thickness"), range: 0.04...0.4)
+            ColorPicker("Marker", selection: color(\.markerColor, "Marker Colour"), supportsOpacity: true)
+            PercentSlider("Marker width", value: field(\.markerWidth, "Marker Width"), range: 0.01...0.15)
+            Toggle("Spokes", isOn: field(\.showSpokes, "Spokes"))
+            if params.showSpokes {
+                ColorPicker("Spokes", selection: color(\.spokeColor, "Spoke Colour"), supportsOpacity: true)
+            }
             Text(
                 "Make the object wide and let it hang below the frame so only the upper arc shows. "
                     + "The rim's colour carries its own transparency."
@@ -161,18 +172,20 @@ struct SteeringWheelInspector: View {
         }
     }
 
-    func field<T>(_ keyPath: WritableKeyPath<SteeringWheelParams, T>) -> Binding<T> {
-        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    func field<T>(_ keyPath: WritableKeyPath<SteeringWheelParams, T>, _ name: String) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update(name) { $0[keyPath: keyPath] = v } })
     }
 
-    func color(_ keyPath: WritableKeyPath<SteeringWheelParams, RGBAColor>) -> Binding<Color> {
-        Binding(get: { Color(params[keyPath: keyPath]) }, set: { v in update { $0[keyPath: keyPath] = RGBAColor(v) } })
+    func color(_ keyPath: WritableKeyPath<SteeringWheelParams, RGBAColor>, _ name: String) -> Binding<Color> {
+        Binding(
+            get: { Color(params[keyPath: keyPath]) }, set: { v in update(name) { $0[keyPath: keyPath] = RGBAColor(v) } }
+        )
     }
 
-    func update(_ change: (inout SteeringWheelParams) -> Void) {
+    func update(_ name: String, _ change: (inout SteeringWheelParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Steering Wheel") { $0.kind = .steeringWheel(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .steeringWheel(new) }
     }
 }
 
@@ -231,54 +244,59 @@ struct SectorPanelInspector: View {
 
     var body: some View {
         Section("Sector Times") {
-            Picker("Show", selection: field(\.display)) {
+            Picker("Show", selection: field(\.display, "Display")) {
                 ForEach(SectorPanelParams.Display.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            Picker("Compare with", selection: field(\.reference)) {
+            Picker("Compare with", selection: field(\.reference, "Compare With")) {
                 ForEach(SectorReference.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            Toggle("Sector labels", isOn: field(\.showLabels))
-            Toggle("Highlight the sector in progress", isOn: field(\.highlightCurrent))
+            Toggle("Sector labels", isOn: field(\.showLabels, "Sector Labels"))
+            Toggle("Highlight the sector in progress", isOn: field(\.highlightCurrent, "Current Sector Highlight"))
             NumberField(
-                "Hold the finished lap (s)", value: field(\.holdPreviousSeconds), fractionDigits: 0...1, step: 1)
+                "Hold the finished lap (s)", value: field(\.holdPreviousSeconds, "Hold Finished Lap"),
+                fractionDigits: 0...1, step: 1)
             Text(
                 "After the start/finish line the lap just completed stays up for this long, which is the only "
                     + "moment its last sector is readable. 0 moves on immediately."
             )
             .font(.caption).foregroundStyle(.secondary)
-            Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 1...3)
+            Stepper("Decimals: \(params.decimals)", value: field(\.decimals, "Decimals"), in: 1...3)
             Text(sectorSource).font(.caption).foregroundStyle(.secondary)
         }
         Section("Theoretical lap") {
-            Toggle("Show", isOn: field(\.showTheoretical))
+            Toggle("Show", isOn: field(\.showTheoretical, "Theoretical Lap"))
             if params.showTheoretical {
-                CommittingTextField("Heading", text: field(\.theoreticalLabel))
+                CommittingTextField("Heading", text: field(\.theoreticalLabel, "Theoretical Lap Heading"))
                 Text("Every sector's best time added together — the lap you have already driven in pieces.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         Section("Look") {
-            ColorPicker("Text", selection: color(\.textColor))
-            ColorPicker("Labels", selection: color(\.labelColor))
-            if params.highlightCurrent { ColorPicker("Sector in progress", selection: color(\.currentColor)) }
-            ColorPicker("Ahead", selection: color(\.aheadColor))
-            ColorPicker("Behind", selection: color(\.behindColor))
-            ColorPicker("Background", selection: color(\.backgroundColor), supportsOpacity: true)
-            Toggle("Black outline", isOn: field(\.outline))
+            ColorPicker("Text", selection: color(\.textColor, "Text Colour"))
+            ColorPicker("Labels", selection: color(\.labelColor, "Label Colour"))
+            if params.highlightCurrent {
+                ColorPicker("Sector in progress", selection: color(\.currentColor, "Current Sector Colour"))
+            }
+            ColorPicker("Ahead", selection: color(\.aheadColor, "Ahead Colour"))
+            ColorPicker("Behind", selection: color(\.behindColor, "Behind Colour"))
+            ColorPicker("Background", selection: color(\.backgroundColor, "Background Colour"), supportsOpacity: true)
+            Toggle("Black outline", isOn: field(\.outline, "Outline"))
         }
     }
 
-    func field<T>(_ keyPath: WritableKeyPath<SectorPanelParams, T>) -> Binding<T> {
-        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    func field<T>(_ keyPath: WritableKeyPath<SectorPanelParams, T>, _ name: String) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update(name) { $0[keyPath: keyPath] = v } })
     }
 
-    func color(_ keyPath: WritableKeyPath<SectorPanelParams, RGBAColor>) -> Binding<Color> {
-        Binding(get: { Color(params[keyPath: keyPath]) }, set: { v in update { $0[keyPath: keyPath] = RGBAColor(v) } })
+    func color(_ keyPath: WritableKeyPath<SectorPanelParams, RGBAColor>, _ name: String) -> Binding<Color> {
+        Binding(
+            get: { Color(params[keyPath: keyPath]) }, set: { v in update(name) { $0[keyPath: keyPath] = RGBAColor(v) } }
+        )
     }
 
-    func update(_ change: (inout SectorPanelParams) -> Void) {
+    func update(_ name: String, _ change: (inout SectorPanelParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Sector Times") { $0.kind = .sectorPanel(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .sectorPanel(new) }
     }
 }

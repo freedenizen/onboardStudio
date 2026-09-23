@@ -2,12 +2,22 @@ import SwiftUI
 
 /// Small controls shared by the inspector panels.
 
+/// A number field that writes to the project once: on Return, when focus leaves it, or one step
+/// per press of ↑/↓ (#205, #208).
+///
+/// `TextField(value:format:)` on its own updates its binding as the digits are typed, so typing
+/// 200 was three undo steps — 2, 20, 200 — and three recompiles. This edits a draft instead, like
+/// `CommittingTextField`, and Escape abandons it.
 struct NumberField: View {
     let title: String
     @Binding var value: Double
     let fractionDigits: ClosedRange<Int>
     let step: Double
     let range: ClosedRange<Double>?
+
+    @State private var draft: Double
+    @State private var pending = false
+    @FocusState private var focused: Bool
 
     /// `step` is how far one press of ↑/↓ moves the value. It defaults to 1, which suits the
     /// percentages, degrees and counts most of these fields hold — pass a smaller step for a
@@ -18,13 +28,20 @@ struct NumberField: View {
     ) {
         self.title = title
         _value = value
+        _draft = State(initialValue: value.wrappedValue)
         self.fractionDigits = fractionDigits
         self.step = step
         self.range = range
     }
 
     var body: some View {
-        TextField(title, value: $value, format: .number.precision(.fractionLength(fractionDigits)))
+        TextField(title, value: $draft, format: .number.precision(.fractionLength(fractionDigits)))
+            .focused($focused)
+            .onSubmit(commit)
+            .onChange(of: draft) { _, new in if focused, new != value { pending = true } }
+            .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
+            .onChange(of: value) { _, new in if !pending { draft = new } }
+            .onDisappear(perform: commit)
             // Bare ↑/↓ only. Inside a text field ⇧↑/⇧↓ extend the selection, which is the standard
             // macOS gesture and belongs to the field editor; `onKeyPress(keys:)` does not match a
             // modified key anyway, so they are left alone on purpose rather than by accident.
@@ -32,11 +49,75 @@ struct NumberField: View {
                 adjust(by: press.key == .upArrow ? step : -step)
                 return .handled
             }
+            .onKeyPress(.escape) {
+                guard pending else { return .ignored }
+                draft = value
+                pending = false
+                focused = false
+                return .handled
+            }
     }
 
+    private func commit() {
+        guard pending else { return }
+        pending = false
+        value = draft
+    }
+
+    /// Each press is its own edit, from whatever the field shows — typed or not.
     private func adjust(by amount: Double) {
-        let moved = value + amount
-        value = range.map { min(max(moved, $0.lowerBound), $0.upperBound) } ?? moved
+        let moved = (pending ? draft : value) + amount
+        let clamped = range.map { min(max(moved, $0.lowerBound), $0.upperBound) } ?? moved
+        pending = false
+        draft = clamped
+        value = clamped
+    }
+}
+
+/// A number field that can be empty, meaning "unset" — no trim limit, no fixed bound. Writes on
+/// Return or losing focus, as `NumberField` does (#205).
+struct OptionalNumberField: View {
+    let title: String
+    @Binding var value: Double?
+    let placeholder: String
+
+    @State private var draft: Double?
+    @State private var pending = false
+    @FocusState private var focused: Bool
+
+    init(_ title: String, value: Binding<Double?>, placeholder: String) {
+        self.title = title
+        _value = value
+        _draft = State(initialValue: value.wrappedValue)
+        self.placeholder = placeholder
+    }
+
+    var body: some View {
+        TextField(
+            title,
+            value: $draft,
+            format: .number.precision(.fractionLength(0...3)),
+            prompt: Text(placeholder)
+        )
+        .focused($focused)
+        .onSubmit(commit)
+        .onChange(of: draft) { _, new in if focused, new != value { pending = true } }
+        .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
+        .onChange(of: value) { _, new in if !pending { draft = new } }
+        .onDisappear(perform: commit)
+        .onKeyPress(.escape) {
+            guard pending else { return .ignored }
+            draft = value
+            pending = false
+            focused = false
+            return .handled
+        }
+    }
+
+    private func commit() {
+        guard pending else { return }
+        pending = false
+        value = draft
     }
 }
 

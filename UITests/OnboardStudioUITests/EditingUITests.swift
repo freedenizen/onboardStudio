@@ -303,6 +303,29 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
             file: file, line: line)
     }
 
+    /// #208: the Gauge Designer's controls are reachable by identifier, and an edit to one is a
+    /// single step that ⌘Z takes back.
+    @MainActor
+    func testAGaugeDesignerEditIsOneUndoStep() throws {
+        launch()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        let sweep = app.textFields["gauge.sweep"]
+        XCTAssertTrue(sweep.waitForExistence(timeout: Self.timeout), "No sweep field in the Gauge Designer")
+        reveal(sweep)
+        let before = sweep.value as? String ?? ""
+        sweep.click()
+        app.typeKey("a", modifierFlags: .command)
+        sweep.typeText("200\n")
+        expect(sweep, toRead: "200")
+        // Leave the field first: while it is being edited, ⌘Z undoes typing inside it, as in any
+        // Mac text field.
+        sidebarInput("racerender-basic").click()
+        sidebarObject("Speedometer").click()
+        app.typeKey("z", modifierFlags: .command)
+        expect(app.textFields["gauge.sweep"], toRead: before)
+    }
+
     @MainActor
     func testIndicatorLightAsksForAChannelAndSuggestsAThreshold() throws {
         launch()
@@ -312,8 +335,12 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Indicator").waitForExistence(timeout: Self.timeout))
         // The RaceRender fixture has no ABS channel, so the light starts unbound and says so.
         XCTAssertTrue(app.staticTexts["This object needs a channel."].waitForExistence(timeout: Self.timeout))
-        choose("speed", inPopUpShowing: "Choose a channel…")
+        // #208: the picker names the attribute as the attribute table does — Speed, not `speed`.
+        choose("Speed", inPopUpShowing: "Choose a channel…")
         XCTAssertTrue(app.staticTexts["This object needs a channel."].waitForNonExistence(timeout: Self.timeout))
+        XCTAssertTrue(
+            app.popUpButtons.matching(NSPredicate(format: "value == 'Speed'")).firstMatch.exists,
+            "The channel picker shows the codebase's identifier")
         // The inspector shows the channel's range and suggests a threshold from it.
         let suggest = app.buttons["indicator.suggest"]
         XCTAssertTrue(suggest.waitForExistence(timeout: Self.timeout), "No threshold suggestion")

@@ -213,6 +213,7 @@ struct ShortcutsView: View {
         ("Arrows (object selected)", "Nudge the object 1 px; ⇧ for 10 px"),
         ("← → (nothing selected)", "Step one frame"),
         ("↑ ↓ (in a number field)", "Add or subtract one"),
+        ("⌘↩ (in a script)", "Apply the script"),
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
     ]
 

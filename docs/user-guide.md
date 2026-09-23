@@ -203,6 +203,11 @@ lights** (ABS, traction/stability, brake, warning triangle or text, lit when a c
 threshold, with hold time, flash and glow), text data with formatting and warning zones, shapes, text, images (data-driven rotation, opacity, flashing) and **Script** objects
 that draw with JavaScript ([scripting.md](scripting.md)).
 
+Wherever the inspector asks for a channel it lists the file's channels by the attribute they are —
+*Lateral G*, *Brake pressure (front)* — and a channel the file named itself by that name, with
+where it came from: `analog_1 (CAN bus)`. Hover over a control whose one-word label does not say
+enough, such as a needle's *Tail* or *Hub*, for a short explanation.
+
 Every object has a position and size in percent of the frame, opacity, mirror and an RGB mask.
 Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save it as an
 `.onboardstyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse

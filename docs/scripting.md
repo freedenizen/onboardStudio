@@ -2,7 +2,7 @@
 
 A **Script** object draws itself with JavaScript (JavaScriptCore, sandboxed: no network, no files,
 no timers). Add one from **Add Object ▸ Script**, edit the code in the inspector and press
-**Apply**; the preview updates live and errors are shown in the inspector and as a red badge on
+**Apply** (⌘↩ from inside the editor, where Return starts a new line); the preview updates live and errors are shown in the inspector and as a red badge on
 the object instead of a crash.
 
 A script defines one or both of:

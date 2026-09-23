@@ -425,12 +425,13 @@ struct ChannelPicker: View {
         let options = (selection.isEmpty ? [""] : missing ? [selection] : []) + available
         Picker("Channel", selection: $selection) {
             ForEach(options, id: \.self) { option in
-                Text(option.isEmpty ? "Choose a channel…" : option).tag(option)
+                Text(option.isEmpty ? "Choose a channel…" : ChannelRole.pickerTitle(forIdentifier: option)).tag(option)
             }
         }
         if missing {
             Label(
-                "\"\(selection)\" is not in this data input; pick one of its channels.",
+                "“\(ChannelRole.pickerTitle(forIdentifier: selection))” is not in this data input; pick one of "
+                    + "its channels.",
                 systemImage: "exclamationmark.triangle.fill"
             )
             .foregroundStyle(.yellow).font(.caption)
