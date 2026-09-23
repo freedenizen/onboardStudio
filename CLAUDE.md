@@ -58,7 +58,8 @@ swift run onboard bench --export --codec hevc --seconds 60
   test once; a test that passes only on retry is recorded on the `flaky-tests` issue, so look
   there before calling a test stable.
 - **One PR in CI at a time; the rest are drafts.** CI runs one PR at a time (a run is six macOS
-  jobs), and a draft skips the macOS jobs and the Claude review. Open further PRs with
+  jobs), and a draft skips the macOS jobs and the Claude review — its **UI tests** check is red
+  on purpose, so a draft never reads green (#239). Open further PRs with
   `gh pr create --draft`, and `gh pr ready <n>` the next one only when the one before has merged —
   rebase it first, so it is tested once against the `main` it will land on (#237). Related issues
   can share one PR (`Closes #79.` and `Closes #153.`).
