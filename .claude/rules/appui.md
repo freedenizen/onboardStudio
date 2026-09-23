@@ -74,6 +74,9 @@ The rest of this file is what that means here, and the places this app has got i
   rather than eyeballed padding.
 - Consistent terminology with the user guide. An *attribute* is an attribute everywhere — in the
   UI, the menus, the docs and the release notes.
-- Sentence case for labels and buttons; title case only where the platform uses it (menu items,
-  window titles).
+- Title case for buttons, as macOS uses it, in Apple's title style: short articles, conjunctions
+  and prepositions stay lowercase (**Go to Segment**, **Open the User Guide**). Menu items, window
+  titles, toolbar labels and undo action names are title case too, so a command reads the same as
+  a button and in the menu bar. Checkbox and toggle labels, descriptions and help tags stay
+  sentence case, as they do in Apple's own apps.
 - No jargon from the codebase in the interface: the user has never heard of a `ChannelRole`.

@@ -112,7 +112,7 @@ struct DataInputInspector: View {
                 .accessibilityIdentifier("data.suggestStartFinish")
                 .disabled(session == nil)
             if let line = settings.lapLine {
-                Toggle("Place It on the Track Map", isOn: placingOnMap)
+                Toggle("Place it on the track map", isOn: placingOnMap)
                     .accessibilityIdentifier("data.placeStartFinish")
                 Text(
                     "Drag the yellow line to move it, or either end to turn it. The stub shows which way the "
