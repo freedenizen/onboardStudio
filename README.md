@@ -41,6 +41,10 @@ lap timer or GPS logger. Onboard Studio puts them together.
   is `canbus:analog_1`. Tell Onboard Studio which column feeds Brake pressure, that it is
   logged in kPa, and that you want it shown in bar, and every file you import afterwards
   follows. Units convert for display; the numbers stay as the file recorded them.
+- **Works like a Mac app should.** Every change can be undone, and the Edit menu says what
+  Undo will take back. Text and number fields commit when you press Return, and Escape
+  abandons them. The attribute window can be driven entirely from the keyboard: ⌥⌘A to open
+  it, ⌘F to filter, and Tab through the table in reading order.
 - **Cut between cameras.** Put a second camera picture-in-picture, split the screen, or
   switch between angles partway through.
 - **Export a finished video.** Up to 4K, including vertical for phones. Upload straight to
@@ -105,7 +109,7 @@ If something looks wrong, the guide's
 
 Release notes for every version are on the
 [Releases page](https://github.com/freedenizen/onboardStudio/releases), newest first. The
-app is at **v0.22.0**; version numbers below 1.0 mean the file format and the interface can
+app is at **v0.23.0**; version numbers below 1.0 mean the file format and the interface can
 still change between releases.
 
 ## For developers
