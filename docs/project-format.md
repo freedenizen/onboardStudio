@@ -103,6 +103,14 @@ can carry; the answer is a migration pinning the old value, never regenerating t
 }
 ```
 
+`details` (optional, #74) is what the project is of:
+`{ "track", "car", "driver", "event", "session", "date": "2026-08-23", "extras": [{ "id", "name", "value" }] }`.
+Every field is text; `date` is a calendar day (`yyyy-MM-dd`) rather than an instant, so it reads
+the same in any time zone. A `text` object's `text` names them in braces — `{track}`, `{Tyres}`,
+matched without regard to case — and they are filled in when the object is drawn. A key with no
+value is left in its braces, which is why a project saved before details existed (it has none)
+draws its text exactly as it did, with no migration. Details are not part of a template.
+
 `settings.typeface` (optional, `{ "family", "face" }`) is the font for every object that has not
 chosen its own `typeface`; absent means the built-in fonts.
 
@@ -225,7 +233,7 @@ what every earlier project did.
 | `sectorPanel` | One cell per sector of the lap in progress, plus the theoretical lap. `display` (`time`/`delta`/`both`), `reference` (`bestSector` (default) = the quickest that sector was driven all session / `sessionBestLap` / `previousLap`), `showLabels` (`S1`, `S2`, …), `showTheoretical` + `theoreticalLabel`, `highlightCurrent` + `currentColor`, `holdPreviousSeconds` (seconds the lap just completed stays up after the line, 5 by default; the only moment its last sector is readable, since it finishes at the instant the car crosses), `decimals`, `textColor`, `labelColor`, `aheadColor`, `behindColor`, `backgroundColor`, `outline`. The sectors themselves come from the data input's `sectors`, not from here |
 | `steeringWheel` | `channel` (empty = bound to the logger's steering channel when data loads), `degreesPerUnit` (1 = degrees, 57.3 = radians, the lock angle for a −1…1 channel), `invert`, `maxDegrees` (0 = no limit), `rimColor`, `edgeColor`, `rimWidth`, `markerColor`, `markerWidth`, `showSpokes`, `spokeColor`. The frame may extend past the picture so only the upper arc shows |
 | `shape` | `shape` (`rectangle`/`roundedRectangle`/`ellipse`), `fillColor`, `gradientEndColor` (optional: fades from `fillColor` at the top/left to this colour at the bottom/right), `gradientHorizontal`, `strokeColor`, `strokeWidth` (fraction of output height), `cornerRadius` |
-| `text` | `text`, `fontScale` (fraction of object height), `fontName`, `bold`, `color`, `backgroundColor`, `alignment`, `outlineWidth`, `outlineColor` |
+| `text` | `text` (with `{detail}` keys, see `details`), `fontScale` (fraction of object height), `fontName`, `bold`, `color`, `backgroundColor`, `alignment`, `outlineWidth`, `outlineColor` |
 | `image` | `inputID` → an image input; `rotation`, `keepAspect`; data-driven: `rotationChannel` + `degreesPerUnit`, `opacityChannel` + `opacityScale`, `flashChannel` + `flashThreshold` + `flashHertz` (data comes from the first data input) |
 
 Colours are `#RRGGBB` or `#RRGGBBAA`. Speed channels are stored in m/s and converted for display

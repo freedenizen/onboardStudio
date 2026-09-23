@@ -217,6 +217,8 @@ extension DisplayObject {
         ("Script", .scripted(ScriptedParams())),
         ("Shape", .shape(ShapeParams())),
         ("Text", .text(TextParams())),
+        // Filled from the project's details (#74), so it reads right in any project it lands in.
+        ("Title Card", .text(TextParams(text: "{track} · {date}"))),
     ]
 }
 

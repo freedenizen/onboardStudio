@@ -118,6 +118,11 @@ struct EditorCommands: Commands {
             Button("Add Camera…") { editor?.addCamera() }.keyboardShortcut("i", modifiers: [.command, .shift])
             Button("Add Data File…") { editor?.addData() }.keyboardShortcut("d", modifiers: [.command, .shift])
             Divider()
+            // The project's own inspector is what shows with nothing selected, which nothing
+            // else in the app says; this is the way to it from anywhere (#74, #118).
+            Button("Show Project Details") { editor?.showProjectInspector() }
+                .keyboardShortcut("i", modifiers: [.command, .control])
+            Divider()
             Menu("Add Display Object") {
                 ForEach(DisplayObject.templates, id: \.name) { template in
                     Button(template.name) { editor?.addObject(template.kind) }
