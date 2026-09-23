@@ -196,6 +196,28 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertEqual(titles.redo, "Redo Rename Object")
     }
 
+    /// #213: removing the data file keeps the overlay — the objects are the user's work, the file
+    /// only what they read — and undo brings the file back.
+    @MainActor
+    func testRemovingTheDataFileKeepsItsObjects() throws {
+        launch()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout))
+
+        sidebarInput("racerender-basic").click()
+        let remove = app.buttons["input.remove"]
+        XCTAssertTrue(remove.waitForExistence(timeout: Self.timeout), "No way to remove the input")
+        reveal(remove)
+        remove.click()
+        XCTAssertTrue(sidebarInput("racerender-basic").waitForNonExistence(timeout: Self.timeout))
+        XCTAssertTrue(sidebarObject("Speedometer").exists, "Removing the data file removed the gauge")
+
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(sidebarInput("racerender-basic").waitForExistence(timeout: Self.timeout), "Undo")
+        XCTAssertTrue(sidebarObject("Speedometer").exists)
+    }
+
     /// #205: a typed name is one edit. Bound straight to the model, the label field wrote on every
     /// key press, and taking back a rename took one ⌘Z per character.
     @MainActor

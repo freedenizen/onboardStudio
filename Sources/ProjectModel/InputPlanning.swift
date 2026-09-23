@@ -122,3 +122,20 @@ extension Project {
         return bound
     }
 }
+
+extension Project {
+    /// Removes an input and keeps every object that used it (#213).
+    ///
+    /// Removing a data file used to delete the gauges, maps and timers bound to it, so replacing a
+    /// log with a better one meant building the overlay again. The objects are the user's work and
+    /// the file is only what they read: they stay, unbound, and are rebound at once to another
+    /// input of the same kind when the project has one — or to the next one added, which is what
+    /// `bindOrphanObjects` already does for a template's objects.
+    public mutating func removeInput(_ id: InputID) {
+        inputs.removeAll { $0.id == id }
+        for index in displayObjects.indices where displayObjects[index].inputID == id {
+            displayObjects[index].inputID = nil
+        }
+        bindOrphanObjects()
+    }
+}

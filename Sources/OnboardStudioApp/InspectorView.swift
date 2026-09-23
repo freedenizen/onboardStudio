@@ -203,6 +203,8 @@ struct InputInspector: View {
         }
         Section {
             Button("Remove Input", role: .destructive) { editor.removeInput(input.id) }
+                .help("Take this file out of the project. Objects that use it stay, ready for another file.")
+                .accessibilityIdentifier("input.remove")
         }
     }
 
