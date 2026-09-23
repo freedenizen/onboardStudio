@@ -12,6 +12,13 @@ struct TimelineOverview: View {
 
     private let height: CGFloat = 12
 
+    /// What part of the project the zoomed timeline shows, as VoiceOver reads it.
+    private var shownPart: String {
+        guard visibleFraction < 0.999 else { return "Showing the whole project" }
+        let percent = { (fraction: Double) in Int((fraction * 100).rounded()) }
+        return "Showing \(percent(visibleFraction)) percent from \(percent(editor.timelineScrollFraction)) percent"
+    }
+
     var body: some View {
         GeometryReader { geometry in
             let width = max(geometry.size.width, 1)
@@ -47,5 +54,13 @@ struct TimelineOverview: View {
         }
         .frame(height: height)
         .help("The whole project; drag the window to scroll the zoomed timeline")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Timeline overview")
+        .accessibilityValue(shownPart)
+        .accessibilityAdjustableAction { direction in
+            guard visibleFraction < 0.999 else { return }
+            let step = visibleFraction / 2 * (direction == .increment ? 1 : -1)
+            scrollTo(min(max(editor.timelineScrollFraction + step, 0), 1 - visibleFraction))
+        }
     }
 }

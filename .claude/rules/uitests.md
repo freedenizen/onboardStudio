@@ -43,7 +43,16 @@ Local run ≈ 5 min for 13 tests.
 - `.accessibilityIdentifier` on an HStack row leaks onto every child. Put it on the `Text`
   (objects) or use `.accessibilityElement(children: .combine)` (inputs).
 - Identifier conventions: `toolbar.*`, `transport.*`, `object.<label>`, `input.<label>`, `tour.*`,
-  `export.*`, `sync.*`, `status.message`. Text controls are found by title.
+  `export.*`, `sync.*`, `status.message`, `preview.object.<label>`. Text controls are found by title.
+- **An identifier is for tests; a label is for people.** Every icon-only control and status glyph
+  gets `.accessibilityLabel` (title case, what it does: "Move Up", "Remove Tyres") *and* `.help`
+  (sentence case, with the shortcut: "Export the finished video (⌘E)"); decorative images get
+  `.accessibilityHidden(true)`. `AccessibilityUITests` runs Apple's audit for element descriptions
+  and for contrast in the light appearance and fails on either — XCUITest cannot read help tags,
+  so those are checked in review.
+- `XCUIElement` cannot read a help tag, and the Touch Bar duplicates a dialog's buttons: scope a
+  dialog button to `app.windows.buttons[…]`. Context menus share titles with menu-bar items
+  (File ▸ Rename…); click the one that `isHittable`.
 - `NSLog` truncates `app.debugDescription` — attach it with `XCTAttachment`.
 
 ## Runner and environment

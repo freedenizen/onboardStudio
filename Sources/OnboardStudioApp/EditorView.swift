@@ -107,12 +107,14 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Add Video", systemImage: "video.badge.plus")
             }
+            .help("Add a video, or every file of one recording (⌘I)")
             .accessibilityIdentifier("toolbar.addVideo")
             Button {
                 editor.addData()
             } label: {
                 Label("Add Data", systemImage: "doc.badge.plus")
             }
+            .help("Add a data file from a logger or phone app (⇧⌘D)")
             .accessibilityIdentifier("toolbar.addData")
             Menu {
                 ForEach(DisplayObject.templates, id: \.name) { template in
@@ -124,6 +126,9 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Add Object", systemImage: "gauge.with.dots.needle.33percent")
             }
+            .help("Add a gauge, map, timer, readout, text or image")
+            // A toolbar menu is read by its symbol's name unless it is told otherwise (#153).
+            .accessibilityLabel("Add Object")
             .accessibilityIdentifier("toolbar.addObject")
             Menu {
                 ForEach(LayoutPreset.allCases, id: \.self) { preset in
@@ -134,6 +139,8 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Layout", systemImage: "rectangle.3.group")
             }
+            .help("Arrange the cameras, or start a new segment at the playhead")
+            .accessibilityLabel("Layout")
             .accessibilityIdentifier("toolbar.layout")
             .disabled(editor.project.videoInputs.isEmpty)
             Button {
@@ -141,6 +148,7 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Sync", systemImage: "arrow.left.arrow.right")
             }
+            .help("Line the data up with the video (⌘Y)")
             .accessibilityIdentifier("toolbar.sync")
             .disabled(editor.project.dataInputs.isEmpty || editor.project.videoInputs.isEmpty)
             Button {
@@ -148,6 +156,7 @@ struct EditorToolbar: ToolbarContent {
             } label: {
                 Label("Export", systemImage: "square.and.arrow.up")
             }
+            .help("Export the finished video (⌘E)")
             .accessibilityIdentifier("toolbar.export")
             .disabled(editor.project.videoInputs.isEmpty)
         }
@@ -166,7 +175,7 @@ struct StatusLineView: View {
     var body: some View {
         if editor.statusMessage != nil || editor.showActivity {
             HStack(spacing: 8) {
-                Image(systemName: "info.circle").foregroundStyle(.secondary)
+                Image(systemName: "info.circle").foregroundStyle(.secondary).accessibilityHidden(true)
                 Text(editor.statusMessage ?? "").font(.callout).lineLimit(2).textSelection(.enabled)
                     .help(editor.statusMessage ?? "")
                     .accessibilityIdentifier("status.message")
@@ -186,7 +195,8 @@ struct StatusLineView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain).accessibilityLabel("Dismiss").accessibilityIdentifier("status.dismiss")
+                .buttonStyle(.plain).help("Dismiss this message")
+                .accessibilityLabel("Dismiss").accessibilityIdentifier("status.dismiss")
             }
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(.bar)

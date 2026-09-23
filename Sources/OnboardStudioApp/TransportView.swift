@@ -11,12 +11,14 @@ struct TransportView: View {
             } label: {
                 Image(systemName: "backward.end.fill")
             }
+            .help("Go to start (Home)")
             .accessibilityIdentifier("transport.start").accessibilityLabel("Go to start")
             Button {
                 editor.step(by: -1)
             } label: {
                 Image(systemName: "backward.frame.fill")
             }
+            .help("Step back one frame (,)")
             .accessibilityIdentifier("transport.stepBack").accessibilityLabel("Step back one frame")
             Button {
                 editor.togglePlayback()
@@ -24,22 +26,27 @@ struct TransportView: View {
                 Image(systemName: editor.isPlaying ? "pause.fill" : "play.fill")
             }
             .keyboardShortcut(.space, modifiers: [])
+            .help(editor.isPlaying ? "Pause (Space)" : "Play (Space)")
             .accessibilityIdentifier("transport.play").accessibilityLabel(editor.isPlaying ? "Pause" : "Play")
             Button {
                 editor.step(by: 1)
             } label: {
                 Image(systemName: "forward.frame.fill")
             }
+            .help("Step forward one frame (.)")
             .accessibilityIdentifier("transport.stepForward").accessibilityLabel("Step forward one frame")
             Text(TimeParsing.lapTimeString(editor.currentTime)).monospacedDigit().frame(width: 66, alignment: .trailing)
-                .accessibilityIdentifier("transport.time")
+                .accessibilityIdentifier("transport.time").accessibilityLabel("Playhead")
             Slider(
                 value: Binding(get: { editor.currentTime }, set: { editor.seek(to: $0) }),
                 in: 0...max(editor.duration, 0.001)
             )
             .frame(minWidth: 60)
+            .accessibilityLabel("Position")
             Text(TimeParsing.lapTimeString(editor.duration)).monospacedDigit().foregroundStyle(.secondary).frame(
-                width: 66, alignment: .leading)
+                width: 66, alignment: .leading
+            )
+            .accessibilityLabel("Length")
             Divider().frame(height: 16)
             Button {
                 editor.snappingEnabled.toggle()
@@ -62,6 +69,7 @@ struct TransportView: View {
             )
             .frame(width: 70)
             .help("Timeline zoom")
+            .accessibilityLabel("Timeline zoom")
             Button {
                 editor.zoomTimeline(by: 1.5)
             } label: {

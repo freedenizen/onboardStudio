@@ -1,3 +1,4 @@
+import ProjectModel
 import SwiftUI
 
 /// Small controls shared by the inspector panels.
@@ -178,5 +179,39 @@ struct CommittingTextField: View {
         guard pending else { return }
         pending = false
         text = draft
+    }
+}
+
+/// Wraps a control for an overridable property with a badge showing whether the segment at the
+/// playhead sets it, and a button to inherit it again.
+struct OverrideRow<Content: View>: View {
+    let editor: EditorModel
+    let object: DisplayObject
+    let property: OverridableProperty
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        HStack {
+            content()
+            if let segment = editor.editingSegment {
+                if editor.isOverriddenHere(property, object.id) {
+                    Button {
+                        editor.resetOverride(property, object.id)
+                    } label: {
+                        Label(
+                            "Set in \(segment.label.isEmpty ? "this segment" : segment.label)", systemImage: "pin.fill"
+                        )
+                        .labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Color.accentColor)
+                    .help("Set in \(segment.label.isEmpty ? "this segment" : segment.label). Click to inherit instead.")
+                } else {
+                    Image(systemName: "pin.slash").foregroundStyle(.secondary)
+                        .help("Inherited from earlier segments; editing sets it for this segment.")
+                        .accessibilityLabel("Inherited from earlier segments")
+                }
+            }
+        }
     }
 }
