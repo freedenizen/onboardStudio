@@ -120,8 +120,9 @@ brake sensor is `brake_pressure_front` in a RaceChrono CSV and `66569` in the `.
 same session. **Attributes** are the app's names for what those numbers *mean* — Speed, Brake
 pressure (front), Coolant temperature, ABS — and they are the same whatever file you opened.
 
-**Map Attributes…** in the data inspector (or in Settings) opens the attribute window. One row per
-attribute, three columns:
+**Project ▸ Map Attributes…** (⌥⌘A), or **Map Attributes…** in the data inspector or in Settings,
+opens the attribute window, pointed at the data file you have selected. One row per attribute,
+three columns:
 
 | Column | What it sets |
 | --- | --- |
@@ -133,7 +134,7 @@ An attribute that is either on or off — ABS, traction control, pit limiter —
 shown in. Its row asks for the level it counts as on at instead, because a logger usually records
 these as a raw analog channel rather than a yes or no.
 
-**Applies to** at the top chooses who the mapping is for:
+The sidebar chooses who the mapping is for:
 
 - **All projects** — set once, and every file you import afterwards follows it. This is the one to
   use for your own car: tell the app once that Brake pressure comes from `brake_pressure_front` in
@@ -145,13 +146,30 @@ Each level follows the one above unless you set it, so changing the global mappi
 everything that has not been pinned and leaves what you did pin alone. A single object can differ
 again — see *Units* under [Objects](#5-objects).
 
+**From the keyboard.** The window is built to be used without the mouse. **⌘F** goes to the filter
+field in the toolbar. Type part of an attribute's name, or of the column it comes from, and only
+the matching rows stay. A filter searches every attribute, including ones this file does not
+supply. **Return** moves to the first row's *From* field; type the column and press Return again.
+**Tab** walks the table in reading order: along a row, then down to the next. As you type a
+column, matching columns are offered below the field; pick one with ↓ and Return. **Escape**
+abandons what you typed. **⌘1** and **⌘2** switch between the attribute table and the import
+report. Hover over a column title, a truncated summary or a sidebar level for a short
+explanation.
+
+The window remembers which level it was showing, which view, and whether every attribute was
+listed, between launches. Without a project open it still edits *All projects*: there are no
+columns to choose from then, but you can type a column's name.
+
 ### What the import read
 
-The attribute window's **Import** tab says what became of every column of the file: which ones
+The attribute window's **Import** tab (⌘2, or **Project ▸ Show Import Report…**) says what became
+of every column of the file, in the attribute table's own words: which ones
 became channels, which of three columns called `speed` kept the role, which sensor read the same
 number all session (usually one that is not connected), and which units the app did not recognise.
 It shows only the columns worth a look; *Show every column* gives the rest. A file where
-everything read cleanly says so in one line.
+everything read cleanly says so in one line. The filter field searches every column by name,
+group or what it became. Select rows and press **⌘C** to copy them as text, for a message to
+whoever wired the logger. Without a data file the tab says so and offers **Add Data File…**.
 
 **A file that knows where the line is.** Racelogic VBO files record the start/finish line, and
 any sector gates, as actual geometry — the only format that does. Add one and the line and sectors

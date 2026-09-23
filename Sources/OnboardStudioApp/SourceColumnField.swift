@@ -18,10 +18,16 @@ struct SourceColumnField: View {
     /// Every column the file in view offers.
     let columns: [String]
     let identifier: String
+    /// The attribute's name, for what VoiceOver calls the field and its menu.
+    let accessibilityName: String
+    /// The window's focus, so it can put the keyboard in this field (#200).
+    var focus: FocusState<AttributeFocus?>.Binding
+    let focusValue: AttributeFocus
     let write: (String?) -> Void
 
     @State private var text: String = ""
-    @FocusState private var focused: Bool
+
+    private var focused: Bool { focus.wrappedValue == focusValue }
 
     /// Columns the typed text narrows to. Matching anywhere, not just at the start: a user looking
     /// for brake pressure types "brake", and the column is called `canbus:front_brake_pressure`.
@@ -34,17 +40,23 @@ struct SourceColumnField: View {
         HStack(spacing: 2) {
             TextField(placeholder, text: $text)
                 .textFieldStyle(.roundedBorder)
-                .focused($focused)
+                .focused(focus, equals: focusValue)
                 .onSubmit { commit() }
                 .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
+                // Completions as you type, chosen with ↓ and Return, so a column can be picked
+                // without leaving the keyboard.
+                .textInputSuggestions(suggestions, id: \.self) { column in
+                    Text(column).textInputCompletion(column)
+                }
                 // Escape abandons what was typed and ends the edit, as `CommittingTextField` does
                 // (#205).
                 .onKeyPress(.escape) {
                     guard text != (pinned ?? "") else { return .ignored }
                     text = pinned ?? ""
-                    focused = false
+                    focus.wrappedValue = nil
                     return .handled
                 }
+                .accessibilityLabel("\(accessibilityName), source column")
                 .accessibilityIdentifier(identifier)
             Menu {
                 Button("Automatic") { set(nil) }
@@ -57,10 +69,19 @@ struct SourceColumnField: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
+            .help("Choose from the columns of the open file")
+            .accessibilityLabel("Columns for \(accessibilityName)")
             .accessibilityIdentifier("\(identifier).menu")
         }
         .onAppear { text = pinned ?? "" }
         .onChange(of: pinned) { _, new in if !focused { text = new ?? "" } }
+    }
+
+    /// Offered while typing, and only then: a list that opened the moment the field was focused
+    /// would cover the next row.
+    private var suggestions: [String] {
+        guard focused, !text.isEmpty, !columns.contains(text) else { return [] }
+        return Array(matches.prefix(12))
     }
 
     /// What automatic amounts to, so a field nobody has filled in still says where the numbers

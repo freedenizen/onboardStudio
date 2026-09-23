@@ -17,7 +17,7 @@ struct DataInputInspector: View {
 
     var body: some View {
         DataInputAttributesSection(editor: editor, input: input, settings: settings, session: session)
-        if let session { ImportReportSection(report: session.importReport) }
+        if let session { ImportReportSection(report: session.importReport, inputID: input.id) }
         Section {
             if let session {
                 DisclosureGroup(isExpanded: $showChannels) {

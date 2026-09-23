@@ -41,7 +41,7 @@ struct DataInputAttributesSection: View {
                     .accessibilityIdentifier("attribute.\(role.identifier)")
                 }
             }
-            OpenAttributeWindowButton()
+            OpenAttributeWindowButton(scope: .input(input.id))
         } header: {
             Text("Attributes")
         } footer: {
