@@ -1,4 +1,5 @@
 import AppKit
+import MediaKit
 import SwiftUI
 
 /// Everything the app has told the user in one project's window, newest last (#112): the status
@@ -20,6 +21,11 @@ struct ActivityLog {
 
     mutating func record(_ text: String, isProblem: Bool = false, at date: Date = Date()) {
         entries.append(Entry(date: date, text: text, isProblem: isProblem))
+        if isProblem {
+            Diagnostics.activity.error("\(text, privacy: .public)")
+        } else {
+            Diagnostics.activity.info("\(text, privacy: .public)")
+        }
         if entries.count > Self.limit { entries.removeFirst(entries.count - Self.limit) }
     }
 

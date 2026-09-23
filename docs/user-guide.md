@@ -427,6 +427,13 @@ a project, `sync` finds the data/video offset from motion, `upload` sends a file
 
 ## 9. Troubleshooting
 
+- **Reporting a problem.** **Help ▸ Export Diagnostics…** saves one zip for a bug report: the
+  app's log since it started, everything it told you, the open project's settings and file paths,
+  a description of each data file (channels, units, ranges, laps — not the data itself), which
+  ffmpeg it found, and any crash report from the last two weeks. No videos or data go in, and the
+  app sends nothing: you choose where it is saved and whom to give it to. After a crash, the app
+  offers to make one when it next starts.
+
 - **Something happened and the message is gone.** **View ▸ Show Activity** (⌥⌘L) lists every
   message and error since the project opened; **Copy All** puts them on the clipboard.
 

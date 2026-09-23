@@ -25,6 +25,11 @@ enum LaunchOptions {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     /// With the welcome window there is no untitled project until the user asks for one.
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { !LaunchOptions.showLauncher }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        _ = DiagnosticsExport.launchedAt
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { DiagnosticsExport.offerAfterCrash() }
+    }
 }
 
 /// The welcome window: a blank project, a project from a template, or an existing project.

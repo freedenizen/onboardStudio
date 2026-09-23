@@ -24,7 +24,9 @@ over footage from your camera, driven by the data your logger recorded.
 > please do not treat a project file as the only copy of anything you care about.
 >
 > Bug reports and suggestions are very welcome —
-> [open an issue](https://github.com/freedenizen/onboardStudio/issues/new).
+> [open an issue](https://github.com/freedenizen/onboardStudio/issues/new), and attach the file
+> **Help ▸ Export Diagnostics…** saves: the app's log, your project's settings and a description of
+> its data files, with no videos or data. Nothing is sent anywhere by the app.
 
 ## What it does
 

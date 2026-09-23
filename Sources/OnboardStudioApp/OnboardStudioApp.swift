@@ -112,6 +112,9 @@ struct EditorCommands: Commands {
             Button("Show Getting Started") { UserDefaults.standard.set(true, for: Preferences.showGettingStarted) }
             Divider()
             Button("Open the Sample Project") { SampleProject.open() }.disabled(!SampleProject.isAvailable)
+            Divider()
+            // Everything a bug report needs, in one file the user sends themselves (#152).
+            Button("Export Diagnostics…") { DiagnosticsExport.run(editor: editor) }
         }
         CommandMenu("Project") {
             Button("Add Video…") { editor?.addVideo() }.keyboardShortcut("i", modifiers: [.command])

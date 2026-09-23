@@ -57,11 +57,15 @@ public enum Exporter {
                 continuation.finish(throwing: error)
                 return
             }
+            let name = outputURL.lastPathComponent
+            Diagnostics.exportStarted(name, settings)
             let task = Task.detached(priority: .userInitiated) {
                 do {
                     try await job.run()
+                    Diagnostics.exporting.info("Exported \(name, privacy: .public)")
                     continuation.finish()
                 } catch {
+                    Diagnostics.exportFailed(name, error)
                     continuation.finish(throwing: error)
                 }
             }
