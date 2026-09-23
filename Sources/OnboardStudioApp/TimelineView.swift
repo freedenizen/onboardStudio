@@ -204,7 +204,7 @@ struct SegmentLaneView: View {
 
 /// One bar per video input. Drag the body to move the video (snapping), drag either edge to trim
 /// it (the head trim keeps the picture in place, as an editor's ripple-free trim does), click to
-/// select it.
+/// select it. A click anywhere in the lane also puts the playhead there, as in every editor (#106).
 struct VideoLaneView: View {
     @Bindable var editor: EditorModel
     let width: CGFloat
@@ -229,6 +229,8 @@ struct VideoLaneView: View {
         let pixelsPerSecond = width / duration
         ZStack(alignment: .topLeading) {
             Rectangle().fill(Color(nsColor: .windowBackgroundColor))
+                .contentShape(Rectangle())
+                .onTapGesture { location in editor.seek(to: location.x / pixelsPerSecond) }
             ForEach(editor.project.videoInputs) { video in
                 let live = drag?.id == video.id ? drag : nil
                 // `startInProject`, not the raw offset: a clip nudged before the project's start
@@ -332,7 +334,11 @@ struct VideoLaneView: View {
                 editor.selectedInputID = video.id
                 editor.selectedObjectID = nil
                 editor.selectedSegmentID = nil
-                guard let drag, drag.id == video.id, abs(value.translation.width) >= 2 else { return }
+                guard let drag, drag.id == video.id, abs(value.translation.width) >= 2 else {
+                    // A click rather than a drag: the playhead goes where it landed (#106).
+                    editor.seek(to: video.sync.startInProject + value.startLocation.x / pixelsPerSecond)
+                    return
+                }
                 switch drag.edge {
                 case .body: editor.setOffset(of: video.id, to: drag.offset)
                 case .head: editor.trimHead(of: video.id, toProjectTime: drag.offset)
@@ -405,6 +411,8 @@ struct DataLaneView: View {
         let pixelsPerSecond = width / duration
         ZStack(alignment: .topLeading) {
             Rectangle().fill(Color(nsColor: .windowBackgroundColor))
+                .contentShape(Rectangle())
+                .onTapGesture { location in editor.seek(to: location.x / pixelsPerSecond) }
             ForEach(editor.project.dataInputs) { data in
                 let laps = editor.laps(of: data)
                 let span = editor.dataSpan(of: data)
@@ -412,11 +420,12 @@ struct DataLaneView: View {
                 bar(data, laps: laps, selected: selected, pixelsPerSecond: pixelsPerSecond)
                     .frame(width: max((span.end - span.start) * pixelsPerSecond - 2, 6))
                     .offset(x: span.start * pixelsPerSecond + 1, y: 3)
-                    .onTapGesture {
+                    .onTapGesture { location in
                         editor.selectedInputID = data.id
                         editor.selectedObjectID = nil
                         editor.selectedSegmentID = nil
                         editor.selectedMarkerID = nil
+                        editor.seek(to: span.start + location.x / pixelsPerSecond)
                     }
             }
             Rectangle().fill(Color.red).frame(width: 1, height: Self.height)

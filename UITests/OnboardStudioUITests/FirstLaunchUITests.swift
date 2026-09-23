@@ -256,4 +256,21 @@ final class TimelineUITests: OnboardStudioUITestCase {
         app.buttons["transport.start"].click()
         expect(transportTime, toRead: "0:00.00")
     }
+
+    /// #106: a click on a clip in the timeline puts the playhead where it landed, as well as
+    /// selecting the clip, the way every editor does.
+    @MainActor
+    func testClickingAClipMovesThePlayhead() throws {
+        launch()
+        addFixtureVideo()
+        let label = app.staticTexts["test-3s"]
+        XCTAssertTrue(label.waitForExistence(timeout: Self.timeout))
+        expect(transportTime, toRead: "0:00.00")
+        // Well to the right of the clip's name, still on the clip.
+        label.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: 250, dy: 0)).click()
+        let moved = NSPredicate(format: "value != '0:00.00' AND value BEGINSWITH '0:0'")
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: transportTime)], timeout: 10),
+            .completed, "The playhead stayed at \(transportTime.value ?? "nil")")
+    }
 }
