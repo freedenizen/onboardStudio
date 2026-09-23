@@ -19,6 +19,9 @@ Local run ≈ 5 min for 13 tests.
 - The test bundle must **not** use `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor` (XCTestCase inits).
   Annotate test methods `@MainActor` instead, and hold the app under test in an optional property,
   not an implicitly-unwrapped one (SwiftLint).
+- The shell's environment does **not** reach the test runner: `xcodebuild` forwards only
+  `TEST_RUNNER_`-prefixed variables, which is why CI exports `TEST_RUNNER_CI=true` for
+  `environment["CI"]` to work in a test.
 - Scheme environment variables reach the **test runner only**. Anything the app needs goes through
   `app.launchEnvironment`. The fixtures path is derived from `#filePath` → `Tests/Fixtures`.
 - Launch arguments: `-ApplePersistenceIgnoreState YES`
@@ -43,7 +46,17 @@ Local run ≈ 5 min for 13 tests.
 - `.accessibilityIdentifier` on an HStack row leaks onto every child. Put it on the `Text`
   (objects) or use `.accessibilityElement(children: .combine)` (inputs).
 - Identifier conventions: `toolbar.*`, `transport.*`, `object.<label>`, `input.<label>`, `tour.*`,
-  `export.*`, `sync.*`, `status.message`. Text controls are found by title.
+  `export.*`, `sync.*`, `status.message`, `preview.object.<label>`. Text controls are found by title.
+- **An identifier is for tests; a label is for people.** Every icon-only control and status glyph
+  gets `.accessibilityLabel` (title case, what it does: "Move Up", "Remove Tyres") *and* `.help`
+  (sentence case, with the shortcut: "Export the finished video (⌘E)"); decorative images get
+  `.accessibilityHidden(true)`. `AccessibilityUITests` runs Apple's audit for element descriptions
+  (on CI too) and for contrast in both appearances (locally only: on CI's runners the forced-light
+  pass flags labels that pass on a Mac) and fails on either — XCUITest cannot read help tags,
+  so those are checked in review.
+- `XCUIElement` cannot read a help tag, and the Touch Bar duplicates a dialog's buttons: scope a
+  dialog button to `app.windows.buttons[…]`. Context menus share titles with menu-bar items
+  (File ▸ Rename…); click the one that `isHittable`.
 - `NSLog` truncates `app.debugDescription` — attach it with `XCTAttachment`.
 
 ## Runner and environment

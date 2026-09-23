@@ -76,7 +76,10 @@ also puts the playhead where you clicked, as in any editor. The magnet button (N
   refused. Nothing it says is lost when the next message replaces it: the clock button at its right,
   or **View ▸ Show Activity** (⌥⌘L), lists everything the app has told you in this project, newest
   first, with **Copy All** for a bug report. Errors shown in an alert are listed there too.
-- **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export.
+- **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export. Hover over any button without
+  a caption, here or under the preview, for its name and shortcut.
+- **VoiceOver**: every control is named, and each object on the preview is an element of its own
+  that VoiceOver can select and move with its actions (Move Left, Right, Up, Down).
 
 ## 3. Videos
 

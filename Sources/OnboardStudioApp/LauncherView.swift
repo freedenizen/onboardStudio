@@ -167,7 +167,7 @@ struct LauncherView: View {
                                 }
                             } label: {
                                 HStack {
-                                    Image(systemName: "doc.richtext")
+                                    Image(systemName: "doc.richtext").accessibilityHidden(true)
                                     Text(url.deletingPathExtension().lastPathComponent)
                                     Spacer()
                                     Text(url.deletingLastPathComponent().path(percentEncoded: false))

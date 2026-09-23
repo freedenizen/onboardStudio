@@ -66,6 +66,12 @@ The rest of this file is what that means here, and the places this app has got i
 - Full keyboard access: tab order follows reading order, focus is visible, Escape and Return do
   what they should in a sheet.
 - Honour Reduce Motion, Reduce Transparency and Increase Contrast.
+- A toolbar `Menu` is read by its **symbol's name** ("gauge.with.dots.needle.33percent") unless it
+  has its own `.accessibilityLabel`; a `Label` inside it is not enough (#153).
+- `underPageBackgroundColor` is mid-grey in the light appearance; secondary text on it fails
+  contrast. The timeline ruler did (#153).
+- A drawn `NSView` (the preview) is invisible to VoiceOver until it returns
+  `accessibilityChildren`, and AppKit holds those weakly: keep the elements alive on the view.
 - Text scales; nothing clips at the largest accessibility sizes that a Mac offers.
 
 ## Polish that makes it feel bought rather than built

@@ -14,7 +14,10 @@ struct SidebarView: View {
                     HStack {
                         Image(
                             systemName: input.kind.isVideo
-                                ? "video" : input.kind.isImage ? "photo" : "waveform.path.ecg")
+                                ? "video" : input.kind.isImage ? "photo" : "waveform.path.ecg"
+                        )
+                        .accessibilityLabel(input.kind.isVideo ? "Video" : input.kind.isImage ? "Image" : "Data")
+                        .help(input.kind.isVideo ? "A video" : input.kind.isImage ? "An image" : "A data file")
                         VStack(alignment: .leading) {
                             Text(input.label)
                             Text(inputDetail(input)).font(.caption).foregroundStyle(.secondary)
@@ -23,6 +26,7 @@ struct SidebarView: View {
                             Spacer()
                             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
                                 .help(editor.problems[input.id] ?? "")
+                                .accessibilityLabel("Problem: \(editor.problems[input.id] ?? "")")
                         }
                     }
                     .contentShape(Rectangle())
@@ -45,7 +49,7 @@ struct SidebarView: View {
                     if editor.selectedInputID == input.id, editor.selectedObjectID == nil {
                         ForEach(editor.chapters(of: input.id)) { chapter in
                             HStack(spacing: 6) {
-                                Image(systemName: "film").foregroundStyle(.secondary)
+                                Image(systemName: "film").foregroundStyle(.secondary).accessibilityHidden(true)
                                 Text(chapter.name).lineLimit(1).truncationMode(.middle)
                                 Spacer(minLength: 0)
                                 Text(EditorModel.clock(chapter.duration)).foregroundStyle(.secondary)
@@ -70,6 +74,8 @@ struct SidebarView: View {
                         HStack(spacing: 6) {
                             Image(systemName: placed.marker.isRange ? "arrow.left.and.right" : "mappin")
                                 .foregroundStyle(Color(placed.marker.colour))
+                                .accessibilityLabel(placed.marker.isRange ? "Range" : "Marker")
+                                .help(placed.marker.isRange ? "A range marker" : "A marker at one moment")
                             Text(placed.marker.name.isEmpty ? "Marker" : placed.marker.name).lineLimit(1)
                             Spacer(minLength: 0)
                             Text(TimelineRuler.label(placed.start)).font(.caption).monospacedDigit()
@@ -95,7 +101,8 @@ struct SidebarView: View {
             Section("Display Objects") {
                 ForEach(editor.project.displayObjects.reversed()) { object in
                     HStack {
-                        Image(systemName: icon(for: object.kind))
+                        Image(systemName: icon(for: object.kind)).accessibilityLabel(object.kind.typeName)
+                            .help(object.kind.typeName)
                         Text(object.label).accessibilityIdentifier("object.\(object.label)")
                         Spacer()
                         let visible = editor.resolvedObject(object.id)?.isVisible ?? object.isVisible
@@ -107,6 +114,7 @@ struct SidebarView: View {
                             Image(systemName: visible ? "eye" : "eye.slash").foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
+                        .help(visible ? "Hide \(object.label)" : "Show \(object.label)")
                         .accessibilityIdentifier("object.\(object.label).visibility")
                         .accessibilityLabel(visible ? "Hide \(object.label)" : "Show \(object.label)")
                     }

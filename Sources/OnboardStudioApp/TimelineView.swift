@@ -68,10 +68,12 @@ struct TimelineRuler: View {
         let pixelsPerSecond = width / duration
         let step = Self.labelStep(pixelsPerSecond: pixelsPerSecond)
         ZStack(alignment: .topLeading) {
-            Rectangle().fill(Color(nsColor: .underPageBackgroundColor))
+            // The control background rather than the under-page grey: in the light appearance
+            // secondary text on that grey failed the contrast audit (#153).
+            Rectangle().fill(Color(nsColor: .controlBackgroundColor))
             ForEach(Array(stride(from: 0.0, through: duration, by: step)), id: \.self) { t in
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(Self.label(t)).font(.system(size: 9)).foregroundStyle(.secondary).padding(.leading, 3)
+                    Text(Self.label(t)).font(.caption2).foregroundStyle(.secondary).padding(.leading, 3)
                     Spacer(minLength: 0)
                 }
                 .overlay(alignment: .bottomLeading) {

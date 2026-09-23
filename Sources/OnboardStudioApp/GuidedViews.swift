@@ -65,6 +65,8 @@ struct GettingStartedSection: View {
                         Image(systemName: step.done ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(step.done ? Color.green : Color.secondary)
                             .padding(.top, 2)
+                            .accessibilityLabel(step.done ? "Done" : "To Do")
+                            .help(step.done ? "Done" : "Still to do")
                         VStack(alignment: .leading, spacing: 2) {
                             Text(step.title).fontWeight(step.done ? .regular : .semibold)
                                 .foregroundStyle(step.done ? .secondary : .primary)
@@ -123,6 +125,7 @@ struct WelcomeOverlay: View {
     var body: some View {
         VStack(spacing: 18) {
             Image(systemName: "gauge.with.dots.needle.67percent").font(.system(size: 56)).foregroundStyle(.secondary)
+                .accessibilityHidden(true)
             Text("Turn a lap video and its data into an overlay video").font(.title2)
                 .accessibilityIdentifier("welcome.title")
             Text(

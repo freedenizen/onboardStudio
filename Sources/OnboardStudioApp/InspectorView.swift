@@ -93,12 +93,14 @@ struct InputInspector: View {
                     } label: {
                         Image(systemName: "arrow.up")
                     }
+                    .help("Move up the list").accessibilityLabel("Move Up")
                     .disabled(editor.project.inputs.first?.id == input.id)
                     Button {
                         editor.moveInput(input.id, by: 1)
                     } label: {
                         Image(systemName: "arrow.down")
                     }
+                    .help("Move down the list").accessibilityLabel("Move Down")
                     .disabled(editor.project.inputs.last?.id == input.id)
                 }
                 Text("Drag the video bars in the timeline to move them; videos snap to each other's ends.")
@@ -274,39 +276,6 @@ struct ObjectInspector: View {
         Binding(
             get: { object.inputID },
             set: { value in editor.updateObject(object.id, name: "Change Data Source") { $0.inputID = value } })
-    }
-}
-
-/// Wraps a control for an overridable property with a badge showing whether the segment at the
-/// playhead sets it, and a button to inherit it again.
-struct OverrideRow<Content: View>: View {
-    let editor: EditorModel
-    let object: DisplayObject
-    let property: OverridableProperty
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        HStack {
-            content()
-            if let segment = editor.editingSegment {
-                if editor.isOverriddenHere(property, object.id) {
-                    Button {
-                        editor.resetOverride(property, object.id)
-                    } label: {
-                        Label(
-                            "Set in \(segment.label.isEmpty ? "this segment" : segment.label)", systemImage: "pin.fill"
-                        )
-                        .labelStyle(.iconOnly)
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(Color.accentColor)
-                    .help("Set in \(segment.label.isEmpty ? "this segment" : segment.label). Click to inherit instead.")
-                } else {
-                    Image(systemName: "pin.slash").foregroundStyle(.secondary)
-                        .help("Inherited from earlier segments; editing sets it for this segment.")
-                }
-            }
-        }
     }
 }
 
