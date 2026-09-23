@@ -52,10 +52,16 @@ swift run onboard bench --export --codec hevc --seconds 60
   commits on GitHub's side **unsigned** and fails the required `Verify commit signatures` check.
   `UI tests` is reported by an aggregating job that fans out to `UI tests (build)` and three
   `UI tests (shard N)` jobs; only the aggregate name is required, so the shards can be rebalanced
-  freely. A new XCUITest class must be added to a shard in `.github/workflows/ci.yml` —
-  `Scripts/check-ui-test-shards.sh` (run by Lint (fast) and the pre-commit hook) fails the build
-  if one is missing. A shard retries a failed test once; a test that passes only on retry is
-  recorded on the `flaky-tests` issue, so look there before calling a test stable.
+  freely. A new XCUITest class names its shard in a `// ci-shard: N` line above its
+  declaration — `Scripts/check-ui-test-shards.sh` (run by Lint (fast) and the pre-commit hook)
+  fails the build if one is missing; `ci.yml` is not edited for it. A shard retries a failed
+  test once; a test that passes only on retry is recorded on the `flaky-tests` issue, so look
+  there before calling a test stable.
+- **One PR in CI at a time; the rest are drafts.** CI runs one PR at a time (a run is six macOS
+  jobs), and a draft skips the macOS jobs and the Claude review. Open further PRs with
+  `gh pr create --draft`, and `gh pr ready <n>` the next one only when the one before has merged —
+  rebase it first, so it is tested once against the `main` it will land on (#237). Related issues
+  can share one PR (`Closes #79.` and `Closes #153.`).
 - The nightly workflow (`.github/workflows/nightly.yml`) runs what a PR does not wait for:
   the ffprobe-backed media tests, `onboard render` on the fixture, an unsigned bundle and the
   bench against a budget; red opens the `nightly-red` issue.
@@ -63,10 +69,11 @@ swift run onboard bench --export --codec hevc --seconds 60
 - Conventional Commits subjects: `feat(importers): …`, `fix(mediakit): …`, `test(ui): …`, `ci: …`.
 - **Every user-visible change is documented in the same PR that makes it.** A feature nobody can
   find is not finished. `docs/user-guide.md` for what it does and where it is; a journey in
-  `docs/user-journeys.md` (numbered, naming the XCUITest that drives it) when it is a new thing a
-  user *does*; `docs/formats.md` for anything about a file format; `docs/project-format.md` for a
-  new field in the document; `docs/parity.md` when it changes what we do or do not have against
-  RaceRender. Say what changed for the user, not what changed in the code.
+  `docs/journeys/` (one file per journey, `J23-short-title.md`, naming the XCUITest that drives
+  it) when it is a new thing a user *does*; `docs/formats.md` for anything about a file format;
+  `docs/project-format.md` for a new field in the document; `docs/parity.md` when it changes what
+  we do or do not have against RaceRender. Say what changed for the user, not what changed in
+  the code.
 - Every behaviour change ships unit tests. Parsers and renderers test against `Tests/Fixtures`;
   renderers additionally use golden images.
 - `swift format` (`.swift-format`) and SwiftLint (`.swiftlint.yml`) are enforced by the pre-commit
@@ -119,8 +126,8 @@ Deeper docs, read on demand: `docs/architecture.md`, `docs/formats.md`, `docs/pr
 `docs/conventions.md` (editor conventions to follow; which shortcut claims are verified),
 `docs/landscape.md` (what other track-day tools do, where we are ahead, ranked candidate work),
 `docs/tracks-and-sectors.md` (circuit identification, sectors, what each logger format carries),
-`docs/testing.md`, `docs/parity.md`, `docs/scripting.md`, `docs/user-journeys.md`,
-`docs/user-guide.md`, `docs/youtube.md`.
+`docs/testing.md`, `docs/parity.md`, `docs/scripting.md`, `docs/user-journeys.md` and
+`docs/journeys/`, `docs/user-guide.md`, `docs/youtube.md`.
 
 Path-scoped rules load automatically when you work in those areas:
 `.claude/rules/renderkit.md`, `.claude/rules/importers.md`, `.claude/rules/uitests.md`,

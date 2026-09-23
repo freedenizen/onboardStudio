@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 1
 /// J17: save a layout as a template, find it in the welcome window with a picture, manage it
 /// there, and start a project from it (#44).
 final class TemplateLibraryUITests: OnboardStudioUITestCase {

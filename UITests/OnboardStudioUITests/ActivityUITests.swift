@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 3
 /// J19: what the status line said stays readable after the next message replaces it (#112).
 final class ActivityUITests: OnboardStudioUITestCase {
     @MainActor

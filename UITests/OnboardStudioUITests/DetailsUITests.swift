@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 3
 /// J16: the project's details fill in from the data, and a title card shows them (#74).
 final class DetailsUITests: OnboardStudioUITestCase {
     @MainActor

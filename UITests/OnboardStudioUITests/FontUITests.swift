@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 2
 /// J15: choose the font a project's text is drawn in, then give one object its own (#118).
 final class FontUITests: OnboardStudioUITestCase {
     @MainActor

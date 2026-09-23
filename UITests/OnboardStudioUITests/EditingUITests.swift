@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 2
 /// J3: start from a template, then add the media; files are never added twice.
 final class TemplateUITests: OnboardStudioUITestCase {
     @MainActor
@@ -43,6 +44,7 @@ final class TemplateUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 3
 /// J4: the manual sync wizard.
 final class SyncUITests: OnboardStudioUITestCase {
     /// #76: manual sync is a panel under the preview, not a sheet over it. Each nudge applies
@@ -120,6 +122,7 @@ final class SyncUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 1
 /// J5 and J6: objects and their inspectors.
 final class ObjectEditingUITests: OnboardStudioUITestCase {
     @MainActor
@@ -428,6 +431,7 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 3
 /// J7: a second camera, layouts and segments.
 final class MultiCameraUITests: OnboardStudioUITestCase {
     @MainActor
@@ -463,6 +467,7 @@ final class MultiCameraUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 3
 /// J9: open, edit, save and reopen a project.
 final class ProjectUITests: OnboardStudioUITestCase {
     @MainActor

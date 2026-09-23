@@ -1,6 +1,7 @@
 import AVFoundation
 import XCTest
 
+// ci-shard: 2
 /// J2 and J11: the whole track-day workflow, from an empty project to an exported file.
 final class JourneyUITests: OnboardStudioUITestCase {
     @MainActor
