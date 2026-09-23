@@ -61,6 +61,7 @@ struct EditorView: View {
         }
         .focusedSceneValue(\.editor, editor)
         .sheet(isPresented: $editor.showExport) { ExportSheet(editor: editor) }
+        .sheet(isPresented: $editor.showSaveTemplate) { SaveTemplateSheet(editor: editor) }
         .sheet(item: $editor.uploadURL) { url in UploadSheet(file: url) }
         .alert(
             "Problem",

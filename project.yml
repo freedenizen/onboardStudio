@@ -54,6 +54,13 @@ targets:
             LSItemContentTypes:
               - com.freedenizen.onboardstudio.project
               - com.freedenizen.overlaygen.project
+          # Opening a template adds it to the user's templates (#44); it is not a document.
+          - CFBundleTypeName: Onboard Studio Template
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - com.freedenizen.onboardstudio.template
+              - com.freedenizen.overlaygen.template
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: com.freedenizen.onboardstudio.project
             UTTypeDescription: Onboard Studio Project
