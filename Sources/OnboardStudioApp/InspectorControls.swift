@@ -209,7 +209,7 @@ struct OverrideRow<Content: View>: View {
                 } else {
                     Image(systemName: "pin.slash").foregroundStyle(.secondary)
                         .help("Inherited from earlier segments; editing sets it for this segment.")
-                        .accessibilityLabel("Inherited from earlier segments")
+                        .accessibilityLabel("Inherited")
                 }
             }
         }

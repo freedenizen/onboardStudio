@@ -65,7 +65,8 @@ struct GettingStartedSection: View {
                         Image(systemName: step.done ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(step.done ? Color.green : Color.secondary)
                             .padding(.top, 2)
-                            .accessibilityLabel(step.done ? "Done" : "To do")
+                            .accessibilityLabel(step.done ? "Done" : "To Do")
+                            .help(step.done ? "Done" : "Still to do")
                         VStack(alignment: .leading, spacing: 2) {
                             Text(step.title).fontWeight(step.done ? .regular : .semibold)
                                 .foregroundStyle(step.done ? .secondary : .primary)

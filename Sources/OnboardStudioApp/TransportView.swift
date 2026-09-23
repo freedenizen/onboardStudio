@@ -44,6 +44,7 @@ struct TransportView: View {
             )
             .frame(minWidth: 60)
             .accessibilityLabel("Position")
+            .accessibilityIdentifier("transport.position")
             Text(TimeParsing.lapTimeString(editor.duration)).monospacedDigit().foregroundStyle(.secondary).frame(
                 width: 66, alignment: .leading
             )
@@ -71,7 +72,8 @@ struct TransportView: View {
             )
             .frame(width: 70)
             .help("Timeline zoom")
-            .accessibilityLabel("Timeline zoom")
+            .accessibilityLabel("Timeline Zoom")
+            .accessibilityIdentifier("transport.zoom")
             Button {
                 editor.zoomTimeline(by: 1.5)
             } label: {

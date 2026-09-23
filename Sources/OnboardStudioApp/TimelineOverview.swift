@@ -55,7 +55,8 @@ struct TimelineOverview: View {
         .frame(height: height)
         .help("The whole project; drag the window to scroll the zoomed timeline")
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Timeline overview")
+        .accessibilityLabel("Timeline Overview")
+        .accessibilityIdentifier("timeline.overview")
         .accessibilityValue(shownPart)
         .accessibilityAdjustableAction { direction in
             guard visibleFraction < 0.999 else { return }

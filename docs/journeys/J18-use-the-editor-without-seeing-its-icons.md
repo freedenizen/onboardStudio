@@ -4,7 +4,7 @@ their symbol names, and the preview was one blank picture to assistive technolog
 
 1. Hover over any toolbar or transport button: a help tag names it and its shortcut.
 2. With VoiceOver on, the toolbar reads *Add Object* and *Layout*, the sidebar's glyphs say *Video*,
-   *Data*, *Problem: …*, and the checklist says *Done* / *To do*.
+   *Data*, *Problem: …*, and the checklist says *Done* / *To Do*.
 3. On the preview, each object is its own element — *Speedometer*, *Selected* — which VoiceOver
    can press to select and whose actions move it (*Move Left*, *Move Right*, *Move Up*,
    *Move Down*, by the ⇧-arrow step).
