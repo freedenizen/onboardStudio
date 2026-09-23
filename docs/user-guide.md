@@ -217,6 +217,10 @@ Wherever the inspector asks for a channel it lists the file's channels by the at
 where it came from: `analog_1 (CAN bus)`. Hover over a control whose one-word label does not say
 enough, such as a needle's *Tail* or *Hub*, for a short explanation.
 
+Switching a bar between **Horizontal** and **Vertical** turns its frame with it, about its centre,
+so a long thin bar becomes a tall thin one rather than a stub in a wide box; a frame you had
+already shaped for the new direction is left as it is.
+
 Every object has a position and size in percent of the frame, opacity, mirror and an RGB mask.
 Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save it as an
 `.onboardstyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse

@@ -387,6 +387,21 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         expect(app.textFields["gauge.sweep"], toRead: before)
     }
 
+    /// #113: making a bar vertical turns its frame too, instead of leaving a stub in a wide box.
+    @MainActor
+    func testTurningABarVerticalTurnsItsFrame() throws {
+        launch()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Bar")
+        let height = app.textFields["object.height"]
+        XCTAssertTrue(height.waitForExistence(timeout: Self.timeout))
+        expect(height, toRead: "5")
+        choose("Vertical", inPopUpShowing: "Horizontal")
+        expect(height, toRead: "71")
+        app.typeKey("z", modifierFlags: .command)
+        expect(height, toRead: "5")
+    }
+
     @MainActor
     func testIndicatorLightAsksForAChannelAndSuggestsAThreshold() throws {
         launch()
