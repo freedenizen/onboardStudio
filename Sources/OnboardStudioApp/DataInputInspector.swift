@@ -341,7 +341,7 @@ struct CalculatedFieldRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                TextField(
+                CommittingTextField(
                     "Name",
                     text: Binding(
                         get: { spec.name },
@@ -352,7 +352,7 @@ struct CalculatedFieldRow: View {
                         })
                 )
                 .frame(width: 110)
-                TextField(
+                CommittingTextField(
                     "Unit",
                     text: Binding(
                         get: { spec.unit },
@@ -369,7 +369,7 @@ struct CalculatedFieldRow: View {
                     Image(systemName: "minus.circle")
                 }.buttonStyle(.borderless)
             }
-            TextField(
+            CommittingTextField(
                 "Expression",
                 text: Binding(
                     get: { spec.expression },

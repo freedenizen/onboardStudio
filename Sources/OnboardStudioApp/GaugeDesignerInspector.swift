@@ -11,7 +11,7 @@ struct GaugeDesignerInspector: View {
     var body: some View {
         Section("Scale") {
             ChannelPicker(editor: editor, object: object, selection: field(\.channel))
-            TextField("Title", text: field(\.title))
+            CommittingTextField("Title", text: field(\.title))
             NumberField("Minimum", value: field(\.minValue))
             NumberField("Maximum", value: field(\.maxValue))
             NumberField("Major tick", value: field(\.majorTick))
@@ -23,7 +23,7 @@ struct GaugeDesignerInspector: View {
                     DisplayUnitPicker(editor: editor, object: object)
                 }
             } else {
-                TextField("Unit label", text: field(\.unitLabel))
+                CommittingTextField("Unit label", text: field(\.unitLabel))
                 NumberField("Divide value by", value: field(\.valueDivisor))
             }
         }

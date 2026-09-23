@@ -8,14 +8,17 @@ struct InspectorView: View {
 
     var body: some View {
         Form {
+            // Identified by what they inspect, so choosing another object of the same kind builds
+            // fresh fields rather than handing the last one's half-typed text to the new one: a
+            // text field commits what was typed when it goes, to the thing it was typed for (#205).
             if let object = editor.selectedObject {
-                ObjectInspector(editor: editor, object: object)
+                ObjectInspector(editor: editor, object: object).id(object.id)
             } else if let marker = editor.selectedMarker {
-                MarkerInspector(editor: editor, marker: marker)
+                MarkerInspector(editor: editor, marker: marker).id(marker.id)
             } else if let segment = editor.selectedSegment {
-                SegmentInspector(editor: editor, segment: segment)
+                SegmentInspector(editor: editor, segment: segment).id(segment.id)
             } else if let input = editor.selectedInput {
-                InputInspector(editor: editor, input: input)
+                InputInspector(editor: editor, input: input).id(input.id)
             } else {
                 ProjectInspector(editor: editor)
             }
@@ -102,7 +105,8 @@ struct InputInspector: View {
                 Label(problem, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.yellow).font(.callout)
                 Button("Relink…") { editor.relink(input.id) }
             }
-            TextField("Label", text: binding(\.label, name: "Rename Input")).accessibilityIdentifier("input.label")
+            CommittingTextField("Label", text: binding(\.label, name: "Rename Input"))
+                .accessibilityIdentifier("input.label")
             if let session = editor.sessions[input.id] {
                 LabeledContent("Format", value: session.info.sourceFormat)
                 LabeledContent("Channels", value: "\(session.channels.count)")
@@ -217,7 +221,8 @@ struct ObjectInspector: View {
 
     var body: some View {
         Section(object.kind.typeName) {
-            TextField("Label", text: binding(\.label, name: "Rename Object")).accessibilityIdentifier("object.label")
+            CommittingTextField("Label", text: binding(\.label, name: "Rename Object"))
+                .accessibilityIdentifier("object.label")
             if object.kind.needsData {
                 Picker("Data", selection: inputBinding) {
                     Text("None").tag(InputID?.none)
@@ -373,7 +378,7 @@ struct SegmentInspector: View {
 
     var body: some View {
         Section("Segment") {
-            TextField(
+            CommittingTextField(
                 "Label", text: Binding(get: { segment.label }, set: { editor.renameSegment(segment.id, to: $0) }))
             NumberField(
                 "Start (s)", value: Binding(get: { segment.start }, set: { editor.shiftSegment(segment.id, to: $0) }),
@@ -447,7 +452,7 @@ struct MarkerInspector: View {
 
     var body: some View {
         Section("Marker") {
-            TextField(
+            CommittingTextField(
                 "Name",
                 text: Binding(
                     get: { marker.name },
@@ -471,7 +476,7 @@ struct MarkerInspector: View {
                     set: { value in
                         editor.updateMarker(marker.id, name: "Resize Marker") { $0.duration = max(0, value) }
                     }), fractionDigits: 0...2)
-            TextField(
+            CommittingTextField(
                 "Note",
                 text: Binding(
                     get: { marker.note },

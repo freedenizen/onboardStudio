@@ -63,7 +63,9 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   visible part; drag it to scroll.
 - **Inspector (right)**: settings for the selected input or object; drag its left edge to widen it.
   With nothing selected it shows the project's output size and frame rate, the camera framing and
-  the Getting Started checklist. The window fits displays 1024 points wide.
+  the Getting Started checklist. The window fits displays 1024 points wide. What you type in a
+  text field takes effect when you press Return or leave the field, so a whole name is one step
+  of Edit ▸ Undo; Escape abandons what you typed.
 - **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export.
 
 ## 3. Videos

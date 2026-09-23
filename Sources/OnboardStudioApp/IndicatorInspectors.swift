@@ -11,7 +11,7 @@ struct IndicatorInspector: View {
             Picker("Symbol", selection: field(\.glyph)) {
                 ForEach(IndicatorGlyph.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            TextField("Label", text: field(\.label))
+            CommittingTextField("Label", text: field(\.label))
             ChannelPicker(editor: editor, object: object, selection: field(\.channel))
             Picker("On when", selection: field(\.condition)) {
                 ForEach(IndicatorCondition.allCases, id: \.self) { Text($0.displayName).tag($0) }
@@ -76,11 +76,11 @@ struct LapPanelInspector: View {
     var body: some View {
         Section("Timing Panel") {
             Toggle("Best lap", isOn: field(\.showBest))
-            if params.showBest { TextField("Heading", text: field(\.bestLabel)) }
+            if params.showBest { CommittingTextField("Heading", text: field(\.bestLabel)) }
             Toggle("Previous lap", isOn: field(\.showPrevious))
-            if params.showPrevious { TextField("Heading", text: field(\.previousLabel)) }
+            if params.showPrevious { CommittingTextField("Heading", text: field(\.previousLabel)) }
             Toggle("Current lap", isOn: field(\.showCurrent))
-            if params.showCurrent { TextField("Heading", text: field(\.currentLabel)) }
+            if params.showCurrent { CommittingTextField("Heading", text: field(\.currentLabel)) }
             Toggle("Lap numbers", isOn: field(\.showLapNumbers))
             Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 1...3)
         }
@@ -252,7 +252,7 @@ struct SectorPanelInspector: View {
         Section("Theoretical lap") {
             Toggle("Show", isOn: field(\.showTheoretical))
             if params.showTheoretical {
-                TextField("Heading", text: field(\.theoreticalLabel))
+                CommittingTextField("Heading", text: field(\.theoreticalLabel))
                 Text("Every sector's best time added together — the lap you have already driven in pieces.")
                     .font(.caption).foregroundStyle(.secondary)
             }
