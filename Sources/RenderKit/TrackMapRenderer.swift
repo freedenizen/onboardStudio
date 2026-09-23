@@ -226,7 +226,7 @@ public struct TrackMapRenderer: OverlayDrawing {
 
     /// Centred text with a black surround, so a number stays readable over map imagery.
     func label(_ string: String, at point: CGPoint, size: Double, in cg: CGContext) {
-        let style = TextDrawing.Style(pointSize: size, color: params.labelColor)
+        let style = context.styled(TextDrawing.Style(pointSize: size, color: params.labelColor))
         var back = style
         back.color = .black
         let offset = max(1, size * 0.08)

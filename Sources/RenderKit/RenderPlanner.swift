@@ -151,7 +151,8 @@ public enum RenderPlanner {
                 cache: cache, speedUnit: resolver.speed(object.kind.speedUnit),
                 units: displayUnits(
                     for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit,
-                    globalAttributeMappings: globalAttributeMappings))
+                    globalAttributeMappings: globalAttributeMappings),
+                typeface: typeface(for: object, in: project), textScale: object.textScale ?? 1)
             let image =
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }
@@ -169,6 +170,12 @@ public enum RenderPlanner {
             }
             return renderer(for: object.kind, context: context, image: image)
         }
+    }
+
+    /// #118's chain: the object's own font, then the project's. `nil` leaves the object in the
+    /// fonts it draws in by itself.
+    public static func typeface(for object: DisplayObject, in project: Project) -> Typeface? {
+        object.typeface ?? project.settings.typeface
     }
 
     /// The map imagery every track map in `project` needs, given the loaded sessions.

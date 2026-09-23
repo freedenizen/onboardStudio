@@ -261,6 +261,24 @@ condition can be ≥, ≤, = or ≠.
 
 The timing panel's headings, lap numbers and comparison lap (best or previous) are settings too.
 
+### Fonts
+
+Every object that draws text has a **Font** section in its inspector: a font, a typeface within it
+(*Bold*, *Condensed Medium*, …) and, for objects without a size of their own, a **Text size** from
+50 % to 200 %. The font reaches all of the object's text at once — a gauge's tick labels and
+readout, a timer's caption and time, a map's corner labels. Numbers stay one width in any font, so
+a changing readout does not shuffle sideways.
+
+To set one font for the whole project, deselect everything and choose it in the project
+inspector's **Font** section. Objects follow it until they choose their own: their pop-up reads
+*Project Font (Futura Bold)*, and choosing it again goes back to following. *Built-In* is how the
+app drew before fonts could be chosen — labels in Helvetica Neue, numbers in Menlo — and is what a
+project saved before this keeps.
+
+A project opened on a Mac without its font says so under the pop-up and draws that text in the
+built-in fonts rather than a substitute, until the font is installed. Copy and paste a style
+(**Project ▸ Copy Object Style**) and the font goes with it.
+
 ### Units on an object
 
 An object shows its channel in whatever the attribute's *Shows* unit says, and a **Unit** picker

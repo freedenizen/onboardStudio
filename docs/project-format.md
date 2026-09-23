@@ -103,6 +103,9 @@ can carry; the answer is a migration pinning the old value, never regenerating t
 }
 ```
 
+`settings.typeface` (optional, `{ "family", "face" }`) is the font for every object that has not
+chosen its own `typeface`; absent means the built-in fonts.
+
 `settings.overlayOpacity` (0…1, default 1) fades the whole overlay layer (everything but the videos) over the picture, on top of each object's own `opacity`.
 
 ## Inputs
@@ -196,6 +199,14 @@ channels the object draws a *number* for, and a unit the values cannot be conver
 ignored rather than relabelling them. Speed keeps its own `speedUnit` on the params, because that
 is what older projects carry and it spells km/h `kph` where this would spell it `km/h`.
 
+`typeface` (optional, #118) is the font every piece of the object's text is drawn in:
+`{ "family": "Futura", "face": "Condensed Medium" }`, the names Font Book shows. Absent follows
+`settings.typeface`, and absent there too means each renderer's built-in fonts (Helvetica Neue for
+labels, Menlo for numbers, or a text object's own `fontName`/`bold`). A font the Mac does not have
+also falls back to the built-in fonts, never to a system substitute. `textScale` (optional,
+default 1) multiplies the size of all of the object's text. Neither needs a migration: absent is
+what every earlier project did.
+
 | kind | params |
 |---|---|
 | `video` | `mirror` (`horizontal`/`vertical`, combined with the input's mirror) and `channelMask` (`red`/`green`/`blue`); the layer is aspect-fitted into `frame` |
@@ -208,7 +219,7 @@ is what older projects carry and it spells km/h `kph` where this would spell it 
 | `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation` (degrees clockwise), `backgroundColor`; `background` (`none`/`standard`/`satellite`/`hybrid`: Apple Maps imagery behind the outline, fetched once for the session's area and cached in `~/Library/Caches/OnboardStudio/maps`); `secondInputID` + `secondDotColor` (another data input drawn as a second dot, positioned through that input's own sync); `trace` (`trackOnly` (default for new objects) / `wholeSession` / `referenceLap`). `trackOnly` draws every lap but only where the car drove the circuit, leaving out the pit lane, the pit entry and exit and the paddock — which otherwise stretch the framing and squash the circuit into a corner of the object (#95). `referenceLap` draws the one lap sectors and deltas are measured against: crisper still, but it needs laps to have been detected. **The decode fallback is `wholeSession`, not the memberwise default**, because it is the record of how the app drew before `trace` existed and rewriting it would retroactively change what pre-0.21 files draw; `colorBySector` + `sectorColors` (cycled across the sectors, so a shorter list repeats; empty falls back to `lineColor`); `showSectorTicks` (a line across the track at each boundary, numbered `S2`, `S3`, … — there is no `S1` tick because the first sector begins at the start/finish line); `showCornerNumbers` (from the reference lap's curvature, not from any published map); `labelColor`, `labelScale` (fraction of the map's shorter side). The options default to off and `trace` falls back to `wholeSession`, so a project saved before them draws exactly the outline it drew before. The sectors themselves come from the data input's `sectors` |
 | `gForce` | `maxG`, `ringStep`, `trailSeconds`, `dotColor`, `gridColor`, `faceColor`, `showValues` |
 | `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`/`projectTime`/`timeOfDay`/`deltaToBest`), `showLapNumber`, `label`, `decimals` (1–3), colours, `aheadColor`/`behindColor` for the delta. `deltaToBest` compares the lap in progress with the best completed lap at the same distance into the lap (needs a distance channel; GPS files get one automatically). `timeOfDay` needs epoch timestamps (RaceChrono) or a recorded start time.; `deltaReference` (`sessionBest` / `bestLap` = best so far / `previousLap`; files without the key use `bestLap`) |
-| `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours; formatting: `multiplier`, `offset` (shown = value × multiplier + offset), `prefix`, `thousandsSeparator`, `showPlusSign`, `minimumIntegerDigits`, `absoluteValue`, `fontScale`, `labelScale`, `fontName` (empty = monospaced); `zones` (`[{ "from", "to", "color" }]`, recolour the shown value) |
+| `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours; formatting: `multiplier`, `offset` (shown = value × multiplier + offset), `prefix`, `thousandsSeparator`, `showPlusSign`, `minimumIntegerDigits`, `absoluteValue`, `fontScale`, `labelScale`, `fontName` (empty = monospaced; the built-in font, which the object's `typeface` replaces); `zones` (`[{ "from", "to", "color" }]`, recolour the shown value) |
 | `indicator` | `channel` (empty = not bound yet; the ABS/Traction templates fill it from the data input when a channel name mentions ABS, DSC, TCS, ESC, ESP, traction or stability), `condition` (`atLeast`/`atMost`/`equal`/`notEqual`), `threshold`, `glyph` (`abs`/`traction`/`warning`/`light`/`text`), `label`, `onColor`, `offColor`, `showWhenOff`, `glow`, `holdSeconds`, `flashHertz`, `outline` |
 | `lapPanel` | `showBest`, `showPrevious`, `showCurrent`, `bestLabel`, `previousLabel`, `currentLabel` (headings), `showLapNumbers`, `reference` (`sessionBest` (default) / `bestLap` = best so far / `previousLap`, what the lanes compare with), `showSpeedDelta`, `showTimeDelta`, `speedDeltaRange` (± display units), `timeDeltaRange` (± s), `speedUnit`, `decimals`, `textColor`, `labelColor`, `aheadColor`, `behindColor`, `backgroundColor`, `outline` |
 | `sectorPanel` | One cell per sector of the lap in progress, plus the theoretical lap. `display` (`time`/`delta`/`both`), `reference` (`bestSector` (default) = the quickest that sector was driven all session / `sessionBestLap` / `previousLap`), `showLabels` (`S1`, `S2`, …), `showTheoretical` + `theoreticalLabel`, `highlightCurrent` + `currentColor`, `holdPreviousSeconds` (seconds the lap just completed stays up after the line, 5 by default; the only moment its last sector is readable, since it finishes at the instant the car crosses), `decimals`, `textColor`, `labelColor`, `aheadColor`, `behindColor`, `backgroundColor`, `outline`. The sectors themselves come from the data input's `sectors`, not from here |
@@ -283,7 +294,7 @@ exact frames in both the preview and the export.
 
 ## Object styles
 
-**Project ▸ Export Object Style…** writes the selected object's `kind`, `opacity`, `width` and `height` to a
+**Project ▸ Export Object Style…** writes the selected object's `kind`, `opacity`, `width`, `height` and, when set, `typeface` and `textScale` to a
 `.onboardstyle` JSON file (`{ "formatVersion": 1, "kind": …, "opacity": 1, "width": 0.22, "height": 0.38 }`).
 **Import Object Style…** applies a file to the selected object (keeping its position, label and data source)
 or adds a new object when nothing is selected. **Copy / Paste Object Style** (⌥⌘C / ⌥⌘V) do the same through

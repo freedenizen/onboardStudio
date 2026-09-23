@@ -34,6 +34,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Common: label, input, X/Y/W/H %, aspect lock, transparency, mirror, RGB mask, volume/pan | ✅ | |
+| Font per object | ✅ | Font, typeface and text size on every object that draws text, plus a project-wide font objects follow until they choose their own |
 | Video, Audio Only | ◐ | Video ✅; audio-only inputs mix without an object (an `.audio` input) |
 | Shape, Text, Embedded Image (data-driven rotation/opacity/flash) | ✅ | |
 | Track Map (+ map background, two-vehicle) | ✅ | Apple Maps imagery (map/satellite/hybrid), second vehicle |

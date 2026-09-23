@@ -1,8 +1,8 @@
 import Foundation
 
 /// A display object's look, saved on its own so it can be reused in other projects: the kind
-/// with all its parameters, the opacity and the size. Position, label and data source are not
-/// part of a style.
+/// with all its parameters, the opacity, the size and the font. Position, label and data source
+/// are not part of a style.
 public struct ObjectStyle: Hashable, Codable, Sendable {
     public static let formatVersion = 1
     public static let fileExtension = "onboardstyle"
@@ -16,6 +16,10 @@ public struct ObjectStyle: Hashable, Codable, Sendable {
     public var opacity: Double
     public var width: Double
     public var height: Double
+    /// The object's own font and text size (#118). Absent from a style saved before fonts could be
+    /// chosen, which therefore leaves an object following the project's font, as it did then.
+    public var typeface: Typeface?
+    public var textScale: Double?
 
     public init(object: DisplayObject) {
         formatVersion = Self.formatVersion
@@ -23,6 +27,8 @@ public struct ObjectStyle: Hashable, Codable, Sendable {
         opacity = object.opacity
         width = object.frame.width
         height = object.frame.height
+        typeface = object.typeface
+        textScale = object.textScale
     }
 
     /// Applies the style to `object`, keeping its identity, label, data source and position.
@@ -30,6 +36,8 @@ public struct ObjectStyle: Hashable, Codable, Sendable {
     public func apply(to object: inout DisplayObject) {
         object.kind = kind
         object.opacity = opacity
+        object.typeface = typeface
+        object.textScale = textScale
         object.frame.width = min(width, 1)
         object.frame.height = min(height, 1)
         object.frame.x = min(object.frame.x, 1 - object.frame.width)

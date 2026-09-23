@@ -81,7 +81,7 @@ public struct IndicatorRenderer: OverlayDrawing {
     }
 
     private func drawLabel(_ text: String, in cg: CGContext, center: CGPoint, size: Double, color: RGBAColor) {
-        let style = TextDrawing.Style(pointSize: size, color: color)
+        let style = context.styled(TextDrawing.Style(pointSize: size, color: color))
         if params.outline {
             TextDrawing.drawOutlined(
                 text, centeredAt: center, style: style, outline: .black, width: max(1, size * 0.08), in: cg)

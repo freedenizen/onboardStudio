@@ -20,11 +20,16 @@ public struct ObjectContext: Sendable {
     /// already resolved through #89's chain. Empty means "draw everything as it is stored", which
     /// is what a project with no display units chosen gets.
     public let units: DisplayUnits
+    /// The font this object's text is drawn in, already resolved object → project (#118); `nil`
+    /// keeps the fonts each renderer draws in by itself.
+    public let typeface: Typeface?
+    /// How much larger than it lays it out this object draws its text (#118).
+    public let textScale: Double
 
     public init(
         objectID: DisplayObjectID, frame: UnitRect, opacity: Double, sampler: TelemetrySampler?, sync: SyncSettings,
         cache: RenderCache, speedUnit: SpeedDisplayUnit = UnitResolver.lastResort,
-        units: DisplayUnits? = nil
+        units: DisplayUnits? = nil, typeface: Typeface? = nil, textScale: Double = 1
     ) {
         self.objectID = objectID
         self.frame = frame
@@ -36,6 +41,18 @@ public struct ObjectContext: Sendable {
         // Without the fuller chain, speed still converts as #75 made it: a caller that knows only
         // a speed unit gets the drawing it always got, never an empty table quietly drawing m/s.
         self.units = units ?? DisplayUnits(speed: speedUnit)
+        self.typeface = typeface
+        self.textScale = textScale
+    }
+
+    /// `style` in this object's chosen font and text size. Every renderer passes its text styles
+    /// through here, so a choice reaches all of an object's text and not just the part that
+    /// happened to have a font field.
+    public func styled(_ style: TextDrawing.Style) -> TextDrawing.Style {
+        var style = style
+        style.typeface = typeface
+        style.pointSize *= textScale
+        return style
     }
 
     /// Pixel rectangle of the object for an output of `size`.
@@ -51,8 +68,9 @@ public struct ObjectContext: Sendable {
     public func inputTime(_ projectTime: Double) -> Double { sync.inputTime(forProjectTime: projectTime) }
 
     /// Cache key prefix unique to this object at this size.
+    /// The font is part of it: a cached gauge face has its labels drawn into it.
     public func cacheKey(_ suffix: String, size: CGSize) -> String {
-        "\(objectID)|\(Int(size.width))x\(Int(size.height))|\(suffix)"
+        "\(objectID)|\(Int(size.width))x\(Int(size.height))|\(typeface?.displayName ?? "")|\(textScale)|\(suffix)"
     }
 }
 

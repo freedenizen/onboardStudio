@@ -72,7 +72,7 @@ public struct GForceRenderer: OverlayDrawing {
         cg.fillEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
 
         if params.showValues {
-            let style = TextDrawing.Style.mono(radius * 0.13)
+            let style = context.styled(TextDrawing.Style.mono(radius * 0.13))
             TextDrawing.draw(
                 String(format: "%.2f", lateral),
                 at: CGPoint(x: rect.minX + radius * 0.06, y: rect.minY + radius * 0.04), style: style, in: cg)
@@ -93,7 +93,8 @@ public struct GForceRenderer: OverlayDrawing {
         while g <= params.maxG + 1e-9 {
             let r = plotRadius * g / params.maxG
             cg.strokeEllipse(in: CGRect(x: center.x - r, y: center.y - r, width: 2 * r, height: 2 * r))
-            let style = TextDrawing.Style(pointSize: radius * 0.09, color: params.gridColor, weightBold: false)
+            let style = context.styled(
+                TextDrawing.Style(pointSize: radius * 0.09, color: params.gridColor, weightBold: false))
             TextDrawing.draw(
                 String(format: "%g", g), at: CGPoint(x: center.x + radius * 0.02, y: center.y - r), style: style, in: cg
             )

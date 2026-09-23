@@ -18,11 +18,15 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     /// numbers are in and what objects show it in. Deviations from the global mapping in
     /// preferences; a single input can deviate again.
     public var attributeMappings: AttributeMappingTable
+    /// The font for every object in this project that has not chosen its own (#118). `nil` leaves
+    /// each object in its built-in fonts, which is what a project saved before fonts could be
+    /// chosen always did.
+    public var typeface: Typeface?
 
     public init(
         outputWidth: Int = 1920, outputHeight: Int = 1080, frameRate: Double = 30, duration: Double? = nil,
         framing: CameraFraming = .none, overlayOpacity: Double = 1, speedUnit: SpeedUnitSetting = .automatic,
-        attributeMappings: AttributeMappingTable = AttributeMappingTable()
+        attributeMappings: AttributeMappingTable = AttributeMappingTable(), typeface: Typeface? = nil
     ) {
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
@@ -32,11 +36,12 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         self.overlayOpacity = overlayOpacity
         self.speedUnit = speedUnit
         self.attributeMappings = attributeMappings
+        self.typeface = typeface
     }
 
     private enum CodingKeys: String, CodingKey {
         case outputWidth, outputHeight, frameRate, duration, framing, overlayOpacity, speedUnit
-        case attributeMappings
+        case attributeMappings, typeface
     }
 
     public init(from decoder: any Decoder) throws {
@@ -57,6 +62,8 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         // and automatic on every field is precisely what such a project already did.
         attributeMappings =
             try c.decodeIfPresent(AttributeMappingTable.self, forKey: .attributeMappings) ?? AttributeMappingTable()
+        // Absent before fonts could be chosen, and absent means the built-in fonts it always drew.
+        typeface = try c.decodeIfPresent(Typeface.self, forKey: .typeface)
     }
 
     /// The same settings with the framing removed (framing is applied by the compositor, so it

@@ -48,6 +48,7 @@ struct ProjectInspector: View {
             }
         }
         OverlayOpacitySection(editor: editor)
+        ProjectFontSection(editor: editor)
         CameraFramingSection(editor: editor)
         GettingStartedSection(editor: editor)
         Section {
@@ -247,6 +248,7 @@ struct ObjectInspector: View {
             OverrideRow(editor: editor, object: object, property: .frame) { Text("Position & Size (% of frame)") }
         }
         kindSection
+        ObjectFontSection(editor: editor, object: object)
         Section {
             Button("Delete Object", role: .destructive) {
                 editor.selectedObjectID = object.id

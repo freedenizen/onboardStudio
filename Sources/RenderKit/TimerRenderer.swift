@@ -25,8 +25,9 @@ public struct TimerRenderer: OverlayDrawing {
         let readout = self.readout(sample: sample, projectTime: time)
         let label = labelText(sample: sample)
         let padding = rect.height * 0.12
-        let labelStyle = TextDrawing.Style(pointSize: rect.height * 0.28, color: params.textColor)
-        let valueStyle = TextDrawing.Style.mono(rect.height * 0.5, color: readout.color ?? params.textColor)
+        let labelStyle = context.styled(TextDrawing.Style(pointSize: rect.height * 0.28, color: params.textColor))
+        let valueStyle = context.styled(
+            TextDrawing.Style.mono(rect.height * 0.5, color: readout.color ?? params.textColor))
         if !label.isEmpty {
             TextDrawing.draw(
                 label, at: CGPoint(x: rect.minX + padding, y: rect.minY + padding), style: labelStyle, in: cg)
