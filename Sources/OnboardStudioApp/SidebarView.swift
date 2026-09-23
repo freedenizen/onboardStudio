@@ -105,6 +105,23 @@ struct SidebarView: View {
                             .help(object.kind.typeName)
                         Text(object.label).accessibilityIdentifier("object.\(object.label)")
                         Spacer()
+                        if object.groupID != nil {
+                            Image(systemName: "link").foregroundStyle(.secondary).font(.caption)
+                                .help("In a group: it moves and resizes with the others")
+                                .accessibilityLabel("Grouped")
+                        }
+                        // Always there rather than only on hover: easier to find, and to reach by keyboard.
+                        Button {
+                            editor.selectObject(object.id)
+                            editor.toggleLockSelection()
+                        } label: {
+                            Image(systemName: object.isLocked ? "lock.fill" : "lock.open")
+                                .foregroundStyle(object.isLocked ? Color.primary : Color.secondary.opacity(0.5))
+                        }
+                        .buttonStyle(.plain)
+                        .help(object.isLocked ? "Unlock \(object.label) (⌘L)" : "Lock \(object.label) (⌘L)")
+                        .accessibilityLabel(object.isLocked ? "Unlock \(object.label)" : "Lock \(object.label)")
+                        .accessibilityIdentifier("object.\(object.label).lock")
                         let visible = editor.resolvedObject(object.id)?.isVisible ?? object.isVisible
                         Button {
                             editor.setOverridable(object.id, name: visible ? "Hide Object" : "Show Object") {
@@ -120,11 +137,13 @@ struct SidebarView: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        editor.selectedObjectID = object.id
-                        editor.selectedSegmentID = nil
-                        editor.selectedMarkerID = nil
+                        // ⌘ or ⇧ adds to the selection, as in the Finder's lists (#90).
+                        let extending = !NSEvent.modifierFlags.isDisjoint(with: [.command, .shift])
+                        editor.selectObject(object.id, extending: extending, wholeGroup: false)
                     }
-                    .listRowBackground(editor.selectedObjectID == object.id ? Color.accentColor.opacity(0.2) : nil)
+                    .listRowBackground(
+                        editor.selectedObjectIDs.contains(object.id) ? Color.accentColor.opacity(0.2) : nil
+                    )
                     .contextMenu {
                         Button("Delete", role: .destructive) {
                             editor.selectedObjectID = object.id

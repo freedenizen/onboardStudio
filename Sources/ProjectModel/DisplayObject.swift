@@ -319,6 +319,11 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
     /// `nil` is 1. Objects whose params already size their text (Text, Text Data, Gear) keep
     /// their own size controls; this scales on top of them.
     public var textScale: Double?
+    /// A finished object the mouse leaves alone (#90): the preview does not pick it up and the
+    /// arrow keys do not nudge it, but it still draws and still edits in the inspector.
+    public var isLocked: Bool
+    /// The group it moves, resizes and nudges with, or `nil` on its own (#90).
+    public var groupID: ObjectGroupID?
 
     public init(
         id: DisplayObjectID = DisplayObjectID(),
@@ -330,7 +335,9 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
         kind: DisplayObjectKind,
         displayUnit: String? = nil,
         typeface: Typeface? = nil,
-        textScale: Double? = nil
+        textScale: Double? = nil,
+        isLocked: Bool = false,
+        groupID: ObjectGroupID? = nil
     ) {
         self.id = id
         self.label = label
@@ -342,5 +349,28 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
         self.displayUnit = displayUnit
         self.typeface = typeface
         self.textScale = textScale
+        self.isLocked = isLocked
+        self.groupID = groupID
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, label, inputID, frame, opacity, isVisible, kind, displayUnit, typeface, textScale, isLocked, groupID
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(DisplayObjectID.self, forKey: .id)
+        label = try c.decode(String.self, forKey: .label)
+        inputID = try c.decodeIfPresent(InputID.self, forKey: .inputID)
+        frame = try c.decode(UnitRect.self, forKey: .frame)
+        opacity = try c.decode(Double.self, forKey: .opacity)
+        isVisible = try c.decode(Bool.self, forKey: .isVisible)
+        kind = try c.decode(DisplayObjectKind.self, forKey: .kind)
+        displayUnit = try c.decodeIfPresent(String.self, forKey: .displayUnit)
+        typeface = try c.decodeIfPresent(Typeface.self, forKey: .typeface)
+        textScale = try c.decodeIfPresent(Double.self, forKey: .textScale)
+        // Absent before objects could be locked or grouped, which is what every such object was.
+        isLocked = try c.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
+        groupID = try c.decodeIfPresent(ObjectGroupID.self, forKey: .groupID)
     }
 }

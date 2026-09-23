@@ -34,6 +34,7 @@ struct PlayerAndGizmo: NSViewRepresentable {
     func updateNSView(_ nsView: PreviewContainerView, context: Context) {
         nsView.gizmo.objects = editor.resolvedObjects
         nsView.gizmo.selectedID = editor.selectedObjectID
+        nsView.gizmo.selectedIDs = editor.selectedObjectIDs
         nsView.gizmo.startFinish = editor.startFinishTarget
         let settings = editor.project.settings
         nsView.gizmo.outputAspect = Double(settings.outputWidth) / Double(max(settings.outputHeight, 1))
@@ -54,6 +55,9 @@ final class PreviewContainerView: NSView {
         addSubview(playerView)
         addSubview(gizmo)
         gizmo.playerView = playerView
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
+        setAccessibilityIdentifier("preview")
     }
 
     @available(*, unavailable)
@@ -71,14 +75,17 @@ final class PreviewContainerView: NSView {
 final class GizmoView: NSView {
     var objects: [DisplayObject] = []
     var selectedID: DisplayObjectID?
+    /// The whole selection: a group, or objects picked with ⌘ or ⇧ (#90).
+    var selectedIDs: Set<DisplayObjectID> = []
     /// Output width / height; the player uses aspect-fit, so this defines where the video sits.
     var outputAspect: Double = 16.0 / 9.0
     weak var playerView: AVPlayerView?
-    private let editor: EditorModel
+    let editor: EditorModel
+    /// A move or resize of the selection's box, carrying every selected object with it.
     private struct DragState {
-        let id: DisplayObjectID
         let handle: ObjectHandle
-        let original: UnitRect
+        let box: UnitRect
+        let originals: [DisplayObjectID: UnitRect]
         let start: CGPoint
     }
 
@@ -151,16 +158,25 @@ final class GizmoView: NSView {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         for object in objects where object.isVisible {
             let rect = viewRect(object.frame)
-            let selected = object.id == selectedID
+            let selected = selectedIDs.contains(object.id)
             context.setStrokeColor(
                 selected ? NSColor.controlAccentColor.cgColor : NSColor.white.withAlphaComponent(0.35).cgColor)
             context.setLineWidth(selected ? 2 : 1)
+            // A locked object is outlined in dashes: there, but not for the mouse.
+            context.setLineDash(phase: 0, lengths: object.isLocked ? [4, 3] : [])
             context.stroke(rect)
-            if selected {
-                context.setFillColor(NSColor.controlAccentColor.cgColor)
-                for point in handlePoints(rect) {
-                    context.fill(CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8))
-                }
+        }
+        context.setLineDash(phase: 0, lengths: [])
+        if let box = movableSelectionBox {
+            let rect = viewRect(box)
+            if selectedIDs.count > 1 {
+                context.setStrokeColor(NSColor.controlAccentColor.withAlphaComponent(0.6).cgColor)
+                context.setLineWidth(1)
+                context.stroke(rect.insetBy(dx: -3, dy: -3))
+            }
+            context.setFillColor(NSColor.controlAccentColor.cgColor)
+            for point in handlePoints(selectedIDs.count > 1 ? rect.insetBy(dx: -3, dy: -3) : rect) {
+                context.fill(CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8))
             }
         }
         drawStartFinish(in: context)
@@ -245,17 +261,24 @@ final class GizmoView: NSView {
         }
         let unit = unitPoint(point)
         let handleSize = 6 / max(videoRect.width, 1)
-        // Selected object's handles win; then topmost object under the pointer.
-        if let id = selectedID, let object = objects.first(where: { $0.id == id }),
-            let handle = ObjectGeometry.handle(at: unit, in: object.frame, handleSize: handleSize)
+        let extending = !event.modifierFlags.isDisjoint(with: [.shift, .command])
+        // The selection's handles win; then the topmost object under the pointer that is not
+        // locked (#90) — a click meant for the video behind a finished gauge reaches the video.
+        if !extending, let box = movableSelectionBox.map(handleBox),
+            let handle = ObjectGeometry.handle(at: unit, in: box, handleSize: handleSize), handle != .body
         {
-            drag = DragState(id: id, handle: handle, original: object.frame, start: unit)
+            beginDrag(handle, at: unit)
             return
         }
         let framing = editor.project.settings.framing
-        for object in objects.reversed() where object.isVisible {
+        for object in objects.reversed() where object.isVisible && !object.isLocked {
             if let handle = ObjectGeometry.handle(at: unit, in: object.frame, handleSize: handleSize) {
-                editor.selectedObjectID = object.id
+                if extending {
+                    editor.selectObject(object.id, extending: true)
+                    return
+                }
+                if !selectedIDs.contains(object.id) { editor.selectObject(object.id) }
+                selectedIDs = editor.selectedObjectIDs
                 needsDisplay = true
                 // Inside a zoomed video's picture, dragging pans the camera framing (as dragging
                 // the viewer does in an editor); the video object's edges still resize it.
@@ -264,10 +287,11 @@ final class GizmoView: NSView {
                     NSCursor.closedHand.push()
                     return
                 }
-                drag = DragState(id: object.id, handle: handle, original: object.frame, start: unit)
+                beginDrag(selectedIDs.count > 1 ? .body : handle, at: unit)
                 return
             }
         }
+        if extending { return }
         editor.selectedObjectID = nil
         needsDisplay = true
         if framing.zoom > 1, videoRect.contains(point) {
@@ -304,8 +328,12 @@ final class GizmoView: NSView {
         let unit = unitPoint(convert(event.locationInWindow, from: nil))
         let delta = CGSize(width: unit.x - drag.start.x, height: unit.y - drag.start.y)
         let keepAspect = event.modifierFlags.contains(.shift)
-        let frame = ObjectGeometry.drag(drag.original, handle: drag.handle, delta: delta, keepAspect: keepAspect)
-        if let index = objects.firstIndex(where: { $0.id == drag.id }) { objects[index].frame = frame }
+        let box = ObjectGeometry.drag(drag.box, handle: drag.handle, delta: delta, keepAspect: keepAspect)
+        for (id, original) in drag.originals {
+            guard let index = objects.firstIndex(where: { $0.id == id }) else { continue }
+            objects[index].frame =
+                drag.originals.count == 1 ? box : ObjectGeometry.mapped(original, from: drag.box, to: box)
+        }
         needsDisplay = true
     }
 
@@ -326,49 +354,20 @@ final class GizmoView: NSView {
         }
         guard let drag else { return }
         self.drag = nil
-        if let object = objects.first(where: { $0.id == drag.id }), object.frame != drag.original {
-            editor.moveObject(drag.id, frame: object.frame)
+        var moved: [DisplayObjectID: UnitRect] = [:]
+        for (id, original) in drag.originals {
+            if let object = objects.first(where: { $0.id == id }), object.frame != original { moved[id] = object.frame }
+        }
+        if moved.count == 1, let (id, frame) = moved.first {
+            editor.moveObject(id, frame: frame)
+        } else {
+            editor.moveObjects(moved)
         }
     }
 
     override func resetCursorRects() {
         super.resetCursorRects()
         if editor.project.settings.framing.zoom > 1 { addCursorRect(videoRect, cursor: .openHand) }
-    }
-
-    override func keyDown(with event: NSEvent) {
-        switch event.keyCode {
-        case 51, 117:  // delete, forward delete
-            editor.deleteSelectedObject()
-        case 49:  // space
-            editor.togglePlayback()
-        case 123, 124, 125, 126:  // arrows
-            guard let id = selectedID, let object = objects.first(where: { $0.id == id }) else {
-                // Nothing selected, so the arrows still belong to the playhead. `,`/`.` step
-                // frames whatever has focus; this keeps the habit working over the picture.
-                switch event.keyCode {
-                case 123: editor.step(by: -1)
-                case 124: editor.step(by: 1)
-                default: super.keyDown(with: event)
-                }
-                return
-            }
-            // Nudge in pixels of the output frame, not a fraction of it, so the step means the
-            // same thing whatever the project's size.
-            let pixels = NudgeStep.pixels(shift: event.modifierFlags.contains(.shift))
-            let (dx, dy): (Double, Double) =
-                switch event.keyCode {
-                case 123: (-pixels, 0)
-                case 124: (pixels, 0)
-                case 125: (0, pixels)
-                default: (0, -pixels)
-                }
-            let frame = ObjectGeometry.nudged(
-                object.frame, byPixels: dx, dy, in: editor.project.settings)
-            editor.moveObject(id, frame: frame)
-        default:
-            super.keyDown(with: event)
-        }
     }
 }
 
@@ -388,90 +387,78 @@ enum NudgeStep {
     }
 }
 
-// MARK: - Accessibility (#153)
+// MARK: - Selection (#90)
 
-/// The preview is drawn, not built from controls, so without this VoiceOver and Voice Control
-/// see one blank picture. Each object on it is exposed as an element of its own: it can be found
-/// by name, pressed to select it, and moved with the same step the arrow keys use.
 extension GizmoView {
-    override func isAccessibilityElement() -> Bool { true }
-    override func accessibilityRole() -> NSAccessibility.Role? { .group }
-    override func accessibilityLabel() -> String? { "Preview" }
-
-    override func accessibilityChildren() -> [Any]? {
-        let shown = objects.filter(\.isVisible).reversed()
-        objectElements = objectElements.filter { id, _ in shown.contains { $0.id == id } }
-        return shown.map { object in
-            let element = objectElements[object.id] ?? PreviewObjectElement(id: object.id, in: self)
-            element.update(object, selected: object.id == selectedID, in: self)
-            objectElements[object.id] = element
-            return element
-        }
-    }
-
-    /// Selects `id` as a click on it would.
-    func accessibilitySelect(_ id: DisplayObjectID) {
-        editor.selectedObjectID = id
-        editor.selectedInputID = nil
-        editor.selectedSegmentID = nil
-        editor.selectedMarkerID = nil
-    }
-
-    /// Moves `id` by `dx`, `dy` steps of the arrow keys' ⇧ nudge.
-    func accessibilityMove(_ id: DisplayObjectID, _ dx: Double, _ dy: Double) -> Bool {
-        guard let object = objects.first(where: { $0.id == id }) else { return false }
-        let pixels = NudgeStep.pixels(shift: true)
-        let frame = ObjectGeometry.nudged(object.frame, byPixels: dx * pixels, dy * pixels, in: editor.project.settings)
-        editor.moveObject(id, frame: frame)
-        return true
-    }
-}
-
-// AppKit asks for these off the main actor's knowledge but always on the main thread.
-nonisolated final class PreviewObjectElement: NSAccessibilityElement {
-    private let id: DisplayObjectID
-    private weak var gizmo: GizmoView?
-
-    @MainActor
-    init(id: DisplayObjectID, in gizmo: GizmoView) {
-        self.id = id
-        self.gizmo = gizmo
-        super.init()
-        setAccessibilityParent(gizmo)
-        setAccessibilityRole(.button)
-        setAccessibilityHelp("Press to select; the actions move it.")
-        let moves: [(String, CGVector)] = [
-            ("Move Left", CGVector(dx: -1, dy: 0)), ("Move Right", CGVector(dx: 1, dy: 0)),
-            ("Move Up", CGVector(dx: 0, dy: -1)), ("Move Down", CGVector(dx: 0, dy: 1)),
-        ]
-        setAccessibilityCustomActions(
-            moves.map { name, step in
-                NSAccessibilityCustomAction(name: name) { [weak self] in
-                    guard let self, let gizmo = self.gizmo else { return false }
-                    return MainActor.assumeIsolated { gizmo.accessibilityMove(self.id, step.dx, step.dy) }
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 51, 117:  // delete, forward delete
+            editor.deleteSelectedObject()
+        case 49:  // space
+            editor.togglePlayback()
+        case 123, 124, 125, 126:  // arrows
+            guard selectedID != nil else {
+                // Nothing selected, so the arrows still belong to the playhead. `,`/`.` step
+                // frames whatever has focus; this keeps the habit working over the picture.
+                switch event.keyCode {
+                case 123: editor.step(by: -1)
+                case 124: editor.step(by: 1)
+                default: super.keyDown(with: event)
                 }
-            })
-    }
-
-    /// Brings the name, selection and place up to date with `object` as it is now.
-    @MainActor
-    func update(_ object: DisplayObject, selected: Bool, in gizmo: GizmoView) {
-        setAccessibilityLabel(
-            object.label == object.kind.typeName ? object.label : "\(object.label), \(object.kind.typeName)")
-        setAccessibilityIdentifier("preview.object.\(object.label)")
-        setAccessibilityValue(selected ? "Selected" : nil)
-        let rect = gizmo.viewRect(object.frame).intersection(gizmo.bounds)
-        if let window = gizmo.window {
-            setAccessibilityFrame(window.convertToScreen(gizmo.convert(rect, to: nil)))
+                return
+            }
+            // Nudge in pixels of the output frame, not a fraction of it, so the step means the
+            // same thing whatever the project's size.
+            let pixels = NudgeStep.pixels(shift: event.modifierFlags.contains(.shift))
+            let (dx, dy): (Double, Double) =
+                switch event.keyCode {
+                case 123: (-pixels, 0)
+                case 124: (pixels, 0)
+                case 125: (0, pixels)
+                default: (0, -pixels)
+                }
+            let selection = movableSelection
+            guard !selection.isEmpty else {
+                editor.statusMessage = "Locked objects stay where they are. Unlock them first (⌘L)."
+                return
+            }
+            var frames: [DisplayObjectID: UnitRect] = [:]
+            for object in selection {
+                frames[object.id] = ObjectGeometry.nudged(object.frame, byPixels: dx, dy, in: editor.project.settings)
+            }
+            if frames.count == 1, let (id, frame) = frames.first {
+                editor.moveObject(id, frame: frame)
+            } else {
+                editor.moveObjects(frames)
+            }
+        default:
+            super.keyDown(with: event)
         }
     }
 
-    override func accessibilityPerformPress() -> Bool {
-        let id = id
-        let target = gizmo
-        return MainActor.assumeIsolated {
-            target?.accessibilitySelect(id)
-            return target != nil
-        }
+    /// The selected objects the mouse may move: none of them locked.
+    fileprivate var movableSelection: [DisplayObject] {
+        let selected = objects.filter { selectedIDs.contains($0.id) && $0.isVisible }
+        return selected.contains(where: \.isLocked) ? [] : selected
+    }
+
+    /// The box the selection moves and resizes by: one object's frame, or the bounds of a group.
+    fileprivate var movableSelectionBox: UnitRect? { ObjectGeometry.bounds(movableSelection.map(\.frame)) }
+
+    /// Where the selection's handles sit: on the object itself, or just outside a group's
+    /// bounds so they do not land on its members' own edges.
+    fileprivate func handleBox(_ box: UnitRect) -> UnitRect {
+        guard selectedIDs.count > 1 else { return box }
+        let dx = 3 / max(videoRect.width, 1)
+        let dy = 3 / max(videoRect.height, 1)
+        return UnitRect(x: box.x - dx, y: box.y - dy, width: box.width + 2 * dx, height: box.height + 2 * dy)
+    }
+
+    fileprivate func beginDrag(_ handle: ObjectHandle, at unit: CGPoint) {
+        let selection = movableSelection
+        guard let box = ObjectGeometry.bounds(selection.map(\.frame)) else { return }
+        drag = DragState(
+            handle: handle, box: box, originals: Dictionary(uniqueKeysWithValues: selection.map { ($0.id, $0.frame) }),
+            start: unit)
     }
 }

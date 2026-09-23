@@ -302,3 +302,72 @@ extension DisplayObject {
         }
     }
 }
+
+// MARK: - Groups and locks (#90)
+
+extension ObjectGeometry {
+    /// The smallest rectangle around every one of `frames`, or `nil` for none.
+    public static func bounds(_ frames: [UnitRect]) -> UnitRect? {
+        guard let first = frames.first else { return nil }
+        var minX = first.x
+        var minY = first.y
+        var maxX = first.x + first.width
+        var maxY = first.y + first.height
+        for frame in frames.dropFirst() {
+            minX = min(minX, frame.x)
+            minY = min(minY, frame.y)
+            maxX = max(maxX, frame.x + frame.width)
+            maxY = max(maxY, frame.y + frame.height)
+        }
+        return UnitRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    }
+
+    /// `frame`'s place inside `old` carried into `new`: how each member of a group follows the
+    /// group's box when the box is moved or resized.
+    public static func mapped(_ frame: UnitRect, from old: UnitRect, to new: UnitRect) -> UnitRect {
+        let sx = old.width > 0 ? new.width / old.width : 1
+        let sy = old.height > 0 ? new.height / old.height : 1
+        return UnitRect(
+            x: new.x + (frame.x - old.x) * sx, y: new.y + (frame.y - old.y) * sy,
+            width: max(frame.width * sx, minimumSize), height: max(frame.height * sy, minimumSize))
+    }
+}
+
+extension Project {
+    /// `ids` with every other member of any group one of them belongs to: what a click on one
+    /// member of a group selects.
+    public func expandingGroups(_ ids: Set<DisplayObjectID>) -> Set<DisplayObjectID> {
+        let groups = Set(displayObjects.filter { ids.contains($0.id) }.compactMap(\.groupID))
+        guard !groups.isEmpty else { return ids }
+        return ids.union(displayObjects.filter { $0.groupID.map(groups.contains) ?? false }.map(\.id))
+    }
+
+    /// Makes one group of `ids` and every group they already belong to. Fewer than two objects
+    /// make no group.
+    @discardableResult
+    public mutating func group(_ ids: Set<DisplayObjectID>) -> ObjectGroupID? {
+        let members = expandingGroups(ids)
+        guard members.count >= 2 else { return nil }
+        let group = ObjectGroupID()
+        for index in displayObjects.indices where members.contains(displayObjects[index].id) {
+            displayObjects[index].groupID = group
+        }
+        return group
+    }
+
+    /// Breaks up every group any of `ids` belongs to.
+    public mutating func ungroup(_ ids: Set<DisplayObjectID>) {
+        let members = expandingGroups(ids)
+        for index in displayObjects.indices where members.contains(displayObjects[index].id) {
+            displayObjects[index].groupID = nil
+        }
+    }
+
+    /// Locks or unlocks `ids` and the rest of their groups: a group is locked as a whole.
+    public mutating func setLocked(_ locked: Bool, _ ids: Set<DisplayObjectID>) {
+        let members = expandingGroups(ids)
+        for index in displayObjects.indices where members.contains(displayObjects[index].id) {
+            displayObjects[index].isLocked = locked
+        }
+    }
+}

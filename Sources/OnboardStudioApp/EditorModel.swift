@@ -17,7 +17,13 @@ final class EditorModel {
     var fileURL: URL?
     var undoManager: UndoManager?
 
-    var selectedObjectID: DisplayObjectID?
+    /// The object the inspector shows. Choosing another one on its own drops the rest of a
+    /// multiple selection; `selectObject(_:extending:)` builds one.
+    var selectedObjectID: DisplayObjectID? {
+        didSet { if selectedObjectID != oldValue { additionalSelection = [] } }
+    }
+    /// The rest of a multiple selection, or of the selected object's group (#90).
+    var additionalSelection: Set<DisplayObjectID> = []
     var selectedInputID: InputID?
     var selectedSegmentID: SegmentID?
     var selectedMarkerID: MarkerID?

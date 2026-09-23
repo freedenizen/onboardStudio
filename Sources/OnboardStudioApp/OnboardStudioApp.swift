@@ -136,6 +136,16 @@ struct EditorCommands: Commands {
                 Button("Image…") { editor?.addImage() }
             }
             Button("Delete Selected Object") { editor?.deleteSelectedObject() }.keyboardShortcut(.delete, modifiers: [])
+            // Keynote's and Pages's keys for the same verbs (#90); ⌘G is Find Next elsewhere.
+            Button("Group") { editor?.groupSelection() }
+                .keyboardShortcut("g", modifiers: [.command, .option])
+                .disabled(editor?.canGroupSelection != true)
+            Button("Ungroup") { editor?.ungroupSelection() }
+                .keyboardShortcut("g", modifiers: [.command, .option, .shift])
+                .disabled(editor?.canUngroupSelection != true)
+            Button(editor?.selectionIsLocked == true ? "Unlock" : "Lock") { editor?.toggleLockSelection() }
+                .keyboardShortcut("l", modifiers: [.command])
+                .disabled(editor?.selectedObjectID == nil)
             Divider()
             Button("Copy Object Style") { editor?.copyStyle() }
                 .keyboardShortcut("c", modifiers: [.command, .option])
