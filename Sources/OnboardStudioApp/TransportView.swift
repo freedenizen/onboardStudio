@@ -37,6 +37,7 @@ struct TransportView: View {
             .accessibilityIdentifier("transport.stepForward").accessibilityLabel("Step forward one frame")
             Text(TimeParsing.lapTimeString(editor.currentTime)).monospacedDigit().frame(width: 66, alignment: .trailing)
                 .accessibilityIdentifier("transport.time").accessibilityLabel("Playhead")
+                .accessibilityValue(TimeParsing.lapTimeString(editor.currentTime))
             Slider(
                 value: Binding(get: { editor.currentTime }, set: { editor.seek(to: $0) }),
                 in: 0...max(editor.duration, 0.001)
@@ -47,6 +48,7 @@ struct TransportView: View {
                 width: 66, alignment: .leading
             )
             .accessibilityLabel("Length")
+            .accessibilityValue(TimeParsing.lapTimeString(editor.duration))
             Divider().frame(height: 16)
             Button {
                 editor.snappingEnabled.toggle()
