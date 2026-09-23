@@ -84,9 +84,11 @@ public enum ProjectCompiler {
                     if unchanged, let cached = previous?.sessions[input.id] {
                         loaded.sessions[input.id] = cached
                     } else {
-                        loaded.sessions[input.id] = try importData(
-                            at: url, settings: settings,
-                            mappings: attributeMappings(for: settings, in: project, global: global))
+                        loaded.sessions[input.id] = Diagnostics.imported(
+                            try importData(
+                                at: url, settings: settings,
+                                mappings: attributeMappings(for: settings, in: project, global: global)),
+                            from: url)
                     }
                 case .video, .audio:
                     if unchanged, let cached = previous?.mediaInfo[input.id] {
@@ -116,7 +118,7 @@ public enum ProjectCompiler {
                     }
                 }
             } catch {
-                loaded.problems[input.id] = "\(error)"
+                loaded.problems[input.id] = Diagnostics.failedToLoad(url, error)
             }
         }
         for request in RenderPlanner.mapBackgroundRequests(for: project, sessions: loaded.sessions) {
