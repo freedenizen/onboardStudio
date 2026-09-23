@@ -1,45 +1,64 @@
 #!/bin/bash
-# Checks that every XCUITest class runs on exactly one shard of the "UI tests" matrix.
+# Which CI shard each XCUITest class runs on, and a check that every class runs on exactly one.
 #
-# The shards select tests with -only-testing: by class name, so a class that nobody added to the
-# matrix is selected by no shard: it runs nowhere, every shard still passes, and the coverage hole
-# is invisible. This turns that silent gap into a Lint failure.
+#   Scripts/check-ui-test-shards.sh             check (Lint (fast) and the pre-commit hook)
+#   Scripts/check-ui-test-shards.sh --shard 2   print shard 2's classes, space-separated (CI)
+#
+# A class says its shard in a `// ci-shard: N` line above its declaration (above its doc comment,
+# if it has one). The shard lives with the test rather than in ci.yml so that adding a class edits
+# only its own file: when the lists lived in ci.yml, every PR that added a class edited the same
+# three lines, and each merge left the other open PRs in conflict (#237).
+#
+# A class with no line runs on no shard: every shard still passes and the hole is invisible. That
+# is what the check turns into a failure.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-workflow=".github/workflows/ci.yml"
-status=0
+shards=3
 
+# "Class shard" for every XCUITest class; shard is "-" when the class has no ci-shard line. The
+# shared base class OnboardStudioUITestCase does not end in UITests and holds no tests.
+assignments() {
+  awk '
+    /^\/\/ ci-shard: / { shard = $3; next }
+    /^(final )?class [A-Za-z0-9_]+UITests[:[:space:]]/ {
+      name = ($1 == "final") ? $3 : $2
+      sub(/:.*/, "", name)
+      print name, (shard == "" ? "-" : shard)
+      shard = ""
+    }
+  ' UITests/OnboardStudioUITests/*.swift | sort
+}
+
+if [ "${1:-}" = "--shard" ]; then
+  assignments | awk -v n="$2" '$2 == n { printf "%s%s", sep, $1; sep = " " } END { print "" }'
+  exit 0
+fi
+
+status=0
 fail() {
   echo "error: $1" >&2
   status=1
 }
 
-# Declared: every class under UITests/ whose name ends in UITests. The shared base class is
-# OnboardStudioUITestCase, which deliberately does not match — it holds no tests of its own.
-declared=$(grep -rhoE '^(final )?class [A-Za-z0-9_]+UITests\b' UITests | awk '{print $NF}' | sort -u)
+all=$(assignments)
+[ -n "$all" ] || fail "found no XCUITest classes under UITests/ — has the layout changed?"
 
-# Listed: the words on the matrix's `classes:` lines.
-listed=$(awk '/^ +classes: /{sub(/^ +classes: /, ""); print}' "$workflow" | tr ' ' '\n' | grep -v '^$' | sort)
-
-[ -n "$declared" ] || fail "found no XCUITest classes under UITests/ — has the layout changed?"
-[ -n "$listed" ] || fail "found no shard \`classes:\` lines in $workflow — has the matrix changed?"
-
-while read -r class; do
-  [ -n "$class" ] && fail "$class is listed on more than one shard in $workflow"
-done <<<"$(echo "$listed" | uniq -d)"
-
-# comm needs each side deduplicated, or a class listed twice also reads as a class that only the
-# workflow knows about — one fault reported as two, the second of them wrong.
-while read -r class; do
-  [ -n "$class" ] && fail "$class runs on no shard — add it to a \`classes:\` line in $workflow"
-done <<<"$(comm -23 <(echo "$declared") <(echo "$listed" | uniq))"
+while read -r class shard; do
+  [ -z "$class" ] && continue
+  if [ "$shard" = "-" ]; then
+    fail "$class runs on no shard — put a \`// ci-shard: N\` line (1–$shards) above its declaration"
+  elif ! [[ "$shard" =~ ^[0-9]+$ ]] || [ "$shard" -lt 1 ] || [ "$shard" -gt "$shards" ]; then
+    fail "$class names shard $shard; there are shards 1 to $shards"
+  fi
+done <<<"$all"
 
 while read -r class; do
-  [ -n "$class" ] && fail "$workflow shards $class, which no longer exists under UITests/"
-done <<<"$(comm -13 <(echo "$declared") <(echo "$listed" | uniq))"
+  [ -n "$class" ] && fail "two classes are called $class"
+done <<<"$(echo "$all" | awk '{print $1}' | uniq -d)"
 
 if [ "$status" -eq 0 ]; then
-  echo "UI test shards OK: $(echo "$declared" | wc -l | tr -d ' ') classes, each on exactly one shard."
+  echo "UI test shards OK: $(echo "$all" | wc -l | tr -d ' ') classes, each on exactly one shard" \
+    "($(for n in $(seq 1 $shards); do printf '%s ' "$(echo "$all" | awk -v n="$n" '$2 == n' | wc -l | tr -d ' ')"; done | sed 's/ $//' | tr ' ' '/'))."
 fi
 exit "$status"

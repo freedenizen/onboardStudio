@@ -8,7 +8,8 @@ paths:
 # App UI and XCUITest
 
 Run with `Scripts/ui-tests.sh [Class[/test]]` (it wraps `xcodebuild` in `caffeinate -dis`).
-One test class per journey in `docs/user-journeys.md`. CI job **UI tests** uploads the `.xcresult`
+One test class per journey in `docs/journeys/` (one file each). A new class names its CI shard in
+a `// ci-shard: N` line above its declaration (above its doc comment). CI job **UI tests** uploads the `.xcresult`
 on failure — read it with `xcrun xcresulttool export attachments`.
 Local run ≈ 5 min for 13 tests.
 

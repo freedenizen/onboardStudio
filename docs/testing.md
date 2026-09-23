@@ -38,7 +38,7 @@ iteration counts locally when hunting a bug; CI runs the committed counts.
 ### UI tests (XCUITest)
 
 `UITests/OnboardStudioUITests` drives the real app through its windows, menus, inspectors and sheets,
-one class per user journey in [user-journeys.md](user-journeys.md). Run them with
+one class per user journey in [journeys/](journeys/) (see [user-journeys.md](user-journeys.md)). Run them with
 `Scripts/ui-tests.sh` (or `Scripts/ui-tests.sh JourneyUITests` for one class); CI runs them in the
 **UI tests** job and keeps the `.xcresult` on failure. The app is launched with `-uiTesting YES`,
 which adds a **Testing** menu that adds the fixture files (open panels cannot be scripted) and with

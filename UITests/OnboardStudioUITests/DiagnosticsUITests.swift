@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 2
 /// J22: everything a bug report needs, in one file the user sends themselves (#152).
 final class DiagnosticsUITests: OnboardStudioUITestCase {
     @MainActor

@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 1
 /// #111, #89 and #192: telling the app where an attribute comes from and what it is read and
 /// shown in, from the window that does it.
 final class AttributeMappingUITests: OnboardStudioUITestCase {

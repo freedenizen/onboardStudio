@@ -2,7 +2,9 @@ name: CI
 on:
   push:
     branches: [main]
+  # ready_for_review too: a draft skips the macOS jobs, and marking it ready is what runs them (#237).
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 # A newer push to a branch supersedes the run in progress; a push to main never does — a
 # cancelled main run reports its shards as failed and `main health` would call main red
 # for a commit nothing was wrong with.
@@ -19,6 +21,9 @@ jobs:
   # on Linux, which is preinstalled with shellcheck and starts in seconds. Both are required.
   lint:
     name: Lint
+    # Drafts wait for macOS time until they are marked ready (#237). A skipped required check
+    # counts as passing, which is safe only because a draft cannot be merged or auto-merged.
+    if: github.event.pull_request.draft != true
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
@@ -60,6 +65,9 @@ jobs:
 
   test:
     name: Test
+    # Drafts wait for macOS time until they are marked ready (#237). A skipped required check
+    # counts as passing, which is safe only because a draft cannot be merged or auto-merged.
+    if: github.event.pull_request.draft != true
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
@@ -119,12 +127,18 @@ jobs:
         id: filter
         env:
           EVENT: ${{ github.event_name }}
+          DRAFT: ${{ github.event.pull_request.draft }}
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           # Anything not a pull request (i.e. a push to main) always runs the suite.
           if [ "$EVENT" != "pull_request" ]; then
             echo "app=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # A draft waits: the suite runs once, when it is marked ready for review (#237).
+          if [ "$DRAFT" = "true" ]; then
+            echo "app=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # `ci.yml` is in the list because the build-once/upload/download/shard plumbing the
@@ -190,13 +204,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Which classes run where is written on each class (`// ci-shard: N`), so adding one edits
+        # only its own file (#237); Scripts/check-ui-test-shards.sh checks every class has a shard.
         include:
           - name: shard 1
-            classes: ObjectEditingUITests TrimUITests MarkerUITests DataEditingUITests AttributeMappingUITests TemplateLibraryUITests
+            shard: 1
           - name: shard 2
-            classes: JourneyUITests TemplateUITests LauncherUITests SplitUITests ImportReportUITests FontUITests DiagnosticsUITests
+            shard: 2
           - name: shard 3
-            classes: FirstLaunchUITests SyncUITests MultiCameraUITests LapUITests ProjectUITests TimelineUITests DetailsUITests ActivityUITests
+            shard: 3
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
@@ -211,9 +227,11 @@ jobs:
           tar -C build/DerivedData/Build -xf products.tar Products
       - name: Run XCUITests
         env:
-          CLASSES: ${{ matrix.classes }}
+          SHARD: ${{ matrix.shard }}
         run: |
           set -o pipefail
+          CLASSES=$(Scripts/check-ui-test-shards.sh --shard "$SHARD")
+          [ -n "$CLASSES" ] || { echo "::error::No classes on shard $SHARD"; exit 1; }
           export ONBOARD_TEST_EXPORT_DIR="$RUNNER_TEMP/exports"
           mkdir -p "$ONBOARD_TEST_EXPORT_DIR"
           only=()
@@ -268,12 +286,17 @@ jobs:
           DETECTED: ${{ needs.changes.result }}
           APP: ${{ needs.changes.outputs.app }}
           RESULT: ${{ needs.ui-tests-shard.result }}
+          DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           # A failed detector produces no outputs, so APP is empty — which must not be read as
           # "the app was untouched". That would skip every shard and still report green.
           if [ "$DETECTED" != "success" ]; then
             echo "::error::Detect app changes did not succeed ($DETECTED); the shards were skipped without knowing whether they were needed. Re-run the workflow."
             exit 1
+          fi
+          if [ "$DRAFT" = "true" ]; then
+            echo "A draft: the suite runs when it is marked ready for review."
+            exit 0
           fi
           if [ "$APP" != "true" ]; then
             echo "No change to Sources/OnboardStudioApp, UITests or project.yml — suite not needed."

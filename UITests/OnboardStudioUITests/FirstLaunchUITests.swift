@@ -1,5 +1,6 @@
 import XCTest
 
+// ci-shard: 3
 /// J1: the app explains itself on first launch.
 final class FirstLaunchUITests: OnboardStudioUITestCase {
     @MainActor
@@ -48,6 +49,7 @@ final class FirstLaunchUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 2
 /// J1: the welcome window offers a blank project, a template, or an existing project.
 final class LauncherUITests: OnboardStudioUITestCase {
     @MainActor
@@ -84,6 +86,7 @@ final class LauncherUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 1
 /// J8: timeline zoom, snapping and the transport.
 /// #54: markers on the timeline, and walking between them.
 final class MarkerUITests: OnboardStudioUITestCase {
@@ -119,6 +122,7 @@ final class MarkerUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 1
 /// #54: trimming a video to the playhead, with Resolve's ⇧[ / ⇧].
 final class TrimUITests: OnboardStudioUITestCase {
     @MainActor
@@ -146,6 +150,7 @@ final class TrimUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 3
 /// #51: the data file shows where its laps are, and the playhead can jump between them.
 final class LapUITests: OnboardStudioUITestCase {
     @MainActor
@@ -168,6 +173,7 @@ final class LapUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 2
 /// #54: splitting a video at the playhead.
 final class SplitUITests: OnboardStudioUITestCase {
     @MainActor
@@ -195,6 +201,7 @@ final class SplitUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 1
 /// #54: the data half — trimming and splitting a data file, not just a video.
 final class DataEditingUITests: OnboardStudioUITestCase {
     @MainActor
@@ -228,6 +235,7 @@ final class DataEditingUITests: OnboardStudioUITestCase {
     }
 }
 
+// ci-shard: 3
 final class TimelineUITests: OnboardStudioUITestCase {
     @MainActor
     func testZoomSnapAndTransport() throws {
