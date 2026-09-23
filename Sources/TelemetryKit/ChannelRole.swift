@@ -262,3 +262,23 @@ extension ChannelRole {
         TextFilter(filter).matches([displayName, source])
     }
 }
+
+extension ChannelRole {
+    /// How a picker names this channel (#208): an attribute by its name — *Lateral G*, never
+    /// `lateralG` — and a channel the file named itself by that name, with where it came from, so
+    /// a CAN channel called `Speed` is not mistaken for the Speed attribute.
+    public var pickerTitle: String {
+        switch self {
+        case .obd(let name): "\(name) (OBD)"
+        case .canbus(let name): "\(name) (CAN bus)"
+        case .aux(let name): name
+        default: displayName
+        }
+    }
+
+    /// `pickerTitle` for a stored identifier, which is what objects keep. One this build cannot
+    /// read is shown as it is, rather than hidden.
+    public static func pickerTitle(forIdentifier identifier: String) -> String {
+        ChannelRole(identifier: identifier)?.pickerTitle ?? identifier
+    }
+}

@@ -12,6 +12,8 @@ struct DataInputInspector: View {
     // Not private: the Track and Corners sections live in `DataInputTrackInspector.swift`.
     @State var circuitSearch = ""
     @State var showCorners = false
+    /// Room for a corner name such as `3a` or `Carousel`, growing with the text size.
+    @ScaledMetric(relativeTo: .body) var cornerNameWidth: CGFloat = 70
 
     var session: TelemetrySession? { editor.sessions[input.id] }
 
@@ -28,7 +30,11 @@ struct DataInputInspector: View {
                     Text("Channels (\(session.channels.count))")
                 }
             } else {
-                Text("Loading…").foregroundStyle(.secondary)
+                // Says what is loading, so a slow file is not mistaken for a stuck one.
+                ProgressView {
+                    Text("Reading \(input.label)…")
+                }
+                .controlSize(.small)
             }
         }
         Section("Processing") {
@@ -290,17 +296,19 @@ struct ChannelMappingRow: View {
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             HStack {
-                Picker("Role", selection: roleBinding) {
-                    Text(channel.role.identifier).tag(channel.role.identifier)
+                Picker("\(channel.name) means", selection: roleBinding) {
+                    Text(channel.role.pickerTitle).tag(channel.role.identifier)
                     Divider()
-                    ForEach(Self.roles, id: \.self) { Text($0).tag($0) }
-                    Text("aux:\(channel.name)").tag("aux:\(channel.name)")
+                    ForEach(Self.roles, id: \.self) { Text(ChannelRole.pickerTitle(forIdentifier: $0)).tag($0) }
+                    Text("Its own channel").tag("aux:\(channel.name)")
                 }
                 .labelsHidden()
-                Picker("Unit", selection: unitBinding) {
-                    ForEach(Self.units, id: \.self) { Text($0.isEmpty ? "file unit" : $0).tag($0) }
+                .help("What this column of the file means")
+                Picker("\(channel.name) unit", selection: unitBinding) {
+                    ForEach(Self.units, id: \.self) { Text($0.isEmpty ? "File's unit" : $0).tag($0) }
                 }
                 .labelsHidden()
+                .help("The unit this column's numbers are in, when the file is silent or wrong")
             }
         }
     }
@@ -338,6 +346,11 @@ struct CalculatedFieldRow: View {
     let change: (CalculatedFieldSpec) -> Void
     let remove: () -> Void
 
+    // A name and a unit are short by nature; the expression below takes the full width. Scaled so
+    // they still hold their text at larger sizes.
+    @ScaledMetric(relativeTo: .body) private var nameWidth: CGFloat = 110
+    @ScaledMetric(relativeTo: .body) private var unitWidth: CGFloat = 60
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -351,7 +364,7 @@ struct CalculatedFieldRow: View {
                             change(s)
                         })
                 )
-                .frame(width: 110)
+                .frame(width: nameWidth)
                 CommittingTextField(
                     "Unit",
                     text: Binding(
@@ -362,12 +375,15 @@ struct CalculatedFieldRow: View {
                             change(s)
                         })
                 )
-                .frame(width: 60)
+                .frame(width: unitWidth)
                 Button(role: .destructive) {
                     remove()
                 } label: {
                     Image(systemName: "minus.circle")
-                }.buttonStyle(.borderless)
+                }
+                .buttonStyle(.borderless)
+                .help("Remove this calculated field")
+                .accessibilityLabel("Remove \(spec.name.isEmpty ? "calculated field" : spec.name)")
             }
             CommittingTextField(
                 "Expression",
@@ -382,26 +398,5 @@ struct CalculatedFieldRow: View {
             .font(.system(.body, design: .monospaced))
             .foregroundStyle(valid ? .primary : Color.red)
         }
-    }
-}
-
-/// A number field that can be empty, meaning "unset" — no trim limit, no fixed bound.
-struct OptionalNumberField: View {
-    let title: String
-    @Binding var value: Double?
-    let placeholder: String
-
-    init(_ title: String, value: Binding<Double?>, placeholder: String) {
-        self.title = title
-        _value = value
-        self.placeholder = placeholder
-    }
-
-    var body: some View {
-        TextField(
-            title,
-            value: $value,
-            format: .number.precision(.fractionLength(0...3)),
-            prompt: Text(placeholder))
     }
 }

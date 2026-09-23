@@ -15,6 +15,8 @@ struct ScriptInspector: View {
             TextEditor(text: $draft)
                 .font(.system(.body, design: .monospaced))
                 .frame(minHeight: 260)
+                .accessibilityLabel("Script")
+                .accessibilityIdentifier("script.source")
                 .onChange(of: draft) { _, source in check(source) }
             if let problem {
                 Label(
@@ -26,8 +28,16 @@ struct ScriptInspector: View {
                 Label("Script compiles.", systemImage: "checkmark.circle").foregroundStyle(.secondary).font(.callout)
             }
             HStack {
-                Button("Apply") { apply() }.disabled(draft == params.source)
-                Button("Revert") { draft = params.source }.disabled(draft == params.source)
+                // ⌘↩ applies from inside the editor, where Return is a new line. Revert has no key: an
+                // Escape meant for something else would throw away a script being written.
+                Button("Apply") { apply() }
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .disabled(draft == params.source)
+                    .help("Use this script for the object (⌘↩)")
+                    .accessibilityIdentifier("script.apply")
+                Button("Revert") { draft = params.source }
+                    .disabled(draft == params.source)
+                    .help("Go back to the script the object is using")
                 Spacer()
                 Menu("Examples") {
                     ForEach(ScriptExamples.all) { example in
@@ -59,6 +69,6 @@ struct ScriptInspector: View {
     func apply() {
         var new = params
         new.source = draft
-        editor.updateObject(object.id, name: "Edit Script") { $0.kind = .scripted(new) }
+        editor.updateObject(object.id, name: "Change Script") { $0.kind = .scripted(new) }
     }
 }

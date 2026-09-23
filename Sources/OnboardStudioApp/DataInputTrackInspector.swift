@@ -88,7 +88,8 @@ extension DataInputInspector {
                                         get: { label(at: index) },
                                         set: { editor.setCornerLabel($0, at: index, for: input.id) })
                                 )
-                                .frame(width: 70)
+                                .frame(width: cornerNameWidth)
+                                .accessibilityLabel("Corner \(index + 1) name")
                             }
                         }
                     }

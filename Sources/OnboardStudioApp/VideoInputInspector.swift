@@ -162,7 +162,7 @@ struct ClipRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: "film").foregroundStyle(.secondary)
+            Image(systemName: "film").foregroundStyle(.secondary).accessibilityHidden(true)
             Text((name as NSString).lastPathComponent).lineLimit(1).truncationMode(.middle)
             Spacer()
             if let index {
@@ -171,17 +171,23 @@ struct ClipRow: View {
                 } label: {
                     Image(systemName: "arrow.up")
                 }
+                .help("Play this file earlier in the sequence")
+                .accessibilityLabel("Move clip up")
                 Button {
                     editor.moveClip(index, by: 1, in: inputID)
                 } label: {
                     Image(systemName: "arrow.down")
                 }
                 .disabled(index == count - 1)
+                .help("Play this file later in the sequence")
+                .accessibilityLabel("Move clip down")
                 Button(role: .destructive) {
                     editor.removeClip(index, from: inputID)
                 } label: {
                     Image(systemName: "minus.circle")
                 }
+                .help("Remove this file from the sequence")
+                .accessibilityLabel("Remove clip")
             } else {
                 Text("first").font(.caption).foregroundStyle(.secondary)
             }
@@ -199,7 +205,8 @@ struct ClipTrimRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Text("").frame(width: 14)
+            // Indents the trim under the file name by exactly the film icon's width, at any text size.
+            Image(systemName: "film").hidden().accessibilityHidden(true)
             NumberField(
                 "In (s)",
                 value: Binding(

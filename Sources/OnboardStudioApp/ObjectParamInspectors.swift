@@ -1,5 +1,6 @@
 import ProjectModel
 import SwiftUI
+import TelemetryKit
 
 struct VideoObjectInspector: View {
     @Bindable var editor: EditorModel
@@ -10,26 +11,35 @@ struct VideoObjectInspector: View {
         Section("Video Layer") {
             Toggle(
                 "Mirror horizontally",
-                isOn: Binding(get: { params.mirror.horizontal }, set: { v in update { $0.mirror.horizontal = v } }))
+                isOn: Binding(
+                    get: { params.mirror.horizontal },
+                    set: { v in update("Horizontal Mirroring") { $0.mirror.horizontal = v } }))
             Toggle(
                 "Mirror vertically",
-                isOn: Binding(get: { params.mirror.vertical }, set: { v in update { $0.mirror.vertical = v } }))
+                isOn: Binding(
+                    get: { params.mirror.vertical },
+                    set: { v in update("Vertical Mirroring") { $0.mirror.vertical = v } }))
             Toggle(
                 "Red channel",
-                isOn: Binding(get: { params.channelMask.red }, set: { v in update { $0.channelMask.red = v } }))
+                isOn: Binding(
+                    get: { params.channelMask.red }, set: { v in update("Red Channel") { $0.channelMask.red = v } }))
             Toggle(
                 "Green channel",
-                isOn: Binding(get: { params.channelMask.green }, set: { v in update { $0.channelMask.green = v } }))
+                isOn: Binding(
+                    get: { params.channelMask.green },
+                    set: { v in update("Green Channel") { $0.channelMask.green = v } }))
             Toggle(
                 "Blue channel",
-                isOn: Binding(get: { params.channelMask.blue }, set: { v in update { $0.channelMask.blue = v } }))
+                isOn: Binding(
+                    get: { params.channelMask.blue }, set: { v in update("Blue Channel") { $0.channelMask.blue = v } })
+            )
         }
     }
 
-    func update(_ change: (inout VideoObjectParams) -> Void) {
+    func update(_ name: String, _ change: (inout VideoObjectParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Video Layer") { $0.kind = .video(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .video(new) }
     }
 }
 
@@ -40,7 +50,7 @@ struct ShapeInspector: View {
 
     var body: some View {
         Section("Shape") {
-            Picker("Shape", selection: Binding(get: { params.shape }, set: { v in update { $0.shape = v } })) {
+            Picker("Shape", selection: Binding(get: { params.shape }, set: { v in update("Shape") { $0.shape = v } })) {
                 Text("Rectangle").tag(ShapeKind.rectangle)
                 Text("Rounded rectangle").tag(ShapeKind.roundedRectangle)
                 Text("Ellipse").tag(ShapeKind.ellipse)
@@ -48,46 +58,55 @@ struct ShapeInspector: View {
             ColorPicker(
                 "Fill",
                 selection: Binding(
-                    get: { Color(params.fillColor) }, set: { c in update { $0.fillColor = RGBAColor(c) } }))
+                    get: { Color(params.fillColor) },
+                    set: { c in update("Fill Colour") { $0.fillColor = RGBAColor(c) } }))
             Toggle(
                 "Gradient fill",
                 isOn: Binding(
                     get: { params.gradientEndColor != nil },
                     set: { on in
-                        update { $0.gradientEndColor = on ? RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.75) : nil }
+                        update("Gradient Fill") {
+                            $0.gradientEndColor = on ? RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.75) : nil
+                        }
                     }))
             if let end = params.gradientEndColor {
                 ColorPicker(
                     "Fades to",
-                    selection: Binding(get: { Color(end) }, set: { c in update { $0.gradientEndColor = RGBAColor(c) } })
+                    selection: Binding(
+                        get: { Color(end) },
+                        set: { c in update("Gradient End Colour") { $0.gradientEndColor = RGBAColor(c) } })
                 )
                 Toggle(
                     "Left to right",
                     isOn: Binding(
-                        get: { params.gradientHorizontal }, set: { v in update { $0.gradientHorizontal = v } })
+                        get: { params.gradientHorizontal },
+                        set: { v in update("Gradient Direction") { $0.gradientHorizontal = v } })
                 )
             }
             ColorPicker(
                 "Stroke",
                 selection: Binding(
-                    get: { Color(params.strokeColor) }, set: { c in update { $0.strokeColor = RGBAColor(c) } }))
+                    get: { Color(params.strokeColor) },
+                    set: { c in update("Stroke Colour") { $0.strokeColor = RGBAColor(c) } }))
             PercentSlider(
                 "Stroke width",
-                value: Binding(get: { params.strokeWidth }, set: { v in update { $0.strokeWidth = v } }),
+                value: Binding(
+                    get: { params.strokeWidth }, set: { v in update("Stroke Width") { $0.strokeWidth = v } }),
                 range: 0...0.05)
             if params.shape == .roundedRectangle {
                 PercentSlider(
                     "Corner radius",
-                    value: Binding(get: { params.cornerRadius }, set: { v in update { $0.cornerRadius = v } }),
+                    value: Binding(
+                        get: { params.cornerRadius }, set: { v in update("Corner Radius") { $0.cornerRadius = v } }),
                     range: 0...0.5)
             }
         }
     }
 
-    func update(_ change: (inout ShapeParams) -> Void) {
+    func update(_ name: String, _ change: (inout ShapeParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Shape") { $0.kind = .shape(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .shape(new) }
     }
 }
 
@@ -99,13 +118,15 @@ struct TextInspector: View {
     var body: some View {
         Section("Text") {
             CommittingTextField(
-                "Text", text: Binding(get: { params.text }, set: { v in update { $0.text = v } }), axis: .vertical)
+                "Text", text: Binding(get: { params.text }, set: { v in update("Text") { $0.text = v } }),
+                axis: .vertical)
             PercentSlider(
-                "Size", value: Binding(get: { params.fontScale }, set: { v in update { $0.fontScale = v } }),
+                "Size", value: Binding(get: { params.fontScale }, set: { v in update("Size") { $0.fontScale = v } }),
                 range: 0.1...1)
-            Toggle("Bold", isOn: Binding(get: { params.bold }, set: { v in update { $0.bold = v } }))
+            Toggle("Bold", isOn: Binding(get: { params.bold }, set: { v in update("Bold") { $0.bold = v } }))
             Picker(
-                "Alignment", selection: Binding(get: { params.alignment }, set: { v in update { $0.alignment = v } })
+                "Alignment",
+                selection: Binding(get: { params.alignment }, set: { v in update("Alignment") { $0.alignment = v } })
             ) {
                 Text("Leading").tag(ProjectModel.TextAlignment.leading)
                 Text("Center").tag(ProjectModel.TextAlignment.center)
@@ -113,25 +134,30 @@ struct TextInspector: View {
             }
             ColorPicker(
                 "Colour",
-                selection: Binding(get: { Color(params.color) }, set: { c in update { $0.color = RGBAColor(c) } }))
+                selection: Binding(
+                    get: { Color(params.color) }, set: { c in update("Text Colour") { $0.color = RGBAColor(c) } }))
             ColorPicker(
                 "Background",
                 selection: Binding(
-                    get: { Color(params.backgroundColor) }, set: { c in update { $0.backgroundColor = RGBAColor(c) } }))
+                    get: { Color(params.backgroundColor) },
+                    set: { c in update("Background Colour") { $0.backgroundColor = RGBAColor(c) } }))
             PercentSlider(
-                "Outline", value: Binding(get: { params.outlineWidth }, set: { v in update { $0.outlineWidth = v } }),
+                "Outline",
+                value: Binding(
+                    get: { params.outlineWidth }, set: { v in update("Outline Width") { $0.outlineWidth = v } }),
                 range: 0...0.15)
             ColorPicker(
                 "Outline colour",
                 selection: Binding(
-                    get: { Color(params.outlineColor) }, set: { c in update { $0.outlineColor = RGBAColor(c) } }))
+                    get: { Color(params.outlineColor) },
+                    set: { c in update("Outline Colour") { $0.outlineColor = RGBAColor(c) } }))
         }
     }
 
-    func update(_ change: (inout TextParams) -> Void) {
+    func update(_ name: String, _ change: (inout TextParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Text") { $0.kind = .text(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .text(new) }
     }
 }
 
@@ -153,45 +179,59 @@ struct ImageObjectInspector: View {
             }
             Toggle(
                 "Keep aspect ratio",
-                isOn: Binding(get: { params.keepAspect }, set: { v in update { $0.keepAspect = v } }))
+                isOn: Binding(
+                    get: { params.keepAspect }, set: { v in update("Aspect Ratio") { $0.keepAspect = v } }))
             NumberField(
-                "Rotation (°)", value: Binding(get: { params.rotation }, set: { v in update { $0.rotation = v } }))
+                "Rotation (°)",
+                value: Binding(get: { params.rotation }, set: { v in update("Rotation") { $0.rotation = v } }))
         }
         Section("Data-driven") {
             OptionalChannelPicker(
                 editor: editor, title: "Rotate by channel",
-                selection: Binding(get: { params.rotationChannel }, set: { v in update { $0.rotationChannel = v } }))
+                selection: Binding(
+                    get: { params.rotationChannel },
+                    set: { v in update("Rotation Channel") { $0.rotationChannel = v } }))
             if params.rotationChannel != nil {
                 NumberField(
                     "Degrees per unit",
-                    value: Binding(get: { params.degreesPerUnit }, set: { v in update { $0.degreesPerUnit = v } }))
+                    value: Binding(
+                        get: { params.degreesPerUnit },
+                        set: { v in update("Degrees Per Unit") { $0.degreesPerUnit = v } }))
             }
             OptionalChannelPicker(
                 editor: editor, title: "Opacity from channel",
-                selection: Binding(get: { params.opacityChannel }, set: { v in update { $0.opacityChannel = v } }))
+                selection: Binding(
+                    get: { params.opacityChannel },
+                    set: { v in update("Opacity Channel") { $0.opacityChannel = v } }))
             if params.opacityChannel != nil {
                 NumberField(
                     "Opacity scale",
-                    value: Binding(get: { params.opacityScale }, set: { v in update { $0.opacityScale = v } }))
+                    value: Binding(
+                        get: { params.opacityScale }, set: { v in update("Opacity Scale") { $0.opacityScale = v } }))
             }
             OptionalChannelPicker(
                 editor: editor, title: "Flash when channel above",
-                selection: Binding(get: { params.flashChannel }, set: { v in update { $0.flashChannel = v } }))
+                selection: Binding(
+                    get: { params.flashChannel }, set: { v in update("Flash Channel") { $0.flashChannel = v } }))
             if params.flashChannel != nil {
                 NumberField(
                     "Threshold",
-                    value: Binding(get: { params.flashThreshold }, set: { v in update { $0.flashThreshold = v } }))
+                    value: Binding(
+                        get: { params.flashThreshold },
+                        set: { v in update("Flash Threshold") { $0.flashThreshold = v } }))
                 NumberField(
                     "Flashes per second",
-                    value: Binding(get: { params.flashHertz }, set: { v in update { $0.flashHertz = max(0.2, v) } }))
+                    value: Binding(
+                        get: { params.flashHertz },
+                        set: { v in update("Flash Rate") { $0.flashHertz = max(0.2, v) } }))
             }
         }
     }
 
-    func update(_ change: (inout ImageObjectParams) -> Void) {
+    func update(_ name: String, _ change: (inout ImageObjectParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit Image") { $0.kind = .image(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .image(new) }
     }
 }
 
@@ -206,7 +246,7 @@ struct OptionalChannelPicker: View {
         let available = session?.orderedChannels.map(\.role.identifier) ?? []
         Picker(title, selection: $selection) {
             Text("None").tag(String?.none)
-            ForEach(available, id: \.self) { Text($0).tag(String?.some($0)) }
+            ForEach(available, id: \.self) { Text(ChannelRole.pickerTitle(forIdentifier: $0)).tag(String?.some($0)) }
         }
     }
 }
@@ -218,17 +258,19 @@ struct GForceInspector: View {
 
     var body: some View {
         Section("G-Force") {
-            NumberField("Max G", value: clamped(\.maxG, least: 0.5))
-            NumberField("Trail (s)", value: clamped(\.trailSeconds, least: 0))
-            Toggle("Show values", isOn: field(\.showValues))
+            NumberField("Max G", value: clamped(\.maxG, least: 0.5, "Max G"))
+            NumberField("Trail (s)", value: clamped(\.trailSeconds, least: 0, "Trail"))
+            Toggle("Show values", isOn: field(\.showValues, "Values"))
         }
         Section("Lateral (left/right)") {
-            axisPicker("Channel", selection: optional(\.lateralChannel), standard: "lateralG")
-            Toggle("Invert", isOn: field(\.invertLateral))
+            axisPicker("Channel", selection: optional(\.lateralChannel, "Lateral Channel"), standard: "lateralG")
+            Toggle("Invert", isOn: field(\.invertLateral, "Lateral Inversion"))
         }
         Section("Longitudinal (braking/acceleration)") {
-            axisPicker("Channel", selection: optional(\.longitudinalChannel), standard: "longitudinalG")
-            Toggle("Invert", isOn: field(\.invertLongitudinal))
+            axisPicker(
+                "Channel", selection: optional(\.longitudinalChannel, "Longitudinal Channel"),
+                standard: "longitudinalG")
+            Toggle("Invert", isOn: field(\.invertLongitudinal, "Longitudinal Inversion"))
             Text(
                 "Loggers disagree on which way is positive: RaceRender calls a right turn positive, "
                     + "ISO 8855 vehicle axes (which RaceChrono follows) call a left turn positive."
@@ -244,33 +286,36 @@ struct GForceInspector: View {
         let session = object.inputID.flatMap { editor.sessions[$0] }
         let available = session?.orderedChannels.map(\.role.identifier) ?? []
         Picker(title, selection: selection) {
-            Text("Standard (\(standard))").tag(String?.none)
-            ForEach(available, id: \.self) { Text($0).tag(String?.some($0)) }
+            Text("Standard (\(ChannelRole.pickerTitle(forIdentifier: standard)))").tag(String?.none)
+            ForEach(available, id: \.self) { Text(ChannelRole.pickerTitle(forIdentifier: $0)).tag(String?.some($0)) }
         }
         if let chosen = selection.wrappedValue, !available.isEmpty, !available.contains(chosen) {
-            Label("\(chosen) is not in this data file.", systemImage: "exclamationmark.triangle.fill")
-                .font(.caption).foregroundStyle(.yellow)
+            Label(
+                "\(ChannelRole.pickerTitle(forIdentifier: chosen)) is not in this data file.",
+                systemImage: "exclamationmark.triangle.fill"
+            )
+            .font(.caption).foregroundStyle(.yellow)
         }
     }
 
-    func field<T>(_ keyPath: WritableKeyPath<GForceParams, T>) -> Binding<T> {
-        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = v } })
+    func field<T>(_ keyPath: WritableKeyPath<GForceParams, T>, _ name: String) -> Binding<T> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update(name) { $0[keyPath: keyPath] = v } })
     }
 
-    func clamped(_ keyPath: WritableKeyPath<GForceParams, Double>, least: Double) -> Binding<Double> {
-        Binding(get: { params[keyPath: keyPath] }, set: { v in update { $0[keyPath: keyPath] = max(least, v) } })
+    func clamped(_ keyPath: WritableKeyPath<GForceParams, Double>, least: Double, _ name: String) -> Binding<Double> {
+        Binding(get: { params[keyPath: keyPath] }, set: { v in update(name) { $0[keyPath: keyPath] = max(least, v) } })
     }
 
     /// The pickers offer "None", which for these means "use the standard role for the axis".
-    func optional(_ keyPath: WritableKeyPath<GForceParams, String>) -> Binding<String?> {
+    func optional(_ keyPath: WritableKeyPath<GForceParams, String>, _ name: String) -> Binding<String?> {
         Binding(
             get: { params[keyPath: keyPath].isEmpty ? nil : params[keyPath: keyPath] },
-            set: { v in update { $0[keyPath: keyPath] = v ?? "" } })
+            set: { v in update(name) { $0[keyPath: keyPath] = v ?? "" } })
     }
 
-    func update(_ change: (inout GForceParams) -> Void) {
+    func update(_ name: String, _ change: (inout GForceParams) -> Void) {
         var new = params
         change(&new)
-        editor.updateObject(object.id, name: "Edit G-Force") { $0.kind = .gForce(new) }
+        editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .gForce(new) }
     }
 }
