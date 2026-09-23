@@ -438,7 +438,8 @@ extension GizmoView {
 
     /// The selected objects the mouse may move: none of them locked.
     fileprivate var movableSelection: [DisplayObject] {
-        let selected = objects.filter { selectedIDs.contains($0.id) && $0.isVisible }
+        // Hidden members too: a group moves as one whether or not all of it shows at the playhead.
+        let selected = objects.filter { selectedIDs.contains($0.id) }
         return selected.contains(where: \.isLocked) ? [] : selected
     }
 

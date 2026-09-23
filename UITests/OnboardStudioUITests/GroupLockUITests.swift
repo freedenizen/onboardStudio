@@ -45,6 +45,26 @@ final class GroupLockUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Timer").exists)
     }
 
+    /// Right-click ▸ Delete on a row deletes that row, even when it is the first of several
+    /// selected — not the whole selection.
+    @MainActor
+    func testDeletingARowFromItsMenuDeletesOnlyThatRow() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        toolbarMenu("toolbar.addObject", "Lap Timer")
+        sidebarObject("Speedometer").click()
+        XCUIElement.perform(withKeyModifiers: .command) { sidebarObject("Timer").click() }
+        XCTAssertTrue(app.staticTexts["2 Objects"].waitForExistence(timeout: Self.timeout))
+        sidebarObject("Speedometer").rightClick()
+        let delete = app.menuItems.matching(NSPredicate(format: "title == 'Delete'"))
+            .allElementsBoundByIndex.first(where: \.isHittable)
+        try XCTUnwrap(delete, "No Delete on the row's menu").click()
+        XCTAssertTrue(sidebarObject("Speedometer").waitForNonExistence(timeout: Self.timeout))
+        XCTAssertTrue(sidebarObject("Timer").exists, "Delete took the rest of the selection with it")
+    }
+
     /// Dragging one member of a group on the preview moves the whole group.
     @MainActor
     func testDraggingAGroupMemberMovesTheGroup() throws {

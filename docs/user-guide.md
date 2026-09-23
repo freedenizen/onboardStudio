@@ -240,7 +240,9 @@ the arrow keys and the delete key leave it alone. It is outlined in dashes. ⌘L
 dragging or nudging any of them moves them all. **Project ▸ Group** (⌥⌘G) keeps them together:
 a click on any member on the preview selects the whole group, which moves, resizes from one box
 and nudges as one, and locks as one. Clicking a member in the sidebar selects just that object,
-to edit it on its own. **Ungroup** (⇧⌥⌘G) separates them again.
+to edit it on its own. **Ungroup** (⇧⌥⌘G) separates them again. As in Keynote, locked objects
+are unlocked before they are grouped, and a group that deleting leaves with one member stops being
+a group.
 
 Every object has a position and size in percent of the frame, opacity, mirror and an RGB mask.
 Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save it as an

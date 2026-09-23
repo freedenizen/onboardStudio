@@ -70,4 +70,26 @@ struct LockAndGroupTests {
         #expect(abs(grown.y - 0.5) < 1e-9 && abs(grown.width - 0.4) < 1e-9 && abs(grown.height - 0.1) < 1e-9)
         #expect(ObjectGeometry.bounds([]) == nil)
     }
+
+    @Test func lockedObjectsAreUnlockedBeforeTheyAreGrouped() {
+        var project = project
+        project.setLocked(true, [speedo.id])
+        #expect(project.group([speedo.id, label.id]) == nil)
+        #expect(project.displayObjects.allSatisfy { $0.groupID == nil })
+        project.setLocked(false, [speedo.id])
+        #expect(project.group([speedo.id, label.id]) != nil)
+    }
+
+    @Test func deletingDownToOneMemberDissolvesTheGroup() {
+        var project = project
+        project.group([speedo.id, label.id])
+        project.removeObjects([speedo.id])
+        #expect(project.displayObjects.map(\.label) == ["Label", "Other"])
+        #expect(project.displayObjects.allSatisfy { $0.groupID == nil })
+        // A group still two strong after a delete stays a group.
+        var three = self.project
+        let group = three.group([speedo.id, label.id, other.id])
+        three.removeObjects([other.id])
+        #expect(three.displayObjects.allSatisfy { $0.groupID == group })
+    }
 }

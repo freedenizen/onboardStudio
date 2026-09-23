@@ -343,11 +343,14 @@ extension Project {
     }
 
     /// Makes one group of `ids` and every group they already belong to. Fewer than two objects
-    /// make no group.
+    /// make no group, and nor does a selection with a locked object in it: as in Keynote, locked
+    /// objects are unlocked before they are grouped, so a group is never half locked.
     @discardableResult
     public mutating func group(_ ids: Set<DisplayObjectID>) -> ObjectGroupID? {
         let members = expandingGroups(ids)
-        guard members.count >= 2 else { return nil }
+        guard members.count >= 2,
+            !displayObjects.contains(where: { members.contains($0.id) && $0.isLocked })
+        else { return nil }
         let group = ObjectGroupID()
         for index in displayObjects.indices where members.contains(displayObjects[index].id) {
             displayObjects[index].groupID = group
@@ -360,6 +363,19 @@ extension Project {
         let members = expandingGroups(ids)
         for index in displayObjects.indices where members.contains(displayObjects[index].id) {
             displayObjects[index].groupID = nil
+        }
+    }
+
+    /// Removes `ids`, their segment overrides, and any group left with a single member: one
+    /// object is not a group, and a leftover `groupID` would still say "moves with the others".
+    public mutating func removeObjects(_ ids: Set<DisplayObjectID>) {
+        displayObjects.removeAll { ids.contains($0.id) }
+        timeline.prune(keeping: displayObjects.map(\.id))
+        let counts = Dictionary(grouping: displayObjects.compactMap(\.groupID), by: { $0 }).mapValues(\.count)
+        for index in displayObjects.indices {
+            if let group = displayObjects[index].groupID, counts[group, default: 0] < 2 {
+                displayObjects[index].groupID = nil
+            }
         }
     }
 

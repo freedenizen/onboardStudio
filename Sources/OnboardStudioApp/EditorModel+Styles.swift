@@ -113,10 +113,7 @@ extension EditorModel {
             if !selectedObjectIDs.isEmpty { statusMessage = "Locked objects are not deleted. Unlock them first (⌘L)." }
             return
         }
-        edit(ids.count == 1 ? "Delete Object" : "Delete Objects") { project in
-            project.displayObjects.removeAll { ids.contains($0.id) }
-            project.timeline.prune(keeping: project.displayObjects.map(\.id))
-        }
+        edit(ids.count == 1 ? "Delete Object" : "Delete Objects") { $0.removeObjects(ids) }
         selectedObjectID = nil
     }
 

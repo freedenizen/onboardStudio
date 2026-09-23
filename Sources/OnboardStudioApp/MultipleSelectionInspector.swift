@@ -32,6 +32,8 @@ struct MultipleSelectionInspector: View {
         Section {
             if editor.canGroupSelection {
                 Button("Group") { editor.groupSelection() }.accessibilityIdentifier("selection.group")
+            } else if !isOneGroup, editor.selectionHasLocked {
+                Text("Unlock them to group them.").font(.caption).foregroundStyle(.secondary)
             }
             if editor.canUngroupSelection {
                 Button("Ungroup") { editor.ungroupSelection() }.accessibilityIdentifier("selection.ungroup")

@@ -47,12 +47,17 @@ extension EditorModel {
         }
     }
 
-    /// Two or more objects not already one group.
+    /// Two or more objects, none locked, not already one group.
     var canGroupSelection: Bool {
         let ids = selectedObjectIDs
-        guard ids.count >= 2 else { return false }
+        guard ids.count >= 2, !selectionHasLocked else { return false }
         let groups = Set(ids.compactMap { project.displayObject($0)?.groupID })
         return !(groups.count == 1 && ids.allSatisfy { project.displayObject($0)?.groupID != nil })
+    }
+
+    /// Whether anything selected is locked, which is what keeps Group unavailable.
+    var selectionHasLocked: Bool {
+        project.expandingGroups(selectedObjectIDs).contains { project.displayObject($0)?.isLocked == true }
     }
 
     var canUngroupSelection: Bool {
