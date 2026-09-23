@@ -48,6 +48,9 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
 
 - **Sidebar (left)**: inputs (videos, data files, images) and display objects, bottom of the list
   is drawn first. Click to select and edit; the eye toggles an object; right-click to remove.
+  Removing a video or data file keeps the objects that use it: they move to another file of the
+  same kind, or wait for the next one you add, so replacing a log does not mean rebuilding the
+  overlay.
 - **Preview (centre)**: the composed frame at the playhead, exactly as it will export. Selected
   objects show handles; the arrow keys nudge them one pixel of the exported frame, or ten with ⇧
   held (the step is set in **Settings ▸ Editing**). With nothing selected, ← and → step a frame

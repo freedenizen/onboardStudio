@@ -106,4 +106,58 @@ struct InputPlanningTests {
         project.bindOrphanObjects()
         #expect(project.displayObjects.dropFirst().allSatisfy { $0.inputID == other.id })
     }
+
+    static func data(_ name: String) -> Input {
+        Input(label: name, source: MediaReference(path: "/\(name).csv"), kind: .data(DataInputSettings()))
+    }
+
+    /// #213: removing the data file keeps the overlay. The gauges are the user's work; the file is
+    /// only what they read.
+    @Test func removingTheOnlyDataFileKeepsItsObjectsUnbound() {
+        var project = ProjectTemplate.classicDash.makeProject()
+        let data = Self.data("log")
+        project.inputs.append(data)
+        project.bindOrphanObjects()
+        let dataObjects = project.displayObjects.filter(\.kind.needsData).map(\.id)
+        #expect(!dataObjects.isEmpty)
+
+        project.removeInput(data.id)
+        #expect(project.inputs.isEmpty)
+        #expect(project.displayObjects.map(\.id).contains(dataObjects[0]), "an object was deleted with its file")
+        #expect(project.displayObjects.filter { dataObjects.contains($0.id) }.count == dataObjects.count)
+        #expect(project.displayObjects.allSatisfy { $0.inputID == nil })
+    }
+
+    /// With another data file in the project the objects move to it at once, so the overlay keeps
+    /// drawing; the next one added takes them otherwise.
+    @Test func removingADataFileMovesItsObjectsToAnotherOrTheNextOne() {
+        var project = ProjectTemplate.classicDash.makeProject()
+        let first = Self.data("first")
+        let second = Self.data("second")
+        project.inputs += [first, second]
+        project.bindOrphanObjects()
+        #expect(project.displayObjects.filter(\.kind.needsData).allSatisfy { $0.inputID == first.id })
+
+        project.removeInput(first.id)
+        #expect(project.displayObjects.filter(\.kind.needsData).allSatisfy { $0.inputID == second.id })
+
+        project.removeInput(second.id)
+        let later = Self.data("later")
+        project.inputs.append(later)
+        project.bindOrphanObjects()
+        #expect(project.displayObjects.filter(\.kind.needsData).allSatisfy { $0.inputID == later.id })
+    }
+
+    /// A camera's video object stays too, ready for the next recording.
+    @Test func removingAVideoKeepsItsVideoObject() {
+        var project = Project()
+        let camera = Self.video("GX010029.MP4")
+        project.inputs.append(camera)
+        project.displayObjects.append(
+            DisplayObject(label: "Camera", inputID: camera.id, frame: .full, kind: .video(VideoObjectParams())))
+
+        project.removeInput(camera.id)
+        #expect(project.displayObjects.count == 1)
+        #expect(project.displayObjects.first?.inputID == nil)
+    }
 }

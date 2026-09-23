@@ -71,10 +71,8 @@ extension EditorModel {
     }
 
     func removeInput(_ id: InputID) {
-        edit("Remove Input") { project in
-            project.inputs.removeAll { $0.id == id }
-            project.displayObjects.removeAll { $0.inputID == id }
-        }
+        // The objects stay: they are the overlay, and the file is only what they read (#213).
+        edit("Remove Input") { $0.removeInput(id) }
         if selectedInputID == id { selectedInputID = nil }
     }
 
