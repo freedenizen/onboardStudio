@@ -31,7 +31,7 @@ struct CameraFramingSection: View {
             PercentSlider("Crop bottom", value: binding(\.crop.bottom), range: 0...0.45)
             PercentSlider("Crop left", value: binding(\.crop.left), range: 0...0.45)
             PercentSlider("Crop right", value: binding(\.crop.right), range: 0...0.45)
-            Button("Reset framing") { editor.setFraming({ $0 = .none }, name: "Reset Camera Framing") }
+            Button("Reset Framing") { editor.setFraming({ $0 = .none }, name: "Reset Camera Framing") }
                 .disabled(framing.isIdentity)
             Text("Applies on top of each video's own crop, so chapters and cameras stay framed together.")
                 .font(.caption).foregroundStyle(.secondary)
@@ -146,7 +146,7 @@ struct WelcomeOverlay: View {
             }
             HStack(spacing: 16) {
                 Button("User Guide") { HelpLinks.open(.userGuide) }
-                Button("Supported data formats") { HelpLinks.open(.formats) }
+                Button("Supported Data Formats") { HelpLinks.open(.formats) }
             }
             .buttonStyle(.link).font(.callout)
         }

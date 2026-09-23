@@ -46,7 +46,7 @@ struct VideoInputInspector: View {
             PercentSlider("Crop bottom", value: field(\.crop.bottom, name: "Crop Picture"), range: 0...0.45)
             PercentSlider("Crop left", value: field(\.crop.left, name: "Crop Picture"), range: 0...0.45)
             PercentSlider("Crop right", value: field(\.crop.right, name: "Crop Picture"), range: 0...0.45)
-            Button("Reset crop") { update("Reset Crop") { $0.crop = .none } }.disabled(settings.crop.isEmpty)
+            Button("Reset Crop") { update("Reset Crop") { $0.crop = .none } }.disabled(settings.crop.isEmpty)
             Text("This video only. Zoom, position and a crop for every video are in the project settings.")
                 .font(.caption).foregroundStyle(.secondary)
         }
@@ -58,7 +58,7 @@ struct VideoInputInspector: View {
                 Text("Hue \(Int(settings.color.hue))°")
             }
             PercentSlider("Sharpness", value: field(\.color.sharpness, name: "Adjust Colour"), range: 0...2)
-            Button("Reset colour") { update("Reset Colour") { $0.color = .neutral } }.disabled(settings.color.isNeutral)
+            Button("Reset Colour") { update("Reset Colour") { $0.color = .neutral } }.disabled(settings.color.isNeutral)
         }
         Section("Lens") {
             Picker("Unwrap", selection: field(\.lens.mode, name: "Change Lens")) {
@@ -82,7 +82,7 @@ struct VideoInputInspector: View {
                 Slider(value: field(\.lens.roll, name: "Roll Lens"), in: -180...180, step: 1) {
                     Text("Roll \(Int(settings.lens.roll))°")
                 }
-                Button("Reset view") {
+                Button("Reset View") {
                     update("Reset Lens") { $0.lens = LensSettings(mode: $0.lens.mode, fov: $0.lens.fov) }
                 }
                 Text(
