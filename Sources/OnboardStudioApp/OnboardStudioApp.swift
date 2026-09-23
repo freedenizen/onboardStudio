@@ -204,6 +204,11 @@ struct EditorCommands: Commands {
             Toggle(
                 "Snapping",
                 isOn: Binding(get: { editor?.snappingEnabled ?? true }, set: { editor?.snappingEnabled = $0 }))
+            Divider()
+            // What the status line has said, all of it (#112).
+            Button("Show Activity") { editor?.showActivity = true }
+                .keyboardShortcut("l", modifiers: [.command, .option])
+                .disabled(editor == nil)
         }
         CommandMenu("Marker") {
             // M to drop one, ⌘M to drop and name it, ⇧↑/⇧↓ to walk them: the Resolve bindings

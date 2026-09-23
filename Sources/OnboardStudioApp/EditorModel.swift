@@ -35,8 +35,18 @@ final class EditorModel {
     var snappingEnabled = true
     /// The first-run tour's current step, `nil` when it is not showing.
     var tourStep: Int?
-    var errorMessage: String?
-    var statusMessage: String?
+    var errorMessage: String? {
+        didSet { if let errorMessage { activity.record(errorMessage, isProblem: true) } }
+    }
+    /// What the app last did on the user's behalf, shown in the status line. Every message is also
+    /// kept in `activity`, so one replacing another loses nothing (#112).
+    var statusMessage: String? {
+        didSet { if let statusMessage, statusMessage != oldValue { activity.record(statusMessage) } }
+    }
+    /// Everything the status line and the error alerts have said since the project opened.
+    var activity = ActivityLog()
+    /// The activity popover is open.
+    var showActivity = false
 
     let preview = PreviewController()
     private(set) var loaded: ProjectCompiler.LoadedProject?
