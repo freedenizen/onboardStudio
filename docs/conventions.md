@@ -94,10 +94,13 @@ first sample is later reported its first lap as starting before its own data.
 
 - **J-K-L shuttle** is universal and predates all three apps — it comes from tape-deck logging.
   `J` plays backward, `L` forward, `K` stops; repeated taps increase speed, and holding `K` while
-  tapping `J`/`L` steps a frame at a time. Onboard Studio has no equivalent today.
+  tapping `J`/`L` steps a frame at a time. **Onboard Studio has J, K and L** (#230): each further
+  tap doubles the speed up to 8×; where the picture cannot play backward, `J` steps back a frame.
+  Holding `K` with `J`/`L` is not implemented — `,` and `.` step frames.
 - **`I` and `O`** set in and out points, used both to choose a portion of a source clip and to mark
-  a range on the timeline for playback, render or a lift/extract. Onboard Studio has no equivalent;
-  its trim range is the closest thing, but that is a property of the input, not a scratch selection.
+  a range on the timeline for playback, render or a lift/extract. **Onboard Studio has I and O**
+  (#230) for a scratch range shown on the ruler, which the export sheet offers (and starts on);
+  ⌥X clears it, as in Final Cut. It is not saved with the project.
 - `Home` / `End` go to start and end.
 - **A click in a timeline lane moves the playhead** there in all three apps. Onboard Studio does
   this in the video and data lanes as well as the ruler and segment strip (#106); J-K-L and I/O

@@ -17,6 +17,17 @@ final class PreviewController {
 
     init() {
         player.actionAtItemEnd = .pause
+        // The periodic observer stops with the player, so it never sees the player stop itself at
+        // the end; without this the transport went on saying Pause.
+        NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.didPlayToEndTimeNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let ended = (note.object as AnyObject?).map(ObjectIdentifier.init)
+            MainActor.assumeIsolated {
+                guard let self, let item = self.player.currentItem, ended == ObjectIdentifier(item) else { return }
+                self.isPlaying = false
+            }
+        }
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 60), queue: .main) {
             [weak self] time in
             MainActor.assumeIsolated {
@@ -62,6 +73,29 @@ final class PreviewController {
         }
         isPlaying = player.rate != 0
     }
+
+    /// J-K-L (#230): `direction` 1 plays forward, −1 backward, 0 stops. Another tap in the same
+    /// direction doubles the speed, up to 8×, as it does in every editor. Returns false when
+    /// the picture cannot play backward, so the caller can step instead.
+    @discardableResult
+    func shuttle(_ direction: Int) -> Bool {
+        guard direction != 0 else {
+            player.pause()
+            isPlaying = false
+            return true
+        }
+        if direction < 0, player.currentItem?.canPlayReverse != true { return false }
+        let current = player.rate
+        let speed: Float =
+            (current != 0 && (current > 0) == (direction > 0)) ? min(abs(current) * 2, 8) : 1
+        if direction > 0, duration > 0, currentTime >= duration - 0.02 { seek(to: 0) }
+        player.rate = speed * Float(direction)
+        isPlaying = player.rate != 0
+        return true
+    }
+
+    /// The shuttle speed, signed: 2 is forward at double speed.
+    var rate: Float { player.rate }
 
     func seek(to seconds: Double) {
         let clamped = min(max(seconds, 0), max(duration, 0))

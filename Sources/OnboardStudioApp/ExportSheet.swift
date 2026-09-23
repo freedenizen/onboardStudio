@@ -92,6 +92,13 @@ struct ExportSheet: View {
                     Picker("Export", selection: $rangeMode) {
                         Text("Whole project").tag("whole")
                         Text("Time span").tag("span")
+                        if let range = editor.inOutRange {
+                            Text(
+                                "In to out (\(TimeParsing.lapTimeString(range.lowerBound)) – "
+                                    + "\(TimeParsing.lapTimeString(range.upperBound)))"
+                            )
+                            .tag("inout")
+                        }
                         Text("Laps").tag("laps").disabled(lapCount == 0)
                     }
                     if rangeMode == "span" {
@@ -179,6 +186,8 @@ struct ExportSheet: View {
             lastLap = l
         }
         if spanEnd == 0 { spanEnd = editor.duration }
+        // A range marked with I and O is what the user means to export, as in any editor (#230).
+        if editor.inOutRange != nil { rangeMode = "inout" }
         if case .keyColor(let c) = settings.background { keyColor = Color(c) }
         if lapCount > 0 {
             firstLap = min(max(firstLap, lapNumbers.lowerBound), lapNumbers.upperBound)
@@ -255,6 +264,8 @@ extension ExportSheet {
         var s = settings.reconciled
         switch rangeMode {
         case "span": s.range = .span(start: spanStart, end: spanEnd)
+        case "inout":
+            if let range = editor.inOutRange { s.range = .span(start: range.lowerBound, end: range.upperBound) }
         case "laps": s.range = .laps(first: firstLap, last: lastLap)
         default: s.range = .whole
         }

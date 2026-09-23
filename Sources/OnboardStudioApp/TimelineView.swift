@@ -71,6 +71,15 @@ struct TimelineRuler: View {
             // The control background rather than the under-page grey: in the light appearance
             // secondary text on that grey failed the contrast audit (#153).
             Rectangle().fill(Color(nsColor: .controlBackgroundColor))
+            // The I/O range (#230), shaded from in to out; an open end runs to the edge.
+            if let start = editor.markIn ?? (editor.markOut != nil ? 0 : nil) {
+                let end = editor.markOut ?? duration
+                Rectangle().fill(Color.accentColor.opacity(0.3))
+                    .frame(width: max((end - start) * pixelsPerSecond, 1), height: 18)
+                    .offset(x: start * pixelsPerSecond)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("ruler.inOut")
+            }
             ForEach(Array(stride(from: 0.0, through: duration, by: step)), id: \.self) { t in
                 VStack(alignment: .leading, spacing: 0) {
                     Text(Self.label(t)).font(.caption2).foregroundStyle(.secondary).padding(.leading, 3)

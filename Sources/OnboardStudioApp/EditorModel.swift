@@ -32,6 +32,10 @@ final class EditorModel {
     var showSyncWizard = false
     var showExport = false
     var showSaveTemplate = false
+    /// A scratch range marked with I and O (#230): shown on the ruler and offered by the export
+    /// sheet. Not saved with the project, as a selection is not.
+    var markIn: Double?
+    var markOut: Double?
     /// The file to offer for upload, set when an export finishes or a file is chosen from the menu.
     var uploadURL: URL?
     var motionSyncTask: Task<Void, Never>?
