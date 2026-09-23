@@ -51,10 +51,12 @@ public struct TemplateLibrary: Sendable {
         try ProjectTemplate(data: Data(contentsOf: entry.url))
     }
 
-    /// A name a file can carry: no slashes or colons, no surrounding space.
+    /// A name a file can carry: no slashes or colons, no surrounding space, and no leading full
+    /// stop — that would make a hidden file the library never lists again.
     public static func cleaned(_ name: String) -> String {
-        name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+        let name = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        return String(name.drop { $0 == "." }).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Saves `template` under `name`, replacing a template of that name. The Save as Template
@@ -63,13 +65,9 @@ public struct TemplateLibrary: Sendable {
     public func save(_ template: ProjectTemplate, name: String) throws -> Entry {
         let name = Self.cleaned(name)
         guard !name.isEmpty else { throw TemplateLibraryError.emptyName }
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        if let existing = entry(named: name) { try FileManager.default.removeItem(at: existing.url) }
-        var named = template
-        named.name = name
-        let url = directory.appending(path: "\(name).\(ProjectTemplate.fileExtension)")
-        try named.data().write(to: url, options: .atomic)
-        return Entry(name: name, url: url)
+        // Written first, and the one it replaces removed only once that has worked: a write that
+        // fails must not cost the user the template they already had.
+        return try saveNew(template, name: name, replacing: entry(named: name)?.url)
     }
 
     /// Renames `entry`, file and all. Refuses a name another template already has.

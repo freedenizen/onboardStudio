@@ -66,15 +66,23 @@ enum TemplateImport {
         }
         NotificationCenter.default.post(name: .templatesChanged, object: nil)
         let alert = NSAlert()
-        if failed.isEmpty {
+        let whereToFind = "Start a project from it in the welcome window or with File ▸ New from Template."
+        let unreadable = failed.map { "“\($0)”" }.joined(separator: ", ")
+        switch (added.count, failed.count) {
+        case (_, 0):
             alert.messageText =
                 added.count == 1 ? "Added “\(added[0])” to Your Templates" : "Added \(added.count) Templates"
-            alert.informativeText =
-                "Start a project from it in the welcome window or with File ▸ New from Template."
-        } else {
+            alert.informativeText = whereToFind
+        case (0, _):
             alert.alertStyle = .warning
-            alert.messageText = "“\(failed[0])” Is Not an Onboard Studio Template"
-            alert.informativeText = "The file could not be read as a template, so nothing was added."
+            alert.messageText =
+                failed.count == 1
+                ? "“\(failed[0])” Is Not an Onboard Studio Template" : "These Are Not Onboard Studio Templates"
+            alert.informativeText = "\(unreadable) could not be read as a template, so nothing was added."
+        default:
+            alert.alertStyle = .warning
+            alert.messageText = "Added \(added.count) of \(added.count + failed.count) Templates"
+            alert.informativeText = "\(unreadable) could not be read as a template. \(whereToFind)"
         }
         alert.runModal()
     }

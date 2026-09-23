@@ -21,10 +21,14 @@ struct TemplateLibraryTests {
         try library.save(template, name: "Sonoma club day")
         try library.save(template, name: "  a/b: c ")
         #expect(library.entries().map(\.name) == ["a-b- c", "Sonoma club day"])
+        #expect(TemplateLibrary.cleaned(" . hidden") == "hidden")
         let loaded = try library.load(try #require(library.entry(named: "sonoma CLUB day")))
         #expect(loaded.name == "Sonoma club day")
         #expect(loaded.displayObjects.count == 1)
         #expect(throws: TemplateLibraryError.emptyName) { try library.save(template, name: "  ") }
+        // A leading full stop would hide the file from the list for good.
+        #expect(try library.save(template, name: ".club").name == "club")
+        #expect(throws: TemplateLibraryError.emptyName) { try library.save(template, name: "..") }
     }
 
     @Test func savingUnderATakenNameReplacesIt() throws {
