@@ -1,3 +1,4 @@
+import AppKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -7,67 +8,130 @@ import TelemetryKit
 /// Laid out as columns rather than stacked, which is the whole reason for the window: the source,
 /// what it is read in and what it is shown in are one row of a table, not three lines of a list.
 struct AttributeMappingGrid: View {
-    let scope: AttributeMappingWindow.Scope
+    let scope: AttributeMappingScope
     let editor: EditorModel?
+    /// What was typed in the window's filter field. While there is any, every attribute is
+    /// searched, not just the ones the file supplies: typing a name is asking for it.
+    let filter: String
+    /// Bumped by Return in the filter field, which moves focus to the first row left.
+    let filterSubmits: Int
+    @Binding var showAll: Bool
+    var focus: FocusState<AttributeFocus?>.Binding
 
     @AppStorage(Preferences.attributeMappings.key) private var globalMappings = Preferences.attributeMappings.unset
-    @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
-    @State private var showAll = false
 
-    private static let sourceWidth: CGFloat = 220
-    private static let unitWidth: CGFloat = 130
+    // The table's columns are the one thing here the content genuinely fixes: every row has to line
+    // up under the header. They scale with the text so nothing clips at larger sizes.
+    @ScaledMetric(relativeTo: .body) private var sourceWidth: CGFloat = 220
+    @ScaledMetric(relativeTo: .body) private var unitWidth: CGFloat = 130
+    @ScaledMetric(relativeTo: .body) private var columnSpacing: CGFloat = 8
+    @ScaledMetric(relativeTo: .body) private var rowInset: CGFloat = 4
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerRow
-            Divider()
-            List {
-                ForEach(rows, id: \.identifier) { role in
-                    AttributeRow(
-                        role: role, level: level, resolver: resolver, columns: sourceColumns,
-                        detected: detectedUnits[role.identifier],
-                        detectedSource: detectedSources[role.identifier],
-                        sourceWidth: Self.sourceWidth, unitWidth: Self.unitWidth,
-                        write: { write(role, $0) })
-                }
+        Group {
+            if rows.isEmpty {
+                ContentUnavailableView.search(text: filter)
+            } else {
+                table
             }
-            .listStyle(.inset(alternatesRowBackgrounds: true))
-            Divider()
-            footer
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                Divider()
+                footer
+            }
+            .background(.bar)
+        }
+        .onChange(of: filterSubmits) {
+            if let first = rows.first { focus.wrappedValue = .source(first.identifier) }
         }
     }
 
+    /// A stack rather than a `List`: a `List` is a table view that keeps Tab to itself, so the
+    /// keyboard could not get from one row's field to the next (#200). In a stack the key-view
+    /// loop is the reading order — along a row, then down to the next.
+    private var table: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
+                Section {
+                    ForEach(Array(rows.enumerated()), id: \.element.identifier) { index, role in
+                        AttributeRow(
+                            role: role, level: scope.level, resolver: resolver, columns: sourceColumns,
+                            detected: detectedUnits[role.identifier],
+                            detectedSource: detectedSources[role.identifier],
+                            sourceWidth: sourceWidth, unitWidth: unitWidth, columnSpacing: columnSpacing,
+                            focus: focus,
+                            write: { write(role, $0) }
+                        )
+                        .padding(.horizontal)
+                        .padding(.vertical, rowInset)
+                        .background(index.isMultiple(of: 2) ? Color.clear : Self.alternateRow)
+                    }
+                } header: {
+                    headerRow
+                }
+            }
+        }
+        .defaultFocus(focus, rows.first.map { .source($0.identifier) })
+    }
+
+    /// The system's own second row colour, which follows dark mode and Increase Contrast.
+    private static let alternateRow = Color(nsColor: NSColor.alternatingContentBackgroundColors[1])
+
     private var headerRow: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: columnSpacing) {
             Text("Attribute").frame(maxWidth: .infinity, alignment: .leading)
-            Text("From").frame(width: Self.sourceWidth, alignment: .leading)
-            Text("Reads").frame(width: Self.unitWidth, alignment: .leading)
-            Text("Shows").frame(width: Self.unitWidth, alignment: .leading)
+            Text("From").frame(width: sourceWidth, alignment: .leading)
+                .help("The column of the data file this attribute is read from")
+            Text("Reads").frame(width: unitWidth, alignment: .leading)
+                .help("The unit the file's numbers are in")
+            Text("Shows").frame(width: unitWidth, alignment: .leading)
+                .help("The unit display objects show it in, unless an object sets its own")
         }
         .font(.caption).foregroundStyle(.secondary)
-        .padding(.horizontal, 16).padding(.vertical, 6)
+        .accessibilityAddTraits(.isHeader)
+        .padding(.horizontal)
+        .padding(.vertical, rowInset)
+        .background(.bar)
+        .overlay(alignment: .bottom) { Divider() }
     }
 
     private var footer: some View {
         HStack {
             Toggle("Show every attribute", isOn: $showAll)
+                .disabled(isFiltering)
+                .help(
+                    isFiltering
+                        ? "A filter searches every attribute already"
+                        : "Also list attributes this file does not supply, to map them to a column"
+                )
                 .accessibilityIdentifier("attributes.showAll")
             Spacer()
             Text(explanation).font(.caption).foregroundStyle(.secondary)
+                .multilineTextAlignment(.trailing)
+                .accessibilityIdentifier("attributes.explanation")
         }
-        .padding(.horizontal, 16).padding(.vertical, 8)
+        .padding(.horizontal)
+        .padding(.vertical, rowInset * 2)
     }
 
     /// What this scope does, and — where the scope covers more than one file — which file the
     /// automatic values in the table are being read from, so they are not mistaken for something
     /// true of every file.
     private var explanation: String {
-        let readingFrom = readFileName.map { " Reading from \($0)." } ?? ""
-        switch scope {
-        case .global: return "Set once here and every later import follows." + readingFrom
-        case .project: return "This project only; inputs and objects can still differ." + readingFrom
-        case .input: return "This file only, when it is the exception."
+        let what =
+            switch scope {
+            case .global: "Set once here and every later import follows."
+            case .project: "This project only; inputs and objects can still differ."
+            case .input: "This file only, when it is the exception."
+            }
+        // With no file to read, there are no columns to offer — but a column's name can still be
+        // typed, which is what a mapping for later imports needs.
+        guard session != nil else {
+            return what + " Open a data file to choose from its columns, or type a column's name."
         }
+        if case .input = scope { return what }
+        return what + (readFileName.map { " Reading from \($0)." } ?? "")
     }
 
     private var readFileName: String? {
@@ -77,26 +141,13 @@ struct AttributeMappingGrid: View {
 
     // MARK: - What the chain looks like from here
 
-    private var level: AttributeMappingLevel {
-        switch scope {
-        case .global: .global
-        case .project: .project
-        case .input: .input
-        }
-    }
-
-    private var inputID: InputID? {
-        if case .input(let id) = scope { return id }
-        return nil
-    }
-
     private var settings: DataInputSettings? {
-        inputID.flatMap { editor?.project.input($0) }?.dataSettings
+        scope.inputID.flatMap { editor?.project.input($0) }?.dataSettings
     }
 
     private var session: TelemetrySession? {
         guard let editor else { return nil }
-        if let inputID { return editor.sessions[inputID] }
+        if let inputID = scope.inputID { return editor.sessions[inputID] }
         return editor.project.dataInputs.first.flatMap { editor.sessions[$0.id] }
     }
 
@@ -137,8 +188,17 @@ struct AttributeMappingGrid: View {
         return Set(ChannelRole.mappableAttributes).intersection(fromData.union(mapped))
     }
 
+    private var isFiltering: Bool { !filter.trimmingCharacters(in: .whitespaces).isEmpty }
+
     private var rows: [ChannelRole] {
-        showAll || interesting.isEmpty
+        if isFiltering {
+            return ChannelRole.mappableAttributes.filter { role in
+                role.matches(
+                    filter: filter,
+                    source: resolver.resolved(role.identifier).source ?? detectedSources[role.identifier])
+            }
+        }
+        return showAll || interesting.isEmpty
             ? ChannelRole.mappableAttributes
             : ChannelRole.mappableAttributes.filter(interesting.contains)
     }
@@ -171,6 +231,9 @@ struct AttributeRow: View {
     let detectedSource: String?
     let sourceWidth: CGFloat
     let unitWidth: CGFloat
+    /// The header's spacing, so the controls line up under their column titles.
+    let columnSpacing: CGFloat
+    var focus: FocusState<AttributeFocus?>.Binding
     let write: (AttributeMapping) -> Void
 
     /// This level's own opinions — what the pop-ups edit.
@@ -191,17 +254,21 @@ struct AttributeRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: columnSpacing) {
+            VStack(alignment: .leading) {
                 Text(role.displayName).lineLimit(1)
                 Text(summary).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            // The summary truncates in the middle when the window is narrow; hovering reads it all.
+            .help(summary)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("attribute.\(role.identifier)")
             SourceColumnField(
                 pinned: mine.source, detected: detectedSource, columns: columns,
                 identifier: "attribute.\(role.identifier).source",
+                accessibilityName: role.displayName,
+                focus: focus, focusValue: .source(role.identifier),
                 write: { column in
                     var mapping = mine
                     mapping.source = column
@@ -212,13 +279,15 @@ struct AttributeRow: View {
             if role.kind == .state {
                 // A state has no unit to be shown in; what it needs is the level at which the
                 // channel it is mapped to counts as on. One field, spanning both unit columns.
-                thresholdField.frame(width: unitWidth * 2 + 8)
+                thresholdField.frame(width: unitWidth * 2 + columnSpacing)
             } else {
                 popUp(.sourceUnit, automatic: "File's unit").frame(width: unitWidth)
                 popUp(.displayUnit, automatic: "As read").frame(width: unitWidth)
             }
         }
-        .padding(.vertical, 2)
+        // One element per row for VoiceOver, named for the attribute, with its controls inside it.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(role.displayName)
     }
 
     /// A one-line statement of the mapping in force, so a row nobody has touched is still worth
@@ -258,7 +327,7 @@ struct AttributeRow: View {
         // A number field, so it commits on Return or on losing focus and parses once: bound to
         // text, `-` on its way to `-5` cleared the threshold and `1500` was four undo steps (#205).
         OptionalNumberField(
-            "On above…",
+            "\(role.displayName), on at or above",
             value: Binding(
                 get: { mine.threshold },
                 set: { threshold in
@@ -268,6 +337,8 @@ struct AttributeRow: View {
                 }),
             placeholder: "On above…"
         )
+        .focused(focus, equals: .threshold(role.identifier))
+        .help("The reading at or above which this counts as on. Left empty, it follows the channel's range.")
         .accessibilityIdentifier("attribute.\(role.identifier).threshold")
     }
 
@@ -298,7 +369,7 @@ struct AttributeRow: View {
                 }
             }()
         let options = options(field)
-        return Picker(field.rawValue, selection: binding(field)) {
+        return Picker(accessibilityName(of: field), selection: binding(field)) {
             Text(above.map { "Automatic (\($0))" } ?? automatic).tag("")
             if !options.isEmpty {
                 Divider()
@@ -312,7 +383,19 @@ struct AttributeRow: View {
             }
         }
         .labelsHidden()
+        .help(field == .sourceUnit ? "The unit the file's numbers are in" : "The unit objects show it in")
         .accessibilityIdentifier("attribute.\(role.identifier).\(field.rawValue)")
+    }
+
+    /// What VoiceOver calls a pop-up whose visible label the header carries: the attribute and the
+    /// column, not the codebase's name for the field.
+    private func accessibilityName(of field: AttributeMappingField) -> String {
+        switch field {
+        case .source: "\(role.displayName), source column"
+        case .sourceUnit: "\(role.displayName), reads in"
+        case .displayUnit: "\(role.displayName), shown in"
+        case .threshold: "\(role.displayName), on at or above"
+        }
     }
 
     private func binding(_ field: AttributeMappingField) -> Binding<String> {

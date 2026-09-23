@@ -1,3 +1,4 @@
+import ProjectModel
 import SwiftUI
 import TelemetryKit
 
@@ -11,6 +12,8 @@ import TelemetryKit
 /// list of every column of the file, which an inspector column cannot hold (#192).
 struct ImportReportSection: View {
     let report: ImportReport
+    /// The input the report is about, which is what the window opens on.
+    let inputID: InputID
 
     var body: some View {
         Section {
@@ -25,7 +28,8 @@ struct ImportReportSection: View {
                     .font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("import.inspectorSummary")
             }
-            OpenAttributeWindowButton("Show Import Report…", identifier: "import.open")
+            OpenAttributeWindowButton(
+                "Show Import Report…", identifier: "import.open", scope: .input(inputID), tab: .report)
         } header: {
             Text("Import")
         }

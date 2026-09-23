@@ -12,9 +12,8 @@ final class AttributeMappingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(open.waitForExistence(timeout: Self.timeout), "No way to open the attribute window")
         reveal(open)
         open.click()
-        let scope = app.popUpButtons["attributes.scope"]
-        XCTAssertTrue(scope.waitForExistence(timeout: Self.timeout), "The attribute window did not open")
-        choosePopUpItem(label, in: scope)
+        expectAttributeWindow()
+        chooseScope(label)
     }
 
     @MainActor
@@ -64,12 +63,11 @@ final class AttributeMappingUITests: OnboardStudioUITestCase {
         addFixtureData()
         openWindowOnTheFixtureInput()
 
-        let scope = app.popUpButtons["attributes.scope"]
-        choosePopUpItem("All projects", in: scope)
+        chooseScope("All projects")
         // The global mapping is still editable: a column can be typed even for a file that is
         // not open, which is what a mapping meant to apply to every later import needs.
         XCTAssertTrue(app.textFields["attribute.speed.source"].waitForExistence(timeout: Self.timeout))
-        choosePopUpItem("This project", in: scope)
+        chooseScope("This project")
         XCTAssertTrue(app.popUpButtons["attribute.speed.sourceUnit"].waitForExistence(timeout: Self.timeout))
     }
 
@@ -93,5 +91,98 @@ final class AttributeMappingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(
             (source.placeholderValue ?? "").contains("Automatic ("),
             "Automatic does not say what it resolves to: \(source.placeholderValue ?? "nil")")
+    }
+
+    /// Whether keyboard focus is in `element`: the field editor that takes the typing is the
+    /// field's child, so the field itself may not report focus while it is being edited.
+    @MainActor
+    func hasKeyboardFocus(_ element: XCUIElement) -> Bool {
+        if (element.value(forKey: "hasKeyboardFocus") as? Bool) == true { return true }
+        return element.descendants(matching: .any).matching(NSPredicate(format: "hasKeyboardFocus == true"))
+            .firstMatch.exists
+    }
+
+    /// The text fields of the table, top to bottom, which is the order Tab has to visit them in.
+    @MainActor
+    func tableTextFields() -> [XCUIElement] {
+        let field = "identifier ENDSWITH '.source' OR identifier ENDSWITH '.threshold'"
+        let predicate = NSPredicate(format: "identifier BEGINSWITH 'attribute.' AND (\(field))")
+        return app.textFields.matching(predicate).allElementsBoundByIndex
+            .filter { $0.isHittable }
+            .sorted { $0.frame.minY < $1.frame.minY }
+    }
+
+    /// #200: Tab walks the table in reading order — down the rows, one text field after the next —
+    /// whether or not the Mac's Keyboard navigation setting sends it through the pop-ups too.
+    @MainActor
+    func testTabWalksTheTableInReadingOrder() throws {
+        launch()
+        addFixtureData()
+        openWindowOnTheFixtureInput()
+
+        let fields = tableTextFields()
+        XCTAssertGreaterThanOrEqual(fields.count, 3, "Too few rows to walk")
+        fields[0].click()
+        XCTAssertTrue(hasKeyboardFocus(fields[0]), "Clicking the first field did not focus it")
+        for next in fields.dropFirst().prefix(2) {
+            // Up to four stops per row: the field, its column menu and the two unit pop-ups.
+            var arrived = false
+            for _ in 0..<4 where !arrived {
+                app.typeKey(.tab, modifierFlags: [])
+                arrived = hasKeyboardFocus(next)
+            }
+            XCTAssertTrue(arrived, "Tab did not reach \(next.identifier) in reading order")
+        }
+    }
+
+    /// #200: the whole of mapping an attribute, without the mouse — ⌘F to the filter, a word,
+    /// Return to the first row it leaves, a column name, Return.
+    @MainActor
+    func testFilterAndReturnMapAnAttributeWithoutTheMouse() throws {
+        launch()
+        addFixtureData()
+        openWindowOnTheFixtureInput()
+
+        app.typeKey("f", modifierFlags: .command)
+        app.typeText("pressure (front)")
+        // Filtering searches every attribute, not only the ones this file supplies.
+        let row = app.staticTexts["attribute.brakePressureFront"]
+        XCTAssertTrue(row.waitForExistence(timeout: Self.timeout), "The filter did not find the attribute")
+        XCTAssertFalse(app.staticTexts["attribute.speed"].exists, "The filter left other attributes in")
+
+        app.typeText("\n")
+        let source = app.textFields["attribute.brakePressureFront.source"]
+        XCTAssertTrue(hasKeyboardFocus(source), "Return in the filter did not go to the row")
+        app.typeText("brake_pressure_front\n")
+        expect(row, toContain: "brake_pressure_front")
+    }
+
+    /// #200: Escape abandons a column name half typed, and the row is as it was.
+    @MainActor
+    func testEscapeAbandonsATypedColumn() throws {
+        launch()
+        addFixtureData()
+        openWindowOnTheFixtureInput()
+
+        let source = app.textFields["attribute.speed.source"]
+        XCTAssertTrue(source.waitForExistence(timeout: Self.timeout))
+        source.click()
+        source.typeText("nonsense")
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertEqual(source.value as? String ?? "", "", "Escape left the typing in the field")
+        XCTAssertFalse(
+            text(of: app.staticTexts["attribute.speed"]).contains("nonsense"), "The abandoned column was mapped")
+    }
+
+    /// #200: Project ▸ Map Attributes… (⌥⌘A) opens the window on the data file that is selected,
+    /// which is the file the user was looking at when they asked.
+    @MainActor
+    func testTheShortcutOpensTheWindowOnTheSelectedFile() throws {
+        launch()
+        addFixtureData()
+        sidebarInput("racerender-basic").click()
+        app.typeKey("a", modifierFlags: [.command, .option])
+        expectAttributeWindow()
+        expect(app.staticTexts["attributes.explanation"], toContain: "This file only")
     }
 }

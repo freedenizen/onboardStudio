@@ -172,6 +172,20 @@ Two details worth noting because they contradict what is widely repeated online:
 - **Up/Down arrows move the selection between edits**, so Resolve does not reserve the arrow keys
   for the playhead the way the secondary sources implied. Only left/right step frames.
 
+## The attribute window (#200)
+
+Not from an editor, so not verified against one; chosen against the Mac's own conventions.
+
+- **⌥⌘A — Map Attributes…** ⌘A is Select All and ⇧⌘A is Deselect All in text and lists across
+  the system, so the plain and shifted forms are taken. ⌥⌘A is unused in this app and, in the
+  Finder, is only the option-variant of Select All.
+- **⌘1 / ⌘2 — the window's two views**, as the Finder's ⌘1–⌘4 switch between its views and
+  Xcode's ⌘-digits between its navigators. They exist only while the attribute window is in
+  front, so they never shadow anything in the editor.
+- **⌘F — the window's filter field**, as in any Mac window with a search field. A toolbar
+  `.searchable` field does not take ⌘F by itself (checked with the UI test with the command
+  removed), so the window adds it as a menu command while it is in front.
+
 ## Other apps
 
 Verified from Apple's official documentation; the Premiere rows could not be confirmed against an

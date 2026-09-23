@@ -35,7 +35,7 @@ struct SettingsView: View {
                 .font(.caption).foregroundStyle(.secondary)
             }
             Section {
-                OpenAttributeWindowButton("Map Attributes…")
+                OpenAttributeWindowButton("Map Attributes…", scope: .global)
             } header: {
                 Text("Attributes")
             } footer: {

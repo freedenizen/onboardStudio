@@ -13,9 +13,8 @@ final class ImportReportUITests: OnboardStudioUITestCase {
         XCTAssertTrue(open.waitForExistence(timeout: Self.timeout), "No way to open the report")
         reveal(open)
         open.click()
-        let scope = app.popUpButtons["attributes.scope"]
-        XCTAssertTrue(scope.waitForExistence(timeout: Self.timeout), "The attribute window did not open")
-        choosePopUpItem("racechrono-v3-noisy", in: scope)
+        expectAttributeWindow()
+        chooseScope("racechrono-v3-noisy")
     }
 
     /// The tab strip is a segmented control, whose segments are radio buttons rather than the
@@ -54,6 +53,7 @@ final class ImportReportUITests: OnboardStudioUITestCase {
     func testAPressureAttributeIsMappedToAColumnAndShownInBar() throws {
         launch()
         openWindowOnTheNoisyFixture()
+        selectTab("Attributes")
 
         // Nothing maps it yet and the file does not supply it by name, so its row waits until
         // every attribute is asked for.
@@ -82,6 +82,7 @@ final class ImportReportUITests: OnboardStudioUITestCase {
     func testASourceChannelIsNotListedAsAnAttribute() throws {
         launch()
         openWindowOnTheNoisyFixture()
+        selectTab("Attributes")
 
         let showAll = app.descendants(matching: .any).matching(identifier: "attributes.showAll").firstMatch
         XCTAssertTrue(showAll.waitForExistence(timeout: Self.timeout))
@@ -90,5 +91,32 @@ final class ImportReportUITests: OnboardStudioUITestCase {
             app.staticTexts["attribute.canbus:analog_1"].exists,
             "One logger's wiring is listed as though it were part of the vocabulary")
         XCTAssertFalse(app.staticTexts["attribute.canbus:brake_pressure_front"].exists)
+    }
+
+    /// #200: ⌘2 shows the import report and ⌘1 the attributes again, from the View menu, while the
+    /// attribute window is in front.
+    @MainActor
+    func testCommandDigitsSwitchTheWindowsView() throws {
+        launch()
+        openWindowOnTheNoisyFixture()
+        app.typeKey("1", modifierFlags: .command)
+        XCTAssertTrue(
+            app.textFields["attribute.speed.source"].waitForExistence(timeout: Self.timeout),
+            "⌘1 did not show attributes")
+        app.typeKey("2", modifierFlags: .command)
+        XCTAssertTrue(
+            app.staticTexts["import.summary"].waitForExistence(timeout: Self.timeout), "⌘2 did not show the report")
+        app.typeKey("1", modifierFlags: .command)
+        XCTAssertTrue(app.textFields["attribute.speed.source"].waitForExistence(timeout: Self.timeout))
+    }
+
+    /// #200: *Show Import Report…* opens the window on the report, not on whatever it last showed.
+    @MainActor
+    func testShowImportReportOpensOnTheReport() throws {
+        launch()
+        openWindowOnTheNoisyFixture()
+        XCTAssertTrue(
+            app.staticTexts["import.summary"].waitForExistence(timeout: Self.timeout),
+            "The window did not open on the report")
     }
 }

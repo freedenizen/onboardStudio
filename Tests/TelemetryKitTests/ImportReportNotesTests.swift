@@ -71,7 +71,7 @@ struct ImportReportNotesTests {
 
     // MARK: - When a missing unit is worth raising
 
-    /// A column that was never imported already reads "not imported"; telling the user to set a
+    /// A column that was never imported already reads "Not imported"; telling the user to set a
     /// unit for it under Attributes is contradictory and unactionable.
     @Test func aColumnThatWasNotImportedIsNotToldToSetAUnit() throws {
         let raw = table([RawColumn(name: "Ignored", values: [1, 2])])

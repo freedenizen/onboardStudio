@@ -120,6 +120,27 @@ class OnboardStudioUITestCase: XCTestCase {
         entry.click()
     }
 
+    /// Waits for the attribute window, whose sidebar is how its scope is chosen.
+    func expectAttributeWindow() {
+        let sidebar = app.descendants(matching: .any).matching(identifier: "attributes.scope").firstMatch
+        XCTAssertTrue(sidebar.waitForExistence(timeout: Self.timeout), "The attribute window did not open")
+    }
+
+    /// Points the attribute window at a level of the mapping chain: *All projects*, *This project*
+    /// or a data file, by its label (#200). A sidebar row, found by identifier because the editor's
+    /// own sidebar lists the same file under the same name.
+    func chooseScope(_ label: String) {
+        let identifier =
+            switch label {
+            case "All projects": "attributes.scope.global"
+            case "This project": "attributes.scope.project"
+            default: "attributes.scope.input.\(label)"
+            }
+        let row = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: Self.timeout), "No scope “\(label)” in the attribute window")
+        row.click()
+    }
+
     /// Types the column an attribute is read from. A field rather than a pop-up because a list of
     /// forty columns is not something to hunt through, and because a menu that long scrolls its
     /// items out of the accessibility tree (#195).

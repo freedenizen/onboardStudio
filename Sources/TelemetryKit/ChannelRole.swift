@@ -254,3 +254,11 @@ extension ChannelRole {
         .absActive, .tractionControlActive, .pitLimiter,
     ]
 }
+
+extension ChannelRole {
+    /// Whether this attribute answers to what was typed in a filter field (#200): its name, or
+    /// the column it is read from, so that typing either `brake` or `analog_2` finds the row.
+    public func matches(filter: String, source: String? = nil) -> Bool {
+        TextFilter(filter).matches([displayName, source])
+    }
+}

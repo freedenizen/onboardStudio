@@ -122,3 +122,44 @@ extension ImportReport.Note {
             ? String(Int(value)) : String(format: "%.3f", value)
     }
 }
+
+extension ImportReport.Column {
+    /// What the column became, in the words the attribute table uses (#200). The role's own
+    /// identifier (`brakePressureFront`, `canbus:66569`) is the codebase's word for it, and the
+    /// user has never met a `ChannelRole`.
+    public var becameDescription: String {
+        guard let role else { return "Not imported" }
+        let name =
+            switch role {
+            // A channel the file named itself keeps that name, which is already in the Column
+            // column; what is worth saying is that it did not become an attribute.
+            case .obd, .canbus, .aux: "Kept as its own channel"
+            default: role.displayName
+            }
+        let unit = unit.symbol
+        return unit.isEmpty ? name : "\(name) · \(unit)"
+    }
+
+    /// Whether the column answers to what was typed in a filter field: its name, the file's
+    /// grouping for it, or what it became.
+    public func matches(filter: String) -> Bool {
+        TextFilter(filter).matches([name, source, becameDescription])
+    }
+}
+
+/// What a filter field matches: anywhere in the text, ignoring case and accents. An empty filter
+/// matches everything.
+struct TextFilter {
+    let query: String
+
+    init(_ query: String) {
+        self.query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func matches(_ candidates: [String?]) -> Bool {
+        guard !query.isEmpty else { return true }
+        return candidates.contains { candidate in
+            candidate?.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+        }
+    }
+}

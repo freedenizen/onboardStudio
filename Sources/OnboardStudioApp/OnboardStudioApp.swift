@@ -45,6 +45,7 @@ struct OnboardStudioApp: App {
                     .disabled(!updater.canCheckForUpdates)
             }
             EditorCommands()
+            AttributeWindowCommands()
             if UITestSupport.isActive { UITestCommands() }
         }
         Window("Welcome to Onboard Studio", id: "launcher") {
@@ -173,6 +174,16 @@ struct EditorCommands: Commands {
             .disabled(editor?.selectedSegmentID == nil)
             Divider()
             Button("Synchronize Data…") { editor?.showSyncWizard = true }.keyboardShortcut("y", modifiers: [.command])
+            // ⌥⌘A: ⌘A and ⇧⌘A are Select All and Deselect All everywhere; with ⌥ it is free here
+            // and in the Finder's sense unrelated. Opens on the selected data file (#200).
+            Button("Map Attributes…") {
+                AttributeMappingWindow.open(openWindow, scope: AttributeMappingWindow.scope(for: editor))
+            }
+            .keyboardShortcut("a", modifiers: [.command, .option])
+            Button("Show Import Report…") {
+                AttributeMappingWindow.open(openWindow, scope: AttributeMappingWindow.scope(for: editor), tab: .report)
+            }
+            .disabled(editor?.project.dataInputs.isEmpty != false)
             Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
             Button("Upload Video to YouTube…") {
                 if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
@@ -224,6 +235,44 @@ struct EditorCommands: Commands {
             Button("Step Forward") { editor?.step(by: 1) }.keyboardShortcut(".", modifiers: [])
             Button("Go to Start") { editor?.seek(to: 0) }.keyboardShortcut(.home, modifiers: [])
         }
+    }
+}
+
+/// View-menu commands for the attribute window, present while it is the key window (#200).
+///
+/// ⌘1 and ⌘2 switch between its two views the way the Finder's ⌘1–⌘4 switch between its, and ⌘F
+/// goes to its filter field. Outside the window the items are not there at all, so the keys do
+/// nothing in the editor rather than something unexpected.
+struct AttributeWindowCommands: Commands {
+    @FocusedValue(\.attributeTab) private var tab
+    @FocusedValue(\.attributeShowAll) private var showAll
+    @FocusedValue(\.attributeFilterFocus) private var focusFilter
+
+    var body: some Commands {
+        CommandGroup(before: .toolbar) {
+            if let tab {
+                Toggle("Attributes", isOn: tab.selecting(.attributes)).keyboardShortcut("1", modifiers: .command)
+                Toggle("Import Report", isOn: tab.selecting(.report)).keyboardShortcut("2", modifiers: .command)
+                if let showAll {
+                    Toggle(
+                        tab.wrappedValue == .attributes ? "Show Every Attribute" : "Show Every Column", isOn: showAll)
+                }
+                Divider()
+            }
+        }
+        CommandGroup(after: .textEditing) {
+            if let focusFilter {
+                Button(tab?.wrappedValue == .report ? "Filter Columns" : "Filter Attributes") { focusFilter() }
+                    .keyboardShortcut("f", modifiers: .command)
+            }
+        }
+    }
+}
+
+extension Binding where Value == AttributeMappingWindow.Tab {
+    /// A menu checkmark for one view: on when it is the one showing, and choosing it shows it.
+    func selecting(_ tab: AttributeMappingWindow.Tab) -> Binding<Bool> {
+        Binding<Bool>(get: { wrappedValue == tab }, set: { if $0 { wrappedValue = tab } })
     }
 }
 
