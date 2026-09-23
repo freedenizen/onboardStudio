@@ -82,7 +82,7 @@ extension DataInputInspector {
                         LabeledContent("Corner \(index + 1)") {
                             HStack {
                                 Text(corner.turnsRight ? "right" : "left").foregroundStyle(.secondary)
-                                TextField(
+                                CommittingTextField(
                                     "\(index + 1)",
                                     text: Binding(
                                         get: { label(at: index) },

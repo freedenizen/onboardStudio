@@ -157,6 +157,79 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Speedo").waitForNonExistence(timeout: Self.timeout), "Redo removes it again")
     }
 
+    /// #205: a typed name is one edit. Bound straight to the model, the label field wrote on every
+    /// key press, and taking back a rename took one ⌘Z per character.
+    @MainActor
+    func testTypingANameIsOneUndoStep() throws {
+        launch()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout))
+
+        let label = app.textFields["object.label"]
+        XCTAssertTrue(label.waitForExistence(timeout: Self.timeout))
+        label.click()
+        app.typeKey("a", modifierFlags: .command)
+        label.typeText("Front straight\n")
+        XCTAssertTrue(sidebarObject("Front straight").waitForExistence(timeout: Self.timeout), "Rename not applied")
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(
+            sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout),
+            "One undo from the field did not take back the whole name")
+        app.typeKey("z", modifierFlags: [.command, .shift])
+        XCTAssertTrue(sidebarObject("Front straight").waitForExistence(timeout: Self.timeout), "Redo")
+    }
+
+    /// #205: Escape abandons what was typed, and nothing is left to undo.
+    @MainActor
+    func testEscapeAbandonsATypedName() throws {
+        launch()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout))
+
+        let label = app.textFields["object.label"]
+        XCTAssertTrue(label.waitForExistence(timeout: Self.timeout))
+        label.click()
+        app.typeKey("a", modifierFlags: .command)
+        label.typeText("Nope")
+        app.typeKey(.escape, modifierFlags: [])
+        expect(label, toRead: "Speedometer")
+
+        XCTAssertFalse(sidebarObject("Nope").exists, "The abandoned name was written")
+        // Escape also ends the edit, so ⌘Z is the project's again rather than the field's, and
+        // there is nothing to undo but adding the object: neither a rename that changed nothing
+        // nor the abandoned typing may take this ⌘Z.
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(
+            sidebarObject("Speedometer").waitForNonExistence(timeout: Self.timeout),
+            "An abandoned edit left an undo step")
+    }
+
+    /// #205: what was typed belongs to the object it was typed for, even when the selection moves
+    /// before Return — and the next object's field does not inherit the text.
+    @MainActor
+    func testATypedNameIsKeptWhenTheSelectionMoves() throws {
+        launch()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        toolbarMenu("toolbar.addObject", "Tachometer")
+        XCTAssertTrue(sidebarObject("Tachometer").waitForExistence(timeout: Self.timeout))
+        sidebarObject("Speedometer").click()
+
+        let label = app.textFields["object.label"]
+        expect(label, toRead: "Speedometer")
+        label.click()
+        app.typeKey("a", modifierFlags: .command)
+        label.typeText("Speedo")
+        sidebarObject("Tachometer").click()
+
+        XCTAssertTrue(
+            sidebarObject("Speedo").waitForExistence(timeout: Self.timeout),
+            "Moving the selection lost the typed name")
+        expect(label, toRead: "Tachometer")
+    }
+
     /// #64: the Sector Times panel is reachable from the Add Object menu and its comparison is
     /// switchable, which is the only way a user meets sector timing in the app.
     @MainActor

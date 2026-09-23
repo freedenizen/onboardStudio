@@ -10,7 +10,7 @@ struct BarInspector: View {
     var body: some View {
         Section("Bar") {
             ChannelPicker(editor: editor, object: object, selection: field(\.channel))
-            TextField("Caption", text: field(\.label))
+            CommittingTextField("Caption", text: field(\.label))
             NumberField("Minimum", value: field(\.minValue))
             NumberField("Maximum", value: field(\.maxValue))
             Picker("Orientation", selection: field(\.orientation)) {
@@ -43,7 +43,7 @@ struct BarInspector: View {
                     DisplayUnitPicker(editor: editor, object: object)
                 }
             } else {
-                TextField("Unit label", text: field(\.unitLabel))
+                CommittingTextField("Unit label", text: field(\.unitLabel))
             }
         }
     }
@@ -70,7 +70,7 @@ struct GraphInspector: View {
 
     var body: some View {
         Section("Graph") {
-            TextField("Caption", text: field(\.label))
+            CommittingTextField("Caption", text: field(\.label))
             Picker("Horizontal axis", selection: field(\.axis)) {
                 Text("Time").tag(GraphAxis.time)
                 Text("Distance").tag(GraphAxis.distance)
@@ -199,10 +199,10 @@ struct GearInspector: View {
         Section("Gear") {
             ChannelPicker(editor: editor, object: object, selection: field(\.channel))
             Toggle("Show caption", isOn: field(\.showLabel))
-            TextField("Caption", text: field(\.label))
-            TextField("Neutral", text: field(\.neutralText))
-            TextField("Reverse", text: field(\.reverseText))
-            TextField("Park", text: field(\.parkText))
+            CommittingTextField("Caption", text: field(\.label))
+            CommittingTextField("Neutral", text: field(\.neutralText))
+            CommittingTextField("Reverse", text: field(\.reverseText))
+            CommittingTextField("Park", text: field(\.parkText))
             PercentSlider("Glyph size", value: field(\.fontScale), range: 0.3...1)
             ColorPicker("Text", selection: color(\.textColor))
             ColorPicker("Background", selection: color(\.backgroundColor))
@@ -231,7 +231,7 @@ struct LapCounterInspector: View {
 
     var body: some View {
         Section("Lap Counter") {
-            TextField("Caption", text: field(\.label))
+            CommittingTextField("Caption", text: field(\.label))
             Toggle("Show total laps", isOn: field(\.showTotal))
             Stepper("Number offset: \(params.numberOffset)", value: field(\.numberOffset), in: -5...5)
             ColorPicker("Text", selection: color(\.textColor))
@@ -264,7 +264,7 @@ struct TimerInspector: View {
             Picker("Shows", selection: field(\.mode)) {
                 ForEach(TimerMode.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            TextField(
+            CommittingTextField(
                 "Caption",
                 text: Binding(get: { params.label ?? "" }, set: { v in update { $0.label = v.isEmpty ? nil : v } }),
                 prompt: Text("default"))
@@ -306,7 +306,7 @@ struct TextDataInspector: View {
     var body: some View {
         Section("Text Data") {
             ChannelPicker(editor: editor, object: object, selection: field(\.channel))
-            TextField("Caption", text: field(\.label))
+            CommittingTextField("Caption", text: field(\.label))
             Picker("Alignment", selection: field(\.alignment)) {
                 Text("Leading").tag(ProjectModel.TextAlignment.leading)
                 Text("Center").tag(ProjectModel.TextAlignment.center)
@@ -319,7 +319,7 @@ struct TextDataInspector: View {
                     DisplayUnitPicker(editor: editor, object: object)
                 }
             } else {
-                TextField("Unit label", text: field(\.unitLabel))
+                CommittingTextField("Unit label", text: field(\.unitLabel))
             }
             ColorPicker("Text", selection: color(\.textColor))
             ColorPicker("Background", selection: color(\.backgroundColor))
@@ -333,7 +333,7 @@ struct TextDataInspector: View {
             Stepper("Decimals: \(params.decimals)", value: field(\.decimals), in: 0...3)
             NumberField("Multiply by", value: field(\.multiplier))
             NumberField("Then add", value: field(\.offset))
-            TextField("Prefix", text: field(\.prefix))
+            CommittingTextField("Prefix", text: field(\.prefix))
             Toggle("Thousands separator", isOn: field(\.thousandsSeparator))
             Toggle("Show + sign", isOn: field(\.showPlusSign))
             Toggle("Absolute value", isOn: field(\.absoluteValue))
@@ -342,7 +342,7 @@ struct TextDataInspector: View {
         Section("Font") {
             PercentSlider("Value size", value: field(\.fontScale), range: 0.2...0.9)
             PercentSlider("Caption size", value: field(\.labelScale), range: 0.1...0.6)
-            TextField("Font (blank = monospaced)", text: field(\.fontName))
+            CommittingTextField("Font (blank = monospaced)", text: field(\.fontName))
         }
     }
 

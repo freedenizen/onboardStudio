@@ -255,15 +255,18 @@ struct AttributeRow: View {
     /// The level a state attribute's channel counts as on at or above. Left empty it follows the
     /// suggestion an indicator derives from the channel's own range.
     private var thresholdField: some View {
-        TextField(
+        // A number field, so it commits on Return or on losing focus and parses once: bound to
+        // text, `-` on its way to `-5` cleared the threshold and `1500` was four undo steps (#205).
+        OptionalNumberField(
             "On above…",
-            text: Binding(
-                get: { mine.threshold.map { "\($0)" } ?? "" },
-                set: { text in
+            value: Binding(
+                get: { mine.threshold },
+                set: { threshold in
                     var mapping = mine
-                    mapping.threshold = text.isEmpty ? nil : Double(text)
+                    mapping.threshold = threshold
                     write(mapping)
-                })
+                }),
+            placeholder: "On above…"
         )
         .accessibilityIdentifier("attribute.\(role.identifier).threshold")
     }

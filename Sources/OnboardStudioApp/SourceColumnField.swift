@@ -37,6 +37,14 @@ struct SourceColumnField: View {
                 .focused($focused)
                 .onSubmit { commit() }
                 .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
+                // Escape abandons what was typed and ends the edit, as `CommittingTextField` does
+                // (#205).
+                .onKeyPress(.escape) {
+                    guard text != (pinned ?? "") else { return .ignored }
+                    text = pinned ?? ""
+                    focused = false
+                    return .handled
+                }
                 .accessibilityIdentifier(identifier)
             Menu {
                 Button("Automatic") { set(nil) }

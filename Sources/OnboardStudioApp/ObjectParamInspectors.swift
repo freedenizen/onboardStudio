@@ -98,7 +98,7 @@ struct TextInspector: View {
 
     var body: some View {
         Section("Text") {
-            TextField(
+            CommittingTextField(
                 "Text", text: Binding(get: { params.text }, set: { v in update { $0.text = v } }), axis: .vertical)
             PercentSlider(
                 "Size", value: Binding(get: { params.fontScale }, set: { v in update { $0.fontScale = v } }),
