@@ -72,6 +72,10 @@ also puts the playhead where you clicked, as in any editor. The magnet button (N
   text field takes effect when you press Return or leave the field, so a whole name is one step
   of Edit ▸ Undo; Escape abandons what you typed. The Edit menu says what Undo and Redo will do —
   *Undo Change Sweep*, *Redo Rename Object* — before you choose them.
+- **Status line (bottom)**: what the app last did for you — chapters joined, data synced, a file
+  refused. Nothing it says is lost when the next message replaces it: the clock button at its right,
+  or **View ▸ Show Activity** (⌥⌘L), lists everything the app has told you in this project, newest
+  first, with **Copy All** for a bug report. Errors shown in an alert are listed there too.
 - **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export.
 
 ## 3. Videos
@@ -422,6 +426,9 @@ a project, `sync` finds the data/video offset from motion, `upload` sends a file
 `bench` measures speed. See [testing.md](testing.md).
 
 ## 9. Troubleshooting
+
+- **Something happened and the message is gone.** **View ▸ Show Activity** (⌥⌘L) lists every
+  message and error since the project opened; **Copy All** puts them on the clipboard.
 
 - **The gauges lead or lag the picture.** Open **Sync** and nudge while watching a braking point.
   The panel stays out of the way under the preview, so you can scrub, look and nudge in a loop;

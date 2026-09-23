@@ -158,17 +158,28 @@ extension URL: @retroactive Identifiable {
 }
 
 /// What the app last did on the user's behalf (chapters joined, sync applied, a file refused…).
-/// Stays until replaced or dismissed.
+/// Stays until replaced or dismissed; everything it has said is a click away (#112).
 struct StatusLineView: View {
     @Bindable var editor: EditorModel
 
     var body: some View {
-        if let message = editor.statusMessage {
+        if editor.statusMessage != nil || editor.showActivity {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle").foregroundStyle(.secondary)
-                Text(message).font(.callout).lineLimit(2).textSelection(.enabled)
+                Text(editor.statusMessage ?? "").font(.callout).lineLimit(2).textSelection(.enabled)
+                    .help(editor.statusMessage ?? "")
                     .accessibilityIdentifier("status.message")
                 Spacer()
+                Button {
+                    editor.showActivity.toggle()
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Show everything the app has done in this project (⌥⌘L)")
+                .accessibilityLabel("Show Activity")
+                .accessibilityIdentifier("status.activity")
+                .popover(isPresented: $editor.showActivity, arrowEdge: .top) { ActivityLogView(log: editor.activity) }
                 Button {
                     editor.statusMessage = nil
                 } label: {

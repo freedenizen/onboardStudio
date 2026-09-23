@@ -196,7 +196,7 @@ jobs:
           - name: shard 2
             classes: JourneyUITests TemplateUITests LauncherUITests SplitUITests ImportReportUITests FontUITests
           - name: shard 3
-            classes: FirstLaunchUITests SyncUITests MultiCameraUITests LapUITests ProjectUITests TimelineUITests DetailsUITests
+            classes: FirstLaunchUITests SyncUITests MultiCameraUITests LapUITests ProjectUITests TimelineUITests DetailsUITests ActivityUITests
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
