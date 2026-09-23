@@ -90,6 +90,9 @@ public struct Project: Hashable, Codable, Sendable {
     public var timeline: Timeline
     /// Named points and ranges worth coming back to. Unordered here; use `markersInProjectTime()`.
     public var markers: [Marker]
+    /// What this project is of — track, car, driver, day — for text to show (#74). Not part of a
+    /// template: a template is a layout, and these belong to one session.
+    public var details: ProjectDetails
 
     public init(
         schemaVersion: Int = Project.currentSchemaVersion,
@@ -98,7 +101,8 @@ public struct Project: Hashable, Codable, Sendable {
         displayObjects: [DisplayObject] = [],
         export: ExportSettings = .hd1080,
         timeline: Timeline = .empty,
-        markers: [Marker] = []
+        markers: [Marker] = [],
+        details: ProjectDetails = ProjectDetails()
     ) {
         self.schemaVersion = schemaVersion
         self.settings = settings
@@ -107,10 +111,11 @@ public struct Project: Hashable, Codable, Sendable {
         self.export = export
         self.timeline = timeline
         self.markers = markers
+        self.details = details
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, settings, inputs, displayObjects, export, timeline, markers
+        case schemaVersion, settings, inputs, displayObjects, export, timeline, markers, details
     }
 
     public init(from decoder: any Decoder) throws {
@@ -123,6 +128,9 @@ public struct Project: Hashable, Codable, Sendable {
         timeline = try c.decodeIfPresent(Timeline.self, forKey: .timeline) ?? .empty
         // Absent in projects saved before markers existed; an empty list is the right reading.
         markers = try c.decodeIfPresent([Marker].self, forKey: .markers) ?? []
+        // Absent before details existed. None is the right reading, and it changes no render:
+        // `ProjectDetails.fill` leaves a key with no value exactly as it was typed.
+        details = try c.decodeIfPresent(ProjectDetails.self, forKey: .details) ?? ProjectDetails()
     }
 
     /// The objects as they appear at project `time`, with timeline overrides applied.

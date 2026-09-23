@@ -127,6 +127,9 @@ final class EditorModel {
     /// A data input just added, whose circuit should be looked up once it has loaded.
     var pendingTrackLookup: InputID?
 
+    /// A data input just added, whose file may name the track, driver and day (#74).
+    var pendingDetails: InputID?
+
     /// The track definitions kept between projects.
     let trackLibrary = TrackLibrary()
 
@@ -295,16 +298,23 @@ final class EditorModel {
                 reusableLoad = loaded
                 if project == self.project {
                     self.loaded = loaded
-                    if needsRecompile || preview.compiled == nil {
-                        let compiled = try await ProjectCompiler.compile(loaded)
-                        preview.replace(with: compiled)
-                    } else if let current = preview.compiled {
-                        preview.update(with: ProjectCompiler.replan(current, for: loaded))
+                    do {
+                        if needsRecompile || preview.compiled == nil {
+                            let compiled = try await ProjectCompiler.compile(loaded)
+                            preview.replace(with: compiled)
+                        } else if let current = preview.compiled {
+                            preview.update(with: ProjectCompiler.replan(current, for: loaded))
+                        }
+                        lastCompiledProject = project
+                        errorMessage = nil
+                    } catch ProjectCompiler.LoadError.noPlayableVideo where project.videoInputs.isEmpty {
+                        // Data with no video yet has nothing to play, but its sessions are loaded
+                        // and a file just added still wants its circuit and details looked up.
+                        errorMessage = nil
                     }
-                    lastCompiledProject = project
-                    errorMessage = nil
                     applyPendingAutoSync()
                     applyPendingTrackDefinition()
+                    applyPendingDetails()
                     bindEmptyChannels()
                 } else {
                     compilePending = true  // superseded by a newer edit

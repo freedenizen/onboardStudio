@@ -119,7 +119,12 @@ struct TextInspector: View {
         Section("Text") {
             CommittingTextField(
                 "Text", text: Binding(get: { params.text }, set: { v in update("Text") { $0.text = v } }),
-                axis: .vertical)
+                axis: .vertical
+            )
+            .accessibilityIdentifier("text.content")
+            InsertDetailMenu(details: editor.project.details) { token in
+                update("Insert Detail") { $0.text += ($0.text.isEmpty || $0.text.hasSuffix(" ") ? "" : " ") + token }
+            }
             PercentSlider(
                 "Size", value: Binding(get: { params.fontScale }, set: { v in update("Size") { $0.fontScale = v } }),
                 range: 0.1...1)

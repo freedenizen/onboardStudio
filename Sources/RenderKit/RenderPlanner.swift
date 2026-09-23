@@ -168,7 +168,7 @@ public enum RenderPlanner {
                     context: context, params: params, second: second, background: request.flatMap { mapBackgrounds[$0] }
                 )
             }
-            return renderer(for: object.kind, context: context, image: image)
+            return renderer(for: object.kind.filling(project.details), context: context, image: image)
         }
     }
 

@@ -65,8 +65,9 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   scroll sideways. The thin strip above the ruler shows the whole project with a window for the
   visible part; drag it to scroll.
 - **Inspector (right)**: settings for the selected input or object; drag its left edge to widen it.
-  With nothing selected it shows the project's output size and frame rate, the camera framing and
-  the Getting Started checklist. The window fits displays 1024 points wide. What you type in a
+  With nothing selected it shows the project's output size and frame rate, its details, font,
+  camera framing and the Getting Started checklist; **Project ▸ Show Project Details** (⌃⌘I)
+  clears the selection to get there from anywhere. The window fits displays 1024 points wide. What you type in a
   text field takes effect when you press Return or leave the field, so a whole name is one step
   of Edit ▸ Undo; Escape abandons what you typed. The Edit menu says what Undo and Redo will do —
   *Undo Change Sweep*, *Redo Rename Object* — before you choose them.
@@ -261,6 +262,22 @@ condition can be ≥, ≤, = or ≠.
 
 The timing panel's headings, lap numbers and comparison lap (best or previous) are settings too.
 
+### Project details and title cards
+
+The project inspector's **Details** say what the project is of: **Track**, **Car**, **Driver**,
+**Event**, **Session** and **Date**, plus any detail of your own — *Add Detail…* and call it
+*Tyres*, *Class* or *Setup*. Adding a data file fills in whatever it knows and nothing you have
+typed: a RaceChrono export names its track and driver, and most loggers say which day they
+recorded; a file that does not name its track takes the circuit it was recognised as.
+**Fill In from Data** does the same later, for a project started before details existed.
+
+Any **Text** object shows a detail by naming it in braces — `{track} · {date}`, `{car} on
+{tyres}` — and **Insert Detail** in its inspector adds one without typing, each item saying what
+it stands for now. **Add Object ▸ Title Card** starts with `{track} · {date}`. A detail with
+nothing entered stays in its braces, so a title card asks for what is missing rather than
+quietly leaving a gap. Details belong to the project, not to templates: a template with a title
+card picks up each project's own track and day.
+
 ### Fonts
 
 Every object that draws text has a **Font** section in its inspector: a font, a typeface within it
@@ -269,7 +286,7 @@ Every object that draws text has a **Font** section in its inspector: a font, a 
 readout, a timer's caption and time, a map's corner labels. Numbers stay one width in any font, so
 a changing readout does not shuffle sideways.
 
-To set one font for the whole project, deselect everything and choose it in the project
+To set one font for the whole project, choose **Project ▸ Show Project Details** and use the project
 inspector's **Font** section. Objects follow it until they choose their own: their pop-up reads
 *Project Font (Futura Bold)*, and choosing it again goes back to following. *Built-In* is how the
 app drew before fonts could be chosen — labels in Helvetica Neue, numbers in Menlo — and is what a

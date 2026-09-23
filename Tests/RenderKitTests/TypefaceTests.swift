@@ -138,3 +138,18 @@ struct TypefaceTests {
         return count
     }
 }
+
+@Suite("Details in text (#74)")
+struct DetailTextRenderTests {
+    @Test func aTextObjectIsDrawnWithTheProjectsDetailsFilledIn() throws {
+        var project = Project()
+        project.details = ProjectDetails(track: "Sonoma Raceway")
+        project.displayObjects = [
+            DisplayObject(label: "Title", inputID: nil, frame: .full, kind: .text(TextParams(text: "{track} {car}")))
+        ]
+        let overlays = RenderPlanner.overlays(for: project, sessions: [:])
+        let text = try #require(overlays.first as? TextRenderer)
+        // The car was never entered, so it still asks for one.
+        #expect(text.params.text == "Sonoma Raceway {car}")
+    }
+}
