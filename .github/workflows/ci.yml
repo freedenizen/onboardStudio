@@ -246,6 +246,10 @@ jobs:
           CLASSES=$(Scripts/check-ui-test-shards.sh --shard "$SHARD")
           [ -n "$CLASSES" ] || { echo "::error::No classes on shard $SHARD"; exit 1; }
           export ONBOARD_TEST_EXPORT_DIR="$RUNNER_TEMP/exports"
+          # xcodebuild hands the test runner only variables prefixed TEST_RUNNER_, so without this
+          # the tests never saw CI: not the longer waits OnboardStudioUITestCase gives a runner,
+          # nor the skip of the contrast audit, which measures the runner's rendering (#153).
+          export TEST_RUNNER_CI=true
           mkdir -p "$ONBOARD_TEST_EXPORT_DIR"
           only=()
           for class in $CLASSES; do only+=("-only-testing:OnboardStudioUITests/$class"); done

@@ -19,6 +19,9 @@ Local run ≈ 5 min for 13 tests.
 - The test bundle must **not** use `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor` (XCTestCase inits).
   Annotate test methods `@MainActor` instead, and hold the app under test in an optional property,
   not an implicitly-unwrapped one (SwiftLint).
+- The shell's environment does **not** reach the test runner: `xcodebuild` forwards only
+  `TEST_RUNNER_`-prefixed variables, which is why CI exports `TEST_RUNNER_CI=true` for
+  `environment["CI"]` to work in a test.
 - Scheme environment variables reach the **test runner only**. Anything the app needs goes through
   `app.launchEnvironment`. The fixtures path is derived from `#filePath` → `Tests/Fixtures`.
 - Launch arguments: `-ApplePersistenceIgnoreState YES`
