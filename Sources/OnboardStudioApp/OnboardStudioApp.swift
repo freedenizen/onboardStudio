@@ -45,6 +45,7 @@ struct OnboardStudioApp: App {
                     .disabled(!updater.canCheckForUpdates)
             }
             EditorCommands()
+            UndoCommands()
             AttributeWindowCommands()
             if UITestSupport.isActive { UITestCommands() }
         }

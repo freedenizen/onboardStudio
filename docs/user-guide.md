@@ -65,7 +65,8 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   With nothing selected it shows the project's output size and frame rate, the camera framing and
   the Getting Started checklist. The window fits displays 1024 points wide. What you type in a
   text field takes effect when you press Return or leave the field, so a whole name is one step
-  of Edit ▸ Undo; Escape abandons what you typed.
+  of Edit ▸ Undo; Escape abandons what you typed. The Edit menu says what Undo and Redo will do —
+  *Undo Change Sweep*, *Redo Rename Object* — before you choose them.
 - **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export.
 
 ## 3. Videos

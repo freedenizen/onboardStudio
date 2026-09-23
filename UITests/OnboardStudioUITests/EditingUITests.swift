@@ -157,6 +157,45 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Speedo").waitForNonExistence(timeout: Self.timeout), "Redo removes it again")
     }
 
+    /// The first two items of the Edit menu — Undo and Redo — as they read with the menu open.
+    @MainActor
+    func undoRedoTitles() -> (undo: String, redo: String) {
+        let edit = app.menuBarItems["Edit"]
+        edit.click()
+        let items = edit.menus.firstMatch.menuItems
+        XCTAssertTrue(items.firstMatch.waitForExistence(timeout: Self.timeout), "The Edit menu did not open")
+        let titles = (items.element(boundBy: 0).title, items.element(boundBy: 1).title)
+        app.typeKey(.escape, modifierFlags: [])
+        return titles
+    }
+
+    /// #209: Edit ▸ Undo says what it will take back. The undo manager always had the name; the
+    /// menu read a bare "Undo" whatever the edit.
+    @MainActor
+    func testTheEditMenuNamesWhatUndoAndRedoWillDo() throws {
+        launch()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout))
+        XCTAssertEqual(undoRedoTitles().undo, "Undo Add Speedometer")
+
+        let label = app.textFields["object.label"]
+        XCTAssertTrue(label.waitForExistence(timeout: Self.timeout))
+        label.click()
+        app.typeKey("a", modifierFlags: .command)
+        label.typeText("Front straight\n")
+        XCTAssertTrue(sidebarObject("Front straight").waitForExistence(timeout: Self.timeout))
+        // Leave the field, whose own typing would otherwise be what Undo is about.
+        sidebarInput("racerender-basic").click()
+        XCTAssertEqual(undoRedoTitles().undo, "Undo Rename Object")
+
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout), "⌘Z did not undo")
+        let titles = undoRedoTitles()
+        XCTAssertEqual(titles.undo, "Undo Add Speedometer")
+        XCTAssertEqual(titles.redo, "Redo Rename Object")
+    }
+
     /// #205: a typed name is one edit. Bound straight to the model, the label field wrote on every
     /// key press, and taking back a rename took one ⌘Z per character.
     @MainActor
