@@ -48,7 +48,8 @@ Local run ≈ 5 min for 13 tests.
   gets `.accessibilityLabel` (title case, what it does: "Move Up", "Remove Tyres") *and* `.help`
   (sentence case, with the shortcut: "Export the finished video (⌘E)"); decorative images get
   `.accessibilityHidden(true)`. `AccessibilityUITests` runs Apple's audit for element descriptions
-  and for contrast in the light appearance and fails on either — XCUITest cannot read help tags,
+  (on CI too) and for contrast in both appearances (locally only: on CI's runners the forced-light
+  pass flags labels that pass on a Mac) and fails on either — XCUITest cannot read help tags,
   so those are checked in review.
 - `XCUIElement` cannot read a help tag, and the Touch Bar duplicates a dialog's buttons: scope a
   dialog button to `app.windows.buttons[…]`. Context menus share titles with menu-bar items
