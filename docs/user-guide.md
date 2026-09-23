@@ -105,8 +105,9 @@ switch between them over time with timeline segments (§6).
 
 ## 4. Data
 
-Every data input shows its format, channels and laps. The *Channels* list maps each column to a
-role (speed, RPM, latitude…) with a unit; fix a misdetected column here. *Processing* offers
+Every data input shows its format, channels and laps. Its *Attributes* section says what is
+mapped and how the import went, in a line, and **Map Attributes…** opens the window where a
+misdetected column is fixed and every column's fate is listed (see below). *Processing* offers
 resampling, smoothing, speed/heading from GPS and calculated fields (`kph = speed * 3.6`).
 *Laps* come from the file when it has them, or from a start/finish line you pick on the map.
 

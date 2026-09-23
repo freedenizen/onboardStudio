@@ -8,7 +8,6 @@ struct DataInputInspector: View {
     let input: Input
     let settings: DataInputSettings
 
-    @State private var showChannels = false
     // Not private: the Track and Corners sections live in `DataInputTrackInspector.swift`.
     @State var circuitSearch = ""
     @State var showCorners = false
@@ -18,25 +17,10 @@ struct DataInputInspector: View {
     var session: TelemetrySession? { editor.sessions[input.id] }
 
     var body: some View {
+        // One way in (#215): what the attributes are mapped to, how the import went, and the
+        // window that does both. The per-column list and a second button to the same window used
+        // to sit alongside, each a partial view of the same thing.
         DataInputAttributesSection(editor: editor, input: input, settings: settings, session: session)
-        if let session { ImportReportSection(report: session.importReport, inputID: input.id) }
-        Section {
-            if let session {
-                DisclosureGroup(isExpanded: $showChannels) {
-                    ForEach(session.orderedChannels, id: \.role) { channel in
-                        ChannelMappingRow(editor: editor, input: input, settings: settings, channel: channel)
-                    }
-                } label: {
-                    Text("Channels (\(session.channels.count))")
-                }
-            } else {
-                // Says what is loading, so a slow file is not mistaken for a stuck one.
-                ProgressView {
-                    Text("Reading \(input.label)…")
-                }
-                .controlSize(.small)
-            }
-        }
         Section("Processing") {
             Toggle(
                 "Derive speed from GPS when missing",
@@ -266,71 +250,6 @@ struct DataInputInspector: View {
             change(&line)
             settings.lapLine = line
         }
-    }
-
-    func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
-        var new = settings
-        change(&new)
-        editor.updateInput(input.id, name: name) { $0.kind = .data(new) }
-    }
-}
-
-/// One imported channel with its role and unit, editable via overrides.
-struct ChannelMappingRow: View {
-    @Bindable var editor: EditorModel
-    let input: Input
-    let settings: DataInputSettings
-    let channel: Channel
-
-    static let roles: [String] = ChannelRole.standardRoles.map(\.identifier)
-    static let units = [
-        "", "m/s", "km/h", "mph", "m", "ft", "km", "mi", "deg", "G", "rpm", "%", "C", "F", "kPa", "psi",
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(channel.name).lineLimit(1).truncationMode(.middle)
-                Spacer()
-                Text("\(channel.count) samples · \(channel.unit.symbol.isEmpty ? "no unit" : channel.unit.symbol)")
-                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-            }
-            HStack {
-                Picker("\(channel.name) means", selection: roleBinding) {
-                    Text(channel.role.pickerTitle).tag(channel.role.identifier)
-                    Divider()
-                    ForEach(Self.roles, id: \.self) { Text(ChannelRole.pickerTitle(forIdentifier: $0)).tag($0) }
-                    Text("Its own channel").tag("aux:\(channel.name)")
-                }
-                .labelsHidden()
-                .help("What this column of the file means")
-                Picker("\(channel.name) unit", selection: unitBinding) {
-                    ForEach(Self.units, id: \.self) { Text($0.isEmpty ? "File's unit" : $0).tag($0) }
-                }
-                .labelsHidden()
-                .help("The unit this column's numbers are in, when the file is silent or wrong")
-            }
-        }
-    }
-
-    var roleBinding: Binding<String> {
-        Binding(
-            get: { settings.roleOverrides[channel.name] ?? channel.role.identifier },
-            set: { value in update("Change Channel Role") { $0.roleOverrides[channel.name] = value } })
-    }
-
-    var unitBinding: Binding<String> {
-        Binding(
-            get: { settings.unitOverrides[channel.name] ?? "" },
-            set: { value in
-                update("Change Channel Unit") {
-                    if value.isEmpty {
-                        $0.unitOverrides[channel.name] = nil
-                    } else {
-                        $0.unitOverrides[channel.name] = value
-                    }
-                }
-            })
     }
 
     func update(_ name: String, _ change: (inout DataInputSettings) -> Void) {
