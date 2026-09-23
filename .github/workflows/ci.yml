@@ -22,8 +22,8 @@ jobs:
   lint:
     name: Lint
     # Drafts wait for macOS time until they are marked ready (#237), decided from the PR as it is
-    # now rather than as the event saw it (#239). A skipped required check counts as passing; the
-    # "UI tests" check below refuses to pass a run that skipped for a PR no longer a draft.
+    # now rather than as the event saw it (#239). A skipped required check counts as passing, so
+    # the "UI tests" check below fails on a draft: that is what keeps a draft from reading green.
     needs: changes
     if: needs.changes.outputs.draft != 'true'
     runs-on: macos-latest
@@ -68,8 +68,8 @@ jobs:
   test:
     name: Test
     # Drafts wait for macOS time until they are marked ready (#237), decided from the PR as it is
-    # now rather than as the event saw it (#239). A skipped required check counts as passing; the
-    # "UI tests" check below refuses to pass a run that skipped for a PR no longer a draft.
+    # now rather than as the event saw it (#239). A skipped required check counts as passing, so
+    # the "UI tests" check below fails on a draft: that is what keeps a draft from reading green.
     needs: changes
     if: needs.changes.outputs.draft != 'true'
     runs-on: macos-latest
@@ -292,8 +292,6 @@ jobs:
     needs: [changes, ui-tests-shard]
     if: always()
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
     timeout-minutes: 5
     steps:
       - name: Report the shard results
@@ -302,8 +300,6 @@ jobs:
           APP: ${{ needs.changes.outputs.app }}
           RESULT: ${{ needs.ui-tests-shard.result }}
           DRAFT: ${{ needs.changes.outputs.draft }}
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
         run: |
           # A failed detector produces no outputs, so APP is empty — which must not be read as
           # "the app was untouched". That would skip every shard and still report green.
@@ -311,15 +307,12 @@ jobs:
             echo "::error::Detect app changes did not succeed ($DETECTED); the shards were skipped without knowing whether they were needed. Re-run the workflow."
             exit 1
           fi
+          # A draft reports failure, never success: marking it ready does not change the head
+          # commit, so a pass recorded now would still stand in the minutes before the ready run's
+          # own "UI tests" appears — long enough for auto-merge to merge without the suite (#239).
           if [ "$DRAFT" = "true" ]; then
-            # Marked ready while this run was deciding: its skips must not read as a pass. The run
-            # that "ready" started is the one that counts (#239).
-            if [ "$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .draft)" != "true" ]; then
-              echo "::error::This PR was marked ready after this run skipped the suite as a draft; the run started by marking it ready is the one that counts."
-              exit 1
-            fi
-            echo "A draft: the suite runs when it is marked ready for review."
-            exit 0
+            echo "::error::A draft: the UI tests have not run. They run when the PR is marked ready for review."
+            exit 1
           fi
           if [ "$APP" != "true" ]; then
             echo "No change to Sources/OnboardStudioApp, UITests or project.yml — suite not needed."
