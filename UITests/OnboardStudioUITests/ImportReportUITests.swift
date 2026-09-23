@@ -9,10 +9,8 @@ final class ImportReportUITests: OnboardStudioUITestCase {
         XCTAssertTrue(
             sidebarInput("racechrono-v3-noisy").waitForExistence(timeout: Self.timeout), "Data not listed")
         sidebarInput("racechrono-v3-noisy").click()
-        let open = app.buttons["import.open"]
-        XCTAssertTrue(open.waitForExistence(timeout: Self.timeout), "No way to open the report")
-        reveal(open)
-        open.click()
+        // One way in from the inspector (#215); the report itself is the menu command's to open.
+        menu("Project", "Show Import Report…")
         expectAttributeWindow()
         chooseScope("racechrono-v3-noisy")
     }
@@ -110,7 +108,8 @@ final class ImportReportUITests: OnboardStudioUITestCase {
         XCTAssertTrue(app.textFields["attribute.speed.source"].waitForExistence(timeout: Self.timeout))
     }
 
-    /// #200: *Show Import Report…* opens the window on the report, not on whatever it last showed.
+    /// #200: Project ▸ Show Import Report… opens the window on the report, not on whatever it last
+    /// showed.
     @MainActor
     func testShowImportReportOpensOnTheReport() throws {
         launch()
@@ -118,5 +117,23 @@ final class ImportReportUITests: OnboardStudioUITestCase {
         XCTAssertTrue(
             app.staticTexts["import.summary"].waitForExistence(timeout: Self.timeout),
             "The window did not open on the report")
+    }
+
+    /// #215: the data inspector has one way into the attribute window, with how the import went
+    /// said in a line beside it — not a second button to the same window and a per-column list.
+    @MainActor
+    func testTheDataInspectorHasOneWayToTheAttributes() throws {
+        launch()
+        testing("Add Fixture Data (Noisy CAN)")
+        sidebarInput("racechrono-v3-noisy").click()
+        let open = app.buttons["attributes.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: Self.timeout), "No way to the attribute window")
+        XCTAssertTrue(
+            app.descendants(matching: .any)["import.inspectorSummary"].waitForExistence(timeout: Self.timeout),
+            "The inspector does not say how the import went")
+        XCTAssertFalse(app.buttons["import.open"].exists, "A second button to the same window")
+        XCTAssertFalse(
+            app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Channels ('")).firstMatch.exists,
+            "The per-column list is still there")
     }
 }
