@@ -43,6 +43,10 @@ class OnboardStudioUITestCase: XCTestCase {
         app.launchArguments += extraArguments
         app.launchEnvironment["ONBOARD_FIXTURES"] = Self.fixtures.path
         app.launchEnvironment["ONBOARD_TEST_EXPORT_DIR"] = Self.exportDirectory.path
+        // A fresh, empty set of the user's own templates for every launch (#44).
+        let templates = FileManager.default.temporaryDirectory.appending(
+            path: "onboard-uitests-templates-\(UUID().uuidString)", directoryHint: .isDirectory)
+        app.launchEnvironment["ONBOARD_TEST_TEMPLATES_DIR"] = templates.path
         app.launch()  // the app activates itself when the editor appears (UITestSupport.editorAppeared)
         XCTAssertTrue(
             app.windows.firstMatch.waitForExistence(timeout: Self.timeout), "No window: \(app.debugDescription)")

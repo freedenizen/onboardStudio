@@ -14,22 +14,29 @@ extension EditorModel {
     }
 
     func applyTemplate(at url: URL) {
-        do { apply(try TemplateStore.load(url)) } catch { errorMessage = "\(error)" }
+        do { apply(try ProjectTemplate(data: Data(contentsOf: url))) } catch { errorMessage = "\(error)" }
     }
 
     func importTemplate() {
-        guard let url = OpenPanels.chooseTemplate() else { return }
+        guard let url = OpenPanels.chooseTemplate(title: "Apply Template") else { return }
         applyTemplate(at: url)
     }
 
-    func saveAsTemplate() {
-        let suggested = fileURL?.deletingPathExtension().lastPathComponent ?? "My Template"
-        guard let name = OpenPanels.askTemplateName(default: suggested) else { return }
+    /// Project ▸ Save as Template… — a sheet with the name and a picture of what is saved (#44).
+    func saveAsTemplate() { showSaveTemplate = true }
+
+    /// Saves this project's layout to the library as `name`, replacing a template of that name.
+    func saveTemplate(named name: String) {
         do {
-            let url = try TemplateStore.save(ProjectTemplate(name: name, project: project), name: name)
-            statusMessage = "Saved template \(url.lastPathComponent)"
+            let entry = try TemplateLibrary.app.save(ProjectTemplate(name: name, project: project), name: name)
+            NotificationCenter.default.post(name: .templatesChanged, object: nil)
+            statusMessage =
+                "Saved the template “\(entry.name)”. Start a project from it in the welcome window or with "
+                + "File ▸ New from Template."
+        } catch let error as TemplateLibraryError {
+            errorMessage = error.description
         } catch {
-            errorMessage = "\(error)"
+            errorMessage = "The template could not be saved: \(error.localizedDescription)"
         }
     }
 

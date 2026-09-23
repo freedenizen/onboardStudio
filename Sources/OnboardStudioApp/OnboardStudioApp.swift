@@ -31,14 +31,16 @@ struct OnboardStudioApp: App {
                     ForEach(ProjectTemplate.builtIn, id: \.name) { template in
                         Button(template.name) { newDocument(from: template) }
                     }
-                    let user = TemplateStore.userTemplates()
+                    let user = TemplateLibrary.app.entries()
                     if !user.isEmpty { Divider() }
                     ForEach(user) { entry in
                         Button(entry.name) {
-                            if let template = try? TemplateStore.load(entry.url) { newDocument(from: template) }
+                            if let template = try? TemplateLibrary.app.load(entry) { newDocument(from: template) }
                         }
                     }
                 }
+                // Adds a template someone shared to the welcome window and the menu above (#44).
+                Button("Import Template…") { TemplateImport.chooseAndAdd() }
             }
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { updater.checkForUpdates() }
@@ -148,15 +150,15 @@ struct EditorCommands: Commands {
                 ForEach(ProjectTemplate.builtIn, id: \.name) { template in
                     Button(template.name) { editor?.apply(template) }
                 }
-                let user = TemplateStore.userTemplates()
+                let user = TemplateLibrary.app.entries()
                 if !user.isEmpty { Divider() }
                 ForEach(user) { entry in
                     Button(entry.name) { editor?.applyTemplate(at: entry.url) }
                 }
                 Divider()
-                Button("Import Template File…") { editor?.importTemplate() }
+                Button("From File…") { editor?.importTemplate() }
             }
-            Button("Save as Template…") { editor?.saveAsTemplate() }
+            Button("Save as Template…") { editor?.saveAsTemplate() }.disabled(editor == nil)
             Divider()
             Menu("Camera Layout") {
                 ForEach(LayoutPreset.allCases, id: \.self) { preset in

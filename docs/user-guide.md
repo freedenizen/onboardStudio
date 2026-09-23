@@ -228,8 +228,21 @@ already shaped for the new direction is left as it is.
 
 Every object has a position and size in percent of the frame, opacity, mirror and an RGB mask.
 Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save it as an
-`.onboardstyle` file. Save a whole layout as a template (**Project ▸ Save as Template…**) to reuse
-it on the next session.
+`.onboardstyle` file. Save a whole layout as a template to reuse it on the next session (see
+*Your own templates* below).
+
+### Your own templates
+
+**Project ▸ Save as Template…** saves the layout — objects, fonts, segments, output size and
+export settings, but not the videos, data files or the project's details — under a name, with a
+picture of what is being saved. Saving under a name you already use says so and offers **Replace**.
+
+Your templates sit beside the built-in ones in the welcome window (**Help ▸ Welcome to Onboard
+Studio**) and in **File ▸ New from Template**, each card with a picture of its layout. Right-click
+one of yours to **Rename…**, **Duplicate**, **Show in Finder**, **Export…** it to share, or
+**Delete…** it (it goes to the Trash). **File ▸ Import Template…** adds a template someone sent
+you, and so does double-clicking an `.onboardtemplate` file in the Finder; it keeps the file's
+name. **Project ▸ Apply Template** puts any template's layout onto the project you are in.
 
 ### See-through overlays
 

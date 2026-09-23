@@ -69,6 +69,11 @@ other way skips migration entirely**. Nothing does today; everything goes throug
 `Project.decode(_:)` or `ProjectPackage`. Reaching for `JSONDecoder().decode(Project.self, …)`
 directly would quietly opt out.
 
+The user's templates are `.onboardtemplate` files in
+`~/Library/Application Support/OnboardStudio/Templates`, one per template, the file named for the
+template (`name` inside is kept the same; renaming moves the file). Import names a template after
+the file it came from.
+
 Templates (`.onboardtemplate`) and object styles (`.onboardstyle`) embed the same `DisplayObject`
 and params types and carry their own `formatVersion`. Applying a template replaces
 `displayObjects` wholesale and applying a style replaces an object's whole `kind`, so the rule

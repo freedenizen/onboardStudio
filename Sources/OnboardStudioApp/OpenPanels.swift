@@ -90,26 +90,22 @@ enum OpenPanels {
     static let legacyTemplateType = UTType(
         importedAs: "com.freedenizen.overlaygen.template", conformingTo: .json)
 
-    static func chooseTemplate() -> URL? {
+    static func chooseTemplate(title: String = "Import Template") -> URL? {
         let panel = NSOpenPanel()
-        panel.title = "Import Template"
+        panel.title = title
         panel.allowedContentTypes = [templateType, legacyTemplateType, .json]
         panel.allowsMultipleSelection = false
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    /// Asks for a template name; returns nil when cancelled.
-    static func askTemplateName(default name: String) -> String? {
-        let alert = NSAlert()
-        alert.messageText = "Save as Template"
-        alert.informativeText = "The objects, timeline and export settings are saved; inputs are not."
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-        field.stringValue = name
-        alert.accessoryView = field
-        alert.window.initialFirstResponder = field
-        return alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil
+    /// Where to export one of the user's templates for sharing.
+    static func chooseTemplateDestination(suggestedName: String) -> URL? {
+        let panel = NSSavePanel()
+        panel.title = "Export Template"
+        panel.allowedContentTypes = [templateType]
+        panel.nameFieldStringValue = suggestedName + "." + ProjectTemplate.fileExtension
+        panel.canCreateDirectories = true
+        return panel.runModal() == .OK ? panel.url : nil
     }
 
     /// Asks for a marker's name; returns nil when cancelled.

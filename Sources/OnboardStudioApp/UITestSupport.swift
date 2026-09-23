@@ -20,6 +20,15 @@ enum UITestSupport {
         }
     }
 
+    /// `ONBOARD_TEST_TEMPLATES_DIR`: a scratch folder for the user's templates, so a test that
+    /// saves one never writes into the real Application Support. `nil` outside the UI tests.
+    static var templatesDirectory: URL? {
+        guard isActive else { return nil }
+        return ProcessInfo.processInfo.environment["ONBOARD_TEST_TEMPLATES_DIR"].map {
+            URL(fileURLWithPath: $0, isDirectory: true)
+        }
+    }
+
     static func fixture(_ name: String) -> URL? { fixtures?.appending(path: name) }
 
     /// The editor that appeared last. Headless CI runners do not always give the document window

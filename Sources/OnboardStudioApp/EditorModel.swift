@@ -23,6 +23,7 @@ final class EditorModel {
     var selectedMarkerID: MarkerID?
     var showSyncWizard = false
     var showExport = false
+    var showSaveTemplate = false
     /// The file to offer for upload, set when an export finishes or a file is chosen from the menu.
     var uploadURL: URL?
     var motionSyncTask: Task<Void, Never>?
