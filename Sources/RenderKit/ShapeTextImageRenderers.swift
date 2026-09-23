@@ -72,9 +72,10 @@ public struct TextRenderer: OverlayDrawing {
         if params.backgroundColor.alpha > 0 {
             cg.fillRoundedRect(rect, radius: rect.height * 0.15, color: params.backgroundColor.cgColor)
         }
-        let style = TextDrawing.Style(
-            fontName: params.fontName, pointSize: rect.height * params.fontScale, color: params.color,
-            weightBold: params.bold)
+        let style = context.styled(
+            TextDrawing.Style(
+                fontName: params.fontName, pointSize: rect.height * params.fontScale, color: params.color,
+                weightBold: params.bold))
         let textSize = TextDrawing.size(of: params.text, style: style)
         let padding = rect.height * 0.1
         let y = rect.midY - textSize.height / 2

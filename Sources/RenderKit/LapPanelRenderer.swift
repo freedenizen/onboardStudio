@@ -99,7 +99,7 @@ public struct LapPanelRenderer: OverlayDrawing {
         _ string: String, at point: CGPoint, alignment: TextDrawing.HorizontalAlignment, size: Double, color: RGBAColor,
         in cg: CGContext
     ) {
-        let style = TextDrawing.Style(pointSize: size, color: color)
+        let style = context.styled(TextDrawing.Style(pointSize: size, color: color))
         if params.outline {
             let width = max(1, size * 0.06)
             var back = style

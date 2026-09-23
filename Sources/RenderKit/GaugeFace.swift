@@ -38,7 +38,7 @@ extension GaugeRenderer {
         drawTicks(in: cg, geometry: geometry)
 
         if !params.title.isEmpty {
-            let style = TextDrawing.Style(pointSize: r * 0.14, color: params.textColor)
+            let style = context.styled(TextDrawing.Style(pointSize: r * 0.14, color: params.textColor))
             TextDrawing.drawCentered(
                 params.title, at: CGPoint(x: geometry.center.x, y: geometry.center.y - r * 0.32), style: style, in: cg)
         }
@@ -100,7 +100,7 @@ extension GaugeRenderer {
         let major = max(params.majorTick, 0.000_001)
         let minor = max(params.minorTick, 0.000_001)
         let span = max(params.maxValue - params.minValue, 0.000_001)
-        let labelStyle = TextDrawing.Style(pointSize: r * ticks.labelScale, color: params.textColor)
+        let labelStyle = context.styled(TextDrawing.Style(pointSize: r * ticks.labelScale, color: params.textColor))
 
         // Decide which major labels fit: skip every k-th when neighbours would overlap.
         var labelSkip = 1

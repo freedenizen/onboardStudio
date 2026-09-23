@@ -187,14 +187,15 @@ public struct GaugeRenderer: OverlayDrawing {
     func drawReadout(value: Double?, in cg: CGContext, geometry: Geometry) {
         let text = value.map { ValueFormatting.format($0, decimals: params.decimals) } ?? "--"
         // The readout sits in the bottom gap of the sweep, below the end-of-scale labels.
-        let style = TextDrawing.Style.mono(geometry.radius * 0.22, color: params.textColor)
+        let style = context.styled(TextDrawing.Style.mono(geometry.radius * 0.22, color: params.textColor))
         TextDrawing.drawCentered(
             text, at: CGPoint(x: geometry.center.x, y: geometry.center.y + geometry.radius * 0.64), style: style,
             in: cg)
         let unit = unitText
         if !unit.isEmpty {
-            let unitStyle = TextDrawing.Style(
-                pointSize: geometry.radius * 0.12, color: params.textColor, weightBold: false)
+            let unitStyle = context.styled(
+                TextDrawing.Style(
+                    pointSize: geometry.radius * 0.12, color: params.textColor, weightBold: false))
             TextDrawing.drawCentered(
                 unit, at: CGPoint(x: geometry.center.x, y: geometry.center.y + geometry.radius * 0.83),
                 style: unitStyle, in: cg)

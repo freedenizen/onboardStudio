@@ -123,7 +123,6 @@ struct TextInspector: View {
             PercentSlider(
                 "Size", value: Binding(get: { params.fontScale }, set: { v in update("Size") { $0.fontScale = v } }),
                 range: 0.1...1)
-            Toggle("Bold", isOn: Binding(get: { params.bold }, set: { v in update("Bold") { $0.bold = v } }))
             Picker(
                 "Alignment",
                 selection: Binding(get: { params.alignment }, set: { v in update("Alignment") { $0.alignment = v } })

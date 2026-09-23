@@ -258,6 +258,24 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         }
     }
 
+    /// Objects that draw text, and so the ones a font can be chosen for (#118). A script chooses
+    /// its own fonts in its code, so it is not one of them.
+    public var drawsText: Bool {
+        switch self {
+        case .video, .shape, .image, .scripted, .steeringWheel: false
+        default: true
+        }
+    }
+
+    /// Objects whose params already size their text, so a second size control would compete with
+    /// the first.
+    public var sizesOwnText: Bool {
+        switch self {
+        case .text, .textData, .gear: true
+        default: false
+        }
+    }
+
     /// Objects fed by an image input.
     public var needsImage: Bool {
         if case .image = self { return true }
@@ -293,6 +311,14 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
     /// Text, for the same reason `AttributeMapping`'s units are: `ProjectModel` holds the document
     /// schema and does not depend on `TelemetryKit`.
     public var displayUnit: String?
+    /// The font every piece of this object's text is drawn in (#118). `nil` follows the project's
+    /// font, and without one the object's built-in fonts — so a project saved before fonts could
+    /// be chosen draws exactly as it did.
+    public var typeface: Typeface?
+    /// This object's text drawn larger or smaller than it lays it out, as a multiple (#118):
+    /// `nil` is 1. Objects whose params already size their text (Text, Text Data, Gear) keep
+    /// their own size controls; this scales on top of them.
+    public var textScale: Double?
 
     public init(
         id: DisplayObjectID = DisplayObjectID(),
@@ -302,7 +328,9 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
         opacity: Double = 1,
         isVisible: Bool = true,
         kind: DisplayObjectKind,
-        displayUnit: String? = nil
+        displayUnit: String? = nil,
+        typeface: Typeface? = nil,
+        textScale: Double? = nil
     ) {
         self.id = id
         self.label = label
@@ -312,5 +340,7 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
         self.isVisible = isVisible
         self.kind = kind
         self.displayUnit = displayUnit
+        self.typeface = typeface
+        self.textScale = textScale
     }
 }

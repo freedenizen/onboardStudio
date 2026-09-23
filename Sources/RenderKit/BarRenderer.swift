@@ -55,7 +55,7 @@ public struct BarRenderer: OverlayDrawing {
         let text = pieces.joined(separator: " ")
         guard !text.isEmpty else { return (rect, nil) }
         if params.orientation == .horizontal {
-            var style = TextDrawing.Style(pointSize: rect.height * 0.55, color: params.textColor)
+            var style = context.styled(TextDrawing.Style(pointSize: rect.height * 0.55, color: params.textColor))
             var textSize = TextDrawing.size(of: text, style: style)
             let maxWidth = rect.width * 0.45
             if textSize.width > maxWidth {
@@ -71,7 +71,8 @@ public struct BarRenderer: OverlayDrawing {
                 Caption(text: text, style: style, origin: CGPoint(x: rect.minX, y: rect.midY - textSize.height / 2))
             )
         }
-        var style = TextDrawing.Style(pointSize: min(rect.height * 0.12, rect.width * 0.3), color: params.textColor)
+        var style = context.styled(
+            TextDrawing.Style(pointSize: min(rect.height * 0.12, rect.width * 0.3), color: params.textColor))
         var textSize = TextDrawing.size(of: text, style: style)
         if textSize.width > rect.width {
             style.pointSize *= rect.width / textSize.width

@@ -149,7 +149,7 @@ public struct GraphRenderer: OverlayDrawing {
 
     /// Caption top-left, current value top-right, range on the left edge.
     func drawLabels(_ layout: Layout, in cg: CGContext, plot: Plot, labelHeight: Double, top: Double) {
-        let style = TextDrawing.Style(pointSize: labelHeight * 0.8, color: params.textColor)
+        let style = context.styled(TextDrawing.Style(pointSize: labelHeight * 0.8, color: params.textColor))
         let places = decimals(for: plot.yRange.upperBound - plot.yRange.lowerBound)
         if !params.label.isEmpty {
             TextDrawing.draw(params.label, at: CGPoint(x: plot.rect.minX, y: top), style: style, in: cg)
@@ -159,9 +159,10 @@ public struct GraphRenderer: OverlayDrawing {
             let text = ValueFormatting.format(last.y, decimals: places) + (unit.isEmpty ? "" : " \(unit)")
             TextDrawing.draw(
                 text, at: CGPoint(x: plot.rect.maxX, y: top), alignment: .trailing,
-                style: TextDrawing.Style.mono(labelHeight * 0.8, color: params.textColor), in: cg)
+                style: context.styled(TextDrawing.Style.mono(labelHeight * 0.8, color: params.textColor)), in: cg)
         }
-        let small = TextDrawing.Style(pointSize: labelHeight * 0.55, color: params.textColor, weightBold: false)
+        let small = context.styled(
+            TextDrawing.Style(pointSize: labelHeight * 0.55, color: params.textColor, weightBold: false))
         TextDrawing.draw(
             ValueFormatting.format(plot.yRange.upperBound, decimals: places),
             at: CGPoint(x: plot.rect.minX, y: plot.rect.minY), style: small, in: cg)

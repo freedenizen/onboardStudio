@@ -24,11 +24,11 @@ public struct GearRenderer: OverlayDrawing {
         let text = params.text(for: value)
         let captionHeight = params.showLabel && !params.label.isEmpty ? rect.height * 0.18 : 0
         if captionHeight > 0 {
-            let style = TextDrawing.Style(pointSize: captionHeight * 0.8, color: params.textColor)
+            let style = context.styled(TextDrawing.Style(pointSize: captionHeight * 0.8, color: params.textColor))
             TextDrawing.drawCentered(
                 params.label, at: CGPoint(x: rect.midX, y: rect.minY + captionHeight * 0.65), style: style, in: cg)
         }
-        let glyph = TextDrawing.Style.mono(rect.height * params.fontScale, color: params.textColor)
+        let glyph = context.styled(TextDrawing.Style.mono(rect.height * params.fontScale, color: params.textColor))
         TextDrawing.drawCentered(
             text, at: CGPoint(x: rect.midX, y: rect.minY + captionHeight + (rect.height - captionHeight) / 2),
             style: glyph, in: cg)
@@ -58,8 +58,8 @@ public struct LapCounterRenderer: OverlayDrawing {
             text += " / \(last.number + params.numberOffset)"
         }
         let padding = rect.height * 0.12
-        let labelStyle = TextDrawing.Style(pointSize: rect.height * 0.3, color: params.textColor)
-        let valueStyle = TextDrawing.Style.mono(rect.height * 0.55, color: params.textColor)
+        let labelStyle = context.styled(TextDrawing.Style(pointSize: rect.height * 0.3, color: params.textColor))
+        let valueStyle = context.styled(TextDrawing.Style.mono(rect.height * 0.55, color: params.textColor))
         if !params.label.isEmpty {
             TextDrawing.draw(
                 params.label, at: CGPoint(x: rect.minX + padding, y: rect.minY + padding), style: labelStyle, in: cg)

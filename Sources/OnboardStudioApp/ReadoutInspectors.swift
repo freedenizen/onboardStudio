@@ -364,10 +364,9 @@ struct TextDataInspector: View {
                 value: field(\.minimumIntegerDigits, "Minimum Digits"),
                 in: 1...6)
         }
-        Section("Font") {
+        Section("Text Size") {
             PercentSlider("Value size", value: field(\.fontScale, "Value Size"), range: 0.2...0.9)
             PercentSlider("Caption size", value: field(\.labelScale, "Caption Size"), range: 0.1...0.6)
-            CommittingTextField("Font (blank = monospaced)", text: field(\.fontName, "Font"))
         }
     }
 

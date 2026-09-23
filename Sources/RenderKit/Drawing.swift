@@ -20,18 +20,27 @@ public enum TextDrawing {
         public var pointSize: Double
         public var color: RGBAColor
         public var weightBold: Bool
+        /// The font the user chose (#118), drawn in place of `fontName` and `weightBold` when it
+        /// is installed. Those two stay the fallback, so a missing font costs the object its
+        /// choice and nothing else.
+        public var typeface: Typeface?
+        /// Digits of one width, so a changing number does not shuffle sideways. Menlo has them
+        /// anyway; a chosen typeface is asked for them where the object drew in Menlo.
+        public var tabularFigures: Bool
 
         public init(
-            fontName: String = "Helvetica Neue", pointSize: Double, color: RGBAColor = .white, weightBold: Bool = true
+            fontName: String = "Helvetica Neue", pointSize: Double, color: RGBAColor = .white, weightBold: Bool = true,
+            tabularFigures: Bool = false
         ) {
             self.fontName = fontName
             self.pointSize = pointSize
             self.color = color
             self.weightBold = weightBold
+            self.tabularFigures = tabularFigures
         }
 
         public static func mono(_ size: Double, color: RGBAColor = .white) -> Style {
-            Style(fontName: "Menlo-Bold", pointSize: size, color: color)
+            Style(fontName: "Menlo-Bold", pointSize: size, color: color, tabularFigures: true)
         }
     }
 
@@ -73,23 +82,32 @@ public enum TextDrawing {
 
     /// Fonts are resolved through the system font server (an XPC round trip); cache them so a
     /// frame costs no lookups and parallel renders cannot pile up on the server.
-    private static let fontLock = NSLock()
+    static let fontLock = NSLock()
     nonisolated(unsafe) private static var fontCache: [String: CTFont] = [:]
 
     static func font(for style: Style) -> CTFont {
         // Quantise the size so a slowly resizing object does not grow the cache without bound.
         let size = (style.pointSize * 4).rounded() / 4
-        let key = "\(style.fontName)|\(size)|\(style.weightBold)"
+        let key =
+            "\(style.fontName)|\(size)|\(style.weightBold)|\(style.typeface?.displayName ?? "")|\(style.tabularFigures)"
         // The lock is held across the lookup on purpose: concurrent first-time lookups from many
         // render threads have been seen to wedge the font server connection.
         fontLock.lock()
         defer { fontLock.unlock() }
         if let cached = fontCache[key] { return cached }
-        var font = CTFontCreateWithName(style.fontName as CFString, size, nil)
-        if style.weightBold, !style.fontName.lowercased().contains("bold"),
-            let bold = CTFontCreateCopyWithSymbolicTraits(font, size, nil, .boldTrait, .boldTrait)
-        {
-            font = bold
+        var font: CTFont
+        if let chosen = style.typeface.flatMap({ Typefaces.font($0, size: size) }) {
+            font = chosen
+        } else {
+            font = CTFontCreateWithName(style.fontName as CFString, size, nil)
+            if style.weightBold, !style.fontName.lowercased().contains("bold"),
+                let bold = CTFontCreateCopyWithSymbolicTraits(font, size, nil, .boldTrait, .boldTrait)
+            {
+                font = bold
+            }
+        }
+        if style.tabularFigures, !CTFontGetSymbolicTraits(font).contains(.monoSpaceTrait) {
+            font = Typefaces.withTabularFigures(font, size: size)
         }
         fontCache[key] = font
         return font
