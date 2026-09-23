@@ -119,6 +119,13 @@ public enum SessionBuilder {
                     : Resampler.smooth(channel, windowSeconds: options.smoothingSeconds)
             }
             channels.append(channel)
+            if let alias = mapping.rawAlias {
+                channels.append(
+                    Channel(
+                        role: alias, name: channel.name, unit: channel.unit, times: channel.times,
+                        values: channel.values, interpolation: channel.interpolation))
+                if channel.unit != recordedUnit { recordedUnits[alias] = recordedUnit }
+            }
         }
 
         var session = TelemetrySession(info: table.info, channels: channels)

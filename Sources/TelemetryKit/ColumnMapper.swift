@@ -35,6 +35,10 @@ struct ColumnMapper {
         var demotedFrom: ChannelRole?
         /// Whether the user named this column rather than the importer guessing it.
         var wasNamed: Bool
+        /// The file's own name for a column the user pointed an attribute at — `canbus:
+        /// brake_pressure_front` once it is Brake pressure (front) — so the channel is offered in
+        /// both forms and objects bound to the raw one keep drawing (#214).
+        var rawAlias: ChannelRole?
     }
 
     /// The role this column takes and the column as it should be read, or `nil` to drop it
@@ -57,6 +61,15 @@ struct ColumnMapper {
         }
         usedRoles.insert(finalRole)
         if finalRole == role { tookRole[role] = column.name }
+        // Only a name the file gave the column itself: a vocabulary guess the user overrode is
+        // the importer's reading, not the column's, and could take an attribute from another.
+        var rawAlias: ChannelRole?
+        if explicitRole != nil, let own = column.suggestedRole, !own.isStandard, own != finalRole,
+            !usedRoles.contains(own)
+        {
+            rawAlias = own
+            usedRoles.insert(own)
+        }
         var effectiveColumn = column
         if let unit = options.unitOverrides.first(where: { named($0.key) })?.value
             ?? options.sourceUnits[finalRole]
@@ -65,7 +78,7 @@ struct ColumnMapper {
         }
         return Mapping(
             role: finalRole, column: effectiveColumn,
-            demotedFrom: finalRole == role ? nil : role, wasNamed: explicitRole != nil)
+            demotedFrom: finalRole == role ? nil : role, wasNamed: explicitRole != nil, rawAlias: rawAlias)
     }
 
     /// The column that kept `role`, for a column that was renamed out of it.

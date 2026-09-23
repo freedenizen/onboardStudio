@@ -314,6 +314,7 @@ struct AttributeVocabularyTests {
         let session = SessionBuilder.build(raw, options: .init(sourceColumns: [.absActive: "analog_1"]))
         let abs = try #require(session[.absActive])
         #expect(abs.values == [512, 2800])
-        #expect(session[.canbus("analog_1")] == nil, "it is the ABS attribute now, not a raw channel")
+        // #214: and it is still offered under the file's own name, so it can be picked either way.
+        #expect(session[.canbus("analog_1")]?.values == [512, 2800], "the raw channel was lost")
     }
 }

@@ -12,9 +12,13 @@ extension ProjectCompiler {
     /// The global level is read here rather than deeper down for the same reason `appSpeedUnit` is:
     /// it keeps everything below a pure function of what it is handed, which is what lets a test
     /// pin a mapping without touching the running app's settings.
-    static func attributeMappings(for settings: DataInputSettings, in project: Project) -> AttributeMappingResolver {
+    static func attributeMappings(
+        for settings: DataInputSettings, in project: Project,
+        global: AttributeMappingTable = AttributeMappingTable(
+            json: UserDefaults.standard.value(for: Preferences.attributeMappings))
+    ) -> AttributeMappingResolver {
         AttributeMappingResolver(
-            global: AttributeMappingTable(json: UserDefaults.standard.value(for: Preferences.attributeMappings)),
+            global: global,
             project: project.settings.attributeMappings,
             input: settings.attributeMappings)
     }
