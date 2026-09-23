@@ -28,6 +28,9 @@ public enum ProjectCompiler {
         public var problems: [InputID: String]
         /// Map imagery for track maps with a background style, keyed by the window they cover.
         public var mapBackgrounds: [MapBackgroundRequest: MapBackground]
+        /// The global attribute mapping the sessions were imported under. It lives in preferences,
+        /// not in the project, so it has to be remembered here to know when a session is stale.
+        public var globalAttributeMappings = AttributeMappingTable()
 
         public init(
             project: Project,
@@ -61,21 +64,19 @@ public enum ProjectCompiler {
     /// results for inputs whose source and settings have not changed (the app calls this on every
     /// edit). An input whose file is missing or unreadable is recorded in `problems` instead of
     /// failing the whole load, so the project still opens and the file can be relinked.
-    public static func load(_ project: Project, location: ProjectLocation, reusing previous: LoadedProject? = nil)
-        async throws
-        -> LoadedProject
-    {
+    /// `globalAttributeMappings` defaults to the one in preferences; a test passes its own.
+    public static func load(
+        _ project: Project, location: ProjectLocation, reusing previous: LoadedProject? = nil,
+        globalAttributeMappings: AttributeMappingTable? = nil
+    ) async throws -> LoadedProject {
         var loaded = LoadedProject(project: project, location: location, sessions: [:], mediaInfo: [:])
+        let global =
+            globalAttributeMappings
+            ?? AttributeMappingTable(json: UserDefaults.standard.value(for: Preferences.attributeMappings))
+        loaded.globalAttributeMappings = global
         for input in project.inputs {
             let url = location.resolve(input.source)
-            // A cached session is only still right if nothing that shaped it changed. The
-            // project-level attribute mapping shapes it and does not live on the input, so it is
-            // compared here too — without this, correcting a project mapping would leave every
-            // already-imported session reading its old columns and units.
-            let mappingsUnchanged = previous?.project.settings.attributeMappings == project.settings.attributeMappings
-            let unchanged =
-                previous?.project.input(input.id).map { $0.source == input.source && $0.kind == input.kind } ?? false
-                && previous?.problems[input.id] == nil && mappingsUnchanged
+            let unchanged = isUnchanged(input, in: project, since: previous, global: global)
             do {
                 guard FileManager.default.fileExists(atPath: url.path) else { throw LoadError.missingFile(url) }
                 switch input.kind {
@@ -84,7 +85,8 @@ public enum ProjectCompiler {
                         loaded.sessions[input.id] = cached
                     } else {
                         loaded.sessions[input.id] = try importData(
-                            at: url, settings: settings, mappings: attributeMappings(for: settings, in: project))
+                            at: url, settings: settings,
+                            mappings: attributeMappings(for: settings, in: project, global: global))
                     }
                 case .video, .audio:
                     if unchanged, let cached = previous?.mediaInfo[input.id] {
@@ -137,6 +139,20 @@ public enum ProjectCompiler {
         var duration: Double = 0
         /// Seconds of each clip's file that actually play, after its own trim.
         var played: [Double] = []
+    }
+
+    /// Whether what `previous` loaded for `input` is still right: nothing that shaped it changed.
+    /// The project's attribute mapping shapes a session and does not live on the input, so it is
+    /// compared too — without it, correcting a project mapping left every imported session reading
+    /// its old columns and units. The global mapping likewise: a mapping made for all projects left
+    /// an open project reading its old columns until it was reopened (#214).
+    static func isUnchanged(
+        _ input: Input, in project: Project, since previous: LoadedProject?, global: AttributeMappingTable
+    ) -> Bool {
+        guard let previous, let before = previous.project.input(input.id) else { return false }
+        return before.source == input.source && before.kind == input.kind && previous.problems[input.id] == nil
+            && previous.project.settings.attributeMappings == project.settings.attributeMappings
+            && previous.globalAttributeMappings == global
     }
 
     static func loadClips(_ clips: [VideoClip], location: ProjectLocation) async throws -> LoadedClips {

@@ -144,7 +144,10 @@ The sidebar chooses who the mapping is for:
 - **A data input** — where one file is the exception.
 
 Each level follows the one above unless you set it, so changing the global mapping moves
-everything that has not been pinned and leaves what you did pin alone. A single object can differ
+everything that has not been pinned and leaves what you did pin alone. A change takes effect at
+once, in projects that are already open too. A column you point an attribute at is still listed
+under its own name as well, so an object's channel picker offers both *Brake pressure (front)*
+and `brake_pressure_front (CAN bus)`, and objects already using the raw channel keep drawing. A single object can differ
 again — see *Units* under [Objects](#5-objects).
 
 **From the keyboard.** The window is built to be used without the mouse. **⌘F** goes to the filter

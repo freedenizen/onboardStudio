@@ -7,6 +7,7 @@ struct EditorView: View {
     @Environment(\.undoManager) private var undoManager
     @Environment(\.dismissWindow) private var dismissWindow
     @AppStorage(Preferences.tourSeen.key) private var tourSeen = false
+    @AppStorage(Preferences.attributeMappings.key) private var globalMappings = Preferences.attributeMappings.unset
 
     init(document: ProjectDocument, fileURL: URL?) {
         _editor = State(initialValue: EditorModel(document: document, fileURL: fileURL))
@@ -89,6 +90,9 @@ struct EditorView: View {
             editor.scheduleCompile()
         }
         .onChange(of: undoManager) { _, newValue in editor.undoManager = newValue }
+        // The mapping for all projects lives in preferences, not in this document, so no edit of
+        // the project notices it change; without this an open project kept its old channels (#214).
+        .onChange(of: globalMappings) { editor.scheduleCompile() }
     }
 }
 
