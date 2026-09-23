@@ -21,9 +21,11 @@ jobs:
   # on Linux, which is preinstalled with shellcheck and starts in seconds. Both are required.
   lint:
     name: Lint
-    # Drafts wait for macOS time until they are marked ready (#237). A skipped required check
-    # counts as passing, which is safe only because a draft cannot be merged or auto-merged.
-    if: github.event.pull_request.draft != true
+    # Drafts wait for macOS time until they are marked ready (#237), decided from the PR as it is
+    # now rather than as the event saw it (#239). A skipped required check counts as passing; the
+    # "UI tests" check below refuses to pass a run that skipped for a PR no longer a draft.
+    needs: changes
+    if: needs.changes.outputs.draft != 'true'
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
@@ -65,9 +67,11 @@ jobs:
 
   test:
     name: Test
-    # Drafts wait for macOS time until they are marked ready (#237). A skipped required check
-    # counts as passing, which is safe only because a draft cannot be merged or auto-merged.
-    if: github.event.pull_request.draft != true
+    # Drafts wait for macOS time until they are marked ready (#237), decided from the PR as it is
+    # now rather than as the event saw it (#239). A skipped required check counts as passing; the
+    # "UI tests" check below refuses to pass a run that skipped for a PR no longer a draft.
+    needs: changes
+    if: needs.changes.outputs.draft != 'true'
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
@@ -117,8 +121,12 @@ jobs:
     name: Detect app changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       app: ${{ steps.filter.outputs.app }}
+      draft: ${{ steps.filter.outputs.draft }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -127,7 +135,8 @@ jobs:
         id: filter
         env:
           EVENT: ${{ github.event_name }}
-          DRAFT: ${{ github.event.pull_request.draft }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
@@ -136,8 +145,12 @@ jobs:
             echo "app=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # A draft waits: the suite runs once, when it is marked ready for review (#237).
-          if [ "$DRAFT" = "true" ]; then
+          # A draft waits: the suite runs once, when it is marked ready for review (#237). Asked of
+          # the PR as it is now, not the event's payload: a push and "ready" a second apart fire two
+          # runs, and the one that survives may carry a payload that still says draft (#239).
+          draft=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .draft)
+          echo "draft=$draft" >> "$GITHUB_OUTPUT"
+          if [ "$draft" = "true" ]; then
             echo "app=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -279,6 +292,8 @@ jobs:
     needs: [changes, ui-tests-shard]
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     timeout-minutes: 5
     steps:
       - name: Report the shard results
@@ -286,7 +301,9 @@ jobs:
           DETECTED: ${{ needs.changes.result }}
           APP: ${{ needs.changes.outputs.app }}
           RESULT: ${{ needs.ui-tests-shard.result }}
-          DRAFT: ${{ github.event.pull_request.draft }}
+          DRAFT: ${{ needs.changes.outputs.draft }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
           # A failed detector produces no outputs, so APP is empty — which must not be read as
           # "the app was untouched". That would skip every shard and still report green.
@@ -295,6 +312,12 @@ jobs:
             exit 1
           fi
           if [ "$DRAFT" = "true" ]; then
+            # Marked ready while this run was deciding: its skips must not read as a pass. The run
+            # that "ready" started is the one that counts (#239).
+            if [ "$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .draft)" != "true" ]; then
+              echo "::error::This PR was marked ready after this run skipped the suite as a draft; the run started by marking it ready is the one that counts."
+              exit 1
+            fi
             echo "A draft: the suite runs when it is marked ready for review."
             exit 0
           fi
