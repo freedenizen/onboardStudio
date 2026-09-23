@@ -13,7 +13,7 @@ struct BarInspector: View {
             CommittingTextField("Caption", text: field(\.label, "Caption"))
             NumberField("Minimum", value: field(\.minValue, "Minimum"))
             NumberField("Maximum", value: field(\.maxValue, "Maximum"))
-            Picker("Orientation", selection: field(\.orientation, "Orientation")) {
+            Picker("Orientation", selection: orientation) {
                 Text("Horizontal").tag(BarOrientation.horizontal)
                 Text("Vertical").tag(BarOrientation.vertical)
             }
@@ -63,6 +63,16 @@ struct BarInspector: View {
         var new = params
         change(&new)
         editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .bar(new) }
+    }
+
+    /// Turning the bar turns its frame too, in the same undo step (#113).
+    var orientation: Binding<BarOrientation> {
+        Binding(
+            get: { params.orientation },
+            set: { value in
+                let settings = editor.project.settings
+                editor.updateObject(object.id, name: "Change Orientation") { $0.setBarOrientation(value, in: settings) }
+            })
     }
 }
 

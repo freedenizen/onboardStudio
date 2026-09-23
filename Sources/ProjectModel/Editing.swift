@@ -67,6 +67,23 @@ public enum ObjectGeometry {
         return rect
     }
 
+    /// Whether `rect` is taller than it is wide on the output picture, which is not the same as
+    /// in unit coordinates: a 16:9 frame makes a unit square wide.
+    public static func isPortrait(_ rect: UnitRect, in settings: ProjectSettings) -> Bool {
+        rect.height * Double(settings.outputHeight) > rect.width * Double(settings.outputWidth)
+    }
+
+    /// `rect` given a quarter turn about its centre as it appears on the picture: what was its
+    /// width in pixels becomes its height. Clamped like a drag.
+    public static func transposed(_ rect: UnitRect, in settings: ProjectSettings) -> UnitRect {
+        let aspect = Double(max(1, settings.outputWidth)) / Double(max(1, settings.outputHeight))
+        let width = rect.height / aspect
+        let height = rect.width * aspect
+        let centreX = rect.x + rect.width / 2
+        let centreY = rect.y + rect.height / 2
+        return clamped(UnitRect(x: centreX - width / 2, y: centreY - height / 2, width: width, height: height))
+    }
+
     /// Moves `rect` by a number of **output pixels**, clamped like a drag.
     ///
     /// Object frames are fractions of the picture, but a nudge is specified in pixels so the step
@@ -266,5 +283,20 @@ extension BarParams {
         result.maxValue = bounds.max
         if !summary.unit.isEmpty { result.unitLabel = summary.unit }
         return result
+    }
+}
+
+extension DisplayObject {
+    /// Turns a bar to `orientation`, and its frame with it when the frame is the wrong way round
+    /// for the new orientation (#113): a vertical bar in a long, thin horizontal box is a stub,
+    /// and transposing it by hand was arithmetic the app should do. A frame already the right way
+    /// round — a bar someone sized deliberately — is left alone.
+    public mutating func setBarOrientation(_ orientation: BarOrientation, in settings: ProjectSettings) {
+        guard case .bar(var params) = kind, params.orientation != orientation else { return }
+        params.orientation = orientation
+        kind = .bar(params)
+        if ObjectGeometry.isPortrait(frame, in: settings) != (orientation == .vertical) {
+            frame = ObjectGeometry.transposed(frame, in: settings)
+        }
     }
 }

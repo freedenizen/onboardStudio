@@ -242,8 +242,8 @@ struct ObjectInspector: View {
         Section {
             NumberField("X", value: percent(\.x)).accessibilityIdentifier("object.x")
             NumberField("Y", value: percent(\.y)).accessibilityIdentifier("object.y")
-            NumberField("Width", value: percent(\.width))
-            NumberField("Height", value: percent(\.height))
+            NumberField("Width", value: percent(\.width)).accessibilityIdentifier("object.width")
+            NumberField("Height", value: percent(\.height)).accessibilityIdentifier("object.height")
         } header: {
             OverrideRow(editor: editor, object: object, property: .frame) { Text("Position & Size (% of frame)") }
         }
