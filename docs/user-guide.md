@@ -60,7 +60,8 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   ruler (click or drag it to scrub), a marker lane (§6a), a lane with one bar per video, a lane
   with one bar per data file showing where its laps fall (§6c), and the segment strip (§6).
   Drag a video bar to move it, drag its left or right edge to trim it (the head trim keeps the
-  picture where it was), click it to select the video. The magnet button (N) snaps drags to other
+  picture where it was), click it to select the video. A click anywhere in the video or data lanes
+also puts the playhead where you clicked, as in any editor. The magnet button (N) snaps drags to other
   videos' edges and the playhead; zoom with ⌘= / ⌘− / ⇧Z, the slider next to the transport, or
   scroll sideways. The thin strip above the ruler shows the whole project with a window for the
   visible part; drag it to scroll.
