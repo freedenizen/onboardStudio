@@ -215,3 +215,20 @@ struct SphericalFuzzTests {
         }
     }
 }
+
+@Suite("Nothing left beside an export (#248)")
+struct ExportLeftoverTests {
+    @Test func theNetworkPassCopyIsRemovedAndNothingElse() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let names = [
+            "Lap 1.mp4", "Lap 1.mp4.sb-00432293-JSNKdA", "Lap 2.mp4", "Lap 2.mp4.sb-00432293-Zx1", "notes.txt",
+        ]
+        for name in names { try Data("x".utf8).write(to: folder.appending(path: name)) }
+        ExportJob.removeLeftovers(beside: folder.appending(path: "Lap 1.mp4"))
+        let left = try FileManager.default.contentsOfDirectory(atPath: folder.path).sorted()
+        // Only this export's copy goes; another export's is its own business.
+        #expect(left == ["Lap 1.mp4", "Lap 2.mp4", "Lap 2.mp4.sb-00432293-Zx1", "notes.txt"])
+    }
+}

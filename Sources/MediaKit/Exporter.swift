@@ -222,8 +222,23 @@ final class ExportJob: @unchecked Sendable {
         }
         await writer.finishWriting()
         if writer.status == .failed { throw ExportError.writerFailed(writer.error?.localizedDescription ?? "unknown") }
+        Self.removeLeftovers(beside: outputURL)
         if spherical { try SphericalMetadata.inject(into: outputURL) }
         onProgress(ExportProgress(fraction: 1, framesWritten: frames.value, currentTime: end))
+    }
+
+    /// Removes the copy the network-optimising pass leaves beside the output (`<name>.sb-…`).
+    ///
+    /// AVFoundation deletes it only when the writer is released, so a process that ends straight
+    /// after an export — the CLI — left one beside every video (#248). The export is complete once
+    /// `finishWriting` returns, so the copy is removed then rather than left to the writer.
+    static func removeLeftovers(beside outputURL: URL) {
+        let folder = outputURL.deletingLastPathComponent()
+        let prefix = outputURL.lastPathComponent + ".sb-"
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+        for name in names where name.hasPrefix(prefix) {
+            try? FileManager.default.removeItem(at: folder.appending(path: name))
+        }
     }
 
     /// Copies sample buffers from a reader output to a writer input, honouring back-pressure and
