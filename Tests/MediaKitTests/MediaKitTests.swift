@@ -117,6 +117,9 @@ struct ExporterTests {
         for try await progress in Exporter.export(compiled, settings: settings, to: output) { last = progress }
         #expect(last?.fraction == 1)
         #expect((last?.framesWritten ?? 0) >= 85 && (last?.framesWritten ?? 0) <= 92)
+        // Nothing left beside it: the network-optimising pass's copy is gone when the export ends (#248).
+        let siblings = try FileManager.default.contentsOfDirectory(atPath: output.deletingLastPathComponent().path)
+        #expect(!siblings.contains { $0.hasPrefix(output.lastPathComponent + ".sb-") })
 
         let info = try await MediaProbe.probe(output)
         #expect(abs(info.duration - 3) < 0.1)
