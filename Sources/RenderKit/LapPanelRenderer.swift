@@ -234,10 +234,12 @@ public struct LapPanelRenderer: OverlayDrawing {
 }
 
 extension LapReference {
-    /// The telemetry-side reference this setting names.
+    /// The telemetry-side reference this setting names. The compared lap is not in this session's
+    /// data alone, so a renderer that can reach the lap comparison asks it first; one that cannot
+    /// falls back to the session best, as the setting says.
     var comparison: LapComparison.Reference {
         switch self {
-        case .sessionBest: .sessionBest
+        case .sessionBest, .comparedLap: .sessionBest
         case .bestLap: .best
         case .previousLap: .previous
         }

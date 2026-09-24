@@ -123,6 +123,13 @@ matched without regard to case — and they are filled in when the object is dra
 value is left in its braces, which is why a project saved before details existed (it has none)
 draws its text exactly as it did, with no migration. Details are not part of a template.
 
+`lapComparison` (optional, #154) compares two laps:
+`{ "lap": { "dataInputID", "videoInputID", "lap": 3 }, "comparedLap": { … "lap": 4 }, "layout": "sideBySide" | "stacked" }`.
+The project plays `lap`; `comparedLap` — from the same inputs or others — is kept level with it by
+the fraction of the lap covered, and objects with `followsComparedLap` show it. Absent means not
+comparing, which is what every project saved before it was. A timer's `deltaReference`
+`comparedLap` measures against it (falling back to `sessionBest` without a comparison).
+
 `settings.typeface` (optional, `{ "family", "face" }`) is the font for every object that has not
 chosen its own `typeface`; absent means the built-in fonts.
 
@@ -223,6 +230,11 @@ is what older projects carry and it spells km/h `kph` where this would spell it 
 `groupID` (optional, a UUID) names the group it moves with (#90); objects sharing a `groupID` are
 one group. Both absent in files saved before them, which is what those objects were.
 
+`followsComparedLap` (default `false`, #154) makes the object show the compared lap of the
+project's `lapComparison`: a `video` object draws that lap's picture, retimed to stay level with the
+lap playing, and a data object reads that lap's data at the same point round the lap. Ignored when
+the project is not comparing laps; absent in files saved before, which is what those objects were.
+
 `typeface` (optional, #118) is the font every piece of the object's text is drawn in:
 `{ "family": "Futura", "face": "Condensed Medium" }`, the names Font Book shows. Absent follows
 `settings.typeface`, and absent there too means each renderer's built-in fonts (Helvetica Neue for
@@ -242,7 +254,7 @@ what every earlier project did.
 | `scripted` | `source`: JavaScript defining `background(canvas)` and/or `frame(canvas, data)`; see `docs/scripting.md` |
 | `trackMap` | `lineColor`, `lineWidth`, `dotColor`, `dotRadius`, `rotation` (degrees clockwise), `backgroundColor`; `background` (`none`/`standard`/`satellite`/`hybrid`: Apple Maps imagery behind the outline, fetched once for the session's area and cached in `~/Library/Caches/OnboardStudio/maps`); `secondInputID` + `secondDotColor` (another data input drawn as a second dot, positioned through that input's own sync); `trace` (`trackOnly` (default for new objects) / `wholeSession` / `referenceLap`). `trackOnly` draws every lap but only where the car drove the circuit, leaving out the pit lane, the pit entry and exit and the paddock — which otherwise stretch the framing and squash the circuit into a corner of the object (#95). `referenceLap` draws the one lap sectors and deltas are measured against: crisper still, but it needs laps to have been detected. **The decode fallback is `wholeSession`, not the memberwise default**, because it is the record of how the app drew before `trace` existed and rewriting it would retroactively change what pre-0.21 files draw; `colorBySector` + `sectorColors` (cycled across the sectors, so a shorter list repeats; empty falls back to `lineColor`); `showSectorTicks` (a line across the track at each boundary, numbered `S2`, `S3`, … — there is no `S1` tick because the first sector begins at the start/finish line); `showCornerNumbers` (from the reference lap's curvature, not from any published map); `labelColor`, `labelScale` (fraction of the map's shorter side). The options default to off and `trace` falls back to `wholeSession`, so a project saved before them draws exactly the outline it drew before. The sectors themselves come from the data input's `sectors` |
 | `gForce` | `maxG`, `ringStep`, `trailSeconds`, `dotColor`, `gridColor`, `faceColor`, `showValues` |
-| `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`/`projectTime`/`timeOfDay`/`deltaToBest`/`projectedLap`), `showLapNumber`, `label`, `decimals` (1–3), colours, `aheadColor`/`behindColor` for the delta. `deltaToBest` compares the lap in progress with the best completed lap at the same distance into the lap (needs a distance channel; GPS files get one automatically). `projectedLap` is the compared lap's time plus that delta. `timeOfDay` needs epoch timestamps (RaceChrono) or a recorded start time.; `deltaReference` (`sessionBest` / `bestLap` = best so far / `previousLap`; files without the key use `bestLap`) |
+| `timer` | `mode` (`currentLap`/`lastLap`/`bestLap`/`session`/`projectTime`/`timeOfDay`/`deltaToBest`/`projectedLap`), `showLapNumber`, `label`, `decimals` (1–3), colours, `aheadColor`/`behindColor` for the delta. `deltaToBest` compares the lap in progress with the best completed lap at the same distance into the lap (needs a distance channel; GPS files get one automatically). `projectedLap` is the compared lap's time plus that delta. `timeOfDay` needs epoch timestamps (RaceChrono) or a recorded start time.; `deltaReference` (`sessionBest` / `bestLap` = best so far / `previousLap` / `comparedLap` = the lap comparison's other lap; files without the key use `bestLap`) |
 | `textData` | `channel`, `label`, `decimals`, `speedUnit`, `unitLabel`, `alignment`, colours; formatting: `multiplier`, `offset` (shown = value × multiplier + offset), `prefix`, `thousandsSeparator`, `showPlusSign`, `minimumIntegerDigits`, `absoluteValue`, `fontScale`, `labelScale`, `fontName` (empty = monospaced; the built-in font, which the object's `typeface` replaces); `zones` (`[{ "from", "to", "color" }]`, recolour the shown value) |
 | `indicator` | `channel` (empty = not bound yet; the ABS/Traction templates fill it from the data input when a channel name mentions ABS, DSC, TCS, ESC, ESP, traction or stability), `condition` (`atLeast`/`atMost`/`equal`/`notEqual`), `threshold`, `glyph` (`abs`/`traction`/`warning`/`light`/`text`), `label`, `onColor`, `offColor`, `showWhenOff`, `glow`, `holdSeconds`, `flashHertz`, `outline` |
 | `statCard` | `title` (with `{detail}` keys, see `details`), `scope` (`session` / `lapAtPlayhead`), `showBestLap`, `showTopSpeed`, `showOptimalLap`, `showLapCount`, `speedUnit`, `textColor`, `labelColor`, `backgroundColor` (#151) |

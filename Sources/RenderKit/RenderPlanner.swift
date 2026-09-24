@@ -10,12 +10,16 @@ public enum RenderPlanner {
     /// Input picture settings and object mirror/mask combine into the layer transform.
     public static func videoLayers(
         for project: Project, objects: [DisplayObject]? = nil, trackIDs: [InputID: Int32],
-        sourceTransforms: [Int32: CGAffineTransform] = [:]
+        sourceTransforms: [Int32: CGAffineTransform] = [:], comparedTrackID: Int32? = nil
     ) -> [VideoLayer] {
         (objects ?? project.displayObjects).compactMap { object -> VideoLayer? in
-            guard object.isVisible, case .video(let params) = object.kind, let inputID = object.inputID,
-                let trackID = trackIDs[inputID]
-            else { return nil }
+            guard object.isVisible, case .video(let params) = object.kind, let inputID = object.inputID else {
+                return nil
+            }
+            // The compared lap's picture is a track of its own, kept level with the lap by distance
+            // (#154); without one, it shows nothing rather than the wrong moment.
+            let follows = object.followsComparedLap && project.lapComparison != nil
+            guard let trackID = follows ? comparedTrackID : trackIDs[inputID] else { return nil }
             var transform = VideoTransform()
             if let input = project.input(inputID), case .video(let settings) = input.kind {
                 transform = VideoTransform(
@@ -135,7 +139,8 @@ public enum RenderPlanner {
         scriptRenderer: ScriptRendererFactory? = nil,
         mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:],
         appSpeedUnit: SpeedUnitSetting = .automatic,
-        globalAttributeMappings: AttributeMappingTable = AttributeMappingTable()
+        globalAttributeMappings: AttributeMappingTable = AttributeMappingTable(),
+        lapComparison: LapTimeWarp? = nil
     ) -> [any OverlayDrawing] {
         (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
@@ -152,7 +157,8 @@ public enum RenderPlanner {
                 units: displayUnits(
                     for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit,
                     globalAttributeMappings: globalAttributeMappings),
-                typeface: typeface(for: object, in: project), textScale: object.textScale ?? 1)
+                typeface: typeface(for: object, in: project), textScale: object.textScale ?? 1,
+                lapComparison: lapComparison, followsComparedLap: object.followsComparedLap)
             let image =
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }

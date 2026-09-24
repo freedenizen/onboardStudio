@@ -290,12 +290,16 @@ public enum LapReference: String, Codable, Sendable, CaseIterable {
     /// The quickest lap completed so far, as a live lap timer would show.
     case bestLap
     case previousLap
+    /// The compared lap of the project's lap comparison, at the same point round the lap (#154).
+    /// Where there is no comparison it falls back to the session best lap.
+    case comparedLap
 
     public var displayName: String {
         switch self {
         case .sessionBest: "Session best lap"
         case .bestLap: "Best lap so far"
         case .previousLap: "Previous lap"
+        case .comparedLap: "Compared lap"
         }
     }
 }

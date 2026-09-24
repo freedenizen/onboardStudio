@@ -484,6 +484,25 @@ No source of sector definitions exists that this app could ship — circuits do 
 any readable form, and the one dataset that has them is licensed so it cannot be used here. That
 is why sectors are derived from your driving or drawn by you.
 
+### Comparing two laps
+
+**Project ▸ Compare Laps…** plays two laps side by side, kept level by distance, so the same corner
+arrives in both pictures at the same moment and you can see where one lap gained on the other. Pick
+the **lap** to play and the lap to **compare with** — any complete lap of any data file in the
+project, with the camera that filmed it: two laps of one session, or today's best against last
+month's, or against another driver's. Choose **Side by side** or **Stacked**, then **Compare**.
+
+The project is laid out for the comparison: each lap's picture with its lap timer and speed, and
+between them a **delta** — how far ahead (−, green) or behind (+, red) the lap playing is at that
+point round the track. The compared lap is slowed down or sped up moment by moment to stay level,
+matched by how much of the lap each has covered, so two sessions whose GPS disagree about the lap's
+length still meet at the line. The export range becomes the lap, so **Export** writes just it.
+
+Everything in the layout is an ordinary object you can move, restyle or add to. An object's
+**Shows the compared lap** (in its inspector, while comparing) switches it to the other lap; a
+Timer's *Compare with* ▸ **Compared lap** measures against it. **Undo** restores the layout you
+had; **Project ▸ Stop Comparing Laps** removes the compared lap and keeps the rest.
+
 ## 7. Export and share
 
 *Export* renders through the same pipeline as the preview, so what you see is what you get.

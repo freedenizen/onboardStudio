@@ -179,6 +179,11 @@ struct ObjectInspector: View {
             Toggle("Locked", isOn: lockedBinding)
                 .help("A locked object stays where it is: the preview does not pick it up and the arrow keys leave it")
                 .accessibilityIdentifier("object.locked")
+            if editor.project.lapComparison != nil {
+                Toggle("Shows the compared lap", isOn: followsComparedLapBinding)
+                    .help("Draw the compared lap, at the same point round the track, instead of the lap playing")
+                    .accessibilityIdentifier("object.followsComparedLap")
+            }
         }
         Section {
             NumberField("X", value: percent(\.x)).accessibilityIdentifier("object.x")
@@ -285,6 +290,16 @@ struct ObjectInspector: View {
             get: { object.isLocked },
             set: { value in
                 editor.edit(value ? "Lock Object" : "Unlock Object") { $0.setLocked(value, [object.id]) }
+            })
+    }
+
+    var followsComparedLapBinding: Binding<Bool> {
+        Binding(
+            get: { object.followsComparedLap },
+            set: { value in
+                editor.updateObject(object.id, name: value ? "Show Compared Lap" : "Show Lap Playing") {
+                    $0.followsComparedLap = value
+                }
             })
     }
 

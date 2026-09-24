@@ -59,6 +59,20 @@ public struct TimerRenderer: OverlayDrawing {
             return Readout(text: lapTime(projectTime, decimals: decimals), color: nil)
         case .timeOfDay:
             return Readout(text: timeOfDay(sample: sample) ?? "--:--:--", color: nil)
+        case .deltaToBest where params.deltaReference == .comparedLap && context.lapComparison != nil:
+            guard let delta = context.deltaToComparedLap(at: projectTime) else {
+                return Readout(text: "--.--", color: nil)
+            }
+            let text = TimeParsing.deltaString(delta, decimals: decimals)
+            return Readout(text: text, color: color(forDelta: text))
+        case .projectedLap where params.deltaReference == .comparedLap && context.lapComparison != nil:
+            guard let warp = context.lapComparison, let delta = context.deltaToComparedLap(at: projectTime) else {
+                return Readout(text: "--:--.--", color: nil)
+            }
+            // The other lap's time plus how far behind it this one is.
+            let other = context.followsComparedLap ? warp.lapDuration : warp.comparedDuration
+            let color = color(forDelta: TimeParsing.deltaString(delta, decimals: decimals))
+            return Readout(text: lapTime(other + delta, decimals: decimals), color: color)
         case .deltaToBest:
             guard let sample, let session = context.sampler?.session,
                 let delta = LapComparison.delta(

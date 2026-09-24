@@ -93,6 +93,9 @@ public struct Project: Hashable, Codable, Sendable {
     /// What this project is of — track, car, driver, day — for text to show (#74). Not part of a
     /// template: a template is a layout, and these belong to one session.
     public var details: ProjectDetails
+    /// Two laps side by side, the second kept level with the first by distance (#154); `nil` when
+    /// the project is not comparing laps.
+    public var lapComparison: LapComparisonSettings?
 
     public init(
         schemaVersion: Int = Project.currentSchemaVersion,
@@ -102,7 +105,8 @@ public struct Project: Hashable, Codable, Sendable {
         export: ExportSettings = .hd1080,
         timeline: Timeline = .empty,
         markers: [Marker] = [],
-        details: ProjectDetails = ProjectDetails()
+        details: ProjectDetails = ProjectDetails(),
+        lapComparison: LapComparisonSettings? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.settings = settings
@@ -112,10 +116,11 @@ public struct Project: Hashable, Codable, Sendable {
         self.timeline = timeline
         self.markers = markers
         self.details = details
+        self.lapComparison = lapComparison
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, settings, inputs, displayObjects, export, timeline, markers, details
+        case schemaVersion, settings, inputs, displayObjects, export, timeline, markers, details, lapComparison
     }
 
     public init(from decoder: any Decoder) throws {
@@ -131,6 +136,8 @@ public struct Project: Hashable, Codable, Sendable {
         // Absent before details existed. None is the right reading, and it changes no render:
         // `ProjectDetails.fill` leaves a key with no value exactly as it was typed.
         details = try c.decodeIfPresent(ProjectDetails.self, forKey: .details) ?? ProjectDetails()
+        // Absent before laps could be compared, and absent means not comparing: no render changes.
+        lapComparison = try c.decodeIfPresent(LapComparisonSettings.self, forKey: .lapComparison)
     }
 
     /// The objects as they appear at project `time`, with timeline overrides applied.
