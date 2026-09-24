@@ -60,6 +60,10 @@ lap timer or GPS logger. Onboard Studio puts them together.
 - **Export a finished video.** Up to 4K, including vertical for phones. Upload straight to
   YouTube, or export just the overlays with a transparent background to drop into Final
   Cut or Premiere.
+- **Share a lap, not a session.** Export every lap as its own file in one go, leaving out the
+  out-lap, the in-lap and the slow ones. Or put the playhead in your best lap and export it as
+  a phone-shaped clip, with a card of the day's headline numbers — best lap, top speed, how far
+  off the best this lap was — above the picture.
 
 Everything binds to whatever data you actually loaded — Onboard Studio does not assume your
 logger names things a particular way.
@@ -119,7 +123,7 @@ If something looks wrong, the guide's
 
 Release notes for every version are on the
 [Releases page](https://github.com/freedenizen/onboardStudio/releases), newest first. The
-app is at **v0.24.0**; version numbers below 1.0 mean the file format and the interface can
+app is at **v0.25.0**; version numbers below 1.0 mean the file format and the interface can
 still change between releases.
 
 ## For developers
