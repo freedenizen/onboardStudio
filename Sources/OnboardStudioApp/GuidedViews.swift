@@ -170,8 +170,11 @@ enum HelpLinks {
 
     static let base = "https://github.com/freedenizen/onboardStudio/blob/main/docs/"
 
-    static func open(_ page: Page) {
-        if let url = URL(string: base + page.rawValue) { NSWorkspace.shared.open(url) }
+    /// Opens `page` in the browser, at `section` (a heading's anchor, such as `with-gyroflow`) if given.
+    static func open(_ page: Page, section: String? = nil) {
+        if let url = URL(string: base + page.rawValue + (section.map { "#" + $0 } ?? "")) {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
 

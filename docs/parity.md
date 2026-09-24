@@ -12,6 +12,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Brightness / contrast / saturation / hue / sharpness | ✅ | |
 | Chroma key (colour + tolerance) | ✅ | Plus softness |
 | Fisheye / 360 unwrap (FOV, pan) | ✅ | Fisheye and equirectangular, yaw/pitch/roll, runtime Metal kernel |
+| Video stabilisation | ✅ | Not in RaceRender. From the camera's motion data (GoPro HERO8+ CORI), from the picture's own movement (any camera), or with a user-installed Gyroflow, whose steadied picture replaces the recording's while telemetry and sync stay with the recording |
 | Audio volume / balance / channel select | ✅ | |
 | Play speed, start position, offset in project | ✅ | `SyncSettings` |
 | Containers AVFoundation cannot open (MTS, AVI, MKV) | ✅ | Converted with ffmpeg when installed |
@@ -42,7 +43,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Track Map (+ map background, two-vehicle) | ✅ | Apple Maps imagery (map/satellite/hybrid), second vehicle |
 | Speedometer, Tachometer, Gauge (Gauge Designer) | ✅ | |
 | Bar / Level, 2D Graph (vs time/distance/channel), G-Force Plot | ✅ | Graph vs time, distance, lap (with a best-lap ghost) or any channel (X-Y, with a fading trail); time and distance graphs can show what is coming as well as what has been |
-| Gear, Lap Counter, Timer (all modes), Text Data (formatting) | ✅ | Timer: current/last/best/session/project/time-of-day/delta-to-best |
+| Gear, Lap Counter, Timer (all modes), Text Data (formatting) | ✅ | Timer: current/last/best/session/project/time-of-day/delta-to-best, plus *Projected lap* (not in RaceRender); a delta or projection can compare with the compared lap of a lap comparison |
 | Enhanced (scripted) object | ✅ | JavaScript instead of RaceRender's C-like language; RaceRender-style names shimmed |
 | Warning lights (brake / ABS / DSC "Enhanced Display" styles) | ✅ | Native **Indicator** object: ISO ABS and traction glyphs, warning triangle, round light or text; any channel + condition + threshold (templates bind to the logger's channel by name, with a suggested threshold from its range), hold time, flash, glow |
 | Translucent steering wheel and glass instruments (manufacturer track-app look) | ✅ | Native **Steering Wheel** object, gradient-filled shapes, project-wide overlay opacity, **Glass Cockpit** template |
@@ -77,6 +78,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Segments at project times, inherit/override per property | ✅ | Visibility, frame, opacity per object |
 | Shifting a segment moves later ones | ✅ | |
 | Camera switching, PIP, split, quad | ✅ | Layout presets |
+| Two laps side by side | ✅ | Not in RaceRender: **Compare Laps** retimes the second lap's video to stay level by distance, from one session or two, with the delta between them |
 
 ## Output
 

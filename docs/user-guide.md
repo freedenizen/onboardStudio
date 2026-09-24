@@ -107,8 +107,26 @@ data alignment all treat the sequence as a single video, and clips may have diff
 360° footage (unwrap into a flat, pannable view). **Audio**: include, mute, volume, balance,
 channel selection.
 
-**Stabilisation** steadies a shaky picture, such as from a helmet mount, using the orientation the
-camera recorded with the video — GoPro HERO8 and later record it with every clip. Set **Steady** to
+**Transform and Cropping (all videos)**, in the project inspector, zoom, position and crop every
+video at once, in the same terms an editor uses (zoom factor, position as a percentage offset from
+the centre). Use it to reframe a recording without touching each chapter or each camera
+separately; it applies on top of each input's own crop. When zoomed in, drag the picture itself in
+the preview to pan (the cursor becomes a hand); the video object's edge handles still resize it.
+
+**Multiple cameras.** Add each camera as its own video input, line them up in the video lane (or
+with the sync fields), then arrange them with **Layout** (picture-in-picture, split, quad) and
+switch between them over time with timeline segments (§6).
+
+### Stabilisation
+
+**Stabilisation** (in the video's inspector) steadies a shaky picture, such as from a helmet mount.
+There are three ways, under **Steady**; each leaves the recording, its sync and its telemetry as they
+were, and each can be undone.
+
+#### From camera motion data
+
+This uses the orientation the camera recorded with the video — GoPro HERO8 and later record it
+with every clip. Set **Steady** to
 **From camera motion data**: each frame is moved so the camera seems to follow a smooth path, so
 the shake goes but turning your head or the car still comes through. **Smoothing** sets how long
 the steadied view takes to follow (towards *Follow* keeps more movement, towards *Float* smooths
@@ -120,7 +138,7 @@ A video recorded with HyperSmooth is already steadied by the camera and cannot y
 further here; a video with no motion record (most cameras other than GoPro) says so in the
 inspector.
 
-#### Steadying from the picture
+#### From the picture
 
 For a camera that records no motion data — most action cameras other than GoPro, phones, a dash cam
 — choose **Steady ▸ From the picture ▸ Measure Motion**. Onboard Studio follows how the picture moves
@@ -130,7 +148,7 @@ the file changes. It works best on a picture with plenty in it; blur, darkness o
 weaker, and it cannot tell turning from moving sideways, so prefer motion data when the camera
 records it.
 
-#### Stabilising with Gyroflow
+#### With Gyroflow
 
 [Gyroflow](https://gyroflow.xyz) is a free app that steadies video from the camera's gyroscope,
 corrects the lens and the rolling shutter, and handles footage recorded with HyperSmooth. Onboard
@@ -157,16 +175,6 @@ clock for syncing and the chapters all keep coming from the recording — and th
 recording's frames and length, so the sync you set still holds. If a copy goes missing, the
 recording is shown again until you choose **Stabilise Again**. Gyroflow runs as a separate program:
 it is licensed under the GPL, and is not part of Onboard Studio.
-
-**Transform and Cropping (all videos)**, in the project inspector, zoom, position and crop every
-video at once, in the same terms an editor uses (zoom factor, position as a percentage offset from
-the centre). Use it to reframe a recording without touching each chapter or each camera
-separately; it applies on top of each input's own crop. When zoomed in, drag the picture itself in
-the preview to pan (the cursor becomes a hand); the video object's edge handles still resize it.
-
-**Multiple cameras.** Add each camera as its own video input, line them up in the video lane (or
-with the sync fields), then arrange them with **Layout** (picture-in-picture, split, quad) and
-switch between them over time with timeline segments (§6).
 
 ## 4. Data
 
@@ -599,6 +607,14 @@ a project, `sync` finds the data/video offset from motion, `upload` sends a file
   seconds off, which is why the GPS clock is preferred when the clip has one.
 - **A GoPro clip appears upside down.** Onboard Studio honours the camera's orientation flag; use
   Rotation 180° in the Picture section if the camera was mounted inverted without setting it.
+- **Stabilisation does little, or nothing.** Choose the method the camera supports: *From camera
+  motion data* needs a GoPro HERO8 or later recorded with HyperSmooth off; otherwise use *From the
+  picture* or *With Gyroflow*. A shot that is mostly deliberate movement (looking around in the
+  pits) has little shake to take out. More **Smoothing** steadies more; if edges show, raise **Zoom**.
+- **Gyroflow is not found.** Install it into Applications (see *Stabilisation ▸ With Gyroflow*), open it
+  once, then choose *With Gyroflow* again; the inspector checks each time it is shown.
+- **The steadied picture disappeared.** A Gyroflow copy was moved or deleted, so the recording is
+  shown; choose **Stabilise Again**.
 - **A file will not open.** MTS, MKV and some AVI files need `ffmpeg` installed
   (`brew install ffmpeg`); Onboard Studio converts them on first use.
 - **Missing media after moving files.** The sidebar marks the input; select it and press

@@ -69,6 +69,9 @@ lap timer or GPS logger. Onboard Studio puts them together.
   the gap between them counting as you go. A lap timer can show what this lap will come to, and a
   graph can plot one channel against another (a G-G diagram, throttle against speed) or show the
   braking point that is still to come.
+- **Steady a shaky picture.** Helmet footage shakes. Steady it from the motion data a GoPro records
+  with every clip, from the picture's own movement for any other camera, or with Gyroflow if you have
+  it installed — and your sync, GPS and telemetry stay exactly as they were.
 
 Everything binds to whatever data you actually loaded — Onboard Studio does not assume your
 logger names things a particular way.

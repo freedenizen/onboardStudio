@@ -30,6 +30,19 @@ two thin executables.
   No `.metal` files are compiled at build time; any custom kernel is compiled from source at runtime.
 - **Single time mapping.** `SyncSettings` (start position in input, offset within project, play
   speed) converts project time to input time identically for video tracks and telemetry sampling.
+- **Frame-level video processing lives in the layer.** A `VideoLayer` carries everything done to its
+  source frame, in order: stabilisation (`LayerStabilisation`, #262/#264 — a per-frame shift and roll
+  from a `StabilisationPath`, applied to the recorded frame before its display rotation, because that
+  is where the camera's motion was measured), the display rotation, then the input's picture settings.
+  Paths are built per plan from what `ProjectCompiler.load` read: a GoPro's per-frame orientation
+  (`GoProTelemetry.orientation`), or the picture's own movement measured once and kept
+  (`PictureMotion`).
+- **A retimed copy is just another track.** The compared lap of a lap comparison (#154) is a second
+  composition track of its video, cut at a `LapTimeWarp`'s knots and each piece time-scaled, so the
+  compositor, preview and export need nothing special; data objects that follow it sample through the
+  same warp. Gyroflow's steadied copies (#263) likewise simply replace the file a video track reads.
+- **Other programs stay other programs.** ffmpeg and Gyroflow are GPL and optional: when installed
+  they are run as separate processes (`FFmpegBridge`, `Gyroflow`), never linked into the MIT app.
 - **Timeline as overrides.** Segments hold JSON fragments per display object; a property is
   inherited unless its key is present. Resolution is a deep merge of all segments up to time *t*.
 
