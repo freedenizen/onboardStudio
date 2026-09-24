@@ -63,3 +63,18 @@ extension ProjectCompiler {
         }
     }
 }
+
+extension ProjectCompiler {
+    /// The lap playing at project `time`, with the project seconds it covers, from the first data
+    /// input that has laps — complete or not, since a clip of an out-lap is still a clip.
+    public static func lap(at time: Double, in loaded: LoadedProject, duration: Double) -> LapExport? {
+        lap(
+            at: time, in: lapExports(.eachLap(completeOnly: false, slowerThanBest: nil), in: loaded, duration: duration)
+        )
+    }
+
+    /// The lap in `laps` playing at `time`. On the line between two laps it is the one starting.
+    public static func lap(at time: Double, in laps: [LapExport]) -> LapExport? {
+        laps.last { $0.range.contains(time) }
+    }
+}

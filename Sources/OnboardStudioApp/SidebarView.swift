@@ -93,6 +93,8 @@ struct SidebarView: View {
                                 editor.selectedMarkerID = placed.marker.id
                                 editor.renameSelectedMarker()
                             }
+                            Button("Export as Vertical Clip…") { editor.requestClip(of: placed) }
+                            Divider()
                             Button("Delete", role: .destructive) { editor.deleteMarker(placed.marker.id) }
                         }
                     }

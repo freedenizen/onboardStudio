@@ -330,3 +330,26 @@ extension ProjectTemplate {
             object("G", .gForce(GForceParams()), UnitRect(x: 0.8, y: 0.05, width: 0.16, height: 0.28)),
         ])
 }
+
+extension Project {
+    /// This project re-laid for a phone, for one stretch of it (#151): the Social template's
+    /// objects, bound to this project's inputs, at 1080 × 1920, exporting only `range`.
+    ///
+    /// Only the layout and the size come from the template. The attribute mappings, units, font,
+    /// frame rate and codec stay this project's own — a clip should read the data the way the
+    /// project does — and the camera framing is dropped, since it was set for the 16:9 picture.
+    public func verticalClip(from start: Double, to end: Double) -> Project {
+        var clip = self
+        ProjectTemplate.social.apply(to: &clip)
+        clip.settings = settings
+        clip.settings.outputWidth = ProjectTemplate.social.settings.outputWidth
+        clip.settings.outputHeight = ProjectTemplate.social.settings.outputHeight
+        clip.settings.framing = .none
+        clip.export = export
+        clip.export.width = clip.settings.outputWidth
+        clip.export.height = clip.settings.outputHeight
+        clip.export.frameRate = settings.frameRate
+        clip.export.range = .span(start: start, end: end)
+        return clip
+    }
+}

@@ -31,6 +31,8 @@ final class EditorModel {
     var selectedMarkerID: MarkerID?
     var showSyncWizard = false
     var showExport = false
+    /// A lap or range to export as a phone clip; the sheet is open while this is set (#151).
+    var clipRequest: ClipRequest?
     var showSaveTemplate = false
     /// A scratch range marked with I and O (#230): shown on the ruler and offered by the export
     /// sheet. Not saved with the project, as a selection is not.

@@ -103,7 +103,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
 | Niche | Theoretical / optimal lap | Yes — *Optimal* on the Sector Times panel, and in the data inspector |
-| Emerging | Vertical / social export with stat cards | Partial — a Stat Card object and a Social (9:16) template; no one-action clip extraction yet (#151) |
+| Emerging | Vertical / social export with stat cards | Yes — a Stat Card object, a Social (9:16) template, and one lap or marker exported as a vertical clip in one action (#151) |
 
 ## Candidate work
 
@@ -120,15 +120,16 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
    lines, the circuit is recognised from the log (about 1,290 circuits, by position and name), the
    start/finish line is suggested from the lap geometry already in the data, and a line the user
    places is saved as a track definition for next time (v0.21.0).
+5. **Batch export, one file per lap** — *Every lap, one file each* in the Export sheet and
+   `onboard render --laps each` (#150, v0.25.0).
+8. **Social export: stat cards and clip extraction** — the Stat Card object, the Social (9:16)
+   template, and Export Lap as Vertical Clip (#151, v0.25.0).
 
 **Filed**
 
-5. **Batch export, one file per lap** — #150, v0.25.0 *Sharing the result*.
 6. **Lap-vs-lap video comparison** — #154, v0.26.0 *Analysis*.
 7. **Projected lap time** — #155, v0.26.0. Note the survey's finding that GPS-position-based delta is
    materially more accurate than distance-based.
-8. **Social export: stat cards and clip extraction** — #151, v0.25.0. Project details (#74) supply
-   the circuit and date for the card.
 9. **Graph X-Y axis against an arbitrary channel** — #156, v0.26.0, which also moves the playhead
    off the right edge of a time graph so the future shows as well as the past.
 

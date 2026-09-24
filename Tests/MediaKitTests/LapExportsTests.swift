@@ -50,4 +50,12 @@ struct LapExportsTests {
         let lap = LapExport(lap: 7, range: 0...1)
         #expect(lap.fileName(base: "Sonoma", fileExtension: "mp4") == "Sonoma – Lap 7.mp4")
     }
+
+    @Test func theLapAtThePlayheadIsTheOneStartingOnTheLine() {
+        let all = exports(completeOnly: false)
+        #expect(ProjectCompiler.lap(at: 100, in: all)?.lap == 1)
+        #expect(ProjectCompiler.lap(at: 160, in: all)?.lap == 2)
+        #expect(ProjectCompiler.lap(at: 420, in: all)?.lap == 4)
+        #expect(ProjectCompiler.lap(at: 500, in: all) == nil)
+    }
 }

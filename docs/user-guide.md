@@ -245,6 +245,14 @@ and its top speed. Each number can be turned off; top speed is in the card's own
 16:9 picture as a band across the middle rather than cropped to a sliver, a lap-following stat card
 above it, and the lap timer, speedometer and track map below.
 
+To share one lap without re-laying your project, put the playhead in it and choose **Project ▸
+Export Lap as Vertical Clip…** (⇧⌘E), or right-click a marker in the sidebar and choose **Export as
+Vertical Clip…** — a range marker exports its own range, a point marker the lap it falls in. The
+sheet shows the stretch it will export; **Export…** writes `<project> – Lap 7 (vertical).mp4` at
+1080 × 1920, laid out by the Social template, with your project's channels, units, font, frame rate
+and codec. The project itself is left exactly as it was. When it finishes, **Reveal in Finder** or
+**Upload to YouTube…** from the same sheet.
+
 ### Locking and grouping
 
 A finished object can be **locked** (**Project ▸ Lock**, ⌘L, the padlock beside it in the
