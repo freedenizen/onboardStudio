@@ -96,7 +96,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Common (needs CAN/OBD) | Tachometer | Yes |
 | Common (needs CAN/OBD) | Gear indicator | Yes |
 | Common (needs CAN/OBD) | Throttle / brake bars | Yes, Bar object with segments and zones |
-| Moderate | 2D data graphs | Yes — time, distance or lap axis, multi-series, best-lap ghost; not yet against another channel (#156) |
+| Moderate | 2D data graphs | Yes — time, distance, lap or another channel (X-Y) axis, multi-series, best-lap ghost, and what is coming as well as what has been (#156) |
 | Moderate | Lap / run comparison | Partial — ghost trace on the graph; no side-by-side video (#154) |
 | Moderate | Picture-in-picture / multi-camera | Yes, with layout presets and segment-based switching |
 | Niche | Shift lights | Covered by Indicator lights and segmented Bars |
@@ -126,12 +126,12 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
    lap's time plus the position-based delta (#155, v0.26.0).
 8. **Social export: stat cards and clip extraction** — the Stat Card object, the Social (9:16)
    template, and Export Lap as Vertical Clip (#151, v0.25.0).
+9. **Graph X-Y axis against an arbitrary channel** — *Another channel (X-Y)* on the graph, and the
+   playhead moved off the right edge of time and distance graphs so the future shows (#156, v0.26.0).
 
 **Filed**
 
 6. **Lap-vs-lap video comparison** — #154, v0.26.0 *Analysis*.
-9. **Graph X-Y axis against an arbitrary channel** — #156, v0.26.0, which also moves the playhead
-   off the right edge of a time graph so the future shows as well as the past.
 
 **Not filed**
 

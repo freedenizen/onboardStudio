@@ -206,23 +206,47 @@ struct GaugeDesignerGoldenTests {
     }
 
     @Test func graphs() throws {
+        // These are graphs as they drew before #156, pinned to the right edge as a project saved
+        // then is: they must match the images made before the playhead could move.
         let frame = UnitRect(x: 0.05, y: 0.2, width: 0.9, height: 0.6)
-        let time = GraphParams(series: [GraphSeries(channel: "speed")], axis: .time, window: 5, label: "SPEED")
+        var time = GraphParams(series: [GraphSeries(channel: "speed")], axis: .time, window: 5, label: "SPEED")
+        time.pinPlayheadToTheRightEdge()
         try GoldenImage.assertMatches(try render(.graph(time), frame: frame, time: 7), named: "graph-time-7s")
-        let twoSeries = GraphParams(
+        var twoSeries = GraphParams(
             series: [
                 GraphSeries(channel: "lateralG"), GraphSeries(channel: "longitudinalG", color: .white, lineWidth: 2),
             ],
             axis: .time, window: 10, label: "LAT / LONG G", fillUnderLine: false)
+        twoSeries.pinPlayheadToTheRightEdge()
         try GoldenImage.assertMatches(
             try render(.graph(twoSeries), frame: frame, time: 9), named: "graph-two-series-9s")
         let lap = GraphParams(series: [GraphSeries(channel: "speed")], axis: .lap, label: "LAP vs BEST")
         try GoldenImage.assertMatches(try render(.graph(lap), frame: frame, time: 6), named: "graph-lap-ghost-6s")
+        var distance = GraphParams(
+            series: [GraphSeries(channel: "lateralG")], axis: .distance, window: 150, minValue: -1, maxValue: 1,
+            label: "LAT G", fillUnderLine: false)
+        distance.pinPlayheadToTheRightEdge()
+        try GoldenImage.assertMatches(
+            try render(.graph(distance), frame: frame, time: 8), named: "graph-distance-8s")
+    }
+
+    @Test func graphsShowWhatIsComingAndOneChannelAgainstAnother() throws {
+        let frame = UnitRect(x: 0.05, y: 0.2, width: 0.9, height: 0.6)
+        // New graphs: the current moment in the middle, marked by a line, the future to its right.
+        let time = GraphParams(series: [GraphSeries(channel: "speed")], axis: .time, window: 5, label: "SPEED")
+        try GoldenImage.assertMatches(try render(.graph(time), frame: frame, time: 7), named: "graph-time-middle-7s")
         let distance = GraphParams(
             series: [GraphSeries(channel: "lateralG")], axis: .distance, window: 150, minValue: -1, maxValue: 1,
             label: "LAT G", fillUnderLine: false)
         try GoldenImage.assertMatches(
-            try render(.graph(distance), frame: frame, time: 8), named: "graph-distance-8s")
+            try render(.graph(distance), frame: frame, time: 8), named: "graph-distance-middle-8s")
+        // A G-G diagram: longitudinal against lateral G, three seconds of fading trail.
+        let gg = GraphParams(
+            series: [GraphSeries(channel: "longitudinalG")], axis: .channel, window: 3, label: "G-G",
+            xChannel: "lateralG")
+        try GoldenImage.assertMatches(
+            try render(.graph(gg), frame: UnitRect(x: 0.2, y: 0.1, width: 0.6, height: 0.8), time: 8),
+            named: "graph-gg-8s")
     }
 
     @Test func gearAndLapCounter() throws {
@@ -345,6 +369,41 @@ struct DesignerBehaviourTests {
         #expect((live.points.last?.x ?? 0) > 0)
         #expect(layout.xRange.upperBound >= (ghost.points.last?.x ?? 0))
         #expect(ghost.color == params.ghostColor)
+    }
+
+    @Test func aGraphShowsWhatIsComingRightOfThePlayhead() throws {
+        // A 10 s window with now in the middle: 5 s either side, the cursor at now, not at the end.
+        let params = GraphParams(series: [GraphSeries(channel: "speed")], axis: .time, window: 10)
+        let layout = GraphRenderer(context: context(), params: params).layout(at: 12, pointBudget: 21)
+        let trace = try #require(layout.traces.first)
+        #expect(layout.playheadX == 5)
+        #expect(abs((trace.points.last?.x ?? 0) - 10) < 1e-6)
+        #expect(abs((trace.cursor?.x ?? 0) - 5) < 1e-6)
+        // At the right edge it draws as it always did: the last point is now.
+        var edge = params
+        edge.pinPlayheadToTheRightEdge()
+        let old = try #require(
+            GraphRenderer(context: context(), params: edge).layout(at: 12, pointBudget: 21).traces.first)
+        #expect(old.cursor == old.points.last)
+    }
+
+    @Test func aChannelAxisPlotsOneChannelAgainstAnother() throws {
+        let params = GraphParams(
+            series: [GraphSeries(channel: "longitudinalG")], axis: .channel, window: 2, xChannel: "lateralG",
+            xMinValue: -2, xMaxValue: 2)
+        let session = SyntheticSession.withDistance
+        let layout = GraphRenderer(context: context(), params: params).layout(at: 8, pointBudget: 9)
+        let trace = try #require(layout.traces.first)
+        #expect(trace.fades)
+        #expect(layout.xRange == -2...2)
+        #expect(layout.playheadX == nil)
+        // The trail ends at now, at (lateral, longitudinal) as the session has them.
+        let lateral = try #require(session[.lateralG]?.value(at: 8))
+        let longitudinal = try #require(session[.longitudinalG]?.value(at: 8))
+        #expect(abs((trace.cursor?.x ?? 0) - lateral) < 1e-6)
+        #expect(abs((trace.cursor?.y ?? 0) - longitudinal) < 1e-6)
+        // An X-Y graph reads the x channel's value too, so its unit applies to it.
+        #expect(DisplayObjectKind.graph(params).displayChannels == ["longitudinalG", "lateralG"])
     }
 
     @Test func graphWithoutDistanceFallsBackToTime() throws {

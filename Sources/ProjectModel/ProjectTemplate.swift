@@ -4,7 +4,7 @@ import Foundation
 /// settings. Applying a template to a project keeps the project's inputs and rebinds the
 /// template's objects to them.
 public struct ProjectTemplate: Hashable, Codable, Sendable {
-    public static let formatVersion = 1
+    public static let formatVersion = 2
     public static let fileExtension = "onboardtemplate"
     /// The extension used before the app was renamed from OverlayGen. Still opened, never written.
     public static let legacyFileExtension = "overlaytemplate"
@@ -105,8 +105,13 @@ public struct ProjectTemplate: Hashable, Codable, Sendable {
         guard formatVersion < Self.formatVersion else {
             throw ProjectTemplateError.newerFormat(formatVersion)
         }
-        // Future migrations go here, stepping formatVersion up one at a time. A change that alters
-        // a default on any type reachable from `displayObjects` belongs here, pinning the old value.
+        // Steps one version at a time. A change that alters a default on any type reachable from
+        // `displayObjects` belongs here, pinning the old value.
+        if formatVersion < 2 {
+            // 1 → 2 (#156): graphs drew the current moment at the right edge, with no line.
+            for index in displayObjects.indices { displayObjects[index].kind.pinGraphPlayheadToTheRightEdge() }
+            formatVersion = 2
+        }
         formatVersion = Self.formatVersion
     }
 

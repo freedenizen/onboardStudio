@@ -4,7 +4,7 @@ import Foundation
 /// with all its parameters, the opacity, the size and the font. Position, label and data source
 /// are not part of a style.
 public struct ObjectStyle: Hashable, Codable, Sendable {
-    public static let formatVersion = 1
+    public static let formatVersion = 2
     public static let fileExtension = "onboardstyle"
     /// The extension used before the app was renamed from OverlayGen. Still opened, never written.
     public static let legacyFileExtension = "overlaystyle"
@@ -68,8 +68,13 @@ public struct ObjectStyle: Hashable, Codable, Sendable {
     public mutating func migrateIfNeeded() throws {
         guard formatVersion != Self.formatVersion else { return }
         guard formatVersion < Self.formatVersion else { throw ObjectStyleError.newerFormat(formatVersion) }
-        // Future migrations go here, stepping formatVersion up one at a time. A change that alters
-        // a default on any type reachable from `kind` belongs here, pinning the old value.
+        // Steps one version at a time. A change that alters a default on any type reachable from
+        // `kind` belongs here, pinning the old value.
+        if formatVersion < 2 {
+            // 1 → 2 (#156): graphs drew the current moment at the right edge, with no line.
+            kind.pinGraphPlayheadToTheRightEdge()
+            formatVersion = 2
+        }
         formatVersion = Self.formatVersion
     }
 }

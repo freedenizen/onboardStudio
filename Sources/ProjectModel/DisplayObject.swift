@@ -254,7 +254,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .speedometer(let p), .tachometer(let p), .gauge(let p): [p.channel]
         case .bar(let p): [p.channel]
         case .textData(let p): [p.channel]
-        case .graph(let p): p.series.map(\.channel)
+        case .graph(let p): p.series.map(\.channel) + (p.axis == .channel ? [p.xChannel] : [])
         // The timing panel has no channel to name: it always draws speed and the delta from it.
         case .lapPanel: ["speed", "speedDelta"]
         // The card's only number in a unit is its top speed.
@@ -279,6 +279,14 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .text, .textData, .gear: true
         default: false
         }
+    }
+
+    /// A graph as graphs drew before #156, with the current moment at the right edge; anything
+    /// else unchanged. For the migrations of files saved before then.
+    mutating func pinGraphPlayheadToTheRightEdge() {
+        guard case .graph(var params) = self else { return }
+        params.pinPlayheadToTheRightEdge()
+        self = .graph(params)
     }
 
     /// Objects fed by an image input.

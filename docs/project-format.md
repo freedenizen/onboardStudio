@@ -61,6 +61,13 @@ in the migration:
 A change that alters a default ships a fixture project saved before the change, asserting it still
 resolves to the old values.
 
+### Migrations so far
+
+- **Schema 2, template and style format 2 (#156).** Graphs gained `playheadPosition` and
+  `showPlayheadLine`, and new ones sit in the middle with a line. A graph in a project at schema 1,
+  or in a template or style at format 1, is set to `playheadPosition` 1 and `showPlayheadLine`
+  false: the right edge with no line, as every graph drew before.
+
 ### This covers `project.json` only
 
 `Project.migrateIfNeeded()` is called from one place: the static `Project.decode(_:)`. It is
@@ -97,7 +104,7 @@ can carry; the answer is a migration pinning the old value, never regenerating t
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null,
                 "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } },
                 "overlayOpacity": 1, "speedUnit": "automatic", "attributeMappings": {} },
@@ -229,7 +236,7 @@ what every earlier project did.
 | `video` | `mirror` (`horizontal`/`vertical`, combined with the input's mirror) and `channelMask` (`red`/`green`/`blue`); the layer is aspect-fitted into `frame` |
 | `speedometer`, `tachometer`, `gauge` | `GaugeParams` (the Gauge Designer): `channel`, `title`, `minValue`, `maxValue`, `speedUnit` (`mph`/`kph`/`m/s`), `unitLabel`, `majorTick`, `minorTick`, `sweep` (≤ 360), `rotation`, `counterClockwise`, `style` (`needle`/`dualNeedle`/`arc`), `secondChannel` + `secondNeedleColor`, `needle` (`length`, `tailLength`, `width`, `hubRadius`, `tapered`, `smoothingSeconds`; fractions of the radius), `ticks` (`showMajor`, `showMinor`, `showLabels`, `majorLength`, `minorLength`, `outerRadius`, `labelRadius`, `labelDecimals`, `labelScale`, `declutter`), `zones` (`[{ "from", "to" (or null = to max), "color" }]`), `zoneTargets` (`face`, `marks`, `needle`, `gradient`), `arcWidth`, `arcTrackColor`, `showFace`, `faceImageInputID` (an image input drawn as the face), `valueDivisor`, `showValue`, `decimals`, colours. Pre-0.5 files with `redlineFrom`/`redlineColor` load as a single zone. |
 | `bar` | `channel`, `label`, `minValue`, `maxValue`, `fillFromZero` (± bar: fills from zero towards the value; for `lapDelta`, `speedDelta`, steering…), `orientation` (`horizontal`/`vertical`), `fillColor`, `trackColor`, `textColor`, `zones`, `zoneColorsFill` (zone colours the fill, otherwise paints the track), `segments` (0 = continuous), `showValue`, `decimals`, `speedUnit`, `unitLabel`, `cornerRadius` |
-| `graph` | `series` (`[{ "channel", "color", "lineWidth" }]`, up to 4), `axis` (`time` = last `window` seconds, `distance` = last `window` metres, `lap` = distance into the current lap), `window`, `minValue`/`maxValue` (null = fit the data), `speedUnit`, `label`, `backgroundColor`, `gridColor`, `textColor`, `gridLines`, `fillUnderLine`, `showCursor`, `showLabels`, `compareBestLap` + `ghostColor` (lap axis: the best lap's trace) |
+| `graph` | `series` (`[{ "channel", "color", "lineWidth" }]`, up to 4), `axis` (`time` = `window` seconds, `distance` = `window` metres, `lap` = distance into the current lap, `channel` = each series against `xChannel` over the last `window` seconds, as a fading trail), `window`, `playheadPosition` (time and distance: where now sits across the window, 0 = left edge … 1 = right edge; new graphs 0.5), `showPlayheadLine` (a line at now, with the cursor), `xChannel`, `xMinValue`/`xMaxValue` (channel axis; null = fit the trail), `minValue`/`maxValue` (null = fit the data), `speedUnit`, `label`, `backgroundColor`, `gridColor`, `textColor`, `gridLines`, `fillUnderLine`, `showCursor`, `showLabels`, `compareBestLap` + `ghostColor` (lap axis: the best lap's trace) |
 | `gear` | `channel` (0 = neutral, −1 = reverse, −99 = park), `label`, `showLabel`, `neutralText`, `reverseText`, `parkText`, `fontScale`, colours |
 | `lapCounter` | `label`, `showTotal`, `numberOffset`, colours |
 | `scripted` | `source`: JavaScript defining `background(canvas)` and/or `frame(canvas, data)`; see `docs/scripting.md` |
