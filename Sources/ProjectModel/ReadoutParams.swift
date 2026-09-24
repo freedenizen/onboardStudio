@@ -188,6 +188,8 @@ public struct GraphParams: Hashable, Codable, Sendable {
     /// left edge: all of the window is still to come) to 1 (the right edge: all of it has passed).
     /// New graphs sit in the middle, showing as much of what is coming as of what has been (#156).
     public var playheadPosition: Double
+    /// Where new graphs put the current moment, and where the inspector's Middle button returns it.
+    public static let middlePlayheadPosition = 0.5
     /// Draw a vertical line at the current moment, over the traces, when the cursor is shown.
     public var showPlayheadLine: Bool
 
@@ -211,7 +213,7 @@ public struct GraphParams: Hashable, Codable, Sendable {
         xChannel: String = "lateralG",
         xMinValue: Double? = nil,
         xMaxValue: Double? = nil,
-        playheadPosition: Double = 0.5,
+        playheadPosition: Double = GraphParams.middlePlayheadPosition,
         showPlayheadLine: Bool = true
     ) {
         self.series = series

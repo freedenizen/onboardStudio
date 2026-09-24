@@ -48,11 +48,12 @@ struct ExportSheet: View {
                         ForEach(ExportSettings.VideoCodec.allCases, id: \.self) { Text($0.displayName).tag($0) }
                     }
                     if settings.codec.usesBitrate {
-                        Slider(
+                        SliderField(
+                            "Video bitrate",
                             value: Binding(
                                 get: { Double(settings.videoBitrate) / 1_000_000 },
-                                set: { v in settings.videoBitrate = Int(v * 1_000_000) }), in: 1...80, step: 1
-                        ) { Text("Video bitrate: \(settings.videoBitrate / 1_000_000) Mbit/s") }
+                                set: { v in settings.videoBitrate = Int(v * 1_000_000) }),
+                            in: 1...80, step: 1, unit: "Mbit/s")
                     }
                     Picker(
                         "Audio",

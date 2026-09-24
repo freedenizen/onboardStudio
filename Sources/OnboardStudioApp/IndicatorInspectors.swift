@@ -159,9 +159,13 @@ struct SteeringWheelInspector: View {
         Section("Look") {
             ColorPicker("Rim", selection: color(\.rimColor, "Rim Colour"), supportsOpacity: true)
             ColorPicker("Rim edge", selection: color(\.edgeColor, "Rim Edge Colour"), supportsOpacity: true)
-            PercentSlider("Rim thickness", value: field(\.rimWidth, "Rim Thickness"), range: 0.04...0.4)
+            SliderField(
+                "Rim thickness", value: field(\.rimWidth, "Rim Thickness"), in: 0.04...0.4, scale: .percent,
+                unit: "%")
             ColorPicker("Marker", selection: color(\.markerColor, "Marker Colour"), supportsOpacity: true)
-            PercentSlider("Marker width", value: field(\.markerWidth, "Marker Width"), range: 0.01...0.15)
+            SliderField(
+                "Marker width", value: field(\.markerWidth, "Marker Width"), in: 0.01...0.15, scale: .percent,
+                unit: "%")
             Toggle("Spokes", isOn: field(\.showSpokes, "Spokes"))
             if params.showSpokes {
                 ColorPicker("Spokes", selection: color(\.spokeColor, "Spoke Colour"), supportsOpacity: true)
@@ -197,12 +201,12 @@ struct OverlayOpacitySection: View {
 
     var body: some View {
         Section("Overlay") {
-            PercentSlider(
+            SliderField(
                 "Overlay opacity",
                 value: Binding(
                     get: { editor.project.settings.overlayOpacity },
                     set: { value in editor.edit("Change Overlay Opacity") { $0.settings.overlayOpacity = value } }),
-                range: 0.1...1)
+                in: 0.1...1, scale: .percent, unit: "%")
             Text("Fades every gauge, map and readout together, on top of each object's own opacity.")
                 .font(.caption).foregroundStyle(.secondary)
         }

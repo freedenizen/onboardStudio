@@ -23,15 +23,24 @@ struct GraphInspector: View {
             }
             if params.axis.scrolls {
                 // Where now sits across the window: what is to the right of it is still to come.
-                Slider(value: field(\.playheadPosition, "Playhead Position"), in: 0...1, step: 0.05) {
-                    Text("Now at")
-                } minimumValueLabel: {
-                    Text("Left")
-                } maximumValueLabel: {
-                    Text("Right")
-                }
+                SliderField(
+                    "Now at", value: field(\.playheadPosition, "Playhead Position"), in: 0...1, step: 0.05,
+                    scale: .percent, unit: "%", minimumLabel: "Left", maximumLabel: "Right",
+                    identifier: "graph.nowAt"
+                )
                 .help("Where the current moment sits on the graph; the data to its right is still to come")
-                .accessibilityValue(playheadDescription)
+                // The edges are a flick of the slider away and any other value can be typed; the
+                // middle is the one worth a button (#266).
+                HStack {
+                    Spacer()
+                    Button("Middle") {
+                        update("Playhead Position") { $0.playheadPosition = GraphParams.middlePlayheadPosition }
+                    }
+                    .disabled(params.playheadPosition == GraphParams.middlePlayheadPosition)
+                    .help("Put the current moment in the middle: as much still to come as has passed")
+                    .accessibilityLabel("Put now in the middle")
+                    .accessibilityIdentifier("graph.nowAt.middle")
+                }
                 Toggle("Line at now", isOn: field(\.showPlayheadLine, "Playhead Line"))
                     .disabled(!params.showCursor)
             } else if params.axis == .channel {
@@ -150,15 +159,6 @@ struct GraphInspector: View {
 
     func field<T>(_ keyPath: WritableKeyPath<GraphParams, T>, _ name: String) -> Binding<T> {
         Binding(get: { params[keyPath: keyPath] }, set: { v in update(name) { $0[keyPath: keyPath] = v } })
-    }
-
-    var playheadDescription: String {
-        switch params.playheadPosition {
-        case ..<0.01: "Left edge"
-        case 0.99...: "Right edge"
-        case 0.49...0.51: "Middle"
-        default: "\(Int((params.playheadPosition * 100).rounded()))% across"
-        }
     }
 
     func color(_ keyPath: WritableKeyPath<GraphParams, RGBAColor>, _ name: String) -> Binding<Color> {

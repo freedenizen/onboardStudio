@@ -62,7 +62,9 @@ struct NumberField: View {
     private func commit() {
         guard pending else { return }
         pending = false
-        value = draft
+        let clamped = range.map { min(max(draft, $0.lowerBound), $0.upperBound) } ?? draft
+        draft = clamped
+        value = clamped
     }
 
     /// Each press is its own edit, from whatever the field shows — typed or not.
@@ -72,6 +74,124 @@ struct NumberField: View {
         pending = false
         draft = clamped
         value = clamped
+    }
+}
+
+/// A slider with a box beside it for the exact value (#266): a slider is quick but imprecise, and
+/// the box takes what the user has in mind — 12 %, 3.5 s, −90° — in the units they think in
+/// (`ValueScale`), held to the slider's range.
+///
+/// The row reads name, slider, box, unit, like the Format inspector in Keynote and Pages. Dragging
+/// is one undo step (#243); typing is one more, on Return or leaving the box, and ↑/↓ in the box
+/// step it as the slider does. `identifier` names the slider for UI tests; the box is
+/// `identifier.value`.
+struct SliderField: View {
+    let title: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let step: Double?
+    let scale: ValueScale
+    let unit: String
+    let minimumLabel: String?
+    let maximumLabel: String?
+    let identifier: String?
+
+    init(
+        _ title: String, value: Binding<Double>, in range: ClosedRange<Double>, step: Double? = nil,
+        scale: ValueScale = .plain(), unit: String = "", minimumLabel: String? = nil,
+        maximumLabel: String? = nil, identifier: String? = nil
+    ) {
+        self.title = title
+        _value = value
+        self.range = range
+        self.step = step
+        self.scale = scale
+        self.unit = unit
+        self.minimumLabel = minimumLabel
+        self.maximumLabel = maximumLabel
+        self.identifier = identifier
+    }
+
+    /// Wide enough for "−180" or "100.0" at the system size; the content fixes it, not taste.
+    static let boxWidth: CGFloat = 56
+
+    var body: some View {
+        // The form puts the name beside the slider when the inspector is wide enough and above
+        // it when not, as Keynote's inspector has it; a hand-built stack instead confused the
+        // contrast audit about the rows around it.
+        LabeledContent(title) {
+            HStack {
+                slider
+                    .labelsHidden()
+                    .frame(minWidth: 120, maxWidth: .infinity)
+                    .accessibilityLabel(title)
+                    .accessibilityValue(spokenValue)
+                    .accessibilityIdentifier(identifier ?? "")
+                NumberField(
+                    title, value: shownValue, fractionDigits: 0...scale.fractionDigits,
+                    step: scale.keyStep(sliderStep: step), range: scale.shown(range)
+                )
+                .labelsHidden()
+                // A grouped form draws its fields borderless, which beside a slider reads as a
+                // label; the border says the value can be typed.
+                .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.trailing)
+                .frame(width: Self.boxWidth)
+                .accessibilityLabel(unit.isEmpty ? title : "\(title) in \(spokenUnit)")
+                .accessibilityIdentifier(identifier.map { "\($0).value" } ?? "")
+                if !unit.isEmpty {
+                    Text(unit).foregroundStyle(.secondary).accessibilityHidden(true)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder var slider: some View {
+        let label = Text(title)
+        switch (step, minimumLabel, maximumLabel) {
+        case (let step?, let low?, let high?):
+            Slider(value: $value, in: range, step: step) {
+                label
+            } minimumValueLabel: {
+                Text(low)
+            } maximumValueLabel: {
+                Text(high)
+            }
+        case (nil, let low?, let high?):
+            Slider(value: $value, in: range) {
+                label
+            } minimumValueLabel: {
+                Text(low)
+            } maximumValueLabel: {
+                Text(high)
+            }
+        case (let step?, _, _):
+            Slider(value: $value, in: range, step: step) { label }
+        default:
+            Slider(value: $value, in: range) { label }
+        }
+    }
+
+    /// The box edits the value as shown; only a commit reaches the project.
+    var shownValue: Binding<Double> {
+        Binding(get: { scale.shown(value) }, set: { value = scale.stored($0, in: range) })
+    }
+
+    var spokenValue: String {
+        let shown = scale.shown(value).formatted(.number.precision(.fractionLength(0...scale.fractionDigits)))
+        return unit.isEmpty ? shown : "\(shown) \(spokenUnit)"
+    }
+
+    /// VoiceOver reads a unit symbol as a symbol ("percent sign"); say it as a word.
+    var spokenUnit: String {
+        switch unit {
+        case "%": "percent"
+        case "°": "degrees"
+        case "s": "seconds"
+        case "×": "times"
+        case "Mbit/s": "megabits per second"
+        default: unit
+        }
     }
 }
 

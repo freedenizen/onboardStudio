@@ -48,7 +48,8 @@ struct GaugeDesignerInspector: View {
                 ColorPicker("Second needle colour", selection: color(\.secondNeedleColor, "Second Needle Colour"))
             }
             if params.style == .arc {
-                PercentSlider("Arc width", value: field(\.arcWidth, "Arc Width"), range: 0.04...0.4)
+                SliderField(
+                    "Arc width", value: field(\.arcWidth, "Arc Width"), in: 0.04...0.4, scale: .percent, unit: "%")
                 ColorPicker("Arc track", selection: color(\.arcTrackColor, "Arc Track Colour"))
             }
             ColorPicker(
@@ -58,34 +59,54 @@ struct GaugeDesignerInspector: View {
         }
         if params.style != .arc {
             Section("Needle") {
-                PercentSlider("Length", value: field(\.needle.length, "Needle Length"), range: 0.2...1)
-                    .help("How far the needle reaches from the centre, as a share of the gauge's radius")
-                PercentSlider("Tail", value: field(\.needle.tailLength, "Needle Tail"), range: 0...0.5)
-                    .help("How far the needle continues back past the centre")
-                PercentSlider("Width", value: field(\.needle.width, "Needle Width"), range: 0.01...0.2)
-                    .help("How wide the needle is where it meets the hub")
-                PercentSlider("Hub", value: field(\.needle.hubRadius, "Hub Size"), range: 0...0.3)
-                    .help("The size of the disc the needle turns on; 0 hides it")
+                SliderField(
+                    "Length", value: field(\.needle.length, "Needle Length"), in: 0.2...1, scale: .percent, unit: "%"
+                )
+                .help("How far the needle reaches from the centre, as a share of the gauge's radius")
+                SliderField(
+                    "Tail", value: field(\.needle.tailLength, "Needle Tail"), in: 0...0.5, scale: .percent, unit: "%"
+                )
+                .help("How far the needle continues back past the centre")
+                SliderField(
+                    "Width", value: field(\.needle.width, "Needle Width"), in: 0.01...0.2, scale: .percent, unit: "%"
+                )
+                .help("How wide the needle is where it meets the hub")
+                SliderField(
+                    "Hub", value: field(\.needle.hubRadius, "Hub Size"), in: 0...0.3, scale: .percent, unit: "%"
+                )
+                .help("The size of the disc the needle turns on; 0 hides it")
                 Toggle("Tapered", isOn: field(\.needle.tapered, "Needle Taper"))
                     .help("Narrow the needle towards its tip")
-                Slider(value: field(\.needle.smoothingSeconds, "Needle Smoothing"), in: 0...2) {
-                    Text(
-                        params.needle.smoothingSeconds == 0
-                            ? "Smoothing off" : "Smoothing \(String(format: "%.1f", params.needle.smoothingSeconds)) s")
-                }
+                SliderField(
+                    "Smoothing", value: field(\.needle.smoothingSeconds, "Needle Smoothing"), in: 0...2,
+                    scale: .plain(fractionDigits: 1), unit: "s"
+                )
+                .help("How long a change takes to show, in seconds; 0 turns smoothing off")
             }
         }
         Section("Ticks & Labels") {
             Toggle("Major ticks", isOn: field(\.ticks.showMajor, "Major Ticks"))
             Toggle("Minor ticks", isOn: field(\.ticks.showMinor, "Minor Ticks"))
             Toggle("Labels", isOn: field(\.ticks.showLabels, "Tick Labels"))
-            PercentSlider("Major length", value: field(\.ticks.majorLength, "Major Tick Length"), range: 0.02...0.4)
-            PercentSlider("Minor length", value: field(\.ticks.minorLength, "Minor Tick Length"), range: 0.01...0.3)
-            PercentSlider("Outer radius", value: field(\.ticks.outerRadius, "Tick Radius"), range: 0.5...1)
-                .help("How far out the ticks reach, as a share of the gauge's radius")
-            PercentSlider("Label radius", value: field(\.ticks.labelRadius, "Label Radius"), range: 0.3...1)
-                .help("How far from the centre the numbers sit")
-            PercentSlider("Label size", value: field(\.ticks.labelScale, "Label Size"), range: 0.05...0.3)
+            SliderField(
+                "Major length", value: field(\.ticks.majorLength, "Major Tick Length"), in: 0.02...0.4,
+                scale: .percent, unit: "%")
+            SliderField(
+                "Minor length", value: field(\.ticks.minorLength, "Minor Tick Length"), in: 0.01...0.3,
+                scale: .percent, unit: "%")
+            SliderField(
+                "Outer radius", value: field(\.ticks.outerRadius, "Tick Radius"), in: 0.5...1, scale: .percent,
+                unit: "%"
+            )
+            .help("How far out the ticks reach, as a share of the gauge's radius")
+            SliderField(
+                "Label radius", value: field(\.ticks.labelRadius, "Label Radius"), in: 0.3...1, scale: .percent,
+                unit: "%"
+            )
+            .help("How far from the centre the numbers sit")
+            SliderField(
+                "Label size", value: field(\.ticks.labelScale, "Label Size"), in: 0.05...0.3, scale: .percent,
+                unit: "%")
             Stepper(
                 "Label decimals: \(params.ticks.labelDecimals)", value: field(\.ticks.labelDecimals, "Label Decimals"),
                 in: 0...3)
