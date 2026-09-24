@@ -21,11 +21,7 @@ extension GoProTelemetry {
         let lens = lens(from: settings)
         result.focalLength = lens.focalLength
         result.stabilisedInCamera = lens.stabilised
-        // The samples trail the frames they describe by two frames (measured on a HERO13, #262).
-        if track.count > 1, let first = result.times.first, let last = result.times.last, result.times.count > 1 {
-            result.lag = 2 * (last - first) / Double(result.times.count - 1)
-        }
-        return result
+        return result.onFrameTimes()
     }
 
     /// What a recording's settings (`moov/udta/GPMF`) say about the picture: the lens's
@@ -74,5 +70,23 @@ extension GoProTelemetry {
         }
         guard !times.isEmpty else { return nil }
         return CameraOrientationTrack(times: times, camera: camera, image: image)
+    }
+}
+
+extension CameraOrientationTrack {
+    /// The track with sample `k` at the time of frame `k` of its own file.
+    ///
+    /// GoPro writes exactly one CORI sample per frame (92,160 for the 92,160 frames of a 12:48 HERO13
+    /// file), but their `STMP` times count from the start of the *recording*: the second chapter's
+    /// samples start at 768.8 s although its frames start at 0. Frame numbers are the one clock both
+    /// share. Measured against them the samples line up with their frames to within a third of a
+    /// frame, so no lag is kept.
+    func onFrameTimes() -> CameraOrientationTrack {
+        guard times.count > 1, let first = times.first, let last = times.last, last > first else { return self }
+        let frame = (last - first) / Double(times.count - 1)
+        var result = self
+        result.times = times.indices.map { Double($0) * frame }
+        result.lag = 0
+        return result
     }
 }

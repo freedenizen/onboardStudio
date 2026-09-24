@@ -63,14 +63,28 @@ struct OrientationTests {
         defer { try? FileManager.default.removeItem(at: url) }
         let track = try #require(try GoProTelemetry.orientation(of: url))
         #expect(track.times.count == 20 && track.camera.count == 20 && track.image.count == 20)
+        // One sample per frame, on the frames' own clock: starting at 0 whatever `STMP` said.
+        #expect(track.times[0] == 0)
         #expect(abs(track.times[1] - track.times[0] - 0.1) < 1e-6)
         #expect(abs(track.camera[10].angle - 0.1) < 1e-3)  // 10 frames of 0.01 rad
         #expect(track.image.allSatisfy { $0.angle < 1e-3 })
         // POLY's centre slope × ZMPL across half the frame height, in picture heights per radian.
         #expect(abs((track.focalLength ?? 0) - 1.9775 * 0.7525 / 2) < 1e-3)
         #expect(!track.stabilisedInCamera)
-        // Two frames: the samples trail the picture by two frames on a HERO13.
-        #expect(abs(track.lag - 0.2) < 1e-6)
+        #expect(track.lag == 0)
+    }
+
+    @Test func aLaterChaptersSamplesStartAtItsOwnFirstFrame() throws {
+        // A second chapter: `STMP` counts from the start of the recording, 768 s before this file began.
+        let chapter = try GPMFFixture.write(
+            GPMFFixture.mp4(payloads: [
+                GPMFFixture.payload(streams: [Self.quaternionStream("CORI", Self.turning(10), startMicros: 768_782_000)]
+                )
+            ]))
+        defer { try? FileManager.default.removeItem(at: chapter) }
+        let track = try #require(try GoProTelemetry.orientation(of: chapter))
+        #expect(track.times.first == 0)
+        #expect((track.times.last ?? 0) < 1)
     }
 
     @Test func hyperSmoothIsRecognisedAndAFileWithoutOrientationHasNone() throws {

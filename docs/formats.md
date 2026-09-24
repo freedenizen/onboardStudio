@@ -206,8 +206,10 @@ takes `EISE` (HyperSmooth on or off) and the lens's magnification at the centre:
 angle-to-radius slope × `ZMPL` across half the frame height (0.744 frame heights per radian on a
 HERO13's Large FOV, within 10 % of what the picture's own motion measures). Measured on a HERO13,
 the turn between two frames' orientations `a` and `b` in the camera's frame is `a · b⁻¹`; its x
-component moves the recorded picture up and down, y left and right, z rolls it; and the samples
-trail the frames they describe by two frames.
+component moves the recorded picture up and down, y left and right, z rolls it. There is one
+sample per frame, and sample *k* is taken as frame *k*'s: their `STMP` times count from the start of
+the recording (a second chapter's begin at 768.8 s although its frames begin at 0), and measured
+against the frames themselves the samples fall within a third of a frame of their own.
 
 Times are seconds from the start of the video, so a data input made from the video itself needs
 no sync (the app's **Use Embedded GPS** button creates one with the video's sync). The first GPS

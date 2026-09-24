@@ -73,7 +73,7 @@ public struct CameraOrientationTrack: Sendable, Equatable {
     /// Whether the camera stabilised the picture itself while recording (HyperSmooth).
     public var stabilisedInCamera: Bool
     /// Seconds from the orientation samples to the frames they describe; positive when the samples
-    /// come later. Measured at two frames on a HERO13 (#262).
+    /// come later. GoPro's are on their frames' own times (`onFrameTimes`), so 0.
     public var lag: Double
 
     public init(
