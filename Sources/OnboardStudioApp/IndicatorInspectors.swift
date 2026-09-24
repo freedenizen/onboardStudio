@@ -92,7 +92,9 @@ struct LapPanelInspector: View {
         }
         Section("Deltas") {
             Picker("Compare with", selection: field(\.reference, "Compare With")) {
-                ForEach(LapReference.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                ForEach(LapReference.allCases.filter { $0 != .comparedLap }, id: \.self) {
+                    Text($0.displayName).tag($0)
+                }
             }
             Toggle("Speed lane", isOn: field(\.showSpeedDelta, "Speed Lane"))
             if params.showSpeedDelta {

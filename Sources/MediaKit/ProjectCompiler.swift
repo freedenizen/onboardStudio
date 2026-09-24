@@ -190,6 +190,8 @@ public enum ProjectCompiler {
         if old.settings.withoutFraming != new.settings.withoutFraming || old.inputs.count != new.inputs.count {
             return true
         }
+        // The compared lap's picture is a track cut to the laps compared (#154).
+        if old.lapComparison != new.lapComparison { return true }
         for (a, b) in zip(old.inputs, new.inputs) {
             if a.id != b.id || a.source != b.source || a.sync != b.sync { return true }
             switch (a.kind, b.kind) {
@@ -218,17 +220,19 @@ public enum ProjectCompiler {
         return compiled.replacingPlans(
             timedPlans(
                 for: loaded, trackIDs: trackIDs, sourceTransforms: { compiled.sourceTransforms(at: $0) },
-                orientationChanges: compiled.orientationChangeTimes, duration: compiled.duration))
+                orientationChanges: compiled.orientationChangeTimes, duration: compiled.duration,
+                comparedTrackID: compiled.comparedTrackID))
     }
 
     /// One plan per timeline cut point, with the objects resolved for that segment.
     static func timedPlans(
         for loaded: LoadedProject, trackIDs: [InputID: Int32],
         sourceTransforms: @escaping (Double) -> [Int32: CGAffineTransform], orientationChanges: [Double] = [],
-        duration: Double
+        duration: Double, comparedTrackID: Int32? = nil
     ) -> [TimedPlan] {
         let project = loaded.project
         let cache = RenderCache()
+        let lapComparison = LapTimeWarp(project.lapComparison, project: project, sessions: loaded.sessions)
         // A plan per timeline cut and per orientation change (a chapter shot the other way up).
         let cuts = Set(project.timeline.cutPoints(duration: duration) + orientationChanges.filter { $0 < duration })
         return cuts.sorted().map { start in
@@ -246,9 +250,11 @@ public enum ProjectCompiler {
                 // #89's global level, read here for the same reason, so the planner stays a pure
                 // function of what it is given.
                 globalAttributeMappings: AttributeMappingTable(
-                    json: UserDefaults.standard.value(for: Preferences.attributeMappings)))
+                    json: UserDefaults.standard.value(for: Preferences.attributeMappings)),
+                lapComparison: lapComparison)
             let layers = RenderPlanner.videoLayers(
-                for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms)
+                for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms,
+                comparedTrackID: comparedTrackID)
             let plan = RenderPlan(
                 outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
                 frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays,
@@ -277,7 +283,7 @@ public enum ProjectCompiler {
             specInputIDs.append(input.id)
         }
         guard !specs.isEmpty else { throw LoadError.noPlayableVideo }
-        let compiled = try await CompositionBuilder.build(
+        var compiled = try await CompositionBuilder.build(
             videos: specs, overlays: [], outputWidth: project.settings.outputWidth,
             outputHeight: project.settings.outputHeight, frameRate: project.settings.frameRate,
             duration: project.settings.duration)
@@ -286,10 +292,21 @@ public enum ProjectCompiler {
         for (index, inputID) in specInputIDs.enumerated() where index < compiled.trackIDs.count {
             trackIDs[inputID] = compiled.trackIDs[index]
         }
-        return compiled.replacingPlans(
+        // The compared lap's picture, retimed to stay level with the lap playing (#154).
+        if let settings = project.lapComparison,
+            let warp = LapTimeWarp(settings, project: project, sessions: loaded.sessions),
+            let index = specInputIDs.firstIndex(of: settings.comparedLap.videoInputID)
+        {
+            let layer = try await CompositionBuilder.insertWarped(
+                specs[index], warp: warp, duration: compiled.duration, into: compiled.composition)
+            compiled = compiled.addingComparedTrack(layer)
+        }
+        let result = compiled
+        return result.replacingPlans(
             timedPlans(
-                for: loaded, trackIDs: trackIDs, sourceTransforms: { compiled.sourceTransforms(at: $0) },
-                orientationChanges: compiled.orientationChangeTimes, duration: compiled.duration))
+                for: loaded, trackIDs: trackIDs, sourceTransforms: { result.sourceTransforms(at: $0) },
+                orientationChanges: result.orientationChangeTimes, duration: result.duration,
+                comparedTrackID: result.comparedTrackID))
     }
 }
 

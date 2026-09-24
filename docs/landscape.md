@@ -97,7 +97,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Common (needs CAN/OBD) | Gear indicator | Yes |
 | Common (needs CAN/OBD) | Throttle / brake bars | Yes, Bar object with segments and zones |
 | Moderate | 2D data graphs | Yes — time, distance, lap or another channel (X-Y) axis, multi-series, best-lap ghost, and what is coming as well as what has been (#156) |
-| Moderate | Lap / run comparison | Partial — ghost trace on the graph; no side-by-side video (#154) |
+| Moderate | Lap / run comparison | Yes — two laps' video side by side or stacked, the second retimed to stay level by distance, from one session or two, with the delta between; plus the ghost trace on the graph (#154) |
 | Moderate | Picture-in-picture / multi-camera | Yes, with layout presets and segment-based switching |
 | Niche | Shift lights | Covered by Indicator lights and segmented Bars |
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
@@ -122,6 +122,9 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
    places is saved as a track definition for next time (v0.21.0).
 5. **Batch export, one file per lap** — *Every lap, one file each* in the Export sheet and
    `onboard render --laps each` (#150, v0.25.0).
+6. **Lap-vs-lap video comparison** — Project ▸ Compare Laps: two laps' pictures side by side, the
+   compared one retimed by the fraction of the lap so corners arrive together, across sessions too
+   (#154, v0.26.0).
 7. **Projected lap time** — the Timer's *Projected lap* and the `projectedLap` channel: the compared
    lap's time plus the position-based delta (#155, v0.26.0).
 8. **Social export: stat cards and clip extraction** — the Stat Card object, the Social (9:16)
@@ -131,7 +134,7 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 
 **Filed**
 
-6. **Lap-vs-lap video comparison** — #154, v0.26.0 *Analysis*.
+Nothing: every filed item has shipped.
 
 **Not filed**
 

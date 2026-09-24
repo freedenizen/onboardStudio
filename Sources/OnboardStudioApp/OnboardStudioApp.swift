@@ -210,6 +210,13 @@ struct EditorCommands: Commands {
             Button("Export Lap as Vertical Clip…") { editor?.requestLapClip() }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
+            Divider()
+            // Two laps side by side, kept level by distance (#154).
+            Button("Compare Laps…") { editor?.showCompareLaps = true }
+                .disabled(editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
+            Button("Stop Comparing Laps") { editor?.stopComparingLaps() }
+                .disabled(editor?.project.lapComparison == nil)
+            Divider()
             Button("Upload Video to YouTube…") {
                 if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
             }

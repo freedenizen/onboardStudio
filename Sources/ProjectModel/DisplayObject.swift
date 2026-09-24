@@ -337,6 +337,11 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
     public var isLocked: Bool
     /// The group it moves, resizes and nudges with, or `nil` on its own (#90).
     public var groupID: ObjectGroupID?
+    /// Shows the compared lap of the project's lap comparison rather than the lap playing (#154):
+    /// a video object draws the compared lap's picture, kept level by distance; a data object
+    /// reads the compared lap's data at the same point round the lap. Ignored when the project is
+    /// not comparing laps.
+    public var followsComparedLap: Bool
 
     public init(
         id: DisplayObjectID = DisplayObjectID(),
@@ -350,7 +355,8 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
         typeface: Typeface? = nil,
         textScale: Double? = nil,
         isLocked: Bool = false,
-        groupID: ObjectGroupID? = nil
+        groupID: ObjectGroupID? = nil,
+        followsComparedLap: Bool = false
     ) {
         self.id = id
         self.label = label
@@ -364,10 +370,12 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
         self.textScale = textScale
         self.isLocked = isLocked
         self.groupID = groupID
+        self.followsComparedLap = followsComparedLap
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, label, inputID, frame, opacity, isVisible, kind, displayUnit, typeface, textScale, isLocked, groupID
+        case followsComparedLap
     }
 
     public init(from decoder: any Decoder) throws {
@@ -385,5 +393,7 @@ public struct DisplayObject: Identifiable, Hashable, Codable, Sendable {
         // Absent before objects could be locked or grouped, which is what every such object was.
         isLocked = try c.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
         groupID = try c.decodeIfPresent(ObjectGroupID.self, forKey: .groupID)
+        // Absent before laps could be compared, when every object showed the lap playing.
+        followsComparedLap = try c.decodeIfPresent(Bool.self, forKey: .followsComparedLap) ?? false
     }
 }

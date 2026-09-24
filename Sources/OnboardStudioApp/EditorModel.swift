@@ -34,6 +34,8 @@ final class EditorModel {
     /// A lap or range to export as a phone clip; the sheet is open while this is set (#151).
     var clipRequest: ClipRequest?
     var showSaveTemplate = false
+    /// Project ▸ Compare Laps… is open (#154).
+    var showCompareLaps = false
     /// A scratch range marked with I and O (#230): shown on the ruler and offered by the export
     /// sheet. Not saved with the project, as a selection is not.
     var markIn: Double?
@@ -122,18 +124,6 @@ final class EditorModel {
     func edit(_ name: String, _ change: (inout Project) -> Void) {
         document.apply(undoManager, name: name, change)
         syncFromDocument()
-    }
-
-    func addVideo() {
-        let urls = OpenPanels.chooseVideos(
-            title: "Add Video", message: "Chapters of one recording are joined into one video.")
-        guard !urls.isEmpty else { return }
-        addVideos(at: urls)
-    }
-
-    func addData() {
-        guard let url = OpenPanels.chooseData() else { return }
-        addData(at: url)
     }
 
     /// A data input added by the user that should be synced from timestamps once it has loaded.
@@ -362,5 +352,20 @@ final class EditorModel {
                 scheduleCompile()
             }
         }
+    }
+}
+
+// Kept out of the class body, which SwiftLint holds to 250 lines.
+extension EditorModel {
+    func addVideo() {
+        let urls = OpenPanels.chooseVideos(
+            title: "Add Video", message: "Chapters of one recording are joined into one video.")
+        guard !urls.isEmpty else { return }
+        addVideos(at: urls)
+    }
+
+    func addData() {
+        guard let url = OpenPanels.chooseData() else { return }
+        addData(at: url)
     }
 }

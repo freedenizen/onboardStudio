@@ -25,11 +25,17 @@ public struct ObjectContext: Sendable {
     public let typeface: Typeface?
     /// How much larger than it lays it out this object draws its text (#118).
     public let textScale: Double
+    /// The project's lap comparison, when it has one (#154): every object can measure against the
+    /// compared lap, and one that follows it reads its data through the warp.
+    public let lapComparison: LapTimeWarp?
+    /// Reads the compared lap's data, at the same point round the lap, instead of the lap playing.
+    public let followsComparedLap: Bool
 
     public init(
         objectID: DisplayObjectID, frame: UnitRect, opacity: Double, sampler: TelemetrySampler?, sync: SyncSettings,
         cache: RenderCache, speedUnit: SpeedDisplayUnit = UnitResolver.lastResort,
-        units: DisplayUnits? = nil, typeface: Typeface? = nil, textScale: Double = 1
+        units: DisplayUnits? = nil, typeface: Typeface? = nil, textScale: Double = 1,
+        lapComparison: LapTimeWarp? = nil, followsComparedLap: Bool = false
     ) {
         self.objectID = objectID
         self.frame = frame
@@ -43,6 +49,8 @@ public struct ObjectContext: Sendable {
         self.units = units ?? DisplayUnits(speed: speedUnit)
         self.typeface = typeface
         self.textScale = textScale
+        self.lapComparison = lapComparison
+        self.followsComparedLap = followsComparedLap && lapComparison != nil
     }
 
     /// `style` in this object's chosen font and text size. Every renderer passes its text styles
@@ -62,10 +70,22 @@ public struct ObjectContext: Sendable {
 
     /// Telemetry at project `time`, mapped through the input's sync settings.
     public func sample(at time: Double) -> TelemetrySample? {
-        sampler?.sample(at: sync.inputTime(forProjectTime: time))
+        sampler?.sample(at: inputTime(time))
     }
 
-    public func inputTime(_ projectTime: Double) -> Double { sync.inputTime(forProjectTime: projectTime) }
+    /// The time in this object's data file for project `projectTime` — the compared lap's moment
+    /// at the same point round the lap, for an object that follows it.
+    public func inputTime(_ projectTime: Double) -> Double {
+        let time = followsComparedLap ? (lapComparison?.comparedTime(at: projectTime) ?? projectTime) : projectTime
+        return sync.inputTime(forProjectTime: time)
+    }
+
+    /// Seconds behind (+) or ahead of (−) the other lap of the comparison at the same point round
+    /// the lap, seen from the lap this object shows; `nil` without a comparison or outside the lap.
+    public func deltaToComparedLap(at projectTime: Double) -> Double? {
+        guard let delta = lapComparison?.delta(at: projectTime) else { return nil }
+        return followsComparedLap ? -delta : delta
+    }
 
     /// Cache key prefix unique to this object at this size.
     /// The font is part of it: a cached gauge face has its labels drawn into it.

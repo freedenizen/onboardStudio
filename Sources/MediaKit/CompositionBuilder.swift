@@ -80,11 +80,14 @@ public struct CompiledComposition {
     /// Orientation changes inside a clip sequence, per track, in project time (empty when a track
     /// keeps one orientation throughout).
     public let orientationSpans: [Int32: [OrientationSpan]]
+    /// The compared lap's retimed picture, when the project compares laps (#154). Not one of
+    /// `trackIDs`, which are one per video input in order.
+    public let comparedTrackID: Int32?
 
     public init(
         composition: AVMutableComposition, videoComposition: AVMutableVideoComposition, audioMix: AVMutableAudioMix?,
         plans: [TimedPlan], duration: Double, trackIDs: [Int32], sourceTransforms: [Int32: CGAffineTransform]? = nil,
-        orientationSpans: [Int32: [OrientationSpan]] = [:]
+        orientationSpans: [Int32: [OrientationSpan]] = [:], comparedTrackID: Int32? = nil
     ) {
         precondition(!plans.isEmpty, "a composition needs at least one plan")
         self.composition = composition
@@ -100,6 +103,20 @@ public struct CompiledComposition {
                 plans.flatMap { $0.plan.videoLayers.map { ($0.trackID, $0.sourceTransform) } },
                 uniquingKeysWith: { first, _ in first })
         self.orientationSpans = orientationSpans
+        self.comparedTrackID = comparedTrackID
+    }
+
+    /// Every track an instruction must require: each input's, and the compared lap's.
+    var requiredTrackIDs: [Int32] { trackIDs + (comparedTrackID.map { [$0] } ?? []) }
+
+    /// A copy that knows about the compared lap's track, already added to `composition` (#154).
+    func addingComparedTrack(_ layer: VideoLayer) -> CompiledComposition {
+        var transforms = sourceTransforms
+        transforms[layer.trackID] = layer.sourceTransform
+        return CompiledComposition(
+            composition: composition, videoComposition: videoComposition, audioMix: audioMix, plans: plans,
+            duration: duration, trackIDs: trackIDs, sourceTransforms: transforms, orientationSpans: orientationSpans,
+            comparedTrackID: layer.trackID)
     }
 
     public init(
@@ -138,11 +155,11 @@ public struct CompiledComposition {
         newVideoComposition.renderSize = first.outputSize
         newVideoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(first.frameRate.rounded()))
         newVideoComposition.instructions = CompositionBuilder.instructions(
-            for: sorted, duration: duration, trackIDs: trackIDs)
+            for: sorted, duration: duration, trackIDs: requiredTrackIDs)
         return CompiledComposition(
             composition: composition, videoComposition: newVideoComposition, audioMix: audioMix, plans: sorted,
             duration: duration, trackIDs: trackIDs, sourceTransforms: sourceTransforms,
-            orientationSpans: orientationSpans)
+            orientationSpans: orientationSpans, comparedTrackID: comparedTrackID)
     }
 
     /// The source transform of each track at project `time`.
