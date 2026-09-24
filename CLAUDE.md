@@ -29,7 +29,8 @@ swift run onboard bench --export --codec hevc --seconds 60
 - `Scripts/bundle-app.sh` → `dist/OnboardStudio.app`; `Scripts/make-dmg.sh` → the DMG.
 - `Scripts/ui-tests.sh [Class[/test]]` — XCUITest journeys. See `.claude/rules/uitests.md`.
 - Media tests use `ffprobe` and skip when it isn't installed.
-- Set `ONBOARD_SAMPLES_DIR=~/OverlayGenSamples` to run the real-clip tests.
+- Set `ONBOARD_SAMPLES_DIR=~/OverlayGenSamples` to run the real-clip tests, and
+  `ONBOARD_GYROFLOW_CLIP=<short GoPro clip>` (with Gyroflow installed) for the real Gyroflow render.
 
 ## Repo etiquette
 

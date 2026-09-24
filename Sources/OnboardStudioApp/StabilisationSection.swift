@@ -85,7 +85,11 @@ struct StabilisationSection: View {
             ProgressView(value: job.progress) { Text("Stabilising with Gyroflow…") }
                 .accessibilityIdentifier("stabilisation.gyroflowProgress")
             Button("Cancel") { jobs.cancel(input.id) }
-        } else if gyroflowInstalled {
+        } else if !gyroflowInstalled {
+            Button("How to Install Gyroflow") { HelpLinks.open(.userGuide, section: "with-gyroflow") }
+                .help("Open the user guide at the steps for installing Gyroflow")
+                .accessibilityIdentifier("stabilisation.gyroflowHelp")
+        } else {
             Button(copiesReady ? "Stabilise Again" : "Stabilise with Gyroflow") { jobs.stabilise(input, in: editor) }
                 .help("Make a steadied copy of this video with Gyroflow; the recording itself is not changed")
                 .accessibilityIdentifier("stabilisation.gyroflowStart")
@@ -99,7 +103,7 @@ struct StabilisationSection: View {
         if settings.stabilisation.method == .gyroflow {
             if !gyroflowInstalled {
                 return "Gyroflow is not installed. It is free: install it with “brew install --cask gyroflow” in "
-                    + "Terminal, or from gyroflow.xyz, then choose Stabilise with Gyroflow. See the user guide."
+                    + "Terminal, or from gyroflow.xyz, and open it once."
             }
             if copiesReady {
                 return "Showing Gyroflow's steadied copy. Sync, GPS and telemetry still come from the recording."

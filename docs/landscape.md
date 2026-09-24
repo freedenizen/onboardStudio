@@ -103,6 +103,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
 | Niche | Theoretical / optimal lap | Yes — *Optimal* on the Sector Times panel, and in the data inspector |
+| Emerging | Video stabilisation of helmet or chest footage | Yes — from GoPro's motion data, from the picture's own movement, or with a user-installed Gyroflow, keeping telemetry and sync (#140) |
 | Emerging | Vertical / social export with stat cards | Yes — a Stat Card object, a Social (9:16) template, and one lap or marker exported as a vertical clip in one action (#151) |
 
 ## Candidate work
@@ -153,8 +154,9 @@ Recorded so it stops being re-proposed.
 - **Cloud and sharing** — accounts, cloud project sync, a shared template gallery. Implies a
   backend and ongoing cost.
 
-In scope but not started: **telemetry analysis** (lap comparison, sector analysis, channel maths
-for their own sake, not only as overlay) and **social / vertical export**.
+Lap comparison (v0.26.0) and social / vertical export (v0.25.0) have shipped. Still in scope but
+not started: **telemetry analysis for its own sake** — sector analysis and channel maths as a
+study tool rather than as overlay.
 
 ## Unverified
 
