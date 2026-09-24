@@ -449,6 +449,14 @@ Presets cover 720p to 4K and vertical video; codecs are H.264, HEVC, HEVC with a
 the video, a key colour or transparent; *Range* exports the whole project, a time span or a range
 of laps. *360°* tags a full equirectangular frame as spherical video.
 
+**Every lap, one file each** (in *Range*) writes each lap as its own video, into a folder you
+choose, named for the project and the lap: `Sonoma – Lap 7.mp4`. *Complete laps only* (on at first)
+leaves out the out-lap and the in-lap, which begin or end in the pits rather than at the line;
+*Skip slow laps* leaves out cool-down and traffic laps, those slower than your best by more than the
+percentage you set. The sheet says which files it will write before you start, and one progress bar
+covers them all. From the command line: `onboard render --project X --laps each --out <folder>`,
+with `--include-partial-laps` and `--skip-slower-than 10`.
+
 **Upload to YouTube** signs in with a short code and uploads with automatic resume; it needs a
 one-time Google API setup described in [youtube.md](youtube.md).
 

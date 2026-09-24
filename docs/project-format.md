@@ -265,7 +265,7 @@ swift run onboard render --project Tests/Fixtures/slice.onboardproj --out slice.
 | `audioBitrate` (null = no audio), `audioSampleRate`, `audioChannels` | AAC audio |
 | `background` | `{ "video": {} }` (normal), `{ "keyColor": { "_0": "#0000FF" } }` (overlays over a flat colour, no video) or `{ "transparent": {} }` (overlays over alpha; needs an alpha codec) |
 | `spherical` | `true` tags the file as a 360° equirectangular video (Google Spherical Video V1 `uuid` box in the video track, written after encoding) so players and YouTube show a panorama; use with a full equirectangular frame and the lens unwrap off |
-| `range` | `{ "whole": {} }`, `{ "span": { "start": 90, "end": 240 } }` (project seconds) or `{ "laps": { "first": 2, "last": 4 } }` (lap numbers of the first data input with laps, mapped through its sync) |
+| `range` | `{ "whole": {} }`, `{ "span": { "start": 90, "end": 240 } }` (project seconds) or `{ "laps": { "first": 2, "last": 4 } }` (lap numbers of the first data input with laps, mapped through its sync), or `{ "eachLap": { "completeOnly": true, "slowerThanBest": 0.1 } }` for one file per lap (#150; `slowerThanBest` absent = keep every lap, 0.1 = leave out laps more than 10 % slower than the best complete lap) |
 
 Presets (`--preset` on the CLI, the Preset menu in the app): `720p`, `1080p`, `1440p`, `4k`, `vertical` (1080 × 1920),
 `overlay-alpha` (transparent ProRes 4444) and `overlay-key` (blue key, H.264). The CLI also takes

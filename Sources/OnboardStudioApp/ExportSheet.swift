@@ -19,6 +19,11 @@ struct ExportSheet: View {
     @State private var exportTask: Task<Void, Never>?
     @State private var finishedURL: URL?
     @State private var failure: String?
+    /// Every-lap export (#150): which laps, and which lap of how many is being written.
+    @State private var completeLapsOnly = true
+    @State private var skipSlowLaps = false
+    @State private var slowLapPercent = 10
+    @State private var batchLabel: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -100,7 +105,9 @@ struct ExportSheet: View {
                             .tag("inout")
                         }
                         Text("Laps").tag("laps").disabled(lapCount == 0)
+                        Text("Every lap, one file each").tag("eachLap").disabled(lapCount == 0)
                     }
+                    if rangeMode == "eachLap" { eachLapOptions }
                     if rangeMode == "span" {
                         HStack {
                             TextField("From (s)", value: $spanStart, format: .number.precision(.fractionLength(0...2)))
@@ -131,7 +138,7 @@ struct ExportSheet: View {
                 ProgressView(value: progress.fraction) {
                     Text(
                         finishedURL == nil
-                            ? "Exporting… \(progress.framesWritten) frames"
+                            ? batchLabel ?? "Exporting… \(progress.framesWritten) frames"
                             : "Done: \(finishedURL?.lastPathComponent ?? "")")
                 }
             }
@@ -146,9 +153,11 @@ struct ExportSheet: View {
                     if let finishedURL {
                         Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([finishedURL]) }
                             .accessibilityIdentifier("export.reveal")
-                        Button("Upload to YouTube…") {
-                            dismiss()
-                            editor.uploadURL = finishedURL
+                        if !finishedURL.hasDirectoryPath {
+                            Button("Upload to YouTube…") {
+                                dismiss()
+                                editor.uploadURL = finishedURL
+                            }
                         }
                     }
                     Button("Export…") { start() }.keyboardShortcut(.defaultAction).accessibilityIdentifier(
@@ -184,6 +193,11 @@ struct ExportSheet: View {
             rangeMode = "laps"
             firstLap = f
             lastLap = l
+        case .eachLap(let completeOnly, let slowerThanBest):
+            rangeMode = "eachLap"
+            completeLapsOnly = completeOnly
+            skipSlowLaps = slowerThanBest != nil
+            if let slowerThanBest { slowLapPercent = Int((slowerThanBest * 100).rounded()) }
         }
         if spanEnd == 0 { spanEnd = editor.duration }
         // A range marked with I and O is what the user means to export, as in any editor (#230).
@@ -267,6 +281,9 @@ extension ExportSheet {
         case "inout":
             if let range = editor.inOutRange { s.range = .span(start: range.lowerBound, end: range.upperBound) }
         case "laps": s.range = .laps(first: firstLap, last: lastLap)
+        case "eachLap":
+            s.range = .eachLap(
+                completeOnly: completeLapsOnly, slowerThanBest: skipSlowLaps ? Double(slowLapPercent) / 100 : nil)
         default: s.range = .whole
         }
         s.width -= s.width % 2
@@ -280,6 +297,7 @@ extension ExportSheet {
     }
 
     func start() {
+        if rangeMode == "eachLap" { return startEachLap() }
         let settings = finalSettings
         let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
         guard
@@ -313,6 +331,86 @@ extension ExportSheet {
             } catch {
                 failure = "\(error)"
                 progress = nil
+            }
+            exportTask = nil
+        }
+    }
+}
+
+// MARK: - Every lap (#150)
+
+extension ExportSheet {
+    /// The laps the current options keep, as the files they will become.
+    var lapExports: [LapExport] {
+        guard let loaded = editor.loaded else { return [] }
+        return ProjectCompiler.lapExports(finalSettings.range, in: loaded, duration: editor.duration)
+    }
+
+    @ViewBuilder var eachLapOptions: some View {
+        Toggle("Complete laps only", isOn: $completeLapsOnly)
+            .accessibilityIdentifier("export.completeLapsOnly")
+            .help("Leave out the out-lap and the in-lap, which do not start or end at the line")
+        Toggle("Skip slow laps", isOn: $skipSlowLaps)
+            .accessibilityIdentifier("export.skipSlowLaps")
+            .help("Leave out cool-down and traffic laps: those slower than the best lap by more than this")
+        if skipSlowLaps {
+            Stepper("Slower than the best by more than \(slowLapPercent) %", value: $slowLapPercent, in: 1...50)
+        }
+        let laps = lapExports
+        Text(
+            laps.isEmpty
+                ? "No laps match; nothing would be written."
+                : "Writes \(laps.count) \(laps.count == 1 ? "file" : "files"): "
+                    + laps.map { "Lap \($0.lap)" }.joined(separator: ", ") + "."
+        )
+        .font(.caption).foregroundStyle(.secondary)
+        .accessibilityIdentifier("export.lapFiles")
+    }
+
+    /// Writes one file per kept lap into a folder the user chooses, one after another, under one
+    /// progress bar.
+    func startEachLap() {
+        let settings = finalSettings
+        let laps = lapExports
+        guard let loaded = editor.loaded else {
+            failure = "The project has not finished loading."
+            return
+        }
+        guard !laps.isEmpty else {
+            failure = "No laps match, so there is nothing to export."
+            return
+        }
+        guard let folder = OpenPanels.chooseExportFolder() else { return }
+        let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
+        failure = nil
+        finishedURL = nil
+        progress = ExportProgress(fraction: 0, framesWritten: 0, currentTime: 0)
+        editor.edit("Change Export Settings") { $0.export = settings }
+        exportTask = Task {
+            do {
+                let compiled = ProjectCompiler.prepareForExport(
+                    try await ProjectCompiler.compile(loaded), settings: settings)
+                for (index, lap) in laps.enumerated() {
+                    batchLabel = "Exporting Lap \(lap.lap) — \(index + 1) of \(laps.count)"
+                    let url = folder.appending(path: lap.fileName(base: base, fileExtension: settings.fileExtension))
+                    for try await update in Exporter.export(compiled, settings: settings, range: lap.range, to: url) {
+                        progress = ExportProgress(
+                            fraction: (Double(index) + update.fraction) / Double(laps.count),
+                            framesWritten: update.framesWritten, currentTime: update.currentTime)
+                    }
+                }
+                batchLabel = nil
+                finishedURL = folder
+                let count = laps.count == 1 ? "1 lap" : "\(laps.count) laps"
+                editor.statusMessage = "Exported \(count) to \(folder.lastPathComponent)."
+            } catch is CancellationError {
+                failure = "Export cancelled. The laps already written are kept."
+                progress = nil
+                batchLabel = nil
+            } catch {
+                failure = "\(error)"
+                progress = nil
+                batchLabel = nil
             }
             exportTask = nil
         }

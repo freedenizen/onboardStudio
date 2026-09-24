@@ -83,7 +83,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | H.264 / HEVC MP4 up to 4K, size presets, fps, bitrates, audio settings | ✅ | Plus ProRes 4444 and HEVC-with-alpha overlay-only exports |
-| Range: whole / time span / laps | ✅ | |
+| Range: whole / time span / laps | ✅ | Plus *Every lap, one file each* (not in RaceRender): a folder of one video per lap, out/in and slow laps optional |
 | 360° spherical metadata | ✅ | |
 | YouTube upload | ✅ | Device-code sign-in, resumable upload (needs the user's own OAuth client) |
 | Templates, object style import/export | ✅ | `.onboardtemplate`, `.onboardstyle`; your own templates in the welcome window with pictures, renamed, duplicated, shared and deleted from a right-click |
