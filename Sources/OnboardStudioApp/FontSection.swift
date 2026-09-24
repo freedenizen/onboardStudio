@@ -50,8 +50,9 @@ struct FontSection: View {
                 }
             }
             if let textScale {
-                PercentSlider("Text size", value: textScale, range: TextScale.range)
-                    .accessibilityIdentifier("\(identifier).size")
+                SliderField(
+                    "Text size", value: textScale, in: TextScale.range, scale: .percent, unit: "%",
+                    identifier: "\(identifier).size")
             }
             if let caption {
                 Text(caption).font(.caption).foregroundStyle(.secondary)

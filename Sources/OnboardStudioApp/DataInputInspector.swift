@@ -39,11 +39,11 @@ struct DataInputInspector: View {
                 Text("25 Hz").tag(25.0)
                 Text("50 Hz").tag(50.0)
             }
-            Slider(value: field(\.smoothingSeconds, name: "Change Smoothing"), in: 0...3, step: 0.1) {
-                Text(
-                    settings.smoothingSeconds == 0
-                        ? "Smoothing off" : "Smoothing \(String(format: "%.1f", settings.smoothingSeconds)) s")
-            }
+            SliderField(
+                "Smoothing", value: field(\.smoothingSeconds, name: "Change Smoothing"), in: 0...3, step: 0.1,
+                scale: .plain(fractionDigits: 1), unit: "s"
+            )
+            .help("How long a change takes to show, in seconds; 0 turns smoothing off")
         }
         Section("Trim") {
             // In the file's own seconds, like a video's trim. Applied before laps are detected,

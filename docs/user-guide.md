@@ -287,13 +287,19 @@ Wherever the inspector asks for a channel it lists the file's channels by the at
 where it came from: `analog_1 (CAN bus)`. Hover over a control whose one-word label does not say
 enough, such as a needle's *Tail* or *Hub*, for a short explanation.
 
+Every slider in the inspector has a box beside it holding its exact value, in the unit shown after
+it: a crop of `12` %, a smoothing of `1.5` s, a lens yaw of `-90` °. Type a value and press Return
+or Tab to set it — anything past the end of the slider stops at that end — or press ↑ and ↓ in the
+box to step it. Typing a value is one step to undo, as a drag of the slider is.
+
 ### Graphs: what is coming, and one channel against another
 
 A graph against **Time** or **Distance** shows the current moment in the **middle** of its window,
 marked by a line, so the braking point you are about to reach is on the right while the corner you
 have just left is on the left — the data is all loaded, so the future is known. **Now at** slides it
 anywhere from the left edge (all of the window still to come) to the right edge (all of it past, as
-a strip-chart recorder draws); **Line at now** turns the line off. Graphs in projects saved before
+a strip-chart recorder draws); type a percentage in its box to place it exactly, or click **Middle**
+to put it back in the centre. **Line at now** turns the line off. Graphs in projects saved before
 this keep drawing at the right edge, as they did.
 
 **Horizontal axis ▸ Another channel (X-Y)** plots each series against a channel you choose instead

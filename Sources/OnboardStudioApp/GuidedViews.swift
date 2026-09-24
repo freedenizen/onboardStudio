@@ -9,28 +9,20 @@ struct CameraFramingSection: View {
     var body: some View {
         let framing = editor.project.settings.framing
         Section("Transform (all videos)") {
-            HStack {
-                Slider(value: binding(\.zoom), in: 1...4, step: 0.05) { Text("Zoom") }
-                NumberField("", value: binding(\.zoom), fractionDigits: 2...2, step: 0.1).frame(width: 60)
-            }
-            HStack {
-                Slider(value: offset(\.centerX), in: -100...100, step: 1) { Text("Position X") }
-                    .disabled(framing.zoom <= 1)
-                NumberField("", value: offset(\.centerX), fractionDigits: 0...0).frame(width: 60)
-            }
-            HStack {
-                Slider(value: offset(\.centerY), in: -100...100, step: 1) { Text("Position Y") }
-                    .disabled(framing.zoom <= 1)
-                NumberField("", value: offset(\.centerY), fractionDigits: 0...0).frame(width: 60)
-            }
+            SliderField(
+                "Zoom", value: binding(\.zoom), in: 1...4, step: 0.05, scale: .plain(fractionDigits: 2), unit: "×")
+            SliderField("Position X", value: offset(\.centerX), in: -100...100, step: 1, unit: "%")
+                .disabled(framing.zoom <= 1)
+            SliderField("Position Y", value: offset(\.centerY), in: -100...100, step: 1, unit: "%")
+                .disabled(framing.zoom <= 1)
             Text("Position is the offset of the zoomed window from the centre, as a percentage of the frame.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         Section("Cropping (all videos)") {
-            PercentSlider("Crop top", value: binding(\.crop.top), range: 0...0.45)
-            PercentSlider("Crop bottom", value: binding(\.crop.bottom), range: 0...0.45)
-            PercentSlider("Crop left", value: binding(\.crop.left), range: 0...0.45)
-            PercentSlider("Crop right", value: binding(\.crop.right), range: 0...0.45)
+            SliderField("Crop top", value: binding(\.crop.top), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField("Crop bottom", value: binding(\.crop.bottom), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField("Crop left", value: binding(\.crop.left), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField("Crop right", value: binding(\.crop.right), in: 0...0.45, scale: .percent, unit: "%")
             Button("Reset Framing") { editor.setFraming({ $0 = .none }, name: "Reset Camera Framing") }
                 .disabled(framing.isIdentity)
             Text("Applies on top of each video's own crop, so chapters and cameras stay framed together.")

@@ -35,25 +35,16 @@ struct StabilisationSection: View {
             if settings.stabilisation.method == .picture, !pictureMeasured {
                 measureControls
             } else if settings.stabilisation.method == .motionData || settings.stabilisation.method == .picture {
-                Slider(
-                    value: field(\.smoothing, name: "Change Smoothing"), in: StabilisationSettings.smoothingRange,
-                    step: 0.1
-                ) {
-                    Text(
-                        "Smoothing \(settings.stabilisation.smoothing, format: .number.precision(.fractionLength(1))) s"
-                    )
-                } minimumValueLabel: {
-                    Text("Follow")
-                } maximumValueLabel: {
-                    Text("Float")
-                }
+                SliderField(
+                    "Smoothing", value: field(\.smoothing, name: "Change Smoothing"),
+                    in: StabilisationSettings.smoothingRange, step: 0.1, scale: .plain(fractionDigits: 1), unit: "s",
+                    minimumLabel: "Follow", maximumLabel: "Float"
+                )
                 .help("How long the steadied view takes to follow the camera: short keeps more of the movement")
-                Slider(
-                    value: field(\.zoom, name: "Change Stabilisation Zoom"), in: StabilisationSettings.zoomRange,
-                    step: 0.01
-                ) {
-                    Text("Zoom \(Int(((settings.stabilisation.zoom - 1) * 100).rounded()))%")
-                }
+                SliderField(
+                    "Zoom", value: field(\.zoom, name: "Change Stabilisation Zoom"),
+                    in: StabilisationSettings.zoomRange, step: 0.01, scale: .percentAboveOne, unit: "%"
+                )
                 .help(
                     "How much the picture is enlarged to hide the edges moved into view; also how far a frame can move")
             }

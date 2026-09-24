@@ -21,7 +21,9 @@ struct BarInspector: View {
                 "Segments: \(params.segments == 0 ? "continuous" : String(params.segments))",
                 value: field(\.segments, "Segments"),
                 in: 0...40)
-            PercentSlider("Corner radius", value: field(\.cornerRadius, "Corner Radius"), range: 0...0.5)
+            SliderField(
+                "Corner radius", value: field(\.cornerRadius, "Corner Radius"), in: 0...0.5, scale: .percent,
+                unit: "%")
             ColorPicker("Fill", selection: color(\.fillColor, "Fill Colour"))
             ColorPicker("Track", selection: color(\.trackColor, "Track Colour"))
             ColorPicker("Text", selection: color(\.textColor, "Text Colour"))
@@ -89,7 +91,8 @@ struct GearInspector: View {
             CommittingTextField("Neutral", text: field(\.neutralText, "Neutral Text"))
             CommittingTextField("Reverse", text: field(\.reverseText, "Reverse Text"))
             CommittingTextField("Park", text: field(\.parkText, "Park Text"))
-            PercentSlider("Glyph size", value: field(\.fontScale, "Glyph Size"), range: 0.3...1)
+            SliderField(
+                "Glyph size", value: field(\.fontScale, "Glyph Size"), in: 0.3...1, scale: .percent, unit: "%")
             ColorPicker("Text", selection: color(\.textColor, "Text Colour"))
             ColorPicker("Background", selection: color(\.backgroundColor, "Background Colour"))
         }
@@ -236,8 +239,10 @@ struct TextDataInspector: View {
                 in: 1...6)
         }
         Section("Text Size") {
-            PercentSlider("Value size", value: field(\.fontScale, "Value Size"), range: 0.2...0.9)
-            PercentSlider("Caption size", value: field(\.labelScale, "Caption Size"), range: 0.1...0.6)
+            SliderField(
+                "Value size", value: field(\.fontScale, "Value Size"), in: 0.2...0.9, scale: .percent, unit: "%")
+            SliderField(
+                "Caption size", value: field(\.labelScale, "Caption Size"), in: 0.1...0.6, scale: .percent, unit: "%")
         }
     }
 

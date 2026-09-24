@@ -42,22 +42,35 @@ struct VideoInputInspector: View {
             }
         }
         Section("Cropping") {
-            PercentSlider("Crop top", value: field(\.crop.top, name: "Crop Picture"), range: 0...0.45)
-            PercentSlider("Crop bottom", value: field(\.crop.bottom, name: "Crop Picture"), range: 0...0.45)
-            PercentSlider("Crop left", value: field(\.crop.left, name: "Crop Picture"), range: 0...0.45)
-            PercentSlider("Crop right", value: field(\.crop.right, name: "Crop Picture"), range: 0...0.45)
+            SliderField(
+                "Crop top", value: field(\.crop.top, name: "Crop Picture"), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField(
+                "Crop bottom", value: field(\.crop.bottom, name: "Crop Picture"), in: 0...0.45, scale: .percent,
+                unit: "%")
+            SliderField(
+                "Crop left", value: field(\.crop.left, name: "Crop Picture"), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField(
+                "Crop right", value: field(\.crop.right, name: "Crop Picture"), in: 0...0.45, scale: .percent,
+                unit: "%")
             Button("Reset Crop") { update("Reset Crop") { $0.crop = .none } }.disabled(settings.crop.isEmpty)
             Text("This video only. Zoom, position and a crop for every video are in the project settings.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         Section("Colour") {
-            PercentSlider("Brightness", value: field(\.color.brightness, name: "Adjust Colour"), range: 0...2)
-            PercentSlider("Contrast", value: field(\.color.contrast, name: "Adjust Colour"), range: 0...2)
-            PercentSlider("Saturation", value: field(\.color.saturation, name: "Adjust Colour"), range: 0...2)
-            Slider(value: field(\.color.hue, name: "Adjust Colour"), in: -180...180, step: 1) {
-                Text("Hue \(Int(settings.color.hue))°")
-            }
-            PercentSlider("Sharpness", value: field(\.color.sharpness, name: "Adjust Colour"), range: 0...2)
+            SliderField(
+                "Brightness", value: field(\.color.brightness, name: "Adjust Colour"), in: 0...2, scale: .percent,
+                unit: "%")
+            SliderField(
+                "Contrast", value: field(\.color.contrast, name: "Adjust Colour"), in: 0...2, scale: .percent,
+                unit: "%")
+            SliderField(
+                "Saturation", value: field(\.color.saturation, name: "Adjust Colour"), in: 0...2, scale: .percent,
+                unit: "%")
+            SliderField(
+                "Hue", value: field(\.color.hue, name: "Adjust Colour"), in: -180...180, step: 1, unit: "°")
+            SliderField(
+                "Sharpness", value: field(\.color.sharpness, name: "Adjust Colour"), in: 0...2, scale: .percent,
+                unit: "%")
             Button("Reset Colour") { update("Reset Colour") { $0.color = .neutral } }.disabled(settings.color.isNeutral)
         }
         Section("Lens") {
@@ -66,22 +79,16 @@ struct VideoInputInspector: View {
             }
             if settings.lens.isActive {
                 if settings.lens.mode == .fisheye {
-                    Slider(value: field(\.lens.fov, name: "Change Lens FOV"), in: 100...250, step: 1) {
-                        Text("Source FOV \(Int(settings.lens.fov))°")
-                    }
+                    SliderField(
+                        "Source FOV", value: field(\.lens.fov, name: "Change Lens FOV"), in: 100...250, step: 1,
+                        unit: "°")
                 }
-                Slider(value: field(\.lens.outputFov, name: "Change Lens Zoom"), in: 40...150, step: 1) {
-                    Text("View FOV \(Int(settings.lens.outputFov))°")
-                }
-                Slider(value: field(\.lens.yaw, name: "Pan Lens"), in: -180...180, step: 1) {
-                    Text("Yaw \(Int(settings.lens.yaw))°")
-                }
-                Slider(value: field(\.lens.pitch, name: "Tilt Lens"), in: -90...90, step: 1) {
-                    Text("Pitch \(Int(settings.lens.pitch))°")
-                }
-                Slider(value: field(\.lens.roll, name: "Roll Lens"), in: -180...180, step: 1) {
-                    Text("Roll \(Int(settings.lens.roll))°")
-                }
+                SliderField(
+                    "View FOV", value: field(\.lens.outputFov, name: "Change Lens Zoom"), in: 40...150, step: 1,
+                    unit: "°")
+                SliderField("Yaw", value: field(\.lens.yaw, name: "Pan Lens"), in: -180...180, step: 1, unit: "°")
+                SliderField("Pitch", value: field(\.lens.pitch, name: "Tilt Lens"), in: -90...90, step: 1, unit: "°")
+                SliderField("Roll", value: field(\.lens.roll, name: "Roll Lens"), in: -180...180, step: 1, unit: "°")
                 Button("Reset View") {
                     update("Reset Lens") { $0.lens = LensSettings(mode: $0.lens.mode, fov: $0.lens.fov) }
                 }
@@ -107,30 +114,30 @@ struct VideoInputInspector: View {
                         get: { Color(key.color) },
                         set: { color in update("Change Key Colour") { $0.chromaKey?.color = RGBAColor(color) } }),
                     supportsOpacity: false)
-                PercentSlider(
+                SliderField(
                     "Tolerance",
                     value: Binding(
                         get: { key.tolerance },
-                        set: { v in update("Change Key Tolerance") { $0.chromaKey?.tolerance = v } }), range: 0.02...1)
-                PercentSlider(
+                        set: { v in update("Change Key Tolerance") { $0.chromaKey?.tolerance = v } }),
+                    in: 0.02...1, scale: .percent, unit: "%")
+                SliderField(
                     "Softness",
                     value: Binding(
                         get: { key.softness },
-                        set: { v in update("Change Key Softness") { $0.chromaKey?.softness = v } }), range: 0...0.5)
+                        set: { v in update("Change Key Softness") { $0.chromaKey?.softness = v } }),
+                    in: 0...0.5, scale: .percent, unit: "%")
             }
         }
         Section("Audio") {
             Toggle("Include audio", isOn: field(\.includeAudio, name: "Toggle Audio"))
             if settings.includeAudio {
                 Toggle("Mute", isOn: field(\.audio.isMuted, name: "Mute Audio"))
-                PercentSlider("Volume", value: field(\.audio.volume, name: "Change Volume"), range: 0...2)
-                Slider(value: field(\.audio.balance, name: "Change Balance"), in: -1...1) {
-                    Text("Balance")
-                } minimumValueLabel: {
-                    Text("L")
-                } maximumValueLabel: {
-                    Text("R")
-                }
+                SliderField(
+                    "Volume", value: field(\.audio.volume, name: "Change Volume"), in: 0...2, scale: .percent,
+                    unit: "%")
+                SliderField(
+                    "Balance", value: field(\.audio.balance, name: "Change Balance"), in: -1...1, scale: .percent,
+                    unit: "%", minimumLabel: "L", maximumLabel: "R")
                 Picker("Channels", selection: field(\.audio.channels, name: "Change Channels")) {
                     Text("Stereo").tag(AudioChannelSelection.stereo)
                     Text("Mono").tag(AudioChannelSelection.mono)
@@ -245,23 +252,6 @@ struct ClipTrimRow: View {
         }
         .font(.caption)
         .help("In/Out trim this file (0 = whole file); the gap is black before it; speed 2 plays it twice as fast.")
-    }
-}
-
-/// A slider showing its value as a percentage.
-struct PercentSlider: View {
-    let title: String
-    @Binding var value: Double
-    let range: ClosedRange<Double>
-
-    init(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) {
-        self.title = title
-        _value = value
-        self.range = range
-    }
-
-    var body: some View {
-        Slider(value: $value, in: range) { Text("\(title) \(Int((value * 100).rounded()))%") }
     }
 }
 

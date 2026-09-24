@@ -88,17 +88,17 @@ struct ShapeInspector: View {
                 selection: Binding(
                     get: { Color(params.strokeColor) },
                     set: { c in update("Stroke Colour") { $0.strokeColor = RGBAColor(c) } }))
-            PercentSlider(
+            SliderField(
                 "Stroke width",
                 value: Binding(
                     get: { params.strokeWidth }, set: { v in update("Stroke Width") { $0.strokeWidth = v } }),
-                range: 0...0.05)
+                in: 0...0.05, scale: .percent, unit: "%")
             if params.shape == .roundedRectangle {
-                PercentSlider(
+                SliderField(
                     "Corner radius",
                     value: Binding(
                         get: { params.cornerRadius }, set: { v in update("Corner Radius") { $0.cornerRadius = v } }),
-                    range: 0...0.5)
+                    in: 0...0.5, scale: .percent, unit: "%")
             }
         }
     }
@@ -125,9 +125,9 @@ struct TextInspector: View {
             InsertDetailMenu(details: editor.project.details) { token in
                 update("Insert Detail") { $0.text += ($0.text.isEmpty || $0.text.hasSuffix(" ") ? "" : " ") + token }
             }
-            PercentSlider(
+            SliderField(
                 "Size", value: Binding(get: { params.fontScale }, set: { v in update("Size") { $0.fontScale = v } }),
-                range: 0.1...1)
+                in: 0.1...1, scale: .percent, unit: "%")
             Picker(
                 "Alignment",
                 selection: Binding(get: { params.alignment }, set: { v in update("Alignment") { $0.alignment = v } })
@@ -145,11 +145,11 @@ struct TextInspector: View {
                 selection: Binding(
                     get: { Color(params.backgroundColor) },
                     set: { c in update("Background Colour") { $0.backgroundColor = RGBAColor(c) } }))
-            PercentSlider(
+            SliderField(
                 "Outline",
                 value: Binding(
                     get: { params.outlineWidth }, set: { v in update("Outline Width") { $0.outlineWidth = v } }),
-                range: 0...0.15)
+                in: 0...0.15, scale: .percent, unit: "%")
             ColorPicker(
                 "Outline colour",
                 selection: Binding(
