@@ -219,12 +219,17 @@ public struct StabilisationSettings: Hashable, Codable, Sendable {
         /// A copy of the picture stabilised by Gyroflow (#263), a separate app the user installs,
         /// shown in place of the recording's picture. Everything else still comes from the recording.
         case gyroflow
+        /// From the picture's own movement, measured frame to frame (#264): for cameras that record no
+        /// motion data. Weaker than motion data — blur, low light and a picture with little in it
+        /// defeat it, and it cannot tell turning from moving sideways — but it needs nothing else.
+        case picture
 
         public var displayName: String {
             switch self {
             case .off: "Off"
             case .motionData: "From camera motion data"
             case .gyroflow: "With Gyroflow"
+            case .picture: "From the picture"
             }
         }
     }

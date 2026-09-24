@@ -36,6 +36,16 @@ extension ProjectCompiler {
             loaded.orientations[input.id] = try Self.orientation(
                 of: input, settings: settings, in: loaded, url: url, previous: previous)
         }
+        if case .video(let settings) = input.kind, settings.stabilisation.method == .picture {
+            // Kept from the last load while the files are the same; read from disk once measured.
+            if let cached = previous?.pictureMotions[input.id], let before = previous?.project.input(input.id),
+                before.source == input.source, case .video(let old) = before.kind, old.clips == settings.clips
+            {
+                loaded.pictureMotions[input.id] = cached
+            } else {
+                loaded.pictureMotions[input.id] = pictureMotion(of: input, settings: settings, in: loaded, url: url)
+            }
+        }
     }
 
     /// The orientation of a video input's whole sequence: each file's record moved to where that
@@ -71,10 +81,37 @@ extension ProjectCompiler {
         return result
     }
 
+    /// The picture's measured movement through a video's whole sequence, when every file of it has
+    /// been measured (`PictureMotion.analyse`); each chapter carried on from where the one before ended.
+    static func pictureMotion(
+        of input: Input, settings: VideoInputSettings, in loaded: LoadedProject, url: URL
+    ) -> PictureMotionTrack? {
+        let files = [url] + (loaded.clipURLs[input.id] ?? settings.clips.map { loaded.location.resolve($0.source) })
+        var result: PictureMotionTrack?
+        for (index, file) in files.enumerated() {
+            guard var track = PictureMotion.saved(for: file) else { return nil }
+            let clip = index > 0 && index - 1 < settings.clips.count ? settings.clips[index - 1] : nil
+            let start = loaded.chapters[input.id]?.first { $0.index == index }?.start ?? 0
+            let trimStart = clip?.trim.start ?? 0
+            let speed = clip?.speed ?? 1
+            track.times = track.times.map { ($0 - trimStart) / speed }
+            result = result.map { $0.followed(by: track, at: start) } ?? track
+        }
+        return result
+    }
+
     /// Each steadied video input's path, from its orientation and its own settings.
     static func stabilisationPaths(for loaded: LoadedProject) -> [InputID: StabilisationPath] {
         var paths: [InputID: StabilisationPath] = [:]
         for input in loaded.project.inputs {
+            if case .video(let settings) = input.kind, settings.stabilisation.method == .picture,
+                let picture = loaded.pictureMotions[input.id]
+            {
+                paths[input.id] = StabilisationPath(
+                    picture: picture, smoothing: settings.stabilisation.smoothing,
+                    maxShift: settings.stabilisation.maxShift)
+                continue
+            }
             guard case .video(let settings) = input.kind, settings.stabilisation.method == .motionData,
                 let track = loaded.orientations[input.id],
                 // Footage HyperSmooth already steadied is not steadied again from CORI: how its image

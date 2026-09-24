@@ -23,6 +23,9 @@ public enum ProjectCompiler {
         /// The camera's orientation through each video input that is steadied from its motion data
         /// (#262), on the input's own time axis — chapters placed where they play.
         public var orientations: [InputID: CameraOrientationTrack] = [:]
+        /// How the picture of each video steadied from the picture itself moved (#264), measured
+        /// beforehand and kept; chapters joined where they play. Absent until measured.
+        public var pictureMotions: [InputID: PictureMotionTrack] = [:]
         /// Where each file of a multi-file recording falls on its input's media timeline. Empty
         /// for single-file inputs, so callers can treat "no chapters" as "nothing to show".
         public var chapters: [InputID: [ChapterSpan]] = [:]

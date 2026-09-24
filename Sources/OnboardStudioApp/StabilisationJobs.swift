@@ -4,11 +4,12 @@ import MediaKit
 import Observation
 import ProjectModel
 
-/// Gyroflow renders in progress, one per video input (#263). Kept apart from the inspector so a
-/// render goes on while another object is selected, and from `EditorModel`, whose job is the document.
+/// Stabilisation work in progress, one job per video input: Gyroflow renders (#263) and measuring the
+/// picture's own movement (#264). Kept apart from the inspector so the work goes on while another
+/// object is selected, and from `EditorModel`, whose job is the document.
 @MainActor @Observable
-final class GyroflowJobs {
-    static let shared = GyroflowJobs()
+final class StabilisationJobs {
+    static let shared = StabilisationJobs()
 
     struct Job {
         var progress: Double = 0
@@ -62,6 +63,40 @@ final class GyroflowJobs {
         jobs[input.id]?.task = task
     }
 
+    /// Measures how the picture of every file of `input` moves (#264), then steadies it from that, in
+    /// one undoable step. The measurement is kept, so each file is measured once.
+    func measure(_ input: Input, in editor: EditorModel) {
+        guard case .video(let settings) = input.kind, !isRunning(input.id) else { return }
+        let location = editor.location
+        let files = [location.resolve(input.source)] + settings.clips.map { location.resolve($0.source) }
+        jobs[input.id] = Job()
+        let id = input.id
+        let task = Task { [weak editor] in
+            do {
+                for (index, file) in files.enumerated() where PictureMotion.saved(for: file) == nil {
+                    for try await (fraction, _) in PictureMotion.analyse(file) {
+                        self.jobs[id]?.progress = (Double(index) + fraction) / Double(files.count)
+                    }
+                }
+                editor?.updateInput(id, name: "Steady from the Picture") { input in
+                    guard case .video(var video) = input.kind else { return }
+                    video.stabilisation.method = .picture
+                    input.kind = .video(video)
+                }
+                // The measurement is new on disk rather than in the document: load it now.
+                editor?.reloadMedia()
+                self.jobs[id] = nil
+            } catch is CancellationError {
+                self.jobs[id] = nil
+            } catch {
+                self.jobs[id] = Job(
+                    progress: 0, task: nil,
+                    failure: "The picture's movement could not be measured: the video could not be read.")
+            }
+        }
+        jobs[input.id]?.task = task
+    }
+
     func cancel(_ input: InputID) {
         jobs[input]?.task?.cancel()
         jobs[input] = nil
@@ -85,4 +120,9 @@ final class GyroflowJobs {
         let shown = natural.applying(transform)
         return CGSize(width: abs(shown.width).rounded(), height: abs(shown.height).rounded())
     }
+}
+
+extension EditorModel {
+    /// Loads the project's media afresh, for what changed on disk rather than in the document.
+    func reloadMedia() { scheduleCompile() }
 }

@@ -38,6 +38,25 @@ public final class StabilisationPath: Sendable, Equatable {
         }
     }
 
+    /// From the picture's own measured movement (#264): the correction is the picture's path less a
+    /// smoothed version of it. A frame moved by `t` leaves `d + t₀ − t₁` of the measured move `d`
+    /// between two frames (the relation the motion-data path was checked against on a HERO13 clip),
+    /// so with `t = path − smooth` all that is left is the smoothed path's own step.
+    public init?(picture: PictureMotionTrack, smoothing: Double, maxShift: Double) {
+        guard picture.times.count >= 2 else { return nil }
+        let tau = max(smoothing, 0.01)
+        let sx = Self.smoothed(picture.x, times: picture.times, timeConstant: tau)
+        let sy = Self.smoothed(picture.y, times: picture.times, timeConstant: tau)
+        let sr = Self.smoothed(picture.roll, times: picture.times, timeConstant: tau)
+        times = picture.times
+        corrections = picture.times.indices.map { i in
+            var shift = SIMD2(picture.x[i] - sx[i], picture.y[i] - sy[i])
+            let length = (shift * shift).sum().squareRoot()
+            if length > maxShift, length > 0 { shift *= maxShift / length }
+            return SIMD3(shift.x, shift.y, picture.roll[i] - sr[i])
+        }
+    }
+
     public static func == (a: StabilisationPath, b: StabilisationPath) -> Bool { a === b }
 
     /// The correction at a time in the video file, interpolated between samples.
@@ -82,6 +101,24 @@ public final class StabilisationPath: Sendable, Equatable {
         for index in stride(from: path.count - 2, through: 0, by: -1) {
             let step = max(times[index + 1] - times[index], 0)
             result[index] = result[index + 1].slerp(to: forward[index], 1 - exp(-step / timeConstant))
+        }
+        return result
+    }
+
+    /// The same zero-phase average for plain numbers.
+    static func smoothed(_ values: [Double], times: [Double], timeConstant: Double) -> [Double] {
+        guard var previous = values.first else { return [] }
+        var forward = [previous]
+        forward.reserveCapacity(values.count)
+        for index in 1..<values.count {
+            let a = 1 - exp(-max(times[index] - times[index - 1], 0) / timeConstant)
+            previous += (values[index] - previous) * a
+            forward.append(previous)
+        }
+        var result = forward
+        for index in stride(from: values.count - 2, through: 0, by: -1) {
+            let a = 1 - exp(-max(times[index + 1] - times[index], 0) / timeConstant)
+            result[index] = result[index + 1] + (forward[index] - result[index + 1]) * a
         }
         return result
     }
