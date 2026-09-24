@@ -281,4 +281,45 @@ final class TimelineUITests: OnboardStudioUITestCase {
             XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: transportTime)], timeout: 10),
             .completed, "The playhead stayed at \(transportTime.value ?? "nil")")
     }
+
+    /// #230: J-K-L shuttle, and I/O marking a range the export sheet offers.
+    @MainActor
+    func testShuttleAndInOutRange() throws {
+        launch()
+        addFixtureVideo()
+        let play = app.buttons["transport.play"]
+        XCTAssertTrue(play.waitForExistence(timeout: Self.timeout))
+        // L plays, L again doubles, K stops — back to back, as the fixture is 3 s long.
+        app.typeKey("l", modifierFlags: [])
+        app.typeKey("l", modifierFlags: [])
+        app.typeKey("k", modifierFlags: [])
+        expectStatus(containing: "forward at 2×")
+        expect(play, toRead: "Play")
+        // Played to the end, the button says Play again rather than staying on Pause. Not waiting
+        // to see Pause first: on a slow runner the 3 s clip can finish before the check runs.
+        menu("Playback", "Go to Start")
+        app.typeKey("l", modifierFlags: [])
+        expect(transportTime, toRead: "0:03.00")
+        expect(play, toRead: "Play")
+
+        // I at 0.5 s, O at 1.5 s: the ruler shows the range and export offers it.
+        menu("Playback", "Go to Start")
+        for _ in 0..<15 { app.typeKey(".", modifierFlags: []) }
+        app.typeKey("i", modifierFlags: [])
+        expectStatus(containing: "In at 0:00.50")
+        for _ in 0..<30 { app.typeKey(".", modifierFlags: []) }
+        app.typeKey("o", modifierFlags: [])
+        expectStatus(containing: "Out at 0:01.50")
+        XCTAssertTrue(app.descendants(matching: .any)["ruler.inOut"].waitForExistence(timeout: Self.timeout))
+        app.buttons["toolbar.export"].click()
+        let range = app.popUpButtons.matching(NSPredicate(format: "value BEGINSWITH 'In to out'")).firstMatch
+        XCTAssertTrue(range.waitForExistence(timeout: Self.timeout), "Export does not offer the marked range")
+        XCTAssertEqual(range.value as? String, "In to out (0:00.50 – 0:01.50)")
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertTrue(range.waitForNonExistence(timeout: Self.timeout))
+
+        // ⌥X clears it.
+        app.typeKey("x", modifierFlags: .option)
+        XCTAssertTrue(app.descendants(matching: .any)["ruler.inOut"].waitForNonExistence(timeout: Self.timeout))
+    }
 }

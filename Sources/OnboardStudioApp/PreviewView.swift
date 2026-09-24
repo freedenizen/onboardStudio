@@ -42,8 +42,16 @@ struct PlayerAndGizmo: NSViewRepresentable {
     }
 }
 
+/// The player, kept out of the keyboard's way. `AVPlayerView` takes J, K, L, the arrows and Space
+/// for itself when it has focus, which drove playback behind the editor's back and left the
+/// Playback menu's own J-K-L (#230) never reached.
+final class PreviewPlayerView: AVPlayerView {
+    override var acceptsFirstResponder: Bool { false }
+    override func performKeyEquivalent(with event: NSEvent) -> Bool { false }
+}
+
 final class PreviewContainerView: NSView {
-    let playerView = AVPlayerView()
+    let playerView = PreviewPlayerView()
     let gizmo: GizmoView
 
     init(editor: EditorModel) {

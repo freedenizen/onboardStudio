@@ -260,6 +260,16 @@ struct EditorCommands: Commands {
             Button("Step Back") { editor?.step(by: -1) }.keyboardShortcut(",", modifiers: [])
             Button("Step Forward") { editor?.step(by: 1) }.keyboardShortcut(".", modifiers: [])
             Button("Go to Start") { editor?.seek(to: 0) }.keyboardShortcut(.home, modifiers: [])
+            Divider()
+            // J-K-L and I/O, the tape-deck keys every editor shares (#230, docs/conventions.md).
+            Button("Play Backward") { editor?.shuttle(-1) }.keyboardShortcut("j", modifiers: [])
+            Button("Stop") { editor?.shuttle(0) }.keyboardShortcut("k", modifiers: [])
+            Button("Play Forward") { editor?.shuttle(1) }.keyboardShortcut("l", modifiers: [])
+            Divider()
+            Button("Mark In") { editor?.markInAtPlayhead() }.keyboardShortcut("i", modifiers: [])
+            Button("Mark Out") { editor?.markOutAtPlayhead() }.keyboardShortcut("o", modifiers: [])
+            Button("Clear In and Out") { editor?.clearInOut() }.keyboardShortcut("x", modifiers: [.option])
+                .disabled(editor?.markIn == nil && editor?.markOut == nil)
         }
     }
 }
