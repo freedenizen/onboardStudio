@@ -22,6 +22,10 @@ public enum ExportRange: Hashable, Codable, Sendable {
     case span(start: Double, end: Double)
     /// Inclusive lap numbers of the first data input, mapped to project time through its sync.
     case laps(first: Int, last: Int)
+    /// One file per lap of the first data input (#150). `completeOnly` leaves out the laps whose
+    /// start or end was not at the line — the out-lap and the in-lap; `slowerThanBest`, when set,
+    /// leaves out laps slower than the best complete lap by more than that fraction (0.1 = 10 %).
+    case eachLap(completeOnly: Bool, slowerThanBest: Double?)
 }
 
 /// Output video encoding settings.

@@ -28,6 +28,12 @@ extension ProjectCompiler {
                 return e > s ? s...e : nil
             }
             return nil
+        case .eachLap:
+            // Several files, not one range: `lapExports(_:in:duration:)` says which. As one range
+            // it is the span from the first kept lap to the last.
+            let laps = lapExports(range, in: loaded, duration: duration)
+            guard let first = laps.first, let last = laps.last else { return nil }
+            return first.range.lowerBound...last.range.upperBound
         }
     }
 

@@ -40,8 +40,19 @@ struct Render: AsyncParsableCommand {
         name: .long, help: "Video codec: h264, hevc, hevcAlpha or proRes4444 (the alpha codecs write .mov).")
     var codec: ExportSettings.VideoCodec?
 
-    @Option(name: .long, help: "Lap range of the first data input to export, as first:last (project only).")
+    @Option(
+        name: .long,
+        help: """
+            Laps of the first data input to export (project only): first:last for one file, or "each" for \
+            one file per lap in the --out folder, named "<project> – Lap N".
+            """)
     var laps: String?
+
+    @Flag(name: .long, help: "With --laps each: also the out-lap and in-lap, which do not start or end at the line.")
+    var includePartialLaps = false
+
+    @Option(name: .long, help: "With --laps each: leave out laps slower than the best by more than this percent.")
+    var skipSlowerThan: Double?
 
     @Option(
         name: .long, help: "Behind the overlays: video (default), key:#RRGGBB or transparent (both drop the video).")
@@ -84,12 +95,14 @@ struct Render: AsyncParsableCommand {
         var exportRange = try range.map(Self.parseRange)
         var compiled: CompiledComposition
         var settings: ExportSettings
+        var eachLap: [LapExport] = []
         if let project {
             guard video == nil else { throw ValidationError("Use either --video or --project, not both.") }
             let result = try await loadProject(project, range: exportRange)
             compiled = result.compiled
             settings = result.settings
             exportRange = result.range
+            eachLap = result.eachLap
         } else {
             guard let video else { throw ValidationError("Provide --video or --project.") }
             let inputURL = URL(fileURLWithPath: video)
@@ -122,6 +135,24 @@ struct Render: AsyncParsableCommand {
             print("Project:  \(fmt(compiled.duration)) s\(rangeText)")
         }
 
+        guard !eachLap.isEmpty, let project else {
+            try await export(compiled, settings: settings, range: exportRange, to: outputURL)
+            return
+        }
+        // One file per lap, into the --out folder (#150).
+        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+        let base = URL(fileURLWithPath: project).deletingPathExtension().lastPathComponent
+        for lap in eachLap {
+            let url = outputURL.appending(path: lap.fileName(base: base, fileExtension: settings.fileExtension))
+            if !json { print("Lap \(lap.lap): \(fmt(lap.range.lowerBound))–\(fmt(lap.range.upperBound)) s") }
+            try await export(compiled, settings: settings, range: lap.range, to: url)
+        }
+    }
+
+    private func export(
+        _ compiled: CompiledComposition, settings: ExportSettings, range exportRange: ClosedRange<Double>?,
+        to outputURL: URL
+    ) async throws {
         let started = Date()
         var lastPrinted = -1
         var frames = 0
@@ -140,7 +171,7 @@ struct Render: AsyncParsableCommand {
         }
         let elapsed = Date().timeIntervalSince(started)
         let fps = elapsed > 0 ? Double(frames) / elapsed : 0
-        if !json { print("Done: \(frames) frames in \(fmt(elapsed)) s (\(fmt(fps)) fps) → \(out)") }
+        if !json { print("Done: \(frames) frames in \(fmt(elapsed)) s (\(fmt(fps)) fps) → \(outputURL.path)") }
     }
 
     /// Loads, optionally templates, and compiles a project; resolves its settings and lap range.
@@ -148,6 +179,8 @@ struct Render: AsyncParsableCommand {
         var compiled: CompiledComposition
         var settings: ExportSettings
         var range: ClosedRange<Double>?
+        /// The files of `--laps each`; empty otherwise.
+        var eachLap: [LapExport] = []
     }
 
     private func loadProject(_ path: String, range: ClosedRange<Double>?) async throws -> LoadedForRender {
@@ -167,7 +200,13 @@ struct Render: AsyncParsableCommand {
         let compiled = try await ProjectCompiler.compile(loaded)
         let settings = resolveProjectSettings(loaded.project)
         var exportRange = range
-        if let laps {
+        var eachLap: [LapExport] = []
+        if laps == "each" {
+            eachLap = ProjectCompiler.lapExports(
+                .eachLap(completeOnly: !includePartialLaps, slowerThanBest: skipSlowerThan.map { $0 / 100 }),
+                in: loaded, duration: compiled.duration)
+            guard !eachLap.isEmpty else { throw ValidationError("No laps in the project's data match.") }
+        } else if let laps {
             let parts = laps.split(separator: ":").compactMap { Int($0) }
             guard parts.count == 2 else { throw ValidationError("--laps expects first:last, e.g. 2:4.") }
             guard
@@ -181,7 +220,7 @@ struct Render: AsyncParsableCommand {
             let counts = "\(loaded.project.inputs.count) inputs, \(loaded.sessions.count) data sessions"
             print("Project:  \(counts); objects: \(objects)")
         }
-        return LoadedForRender(compiled: compiled, settings: settings, range: exportRange)
+        return LoadedForRender(compiled: compiled, settings: settings, range: exportRange, eachLap: eachLap)
     }
 
     /// Project export settings with CLI overrides applied.

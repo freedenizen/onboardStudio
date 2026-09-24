@@ -122,6 +122,19 @@ enum OpenPanels {
         return alert.runModal() == .alertFirstButtonReturn ? field.stringValue : nil
     }
 
+    /// The folder an every-lap export writes its files into (#150).
+    static func chooseExportFolder() -> URL? {
+        if let directory = UITestSupport.exportDirectory { return directory }
+        let panel = NSOpenPanel()
+        panel.title = "Export Every Lap"
+        panel.message = "Each lap is written here as its own file."
+        panel.prompt = "Export Here"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
     static func chooseExportDestination(suggestedName: String, fileExtension: String = "mp4") -> URL? {
         if let directory = UITestSupport.exportDirectory {
             return directory.appending(path: suggestedName).appendingPathExtension(fileExtension)
