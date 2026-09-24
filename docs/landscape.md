@@ -4,7 +4,9 @@
 what do the tools people actually use offer, where is Onboard Studio ahead, and what is worth building
 next.
 
-Surveyed 2026-09-19. Claims carry sources; anything that could not be confirmed says so.
+Surveyed 2026-09-19. Claims carry sources; anything that could not be confirmed says so. The
+"Onboard Studio" column and the candidate list were brought up to date on 2026-09-23, at v0.24.0
+(#242); the survey itself was not repeated.
 
 ## Where Onboard Studio is already ahead
 
@@ -89,51 +91,53 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Near-universal | Track map with position | Yes, plus Apple Maps imagery and a second vehicle |
 | Near-universal | Lap timer / lap counter | Yes, seven timer modes |
 | Very common | G-force circle / plot | Yes, with a fading trail and per-axis channels |
-| Very common | Predictive lap timer / live delta | Partial — native lap and speed delta to the session best; no *projected* final lap time |
-| Very common | Sector / split times | **No** |
+| Very common | Predictive lap timer / live delta | Partial — native lap and speed delta to the session best; no *projected* final lap time (#155) |
+| Very common | Sector / split times | Yes — Sector Times panel: equal-distance or corner-aware sectors, compared with the best and previous lap |
 | Common (needs CAN/OBD) | Tachometer | Yes |
 | Common (needs CAN/OBD) | Gear indicator | Yes |
 | Common (needs CAN/OBD) | Throttle / brake bars | Yes, Bar object with segments and zones |
-| Moderate | 2D data graphs | Yes — time, distance or lap axis, multi-series, best-lap ghost |
-| Moderate | Lap / run comparison | Partial — ghost trace on the graph; no side-by-side video |
+| Moderate | 2D data graphs | Yes — time, distance or lap axis, multi-series, best-lap ghost; not yet against another channel (#156) |
+| Moderate | Lap / run comparison | Partial — ghost trace on the graph; no side-by-side video (#154) |
 | Moderate | Picture-in-picture / multi-camera | Yes, with layout presets and segment-based switching |
 | Niche | Shift lights | Covered by Indicator lights and segmented Bars |
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
-| Niche | Theoretical / optimal lap | **No** — depends on sectors |
-| Emerging | Vertical / social export with stat cards | Partial — a 1080×1920 preset exists; no stat cards or clip extraction |
+| Niche | Theoretical / optimal lap | Yes — *Optimal* on the Sector Times panel, and in the data inspector |
+| Emerging | Vertical / social export with stat cards | Partial — a 1080×1920 preset exists; no stat cards or clip extraction (#151) |
 
-## Candidate work, ranked
+## Candidate work
 
-For review before any of these is filed as an issue. Ranked by breadth of evidence, not by effort.
+Originally ranked by breadth of evidence, not by effort. Where each item stands now:
 
-1. **Sector / split times** — `enhancement`. Near-universal elsewhere (RaceChrono, TrackAddict,
-   VBOX, Garmin, RaceBox) and entirely absent here. Cheaper than it looks: `TelemetryKit`'s
-   `FinishLine` crossing detection already documents itself as working for "a start/finish (or
-   sector) line"; what is missing is storing more than one line per input and timing between them.
-   Unlocks items 2 and 3.
-2. **Theoretical / optimal lap** — `enhancement`. Best sector times spliced into one hypothetical
-   lap. VBOX and Garmin both make a headline of it. Depends on 1.
-3. **Sector deltas as an overlay object** — `enhancement`. Depends on 1.
-4. **Track database** — `enhancement`. Others ship 2,600+ circuits with start/finish and sectors
-   pre-set; Onboard Studio has a manual `LapLineSpec`. This is the "works out of the box" gap, and it
-   matters: low setup friction is praised by name in reviews of VBOX and TrackAddict, while
-   RaceRender, Harry's and AiM are all criticised for the opposite. Consider deriving a line from
-   the data instead of shipping a database — the lap geometry is already in the log.
-5. **Batch export, one file per lap** — `enhancement`. A repeated ask against Harry's LapTimer.
-   `ExportRange.laps(first:last:)` already exists; this is iteration plus naming.
-6. **Lap-vs-lap video comparison** — `enhancement`. Frame-locked side-by-side of two laps. Widely
-   wanted, and nobody does it well for *video* rather than data traces.
-7. **Projected lap time** — `enhancement`. Completes the predictive timer. Note the survey's
-   finding that GPS-position-based delta is materially more accurate than distance-based.
-8. **Social export: stat cards and clip extraction** — `enhancement`. Emerging elsewhere and absent
-   from all four established tools; the vertical preset is the groundwork.
-9. **Graph X-Y axis against an arbitrary channel** — `enhancement`. Already in `parity.md` as the
-   one partial display object.
-10. **Bézier curves in the script canvas** — `enhancement`. The remaining scripting gap.
+**Shipped**
 
-Also already recorded in `parity.md`: no heading-offset field, no `.rcz` or `.rrp` import, no Sony
-`rtmd` embedded GPS.
+1. **Sector / split times** — the Sector Times panel, sectors at equal distances or on the straights
+   between corners (v0.21.0).
+2. **Theoretical / optimal lap** — best sectors spliced into one lap, shown as *Optimal* (v0.21.0).
+3. **Sector deltas as an overlay object** — the Sector Times panel's comparison with the best and
+   previous lap (v0.21.0).
+4. **Track database** — taken the way this document suggested: rather than shipping start/finish
+   lines, the circuit is recognised from the log (about 1,290 circuits, by position and name), the
+   start/finish line is suggested from the lap geometry already in the data, and a line the user
+   places is saved as a track definition for next time (v0.21.0).
+
+**Filed**
+
+5. **Batch export, one file per lap** — #150, v0.25.0 *Sharing the result*.
+6. **Lap-vs-lap video comparison** — #154, v0.26.0 *Analysis*.
+7. **Projected lap time** — #155, v0.26.0. Note the survey's finding that GPS-position-based delta is
+   materially more accurate than distance-based.
+8. **Social export: stat cards and clip extraction** — #151, v0.25.0. Project details (#74) supply
+   the circuit and date for the card.
+9. **Graph X-Y axis against an arbitrary channel** — #156, v0.26.0, which also moves the playhead
+   off the right edge of a time graph so the future shows as well as the past.
+
+**Not filed**
+
+10. **Bézier curves in the script canvas** — the remaining scripting gap.
+
+Also recorded in `parity.md` and not filed: no heading-offset field, no `.rrp` import, no Sony
+`rtmd` embedded GPS. (`.rcz` import shipped in v0.22.0.)
 
 ## Out of scope
 
