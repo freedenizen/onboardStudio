@@ -93,6 +93,7 @@ struct VideoInputInspector: View {
                 .font(.caption).foregroundStyle(.secondary)
             }
         }
+        StabilisationSection(editor: editor, input: input, settings: settings)
         Section("Chroma Key") {
             Toggle(
                 "Make a colour transparent",

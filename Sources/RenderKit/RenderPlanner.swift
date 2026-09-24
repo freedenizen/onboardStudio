@@ -10,7 +10,8 @@ public enum RenderPlanner {
     /// Input picture settings and object mirror/mask combine into the layer transform.
     public static func videoLayers(
         for project: Project, objects: [DisplayObject]? = nil, trackIDs: [InputID: Int32],
-        sourceTransforms: [Int32: CGAffineTransform] = [:], comparedTrackID: Int32? = nil
+        sourceTransforms: [Int32: CGAffineTransform] = [:], comparedTrackID: Int32? = nil,
+        stabilisationPaths: [InputID: StabilisationPath] = [:], lapComparison: LapTimeWarp? = nil
     ) -> [VideoLayer] {
         (objects ?? project.displayObjects).compactMap { object -> VideoLayer? in
             guard object.isVisible, case .video(let params) = object.kind, let inputID = object.inputID else {
@@ -21,7 +22,13 @@ public enum RenderPlanner {
             let follows = object.followsComparedLap && project.lapComparison != nil
             guard let trackID = follows ? comparedTrackID : trackIDs[inputID] else { return nil }
             var transform = VideoTransform()
+            var stabilisation: LayerStabilisation?
             if let input = project.input(inputID), case .video(let settings) = input.kind {
+                if settings.stabilisation.isActive, let path = stabilisationPaths[inputID] {
+                    stabilisation = LayerStabilisation(
+                        path: path, zoom: settings.stabilisation.zoom, sync: input.sync,
+                        warp: follows ? lapComparison : nil)
+                }
                 transform = VideoTransform(
                     lens: settings.lens, crop: project.settings.framing.effectiveCrop(over: settings.crop),
                     rotation: settings.rotation, mirror: settings.mirror,
@@ -34,7 +41,7 @@ public enum RenderPlanner {
             transform.channelMask = params.channelMask
             return VideoLayer(
                 trackID: trackID, frame: object.frame, opacity: object.opacity, transform: transform,
-                sourceTransform: sourceTransforms[trackID] ?? .identity)
+                sourceTransform: sourceTransforms[trackID] ?? .identity, stabilisation: stabilisation)
         }
     }
 
