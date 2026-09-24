@@ -212,6 +212,10 @@ channels the object draws a *number* for, and a unit the values cannot be conver
 ignored rather than relabelling them. Speed keeps its own `speedUnit` on the params, because that
 is what older projects carry and it spells km/h `kph` where this would spell it `km/h`.
 
+`isLocked` (default `false`) keeps the object out of reach of the mouse and the arrow keys, and
+`groupID` (optional, a UUID) names the group it moves with (#90); objects sharing a `groupID` are
+one group. Both absent in files saved before them, which is what those objects were.
+
 `typeface` (optional, #118) is the font every piece of the object's text is drawn in:
 `{ "family": "Futura", "face": "Condensed Medium" }`, the names Font Book shows. Absent follows
 `settings.typeface`, and absent there too means each renderer's built-in fonts (Helvetica Neue for

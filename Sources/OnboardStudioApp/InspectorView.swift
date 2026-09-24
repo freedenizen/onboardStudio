@@ -11,7 +11,9 @@ struct InspectorView: View {
             // Identified by what they inspect, so choosing another object of the same kind builds
             // fresh fields rather than handing the last one's half-typed text to the new one: a
             // text field commits what was typed when it goes, to the thing it was typed for (#205).
-            if let object = editor.selectedObject {
+            if editor.hasMultipleSelection {
+                MultipleSelectionInspector(editor: editor)
+            } else if let object = editor.selectedObject {
                 ObjectInspector(editor: editor, object: object).id(object.id)
             } else if let marker = editor.selectedMarker {
                 MarkerInspector(editor: editor, marker: marker).id(marker.id)
@@ -174,6 +176,9 @@ struct ObjectInspector: View {
             OverrideRow(editor: editor, object: object, property: .opacity) {
                 Slider(value: opacityBinding, in: 0...1) { Text("Opacity") }
             }
+            Toggle("Locked", isOn: lockedBinding)
+                .help("A locked object stays where it is: the preview does not pick it up and the arrow keys leave it")
+                .accessibilityIdentifier("object.locked")
         }
         Section {
             NumberField("X", value: percent(\.x)).accessibilityIdentifier("object.x")
@@ -269,6 +274,15 @@ struct ObjectInspector: View {
                 // the frame, as the Glass Cockpit steering wheel does.
                 frame = ObjectGeometry.clamped(frame)
                 editor.setOverridable(object.id, name: "Move Object") { $0.frame = frame }
+            })
+    }
+
+    /// Locks the object, and the rest of its group with it (#90).
+    var lockedBinding: Binding<Bool> {
+        Binding(
+            get: { object.isLocked },
+            set: { value in
+                editor.edit(value ? "Lock Object" : "Unlock Object") { $0.setLocked(value, [object.id]) }
             })
     }
 

@@ -17,7 +17,15 @@ final class EditorModel {
     var fileURL: URL?
     var undoManager: UndoManager?
 
-    var selectedObjectID: DisplayObjectID?
+    /// The object the inspector shows. Setting it — even to the object already there — means
+    /// "just this one" and drops the rest of a multiple selection; `selectObject(_:extending:)`
+    /// builds one. (Only on a change, a right-click Delete on the primary row deleted the whole
+    /// selection.)
+    var selectedObjectID: DisplayObjectID? {
+        didSet { additionalSelection = [] }
+    }
+    /// The rest of a multiple selection, or of the selected object's group (#90).
+    var additionalSelection: Set<DisplayObjectID> = []
     var selectedInputID: InputID?
     var selectedSegmentID: SegmentID?
     var selectedMarkerID: MarkerID?
@@ -79,6 +87,10 @@ final class EditorModel {
     func syncFromDocument() {
         guard document.project != project else { return }
         project = document.project
+        // An undo can take away an object that is still selected; a selection naming objects
+        // that no longer exist would group or delete nothing, or a group of one (#90).
+        if let id = selectedObjectID, project.displayObject(id) == nil { selectedObjectID = nil }
+        additionalSelection = additionalSelection.filter { project.displayObject($0) != nil }
         scheduleCompile()
     }
     var location: ProjectLocation {

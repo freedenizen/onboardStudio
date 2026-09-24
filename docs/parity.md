@@ -34,6 +34,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Common: label, input, X/Y/W/H %, aspect lock, transparency, mirror, RGB mask, volume/pan | ✅ | |
+| Lock an object; group objects | ✅ | ⌘L lock (skipped by clicks, arrows and delete); ⌥⌘G groups that move, resize and nudge as one |
 | Project details (track, car, driver, date) in text | ✅ | Beyond RaceRender: `{track}`-style keys in any Text object, filled in from the data file, plus the owner's own details; **Title Card** object |
 | Font per object | ✅ | Font, typeface and text size on every object that draws text, plus a project-wide font objects follow until they choose their own |
 | Video, Audio Only | ◐ | Video ✅; audio-only inputs mix without an object (an `.audio` input) |

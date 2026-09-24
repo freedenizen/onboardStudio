@@ -105,12 +105,15 @@ extension EditorModel {
         selectedObjectID = object.id
     }
 
+    /// Deletes every selected object that is not locked (#90): a lock guards against the delete
+    /// key as much as against the mouse.
     func deleteSelectedObject() {
-        guard let id = selectedObjectID else { return }
-        edit("Delete Object") { project in
-            project.displayObjects.removeAll { $0.id == id }
-            project.timeline.prune(keeping: project.displayObjects.map(\.id))
+        let ids = selectedObjectIDs.filter { project.displayObject($0)?.isLocked == false }
+        guard !ids.isEmpty else {
+            if !selectedObjectIDs.isEmpty { statusMessage = "Locked objects are not deleted. Unlock them first (⌘L)." }
+            return
         }
+        edit(ids.count == 1 ? "Delete Object" : "Delete Objects") { $0.removeObjects(ids) }
         selectedObjectID = nil
     }
 
