@@ -295,9 +295,10 @@ final class TimelineUITests: OnboardStudioUITestCase {
         app.typeKey("k", modifierFlags: [])
         expectStatus(containing: "forward at 2×")
         expect(play, toRead: "Play")
-        // Played to the end, the button says Play again rather than staying on Pause.
+        // Played to the end, the button says Play again rather than staying on Pause. Not waiting
+        // to see Pause first: on a slow runner the 3 s clip can finish before the check runs.
+        menu("Playback", "Go to Start")
         app.typeKey("l", modifierFlags: [])
-        expect(play, toRead: "Pause")
         expect(transportTime, toRead: "0:03.00")
         expect(play, toRead: "Play")
 
