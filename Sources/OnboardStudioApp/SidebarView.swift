@@ -197,6 +197,7 @@ struct SidebarView: View {
         case .scripted: "curlybraces"
         case .indicator: "exclamationmark.triangle"
         case .lapPanel: "timer"
+        case .statCard: "list.bullet.rectangle"
         case .sectorPanel: "chart.bar.doc.horizontal"
         case .steeringWheel: "steeringwheel"
         }

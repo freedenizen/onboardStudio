@@ -162,7 +162,7 @@ public enum ProjectTemplateError: Error, CustomStringConvertible {
 
 extension ProjectTemplate {
     /// Templates shipped with the app.
-    public static let builtIn: [ProjectTemplate] = [classicDash, glassCockpit, minimal, dataWall]
+    public static let builtIn: [ProjectTemplate] = [classicDash, glassCockpit, minimal, dataWall, social]
 
     private static func make(_ name: String, _ objects: [DisplayObject]) -> ProjectTemplate {
         let camera = DisplayObject(label: "Camera", inputID: nil, frame: .full, kind: .video(VideoObjectParams()))
@@ -172,6 +172,33 @@ extension ProjectTemplate {
     private static func object(_ label: String, _ kind: DisplayObjectKind, _ frame: UnitRect) -> DisplayObject {
         DisplayObject(label: label, inputID: nil, frame: frame, kind: kind)
     }
+
+    /// A phone-shaped clip (#151): 1080 × 1920, the whole 16:9 picture as a band across the
+    /// middle rather than cropped to a sliver, the Stat Card above it and the lap timer, speed and
+    /// track map below.
+    public static let social: ProjectTemplate = {
+        let band = 1080.0 / 16 * 9 / 1920  // a 16:9 picture the full width of a 9:16 frame
+        let top = 0.29
+        let camera = DisplayObject(
+            label: "Camera", inputID: nil, frame: UnitRect(x: 0, y: top, width: 1, height: band),
+            kind: .video(VideoObjectParams()))
+        let objects = [
+            camera,
+            object(
+                "Stats", .statCard(StatCardParams(scope: .lapAtPlayhead)),
+                UnitRect(x: 0.06, y: 0.04, width: 0.88, height: 0.22)),
+            object("Lap", .timer(TimerParams()), UnitRect(x: 0.06, y: top + band + 0.02, width: 0.88, height: 0.06)),
+            object(
+                "Speed", .speedometer(.speedometer()),
+                UnitRect(x: 0.06, y: top + band + 0.1, width: 0.42, height: 0.24)),
+            object(
+                "Map", .trackMap(TrackMapParams()), UnitRect(x: 0.52, y: top + band + 0.1, width: 0.42, height: 0.24)),
+        ]
+        var settings = ProjectSettings(outputWidth: 1080, outputHeight: 1920)
+        settings.frameRate = 30
+        return ProjectTemplate(
+            name: "Social (9:16)", project: Project(settings: settings, displayObjects: objects, export: .vertical1080))
+    }()
 
     /// Speedometer, tachometer, track map, G-force, lap timer and gear: the RaceRender look.
     public static let classicDash = make(

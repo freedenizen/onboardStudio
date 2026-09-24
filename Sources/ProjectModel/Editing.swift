@@ -179,6 +179,7 @@ extension DisplayObject {
             case .scripted: UnitRect(x: 0.35 + stagger, y: 0.8 - stagger, width: 0.3, height: 0.12)
             case .indicator: UnitRect(x: 0.45 + stagger, y: 0.05 + stagger, width: 0.07, height: 0.1)
             case .lapPanel: UnitRect(x: 0.2, y: 0.03 + stagger, width: 0.6, height: 0.1)
+            case .statCard: UnitRect(x: 0.03 + stagger, y: 0.05 + stagger, width: 0.3, height: 0.3)
             case .sectorPanel: UnitRect(x: 0.25, y: 0.15 + stagger, width: 0.5, height: 0.09)
             // A wide wheel whose upper arc rises out of the bottom of a 16:9 frame.
             case .steeringWheel: UnitRect(x: 0.22, y: 0.5, width: 0.56, height: 0.56 * 16 / 9)
@@ -206,6 +207,7 @@ extension DisplayObject {
         ("Lap Counter", .lapCounter(LapCounterParams())),
         ("Timing Panel", .lapPanel(LapPanelParams())),
         ("Sector Times", .sectorPanel(SectorPanelParams())),
+        ("Stat Card", .statCard(StatCardParams())),
         ("Steering Wheel", .steeringWheel(SteeringWheelParams())),
         (
             "Delta Bar (time)",

@@ -14,7 +14,9 @@ struct TemplateThumbnailTests {
         let template = try #require(ProjectTemplate.builtIn.first { $0.name == name })
         let image = try #require(TemplateThumbnail.image(of: template, width: 320))
         #expect(image.width == 320)
-        #expect(image.height == 180)  // the template's 16:9 output
+        // The template's own shape: 180 for 16:9, 569 for the 9:16 Social template.
+        let aspect = Double(template.settings.outputHeight) / Double(template.settings.outputWidth)
+        #expect(image.height == Int((320 * aspect).rounded()))
         // Something other than the backdrop was drawn: the overlays are there to be seen.
         #expect(brightPixels(in: image) > 20)
         if let folder = ProcessInfo.processInfo.environment["THUMBNAIL_DIR"] {

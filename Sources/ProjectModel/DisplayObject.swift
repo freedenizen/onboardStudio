@@ -186,6 +186,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
     case scripted(ScriptedParams)
     case indicator(IndicatorParams)
     case lapPanel(LapPanelParams)
+    case statCard(StatCardParams)
     case sectorPanel(SectorPanelParams)
     case steeringWheel(SteeringWheelParams)
 
@@ -209,6 +210,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .scripted: "Script"
         case .indicator: "Indicator"
         case .lapPanel: "Timing Panel"
+        case .statCard: "Stat Card"
         case .sectorPanel: "Sector Times"
         case .steeringWheel: "Steering Wheel"
         }
@@ -239,6 +241,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .graph(let p): p.speedUnit
         case .textData(let p): p.speedUnit
         case .lapPanel(let p): p.speedUnit
+        case .statCard(let p): p.speedUnit
         default: .automatic
         }
     }
@@ -254,6 +257,8 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .graph(let p): p.series.map(\.channel)
         // The timing panel has no channel to name: it always draws speed and the delta from it.
         case .lapPanel: ["speed", "speedDelta"]
+        // The card's only number in a unit is its top speed.
+        case .statCard: ["speed"]
         default: []
         }
     }

@@ -151,8 +151,16 @@ extension DisplayObjectKind {
     /// This object with `details` filled into its text. Only a text object has text of its own to
     /// fill; a readout's label names a channel and stays as it is.
     public func filling(_ details: ProjectDetails) -> DisplayObjectKind {
-        guard case .text(var params) = self, !details.isEmpty else { return self }
-        params.text = details.fill(params.text)
-        return .text(params)
+        guard !details.isEmpty else { return self }
+        switch self {
+        case .text(var params):
+            params.text = details.fill(params.text)
+            return .text(params)
+        case .statCard(var params):
+            params.title = details.fill(params.title)
+            return .statCard(params)
+        default:
+            return self
+        }
     }
 }

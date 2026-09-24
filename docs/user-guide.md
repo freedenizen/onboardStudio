@@ -217,7 +217,8 @@ Speedometer, tachometer, custom gauge (the *Gauge Designer*: needle styles, swee
 zones, face images), bar/level, 2D graph (against time, distance or lap with a best-lap ghost),
 g-force plot, track map (with a second vehicle and Apple Maps imagery), steering wheel, gear, lap counter, timers
 (current/last/best lap, session, project time, time of day, delta to best), a **timing panel** (best,
-previous and current lap with lap numbers plus speed-vs-best and time-vs-best lanes), **indicator
+previous and current lap with lap numbers plus speed-vs-best and time-vs-best lanes), a **stat card**
+(the headline numbers — see below), **indicator
 lights** (ABS, traction/stability, brake, warning triangle or text, lit when a channel crosses a
 threshold, with hold time, flash and glow), text data with formatting and warning zones, shapes, text, images (data-driven rotation, opacity, flashing) and **Script** objects
 that draw with JavaScript ([scripting.md](scripting.md)).
@@ -230,6 +231,19 @@ enough, such as a needle's *Tail* or *Hub*, for a short explanation.
 Switching a bar between **Horizontal** and **Vertical** turns its frame with it, about its centre,
 so a long thin bar becomes a tall thin one rather than a stub in a wide box; a frame you had
 already shaped for the new direction is left as it is.
+
+### Stat card and the Social template
+
+A **Stat Card** (Add Object ▸ Stat Card) puts the session's headline numbers on one card, for a clip
+you share: a title — `{track} · {date}` at first, filled from the project's details — then the best
+lap and its number, top speed, the optimal lap (best sectors spliced together, when the data has
+sectors) and how many laps were completed. Switch *Counts* to **The lap at the playhead** and the
+card follows whichever lap is playing instead: its time, how far off the best it is (or *Best lap*),
+and its top speed. Each number can be turned off; top speed is in the card's own speed unit.
+
+**New from Template ▸ Social (9:16)** lays a project out for a phone: 1080 × 1920, the whole
+16:9 picture as a band across the middle rather than cropped to a sliver, a lap-following stat card
+above it, and the lap timer, speedometer and track map below.
 
 ### Locking and grouping
 

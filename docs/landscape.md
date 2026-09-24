@@ -103,7 +103,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
 | Niche | Theoretical / optimal lap | Yes — *Optimal* on the Sector Times panel, and in the data inspector |
-| Emerging | Vertical / social export with stat cards | Partial — a 1080×1920 preset exists; no stat cards or clip extraction (#151) |
+| Emerging | Vertical / social export with stat cards | Partial — a Stat Card object and a Social (9:16) template; no one-action clip extraction yet (#151) |
 
 ## Candidate work
 
