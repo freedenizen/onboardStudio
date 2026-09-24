@@ -11,6 +11,6 @@ GoPro Player's stabilised export drops the GPS and timing that sync depends on.*
    HyperSmooth says it cannot yet be steadied further here and points to Gyroflow.
 4. Export as usual: the steadied picture is what is written.
 
-Tests: `StabilisationUITests.testAVideoWithoutMotionDataSaysSo` (the fixture video has no motion
+Tests: `StabilisationUITests.testEachWayToSteadySaysWhatItNeeds` (the fixture video has no motion
 record). Model: `StabilisationTests`, `OrientationTests`, `StabilisationSettingsTests`; on real
 footage, `StabilisationSampleTests` (local, `ONBOARD_SAMPLES_DIR`).
