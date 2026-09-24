@@ -78,7 +78,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -170,7 +170,12 @@ public struct Project: Hashable, Codable, Sendable {
         guard schemaVersion < Self.currentSchemaVersion else {
             throw ProjectError.unsupportedSchemaVersion(schemaVersion)
         }
-        // Future migrations go here, stepping schemaVersion up one at a time.
+        // Steps one version at a time; each pins what the build before it did.
+        if schemaVersion < 2 {
+            // 1 → 2 (#156): graphs drew the current moment at the right edge, with no line.
+            for index in displayObjects.indices { displayObjects[index].kind.pinGraphPlayheadToTheRightEdge() }
+            schemaVersion = 2
+        }
         schemaVersion = Self.currentSchemaVersion
     }
 }

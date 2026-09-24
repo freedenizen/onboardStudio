@@ -340,13 +340,14 @@ struct ChannelPicker: View {
     let editor: EditorModel
     let object: DisplayObject
     @Binding var selection: String
+    var title = "Channel"
 
     var body: some View {
         let session = object.inputID.flatMap { editor.sessions[$0] }
         let available = session?.orderedChannels.map(\.role.identifier) ?? []
         let missing = !selection.isEmpty && !available.isEmpty && !available.contains(selection)
         let options = (selection.isEmpty ? [""] : missing ? [selection] : []) + available
-        Picker("Channel", selection: $selection) {
+        Picker(title, selection: $selection) {
             ForEach(options, id: \.self) { option in
                 Text(option.isEmpty ? "Choose a channel…" : ChannelRole.pickerTitle(forIdentifier: option)).tag(option)
             }

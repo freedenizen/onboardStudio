@@ -91,7 +91,8 @@ struct DesignerModelTests {
         let data = try style.data()
         let decoded = try ObjectStyle(data: data)
         #expect(decoded == style)
-        #expect((String(data: data, encoding: .utf8) ?? "").contains("\"formatVersion\" : 1"))
+        #expect(
+            (String(data: data, encoding: .utf8) ?? "").contains("\"formatVersion\" : \(ObjectStyle.formatVersion)"))
 
         var target = DisplayObject(
             label: "Other", inputID: nil, frame: UnitRect(x: 0.8, y: 0.9, width: 0.1, height: 0.1),

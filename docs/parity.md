@@ -41,7 +41,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Shape, Text, Embedded Image (data-driven rotation/opacity/flash) | ✅ | |
 | Track Map (+ map background, two-vehicle) | ✅ | Apple Maps imagery (map/satellite/hybrid), second vehicle |
 | Speedometer, Tachometer, Gauge (Gauge Designer) | ✅ | |
-| Bar / Level, 2D Graph (vs time/distance/channel), G-Force Plot | ◐ | Graph vs time, distance and lap; no "vs arbitrary channel" x-axis |
+| Bar / Level, 2D Graph (vs time/distance/channel), G-Force Plot | ✅ | Graph vs time, distance, lap (with a best-lap ghost) or any channel (X-Y, with a fading trail); time and distance graphs can show what is coming as well as what has been |
 | Gear, Lap Counter, Timer (all modes), Text Data (formatting) | ✅ | Timer: current/last/best/session/project/time-of-day/delta-to-best |
 | Enhanced (scripted) object | ✅ | JavaScript instead of RaceRender's C-like language; RaceRender-style names shimmed |
 | Warning lights (brake / ABS / DSC "Enhanced Display" styles) | ✅ | Native **Indicator** object: ISO ABS and traction glyphs, warning triangle, round light or text; any channel + condition + threshold (templates bind to the logger's channel by name, with a suggested threshold from its range), hold time, flash, glow |

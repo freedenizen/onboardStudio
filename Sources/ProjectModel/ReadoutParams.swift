@@ -103,6 +103,12 @@ public enum GraphAxis: String, Codable, Sendable, CaseIterable {
     case distance
     /// Distance into the current lap, from the start line; optionally with the best lap as a ghost.
     case lap
+    /// Another channel's value (#156): each series plotted against `xChannel` — lateral against
+    /// longitudinal G, throttle against speed — over the last `window` seconds, as a fading trail.
+    case channel
+
+    /// Whether `playheadPosition` applies: the axes that scroll past the current moment.
+    public var scrolls: Bool { self == .time || self == .distance }
 }
 
 public struct GraphSeries: Hashable, Codable, Sendable, Identifiable {
@@ -174,6 +180,16 @@ public struct GraphParams: Hashable, Codable, Sendable {
     /// For `.lap`: also draw the best lap's trace in `ghostColor`.
     public var compareBestLap: Bool
     public var ghostColor: RGBAColor
+    /// For `.channel`: what the horizontal axis plots, and its range (`nil` fits the trail).
+    public var xChannel: String
+    public var xMinValue: Double?
+    public var xMaxValue: Double?
+    /// For `.time` and `.distance`: where the current moment sits across the plot, from 0 (the
+    /// left edge: all of the window is still to come) to 1 (the right edge: all of it has passed).
+    /// New graphs sit in the middle, showing as much of what is coming as of what has been (#156).
+    public var playheadPosition: Double
+    /// Draw a vertical line at the current moment, over the traces, when the cursor is shown.
+    public var showPlayheadLine: Bool
 
     public init(
         series: [GraphSeries],
@@ -191,7 +207,12 @@ public struct GraphParams: Hashable, Codable, Sendable {
         showCursor: Bool = true,
         showLabels: Bool = true,
         compareBestLap: Bool = true,
-        ghostColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.45)
+        ghostColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.45),
+        xChannel: String = "lateralG",
+        xMinValue: Double? = nil,
+        xMaxValue: Double? = nil,
+        playheadPosition: Double = 0.5,
+        showPlayheadLine: Bool = true
     ) {
         self.series = series
         self.axis = axis
@@ -209,6 +230,11 @@ public struct GraphParams: Hashable, Codable, Sendable {
         self.showLabels = showLabels
         self.compareBestLap = compareBestLap
         self.ghostColor = ghostColor
+        self.xChannel = xChannel
+        self.xMinValue = xMinValue
+        self.xMaxValue = xMaxValue
+        self.playheadPosition = playheadPosition
+        self.showPlayheadLine = showPlayheadLine
     }
 
     public init(from decoder: any Decoder) throws {
@@ -230,6 +256,20 @@ public struct GraphParams: Hashable, Codable, Sendable {
         showLabels = try c.decodeIfPresent(Bool.self, forKey: .showLabels) ?? d.showLabels
         compareBestLap = try c.decodeIfPresent(Bool.self, forKey: .compareBestLap) ?? d.compareBestLap
         ghostColor = try c.decodeIfPresent(RGBAColor.self, forKey: .ghostColor) ?? d.ghostColor
+        xChannel = try c.decodeIfPresent(String.self, forKey: .xChannel) ?? d.xChannel
+        xMinValue = try c.decodeIfPresent(Double.self, forKey: .xMinValue)
+        xMaxValue = try c.decodeIfPresent(Double.self, forKey: .xMaxValue)
+        // The new defaults. A graph saved before these existed drew at the right edge with no
+        // line; `pinningPlayheadToTheRightEdge()` restores that in each file type's migration.
+        playheadPosition = try c.decodeIfPresent(Double.self, forKey: .playheadPosition) ?? d.playheadPosition
+        showPlayheadLine = try c.decodeIfPresent(Bool.self, forKey: .showPlayheadLine) ?? d.showPlayheadLine
+    }
+
+    /// How every graph drew before #156: the current moment at the right edge, marked by the
+    /// cursor dot alone.
+    public mutating func pinPlayheadToTheRightEdge() {
+        playheadPosition = 1
+        showPlayheadLine = false
     }
 }
 
