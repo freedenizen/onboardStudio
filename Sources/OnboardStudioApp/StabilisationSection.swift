@@ -14,7 +14,7 @@ struct StabilisationSection: View {
     var recordedWithHyperSmooth: Bool { editor.loaded?.orientations[input.id]?.stabilisedInCamera == true }
     /// Looked up when the section is drawn, so installing Gyroflow while the app is open is noticed.
     var gyroflowInstalled: Bool { Gyroflow.executable() != nil }
-    var jobs: GyroflowJobs { .shared }
+    var jobs: StabilisationJobs { .shared }
     /// With Gyroflow: whether a steadied copy of every file of the video is there to show.
     var copiesReady: Bool {
         let files = settings.stabilisation.gyroflowFiles
@@ -31,7 +31,10 @@ struct StabilisationSection: View {
             .accessibilityIdentifier("stabilisation.method")
             if settings.stabilisation.method == .gyroflow {
                 gyroflowControls
-            } else if settings.stabilisation.isActive {
+            }
+            if settings.stabilisation.method == .picture, !pictureMeasured {
+                measureControls
+            } else if settings.stabilisation.method == .motionData || settings.stabilisation.method == .picture {
                 Slider(
                     value: field(\.smoothing, name: "Change Smoothing"), in: StabilisationSettings.smoothingRange,
                     step: 0.1
@@ -55,6 +58,24 @@ struct StabilisationSection: View {
                     "How much the picture is enlarged to hide the edges moved into view; also how far a frame can move")
             }
             Text(explanation).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    var pictureMeasured: Bool { editor.loaded?.pictureMotions[input.id] != nil }
+
+    /// Measure the picture's movement, or follow the measuring.
+    @ViewBuilder var measureControls: some View {
+        if let job = jobs.job(for: input.id), job.task != nil {
+            ProgressView(value: job.progress) { Text("Measuring the picture's movement…") }
+                .accessibilityIdentifier("stabilisation.measureProgress")
+            Button("Cancel") { jobs.cancel(input.id) }
+        } else {
+            Button("Measure Motion") { jobs.measure(input, in: editor) }
+                .help("Measure how the picture moves, frame by frame, to steady it; done once per video")
+                .accessibilityIdentifier("stabilisation.measure")
+        }
+        if let failure = jobs.job(for: input.id)?.failure {
+            Label(failure, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.secondary)
         }
     }
 
@@ -85,6 +106,13 @@ struct StabilisationSection: View {
             }
             return "Gyroflow makes a steadied copy of the picture beside the recording, which is left as it is. "
                 + "Until it is made, the recording is shown."
+        }
+        if settings.stabilisation.method == .picture {
+            return pictureMeasured
+                ? "Steadied from the picture's own movement. Blur, darkness or a picture with little in it make "
+                    + "this weaker than motion data; use that when the camera records it."
+                : "Onboard Studio measures how the picture moves, frame by frame — once, for any camera — and "
+                    + "steadies it from that. Until it is measured, the recording is shown."
         }
         if settings.stabilisation.method == .motionData, !hasMotionData {
             return "This video has no camera motion record, so it is shown as recorded. GoPro HERO8 and later "

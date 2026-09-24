@@ -90,3 +90,42 @@ public struct CameraOrientationTrack: Sendable, Equatable {
 
     public var isEmpty: Bool { times.isEmpty }
 }
+
+/// How a video's picture moved, measured from the picture itself (#264): at each sampled time, how
+/// far the picture had moved since the first frame — across (x) and up (y), in picture heights, in
+/// the recorded frame's own coordinates (origin at the bottom left) — and how far it had rolled, in
+/// radians. Times are seconds of the video file.
+public struct PictureMotionTrack: Sendable, Equatable, Codable {
+    public var times: [Double]
+    public var x: [Double]
+    public var y: [Double]
+    public var roll: [Double]
+
+    public init(times: [Double] = [], x: [Double] = [], y: [Double] = [], roll: [Double] = []) {
+        self.times = times
+        self.x = x
+        self.y = y
+        self.roll = roll
+    }
+
+    public var isEmpty: Bool { times.isEmpty }
+
+    /// Adds one frame-to-frame move, measured as the picture's shift and roll since the sample before.
+    public mutating func append(time: Double, shift: (x: Double, y: Double), roll delta: Double) {
+        times.append(time)
+        x.append((x.last ?? 0) + shift.x)
+        y.append((y.last ?? 0) + shift.y)
+        roll.append((roll.last ?? 0) + delta)
+    }
+
+    /// `other` played after this one, starting at `offset` seconds, carrying on from where this ended.
+    public func followed(by other: PictureMotionTrack, at offset: Double) -> PictureMotionTrack {
+        var result = self
+        let (x0, y0, r0) = (x.last ?? 0, y.last ?? 0, roll.last ?? 0)
+        result.times += other.times.map { $0 + offset }
+        result.x += other.x.map { $0 + x0 }
+        result.y += other.y.map { $0 + y0 }
+        result.roll += other.roll.map { $0 + r0 }
+        return result
+    }
+}

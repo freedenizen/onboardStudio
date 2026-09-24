@@ -1,7 +1,7 @@
 import XCTest
 
 // ci-shard: 2
-/// J26 and J27: steady a shaky video (#262, #263). The fixture video has no motion record and CI has
+/// J26, J27 and J28: steady a shaky video (#262, #263, #264). The fixture video has no motion record and CI has
 /// no Gyroflow, so this drives what each choice says when what it needs is missing.
 final class StabilisationUITests: OnboardStudioUITestCase {
     @MainActor
@@ -27,6 +27,23 @@ final class StabilisationUITests: OnboardStudioUITestCase {
         // One undo step per choice.
         menu("Edit", "Undo Stabilise Video")
         XCTAssertTrue(text(containing: "no camera motion record").waitForExistence(timeout: Self.timeout))
+    }
+
+    @MainActor
+    func testAVideoIsSteadiedFromItsOwnPicture() throws {
+        launch()
+        addFixtureVideo()
+        sidebarInput("test-3s").click()
+        let steady = app.popUpButtons["stabilisation.method"]
+        XCTAssertTrue(steady.waitForExistence(timeout: Self.timeout), "No Stabilisation control in the inspector")
+        choosePopUpItem("From the picture", in: steady)
+        let measure = app.buttons["stabilisation.measure"]
+        XCTAssertTrue(measure.waitForExistence(timeout: Self.timeout), "No Measure Motion button")
+        reveal(measure)
+        measure.click()
+        // Three seconds of video are measured in moments; then the inspector says it is steadied.
+        XCTAssertTrue(
+            text(containing: "Steadied from the picture").waitForExistence(timeout: 60), "It was not steadied")
     }
 
     func text(containing fragment: String) -> XCUIElement {

@@ -120,6 +120,16 @@ A video recorded with HyperSmooth is already steadied by the camera and cannot y
 further here; a video with no motion record (most cameras other than GoPro) says so in the
 inspector.
 
+#### Steadying from the picture
+
+For a camera that records no motion data — most action cameras other than GoPro, phones, a dash cam
+— choose **Steady ▸ From the picture ▸ Measure Motion**. Onboard Studio follows how the picture moves
+from frame to frame (about thirty times a second), once per video, and steadies it from that with the
+same **Smoothing** and **Zoom**. It keeps the measurement, so the video is not measured again unless
+the file changes. It works best on a picture with plenty in it; blur, darkness or a plain sky make it
+weaker, and it cannot tell turning from moving sideways, so prefer motion data when the camera
+records it.
+
 #### Stabilising with Gyroflow
 
 [Gyroflow](https://gyroflow.xyz) is a free app that steadies video from the camera's gyroscope,
