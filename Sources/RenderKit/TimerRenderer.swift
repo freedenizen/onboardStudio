@@ -4,7 +4,7 @@ import ProjectModel
 import TelemetryKit
 
 /// Lap timer readout: current / last / best lap, session or video time, time of day, or the
-/// delta to the best lap, with an optional lap number.
+/// delta to the best lap or the lap time it projects, with an optional lap number.
 public struct TimerRenderer: OverlayDrawing {
     public let context: ObjectContext
     public let params: TimerParams
@@ -65,9 +65,22 @@ public struct TimerRenderer: OverlayDrawing {
                     at: sample.time, session: session, reference: params.deltaReference.comparison)
             else { return Readout(text: "--.--", color: nil) }
             let text = TimeParsing.deltaString(delta, decimals: decimals)
-            let color = text.hasPrefix("−") ? params.aheadColor : (text.hasPrefix("+") ? params.behindColor : nil)
-            return Readout(text: text, color: color)
+            return Readout(text: text, color: color(forDelta: text))
+        case .projectedLap:
+            let reference = params.deltaReference.comparison
+            guard let sample, let session = context.sampler?.session,
+                let projected = LapComparison.projectedLapTime(at: sample.time, session: session, reference: reference),
+                let delta = LapComparison.delta(at: sample.time, session: session, reference: reference)
+            else { return Readout(text: "--:--.--", color: nil) }
+            // Coloured as the delta would be, so a lap on course for a best reads green.
+            let color = color(forDelta: TimeParsing.deltaString(delta, decimals: decimals))
+            return Readout(text: lapTime(projected, decimals: decimals), color: color)
         }
+    }
+
+    /// Ahead or behind by the delta as shown: one that rounds to zero is neither.
+    func color(forDelta text: String) -> RGBAColor? {
+        text.hasPrefix("−") ? params.aheadColor : (text.hasPrefix("+") ? params.behindColor : nil)
     }
 
     func lapTime(_ seconds: Double?, decimals: Int) -> String {
@@ -104,11 +117,12 @@ public struct TimerRenderer: OverlayDrawing {
             case .projectTime: parts.append("VIDEO")
             case .timeOfDay: parts.append("CLOCK")
             case .deltaToBest: parts.append("DELTA")
+            case .projectedLap: parts.append("PROJECTED")
             }
         }
         if params.showLapNumber {
             switch params.mode {
-            case .currentLap, .session, .deltaToBest, .projectTime, .timeOfDay:
+            case .currentLap, .session, .deltaToBest, .projectedLap, .projectTime, .timeOfDay:
                 if let lap = sample?.lapTiming.currentLap { parts.append(String(lap.number)) }
             case .bestLap:
                 if let lap = sample?.lapTiming.bestLapNumber { parts.append(String(lap)) }

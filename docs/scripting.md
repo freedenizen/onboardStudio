@@ -53,7 +53,8 @@ Colours: `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `rgb(r,g,b)`, `rgba(r,g,b,a)`, or `whit
 
 Helpers: `clamp(v, lo, hi)`, `lerp(a, b, t)`, `formatTime(seconds, decimals)` → `1:23.46`,
 `formatDelta(seconds, decimals)` → `+0.35` / `−0.12`. `data.value("lapDelta")` and
-`data.value("speedDelta")` give the deltas to the session's best lap (`data.lap.delta` is against
+`data.value("speedDelta")` give the deltas to the session's best lap, and `data.value("projectedLap")`
+the lap time they project (`data.lap.delta` is against
 the best lap so far).
 
 ## RaceRender-style names

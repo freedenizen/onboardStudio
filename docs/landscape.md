@@ -91,7 +91,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Near-universal | Track map with position | Yes, plus Apple Maps imagery and a second vehicle |
 | Near-universal | Lap timer / lap counter | Yes, seven timer modes |
 | Very common | G-force circle / plot | Yes, with a fading trail and per-axis channels |
-| Very common | Predictive lap timer / live delta | Partial — native lap and speed delta to the session best; no *projected* final lap time (#155) |
+| Very common | Predictive lap timer / live delta | Yes — native lap and speed delta, and the projected lap time, against the session best, the best so far or the previous lap (#155) |
 | Very common | Sector / split times | Yes — Sector Times panel: equal-distance or corner-aware sectors, compared with the best and previous lap |
 | Common (needs CAN/OBD) | Tachometer | Yes |
 | Common (needs CAN/OBD) | Gear indicator | Yes |
@@ -122,14 +122,14 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
    places is saved as a track definition for next time (v0.21.0).
 5. **Batch export, one file per lap** — *Every lap, one file each* in the Export sheet and
    `onboard render --laps each` (#150, v0.25.0).
+7. **Projected lap time** — the Timer's *Projected lap* and the `projectedLap` channel: the compared
+   lap's time plus the position-based delta (#155, v0.26.0).
 8. **Social export: stat cards and clip extraction** — the Stat Card object, the Social (9:16)
    template, and Export Lap as Vertical Clip (#151, v0.25.0).
 
 **Filed**
 
 6. **Lap-vs-lap video comparison** — #154, v0.26.0 *Analysis*.
-7. **Projected lap time** — #155, v0.26.0. Note the survey's finding that GPS-position-based delta is
-   materially more accurate than distance-based.
 9. **Graph X-Y axis against an arbitrary channel** — #156, v0.26.0, which also moves the playhead
    off the right edge of a time graph so the future shows as well as the past.
 

@@ -355,13 +355,19 @@ struct DesignerBehaviourTests {
         #expect(abs((layout.traces[0].points.last?.x ?? 0) - 2) < 1e-6)
     }
 
-    @Test func timerNewModes() {
+    @Test func timerNewModes() throws {
         let ctx = context()
         let sample = ctx.sample(at: 6)
         let delta = TimerRenderer(context: ctx, params: TimerParams(mode: .deltaToBest)).readout(
             sample: sample, projectTime: 6)
         // Constant speed around the square: no time lost or gained versus the best lap.
         #expect(delta.text == "0.00")
+        // At the best lap's pace the lap projects to the best lap's own time, neither ahead nor behind.
+        let best = try #require(LapDeltas.sessionBest(in: SyntheticSession.withDistance)?.duration)
+        let projected = TimerRenderer(context: ctx, params: TimerParams(mode: .projectedLap))
+        #expect(projected.readout(sample: sample, projectTime: 6).text == TimeParsing.lapTimeString(best, decimals: 2))
+        #expect(projected.readout(sample: sample, projectTime: 6).color == nil)
+        #expect(projected.labelText(sample: sample) == "PROJECTED 1")
         let video = TimerRenderer(context: ctx, params: TimerParams(mode: .projectTime, decimals: 1)).readout(
             sample: sample, projectTime: 65.26)
         #expect(video.text == "1:05.3")

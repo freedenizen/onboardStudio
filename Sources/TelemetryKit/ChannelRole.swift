@@ -24,6 +24,9 @@ public enum ChannelRole: Hashable, Sendable, Codable {
     case lapDelta
     /// Speed minus the best lap's speed at the same distance into the lap (m/s; + = faster).
     case speedDelta
+    /// What the lap in progress will come to at the best lap's pace from here (s): the best lap's
+    /// time plus `lapDelta`.
+    case projectedLap
 
     // MARK: - Vehicle attributes
     //
@@ -112,6 +115,7 @@ public enum ChannelRole: Hashable, Sendable, Codable {
         case .lateralG: "lateralG"
         case .lapDelta: "lapDelta"
         case .speedDelta: "speedDelta"
+        case .projectedLap: "projectedLap"
         case .obd(let name): "obd:\(name)"
         case .canbus(let name): "canbus:\(name)"
         case .aux(let name): "aux:\(name)"
@@ -203,6 +207,7 @@ extension ChannelRole {
         case .lateralG: "Lateral G"
         case .lapDelta: "Lap delta"
         case .speedDelta: "Speed delta"
+        case .projectedLap: "Projected lap time"
         case .obd, .canbus, .aux: identifier
         }
     }
@@ -233,7 +238,7 @@ extension ChannelRole {
     /// *to*, never a row in the table.
     ///
     /// `time` and `lap` are structure rather than data, the GPS diagnostics are not displayed,
-    /// and the two deltas are computed from the session rather than read from a column — none of
+    /// and the deltas and projection are computed from the session rather than read from a column — none of
     /// them has a source column to choose.
     public static let mappableAttributes: [ChannelRole] = [
         .speed, .rpm, .gear, .throttle, .brake, .clutch, .steeringAngle,
@@ -248,7 +253,7 @@ extension ChannelRole {
     public static let standardRoles: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .speed, .heading, .lap, .distance,
         .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG, .lapDelta, .speedDelta,
-        .brakePressureFront, .brakePressureRear, .oilPressure, .oilTemperature, .coolantTemperature,
+        .projectedLap, .brakePressureFront, .brakePressureRear, .oilPressure, .oilTemperature, .coolantTemperature,
         .intakeTemperature, .exhaustTemperature, .boostPressure, .steeringAngle, .clutch, .leanAngle,
         .airFuelRatio, .fuelLevel, .batteryVoltage, .engineLoad,
         .absActive, .tractionControlActive, .pitLimiter,

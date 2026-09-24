@@ -312,6 +312,12 @@ green or red; any bar becomes one with **Fill from zero**. The Delta timer and t
 can compare with the *session best lap* (the default), the *best lap so far* (what a live lap
 timer shows) or the *previous lap*.
 
+A Timer set to **Projected lap** shows what the lap in progress will come to if the rest of it goes
+as the lap it compares with did: that lap's time plus the delta now, as a lap time (`1:32.45`),
+green while it is on course to beat it and red while it is not. On the best lap it reads the best
+lap's time throughout, and as a lap finishes it arrives at that lap's own time. The same number
+against the session's best lap is the **`projectedLap`** channel, for a graph or a digital readout.
+
 ### Indicator lights and your logger
 
 Every logger names its ABS / stability / brake channels differently (a RaceChrono CAN export may

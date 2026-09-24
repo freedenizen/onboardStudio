@@ -119,6 +119,23 @@ struct ReferenceLapTests {
             ], laps: laps)
     }
 
+    @Test func projectedLapTimeIsTheReferenceLapPlusTheDeltaNow() throws {
+        let session = Self.session()
+        // 2 s into lap 4: 0.5 s behind lap 2 (5 s), 1 s ahead of lap 3 (10 s).
+        let best = try #require(LapComparison.projectedLapTime(at: 27, session: session, reference: .best))
+        let previous = try #require(LapComparison.projectedLapTime(at: 27, session: session, reference: .previous))
+        #expect(abs(best - 5.5) < 0.01)
+        #expect(abs(previous - 9) < 0.01)
+        // On the best lap itself it reads that lap's time throughout.
+        let onBest = try #require(LapComparison.projectedLapTime(at: 12, session: session, reference: .sessionBest))
+        #expect(abs(onBest - 5) < 0.01)
+        // Near the end of lap 3 (a 10 s lap) it has nearly arrived at the lap's own time.
+        let late = try #require(LapComparison.projectedLapTime(at: 24.5, session: session, reference: .sessionBest))
+        #expect(abs(late - 9.75) < 0.01)
+        // With nothing to compare with, nothing is projected.
+        #expect(LapComparison.projectedLapTime(at: 3, session: session, reference: .best) == nil)
+    }
+
     @Test func bestAndPreviousLapsAreDifferentReferences() {
         let session = Self.session()
         #expect(LapComparison.referenceLap(at: 27, session: session, reference: .best)?.number == 2)
@@ -146,6 +163,7 @@ struct LapDeltaChannelTests {
         let channels = LapDeltas.channels(for: session)
         let delta = try #require(channels.first { $0.role == .lapDelta })
         let speed = try #require(channels.first { $0.role == .speedDelta })
+        let projected = try #require(channels.first { $0.role == .projectedLap })
         // Lap 1 already has a delta: 50 m in took 5 s, the best lap needed 2.5 s.
         #expect(abs((delta.value(at: 5) ?? 0) - 2.5) < 0.01)
         #expect(abs((speed.value(at: 5) ?? 0) + 10) < 0.01)
@@ -155,6 +173,10 @@ struct LapDeltaChannelTests {
         // Lap 4 (in progress, 15 m/s): 30 m in after 2 s, the best lap needed 1.5 s.
         #expect(abs((delta.value(at: 27) ?? 0) - 0.5) < 0.01)
         #expect(abs((speed.value(at: 27) ?? 0) + 5) < 0.01)
+        // Projected: the best lap's 5 s plus the delta, so 5 s on the best lap and 5.5 s in lap 4.
+        #expect(abs((projected.value(at: 12) ?? 0) - 5) < 0.01)
+        #expect(abs((projected.value(at: 27) ?? 0) - 5.5) < 0.01)
+        #expect(projected.unit == .seconds)
         // The timer's session-best reference agrees with the channel.
         let viaComparison = LapComparison.delta(at: 27, session: session, reference: .sessionBest)
         #expect(abs((viaComparison ?? 0) - 0.5) < 0.01)
@@ -181,7 +203,7 @@ struct LapDeltaChannelTests {
         // Without a distance channel nothing can be judged, so nothing changes.
         #expect(LapDeltas.demotingShortLaps(laps, distance: nil) == laps)
         // No speed channel: only the time delta is produced.
-        #expect(LapDeltas.channels(for: session).map(\.role) == [.lapDelta])
+        #expect(LapDeltas.channels(for: session).map(\.role) == [.lapDelta, .projectedLap])
     }
 
     @Test func sessionsWithoutLapsOrDistanceProduceNoChannels() {
@@ -189,5 +211,6 @@ struct LapDeltaChannelTests {
         #expect(LapDeltas.channels(for: empty).isEmpty)
         #expect(ChannelRole(identifier: "lapDelta") == .lapDelta)
         #expect(ChannelRole(identifier: "speedDelta") == .speedDelta)
+        #expect(ChannelRole(identifier: "projectedLap") == .projectedLap)
     }
 }

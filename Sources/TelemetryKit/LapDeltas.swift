@@ -6,6 +6,8 @@ import Foundation
 /// comparison is "same spot on the track":
 /// - `lapDelta` (s): positive = behind the best lap here, negative = ahead.
 /// - `speedDelta` (m/s): positive = faster than the best lap here.
+/// - `projectedLap` (s): what the lap will come to at the best lap's pace from here — the best
+///   lap's time plus `lapDelta` (#155).
 ///
 /// The best lap is the quickest *full* lap of the whole session, so the first lap already has a
 /// delta and the best lap itself reads zero. Out, in and otherwise partial laps get deltas too but
@@ -61,9 +63,12 @@ public enum LapDeltas {
                 index += 1
             }
         }
-        guard !times.isEmpty else { return [] }
+        guard !times.isEmpty, let bestTime = best.duration else { return [] }
         var result = [
-            Channel(role: .lapDelta, name: "Delta to best lap", unit: .seconds, times: times, values: timeDeltas)
+            Channel(role: .lapDelta, name: "Delta to best lap", unit: .seconds, times: times, values: timeDeltas),
+            Channel(
+                role: .projectedLap, name: "Projected lap time", unit: .seconds, times: times,
+                values: timeDeltas.map { bestTime + $0 }),
         ]
         if speed != nil, profile.hasSpeed {
             result.append(

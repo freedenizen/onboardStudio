@@ -115,7 +115,8 @@ public struct TelemetrySession: Sendable {
 
     private static let standardOrder: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .speed, .heading, .distance, .lap,
-        .longitudinalG, .lateralG, .rpm, .gear, .throttle, .brake, .lapDelta, .speedDelta, .accuracy, .gpsUpdate,
+        .longitudinalG, .lateralG, .rpm, .gear, .throttle, .brake, .lapDelta, .speedDelta, .projectedLap, .accuracy,
+        .gpsUpdate,
         .gpsDelay,
     ]
 
