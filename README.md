@@ -46,7 +46,15 @@ lap timer or GPS logger. Onboard Studio puts them together.
 - **Works like a Mac app should.** Every change can be undone, and the Edit menu says what
   Undo will take back. Text and number fields commit when you press Return, and Escape
   abandons them. The attribute window can be driven entirely from the keyboard: ⌥⌘A to open
-  it, ⌘F to filter, and Tab through the table in reading order.
+  it, ⌘F to filter, and Tab through the table in reading order. Every button explains itself
+  on hover and to VoiceOver, and **Help ▸ Export Diagnostics…** saves what a bug report needs.
+- **Make it yours.** Choose the font, typeface and size of every gauge's text, or one font for
+  the whole project. Tell the project which track, car, driver and day it is — most of it fills
+  in from the data file — and a title card shows it. Save a layout as your own template, with a
+  picture of it in the welcome window.
+- **Arrange without fighting it.** Lock finished gauges so a click goes through to the video,
+  group a gauge with its label so they move as one, and select several at once. J, K and L
+  shuttle, I and O mark a range to export, and a click in the timeline moves the playhead.
 - **Cut between cameras.** Put a second camera picture-in-picture, split the screen, or
   switch between angles partway through.
 - **Export a finished video.** Up to 4K, including vertical for phones. Upload straight to
@@ -111,7 +119,7 @@ If something looks wrong, the guide's
 
 Release notes for every version are on the
 [Releases page](https://github.com/freedenizen/onboardStudio/releases), newest first. The
-app is at **v0.23.1**; version numbers below 1.0 mean the file format and the interface can
+app is at **v0.24.0**; version numbers below 1.0 mean the file format and the interface can
 still change between releases.
 
 ## For developers
