@@ -174,7 +174,7 @@ struct ObjectInspector: View {
                 Toggle("Visible", isOn: visibleBinding)
             }
             OverrideRow(editor: editor, object: object, property: .opacity) {
-                Slider(value: opacityBinding, in: 0...1) { Text("Opacity") }
+                Slider(value: opacityBinding, in: 0...1) { Text("Opacity") }.accessibilityIdentifier("object.opacity")
             }
             Toggle("Locked", isOn: lockedBinding)
                 .help("A locked object stays where it is: the preview does not pick it up and the arrow keys leave it")
