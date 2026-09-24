@@ -43,6 +43,8 @@ public final class FrameCompositor: @unchecked Sendable {
         for layer in plan.videoLayers {
             guard let buffer = sources[layer.trackID] else { continue }
             var raw = CIImage(cvPixelBuffer: buffer)
+            // In the recorded frame's own coordinates, which is where the motion data was measured.
+            if let stabilisation = layer.stabilisation { raw = stabilisation.apply(to: raw, at: time) }
             if layer.sourceTransform != .identity {
                 raw = raw.transformed(by: layer.sourceTransform)
                 raw = raw.transformed(by: CGAffineTransform(translationX: -raw.extent.minX, y: -raw.extent.minY))

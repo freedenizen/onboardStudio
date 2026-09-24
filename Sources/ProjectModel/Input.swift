@@ -70,6 +70,8 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
     /// chapters); trim, sync and picture settings apply to the whole sequence. Each clip can be
     /// trimmed on its own and preceded by a gap.
     public var clips: [VideoClip]
+    /// Steadying the picture (#262). Absent in files saved before it, which is off: as recorded.
+    public var stabilisation: StabilisationSettings
 
     public init(
         trim: TrimRange = .none,
@@ -81,7 +83,8 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         chromaKey: ChromaKey? = nil,
         audio: AudioSettings = .neutral,
         lens: LensSettings = .none,
-        clips: [VideoClip] = []
+        clips: [VideoClip] = [],
+        stabilisation: StabilisationSettings = .off
     ) {
         self.trim = trim
         self.includeAudio = includeAudio
@@ -93,11 +96,12 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         self.audio = audio
         self.lens = lens
         self.clips = clips
+        self.stabilisation = stabilisation
     }
 
     // Older documents lack the picture/audio fields; decode them as neutral.
     private enum CodingKeys: String, CodingKey {
-        case trim, includeAudio, rotation, mirror, crop, color, chromaKey, audio, lens, clips
+        case trim, includeAudio, rotation, mirror, crop, color, chromaKey, audio, lens, clips, stabilisation
     }
 
     public init(from decoder: any Decoder) throws {
@@ -112,6 +116,7 @@ public struct VideoInputSettings: Hashable, Codable, Sendable {
         audio = try c.decodeIfPresent(AudioSettings.self, forKey: .audio) ?? .neutral
         lens = try c.decodeIfPresent(LensSettings.self, forKey: .lens) ?? .none
         clips = try c.decodeIfPresent([VideoClip].self, forKey: .clips) ?? []
+        stabilisation = try c.decodeIfPresent(StabilisationSettings.self, forKey: .stabilisation) ?? .off
     }
 }
 

@@ -107,6 +107,19 @@ data alignment all treat the sequence as a single video, and clips may have diff
 360° footage (unwrap into a flat, pannable view). **Audio**: include, mute, volume, balance,
 channel selection.
 
+**Stabilisation** steadies a shaky picture, such as from a helmet mount, using the orientation the
+camera recorded with the video — GoPro HERO8 and later record it with every clip. Set **Steady** to
+**From camera motion data**: each frame is moved so the camera seems to follow a smooth path, so
+the shake goes but turning your head or the car still comes through. **Smoothing** sets how long
+the steadied view takes to follow (towards *Follow* keeps more movement, towards *Float* smooths
+more); **Zoom** enlarges the picture just enough to hide the edges the moves bring into view, and
+also limits how far a frame can move. Everything else — sync, the embedded GPS and telemetry, the
+chapters — is unaffected, because the video file itself is not changed.
+
+A video recorded with HyperSmooth is already steadied by the camera and cannot yet be steadied
+further here; a video with no motion record (most cameras other than GoPro) says so in the
+inspector.
+
 **Transform and Cropping (all videos)**, in the project inspector, zoom, position and crop every
 video at once, in the same terms an editor uses (zoom factor, position as a percentage offset from
 the centre). Use it to reframe a recording without touching each chapter or each camera

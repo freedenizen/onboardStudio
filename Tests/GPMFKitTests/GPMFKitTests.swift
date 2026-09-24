@@ -111,7 +111,8 @@ enum GPMFFixture {
     static func fullBox(_ type: String, _ body: Data) -> Data { box(type, Data([0, 0, 0, 0]) + body) }
 
     /// An MP4 with only a `gpmd` track whose samples are `payloads`, each `durationMs` long.
-    static func mp4(payloads: [Data], durationMs: UInt32 = 1001) -> Data {
+    /// `userData`, when given, is the recording's settings GPMF, stored as `moov/udta/GPMF`.
+    static func mp4(payloads: [Data], durationMs: UInt32 = 1001, userData: Data? = nil) -> Data {
         let ftyp = box("ftyp", Data("mp42".utf8) + be(UInt32(0)) + Data("mp42isom".utf8))
         let mdatBody = payloads.reduce(Data()) { $0 + $1 }
         let mdatOffset = ftyp.count + 8
@@ -143,7 +144,8 @@ enum GPMFFixture {
         let tkhd = fullBox("tkhd", Data(repeating: 0, count: 80))
         let trak = box("trak", tkhd + mdia)
         let mvhd = fullBox("mvhd", Data(repeating: 0, count: 96))
-        let moov = box("moov", mvhd + trak)
+        let udta = userData.map { box("udta", box("GPMF", $0)) } ?? Data()
+        let moov = box("moov", mvhd + trak + udta)
         return ftyp + mdat + moov
     }
 

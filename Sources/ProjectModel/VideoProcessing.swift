@@ -208,3 +208,42 @@ public struct LensSettings: Hashable, Codable, Sendable {
     public static let none = LensSettings()
     public var isActive: Bool { mode != .none }
 }
+
+/// Steadying a shaky picture (#262): each frame moved so the camera seems to follow a smooth path.
+public struct StabilisationSettings: Hashable, Codable, Sendable {
+    public enum Method: String, Codable, Sendable, CaseIterable {
+        /// The picture as recorded.
+        case off
+        /// From the orientation the camera recorded alongside the picture (GoPro HERO8 and later).
+        case motionData
+
+        public var displayName: String {
+            switch self {
+            case .off: "Off"
+            case .motionData: "From camera motion data"
+            }
+        }
+    }
+
+    public var method: Method
+    /// Seconds the smoothed path takes to follow the camera: short keeps more of the movement,
+    /// long floats. The time constant of the smoothing.
+    public var smoothing: Double
+    /// How far the picture is enlarged so the frames' moved edges stay out of view; also the most a
+    /// frame can be moved.
+    public var zoom: Double
+
+    public init(method: Method = .off, smoothing: Double = 0.5, zoom: Double = 1.15) {
+        self.method = method
+        self.smoothing = smoothing
+        self.zoom = zoom
+    }
+
+    public static let off = StabilisationSettings()
+    public var isActive: Bool { method != .off }
+    public static let smoothingRange = 0.1...3.0
+    public static let zoomRange = 1.0...1.5
+
+    /// The largest move of a frame, in picture heights, that the zoom still hides.
+    public var maxShift: Double { max(zoom - 1, 0) / (2 * zoom) }
+}

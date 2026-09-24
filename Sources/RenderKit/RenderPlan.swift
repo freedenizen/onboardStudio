@@ -21,24 +21,29 @@ public struct VideoLayer: Sendable, Equatable {
     /// The source track's preferred (display) transform. Custom compositors receive buffers in
     /// encoded orientation, so this must be applied before anything else.
     public let sourceTransform: CGAffineTransform
+    /// Steadies the picture frame by frame before anything else is done to it (#262).
+    public let stabilisation: LayerStabilisation?
 
     public init(
         trackID: Int32,
         frame: UnitRect = .full,
         opacity: Double = 1,
         transform: VideoTransform = .identity,
-        sourceTransform: CGAffineTransform = .identity
+        sourceTransform: CGAffineTransform = .identity,
+        stabilisation: LayerStabilisation? = nil
     ) {
         self.trackID = trackID
         self.frame = frame
         self.opacity = opacity
         self.transform = transform
         self.sourceTransform = sourceTransform
+        self.stabilisation = stabilisation
     }
 
     public func with(frame: UnitRect, opacity: Double, transform: VideoTransform) -> VideoLayer {
         VideoLayer(
-            trackID: trackID, frame: frame, opacity: opacity, transform: transform, sourceTransform: sourceTransform)
+            trackID: trackID, frame: frame, opacity: opacity, transform: transform, sourceTransform: sourceTransform,
+            stabilisation: stabilisation)
     }
 }
 

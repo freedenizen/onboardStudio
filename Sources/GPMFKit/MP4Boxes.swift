@@ -68,6 +68,18 @@ public enum MP4Boxes {
         throw ReadError.noTrack(sampleType, url)
     }
 
+    /// The payload of `moov/udta/<type>` — where GoPro keeps a recording's settings as GPMF (`GPMF`) —
+    /// or `nil` when the file has none.
+    public static func userData(_ type: String, in url: URL) throws -> Data? {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        let size = try handle.seekToEnd()
+        guard let moov = try boxes(in: handle, from: 0, to: size).first(where: { $0.type == "moov" }),
+            let udta = try child("udta", of: moov, in: handle), let box = try child(type, of: udta, in: handle)
+        else { return nil }
+        return try bytes(at: box.start, count: Int(box.end - box.start), in: handle)
+    }
+
     /// Reads one sample's bytes.
     public static func sampleData(_ track: TrackSamples, index: Int, in handle: FileHandle) throws -> Data {
         try handle.seek(toOffset: track.offsets[index])

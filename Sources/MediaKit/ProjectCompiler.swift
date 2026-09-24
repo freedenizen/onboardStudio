@@ -1,6 +1,7 @@
 import AVFoundation
 import CoreGraphics
 import Foundation
+import GPMFKit
 import Importers
 import ProjectModel
 import RenderKit
@@ -19,6 +20,9 @@ public enum ProjectCompiler {
         public var mediaURLs: [InputID: URL]
         /// Playable URLs of the following clips of a sequence, per video input.
         public var clipURLs: [InputID: [URL]] = [:]
+        /// The camera's orientation through each video input that is steadied from its motion data
+        /// (#262), on the input's own time axis — chapters placed where they play.
+        public var orientations: [InputID: CameraOrientationTrack] = [:]
         /// Where each file of a multi-file recording falls on its input's media timeline. Empty
         /// for single-file inputs, so callers can treat "no chapters" as "nothing to show".
         public var chapters: [InputID: [ChapterSpan]] = [:]
@@ -91,25 +95,7 @@ public enum ProjectCompiler {
                             from: url)
                     }
                 case .video, .audio:
-                    if unchanged, let cached = previous?.mediaInfo[input.id] {
-                        loaded.mediaInfo[input.id] = cached
-                        loaded.mediaURLs[input.id] = previous?.mediaURLs[input.id]
-                        loaded.clipURLs[input.id] = previous?.clipURLs[input.id]
-                        loaded.chapters[input.id] = previous?.chapters[input.id]
-                    } else {
-                        let playable = try await FFmpegBridge.prepare(url)
-                        var info = try await MediaProbe.probe(playable)
-                        if playable != url { loaded.mediaURLs[input.id] = playable }
-                        if case .video(let settings) = input.kind, !settings.clips.isEmpty {
-                            let clips = try await loadClips(settings.clips, location: location)
-                            loaded.chapters[input.id] = ChapterSpan.layout(
-                                firstName: input.source.displayName, firstDuration: info.duration,
-                                clips: settings.clips, playedDurations: clips.played)
-                            info.duration += clips.duration
-                            loaded.clipURLs[input.id] = clips.urls
-                        }
-                        loaded.mediaInfo[input.id] = info
-                    }
+                    try await loadMedia(input, url: url, unchanged: unchanged, previous: previous, into: &loaded)
                 case .image:
                     if unchanged, let cached = previous?.images[input.id] {
                         loaded.images[input.id] = cached
@@ -233,6 +219,7 @@ public enum ProjectCompiler {
         let project = loaded.project
         let cache = RenderCache()
         let lapComparison = LapTimeWarp(project.lapComparison, project: project, sessions: loaded.sessions)
+        let stabilisationPaths = stabilisationPaths(for: loaded)
         // A plan per timeline cut and per orientation change (a chapter shot the other way up).
         let cuts = Set(project.timeline.cutPoints(duration: duration) + orientationChanges.filter { $0 < duration })
         return cuts.sorted().map { start in
@@ -254,7 +241,7 @@ public enum ProjectCompiler {
                 lapComparison: lapComparison)
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms,
-                comparedTrackID: comparedTrackID)
+                comparedTrackID: comparedTrackID, stabilisationPaths: stabilisationPaths, lapComparison: lapComparison)
             let plan = RenderPlan(
                 outputWidth: project.settings.outputWidth, outputHeight: project.settings.outputHeight,
                 frameRate: project.settings.frameRate, videoLayers: layers, overlays: overlays,
