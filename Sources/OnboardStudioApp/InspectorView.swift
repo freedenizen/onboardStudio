@@ -226,6 +226,8 @@ struct ObjectInspector: View {
             SteeringWheelInspector(editor: editor, object: object, params: params)
         case .lapPanel(let params):
             LapPanelInspector(editor: editor, object: object, params: params)
+        case .statCard(let params):
+            StatCardInspector(editor: editor, object: object, params: params)
         case .sectorPanel(let params):
             SectorPanelInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):
