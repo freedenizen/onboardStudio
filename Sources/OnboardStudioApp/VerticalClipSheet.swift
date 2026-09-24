@@ -117,7 +117,9 @@ struct VerticalClipSheet: View {
             do {
                 let compiled = ProjectCompiler.prepareForExport(
                     try await ProjectCompiler.compile(loaded), settings: settings)
-                for try await update in Exporter.export(compiled, settings: settings, range: range, to: url) {
+                var throttle = ProgressThrottle()
+                for try await update in Exporter.export(compiled, settings: settings, range: range, to: url)
+                where throttle.shouldReport(update.fraction) {
                     progress = update
                 }
                 finishedURL = url

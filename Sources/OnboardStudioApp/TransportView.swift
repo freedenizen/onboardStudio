@@ -35,16 +35,7 @@ struct TransportView: View {
             }
             .help("Step forward one frame (.)")
             .accessibilityIdentifier("transport.stepForward").accessibilityLabel("Step forward one frame")
-            Text(TimeParsing.lapTimeString(editor.currentTime)).monospacedDigit().frame(width: 66, alignment: .trailing)
-                .accessibilityIdentifier("transport.time").accessibilityLabel("Playhead")
-                .accessibilityValue(TimeParsing.lapTimeString(editor.currentTime))
-            Slider(
-                value: Binding(get: { editor.currentTime }, set: { editor.seek(to: $0) }),
-                in: 0...max(editor.duration, 0.001)
-            )
-            .frame(minWidth: 60)
-            .accessibilityLabel("Position")
-            .accessibilityIdentifier("transport.position")
+            TransportClock(editor: editor)
             Text(TimeParsing.lapTimeString(editor.duration)).monospacedDigit().foregroundStyle(.secondary).frame(
                 width: 66, alignment: .leading
             )
@@ -93,5 +84,24 @@ struct TransportView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .disabled(editor.project.videoInputs.isEmpty)
+    }
+}
+
+/// The time and position slider: a view of their own so that they are all the transport redraws
+/// on each tick of playback (#279).
+struct TransportClock: View {
+    let editor: EditorModel
+
+    var body: some View {
+        Text(TimeParsing.lapTimeString(editor.currentTime)).monospacedDigit().frame(width: 66, alignment: .trailing)
+            .accessibilityIdentifier("transport.time").accessibilityLabel("Playhead")
+            .accessibilityValue(TimeParsing.lapTimeString(editor.currentTime))
+        Slider(
+            value: Binding(get: { editor.currentTime }, set: { editor.seek(to: $0) }),
+            in: 0...max(editor.duration, 0.001)
+        )
+        .frame(minWidth: 60)
+        .accessibilityLabel("Position")
+        .accessibilityIdentifier("transport.position")
     }
 }

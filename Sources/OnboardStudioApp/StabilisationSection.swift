@@ -1,3 +1,4 @@
+import AppKit
 import MediaKit
 import ProjectModel
 import SwiftUI
@@ -12,13 +13,32 @@ struct StabilisationSection: View {
     /// Whether the file carries the camera's motion record at all (GoPro HERO8 and later).
     var hasMotionData: Bool { editor.loaded?.mediaInfo[input.id]?.hasGPMF == true }
     var recordedWithHyperSmooth: Bool { editor.loaded?.orientations[input.id]?.stabilisedInCamera == true }
-    /// Looked up when the section is drawn, so installing Gyroflow while the app is open is noticed.
-    var gyroflowInstalled: Bool { Gyroflow.executable() != nil }
+    /// Whether Gyroflow is installed, and with it whether a steadied copy of every file of the video
+    /// is there to show. Both touch the disk, so they are looked up when the section appears, when
+    /// the copies or the job change, and when the user comes back to the app (having perhaps just
+    /// installed Gyroflow) — not on every redraw, which during a render was every frame (#279).
+    @State private var gyroflowInstalled = false
+    @State private var copiesReady = false
     var jobs: StabilisationJobs { .shared }
-    /// With Gyroflow: whether a steadied copy of every file of the video is there to show.
-    var copiesReady: Bool {
+
+    /// What `copiesReady` depends on.
+    struct CopiesKey: Equatable {
+        let files: [MediaReference]
+        let clips: Int
+        let rendering: Bool
+    }
+
+    var copiesKey: CopiesKey {
+        CopiesKey(
+            files: settings.stabilisation.gyroflowFiles, clips: settings.clips.count,
+            rendering: jobs.isRunning(input.id))
+    }
+
+    func lookUpGyroflow() {
+        gyroflowInstalled = Gyroflow.executable() != nil
         let files = settings.stabilisation.gyroflowFiles
-        return files.count == settings.clips.count + 1
+        copiesReady =
+            files.count == settings.clips.count + 1
             && files.allSatisfy { FileManager.default.fileExists(atPath: editor.location.resolve($0).path) }
     }
 
@@ -49,6 +69,10 @@ struct StabilisationSection: View {
                     "How much the picture is enlarged to hide the edges moved into view; also how far a frame can move")
             }
             Text(explanation).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .onChange(of: copiesKey, initial: true) { lookUpGyroflow() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            lookUpGyroflow()
         }
     }
 

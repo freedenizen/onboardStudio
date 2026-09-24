@@ -41,7 +41,7 @@ struct FontSection: View {
                     ForEach(faces, id: \.self) { Text($0).tag($0) }
                 }
                 .accessibilityIdentifier("\(identifier).face")
-                if !Typefaces.isInstalled(typeface) {
+                if !Self.isInstalled(typeface) {
                     Label(
                         "\(typeface.displayName) is not installed on this Mac. \(missingNote)",
                         systemImage: "exclamationmark.triangle"
@@ -60,7 +60,26 @@ struct FontSection: View {
         }
     }
 
-    var faces: [String] { typeface.map { Typefaces.faces(of: $0.family) } ?? [] }
+    var faces: [String] { typeface.map { Self.faces(of: $0.family) } ?? [] }
+
+    /// Each family's faces and each typeface's presence, asked of the font server once, as
+    /// `families` is: the inspector redraws often, and asking on every redraw was felt (#279).
+    private static var facesByFamily: [String: [String]] = [:]
+    private static var installed: [Typeface: Bool] = [:]
+
+    static func faces(of family: String) -> [String] {
+        if let known = facesByFamily[family] { return known }
+        let faces = Typefaces.faces(of: family)
+        facesByFamily[family] = faces
+        return faces
+    }
+
+    static func isInstalled(_ typeface: Typeface) -> Bool {
+        if let known = installed[typeface] { return known }
+        let found = Typefaces.isInstalled(typeface)
+        installed[typeface] = found
+        return found
+    }
 
     var familyBinding: Binding<String?> {
         Binding(

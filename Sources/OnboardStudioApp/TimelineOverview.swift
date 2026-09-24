@@ -34,8 +34,7 @@ struct TimelineOverview: View {
                         .frame(width: max(width * (end - start) / duration, 2), height: 6)
                         .offset(x: width * start / duration)
                 }
-                Rectangle().fill(Color.red).frame(width: 1, height: height)
-                    .offset(x: width * min(editor.currentTime, duration) / duration)
+                PlayheadLine(editor: editor, height: height) { width * min($0, duration) / duration }
                 if visibleFraction < 0.999 {
                     RoundedRectangle(cornerRadius: 2).stroke(Color.white.opacity(0.8), lineWidth: 1)
                         .background(RoundedRectangle(cornerRadius: 2).fill(Color.white.opacity(0.12)))

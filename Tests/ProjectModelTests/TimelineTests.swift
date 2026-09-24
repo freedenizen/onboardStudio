@@ -44,6 +44,21 @@ struct TimelineTests {
         #expect(timeline.cutPoints(duration: 8) == [0, 5])
     }
 
+    /// #279: the editor follows `resolutionTime` instead of every playhead tick, which is only
+    /// right if resolving there gives what resolving at the playhead does.
+    @Test func resolvingAtTheResolutionTimeIsResolvingAtThePlayhead() {
+        let timeline = timeline()
+        for time in stride(from: -1.0, through: 15, by: 0.25) {
+            let key = timeline.resolutionTime(at: time)
+            #expect(timeline.resolve(objects, at: key) == timeline.resolve(objects, at: time))
+            #expect(timeline.segment(at: key)?.id == timeline.segment(at: time)?.id)
+        }
+        #expect(timeline.resolutionTime(at: 4.999) == -.infinity)
+        #expect(timeline.resolutionTime(at: 7) == 5)
+        #expect(timeline.resolutionTime(at: 10) == 10)
+        #expect(Timeline().resolutionTime(at: 3) == -.infinity)
+    }
+
     @Test func badgesReportWhatASegmentSets() {
         let timeline = timeline()
         let s1 = timeline.segments[0].id

@@ -91,9 +91,7 @@ struct TimelineRuler: View {
                 .frame(width: max(step * pixelsPerSecond, 1), height: 18, alignment: .topLeading)
                 .offset(x: t * pixelsPerSecond)
             }
-            Rectangle().fill(Color.red).frame(width: 1, height: 18)
-                .offset(x: min(editor.currentTime, duration) * pixelsPerSecond)
-                .allowsHitTesting(false)
+            PlayheadLine(editor: editor, height: 18) { min($0, duration) * pixelsPerSecond }
         }
         .frame(width: width, height: 18)
         .contentShape(Rectangle())
@@ -180,9 +178,7 @@ struct SegmentLaneView: View {
                     )
                     .onHover { inside in if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() } }
             }
-            Rectangle().fill(Color.red).frame(width: 1, height: Self.height)
-                .offset(x: width * min(editor.currentTime, duration) / duration)
-                .allowsHitTesting(false)
+            PlayheadLine(editor: editor, height: Self.height) { width * min($0, duration) / duration }
         }
         .coordinateSpace(name: "segments")
         .contentShape(Rectangle())
@@ -258,9 +254,7 @@ struct VideoLaneView: View {
                 .gesture(
                     dragGesture(for: video, pixelsPerSecond: pixelsPerSecond, barWidth: length * pixelsPerSecond))
             }
-            Rectangle().fill(Color.red).frame(width: 1, height: height)
-                .offset(x: min(editor.currentTime, duration) * pixelsPerSecond)
-                .allowsHitTesting(false)
+            PlayheadLine(editor: editor, height: height) { min($0, duration) * pixelsPerSecond }
         }
         .frame(width: width, height: height)
     }
@@ -398,9 +392,7 @@ struct MarkerLaneView: View {
                 .accessibilityIdentifier("marker.\(placed.marker.name)")
                 .onTapGesture { editor.select(marker: placed.marker.id, seekTo: placed.start) }
             }
-            Rectangle().fill(Color.red).frame(width: 1, height: Self.height)
-                .offset(x: min(editor.currentTime, duration) * pixelsPerSecond)
-                .allowsHitTesting(false)
+            PlayheadLine(editor: editor, height: Self.height) { min($0, duration) * pixelsPerSecond }
         }
         .frame(width: width, height: Self.height)
     }
@@ -439,9 +431,7 @@ struct DataLaneView: View {
                         editor.seek(to: span.start + location.x / pixelsPerSecond)
                     }
             }
-            Rectangle().fill(Color.red).frame(width: 1, height: Self.height)
-                .offset(x: min(editor.currentTime, duration) * pixelsPerSecond)
-                .allowsHitTesting(false)
+            PlayheadLine(editor: editor, height: Self.height) { min($0, duration) * pixelsPerSecond }
         }
         .frame(width: width, height: Self.height)
     }
@@ -472,5 +462,21 @@ struct DataLaneView: View {
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .contentShape(Rectangle())
         .help(laps.isEmpty ? data.label : "\(data.label) — \(laps.count) laps")
+    }
+}
+
+/// The red line at the playhead. A view of its own so that it is the only thing reading
+/// `currentTime`: a lane that read it to place the line redrew every bar in it 60 times a second
+/// during playback (#279).
+struct PlayheadLine: View {
+    let editor: EditorModel
+    let height: CGFloat
+    /// Where a time sits across the lane.
+    let x: (Double) -> CGFloat
+
+    var body: some View {
+        Rectangle().fill(Color.red).frame(width: 1, height: height)
+            .offset(x: x(editor.currentTime))
+            .allowsHitTesting(false)
     }
 }

@@ -35,9 +35,11 @@ final class StabilisationJobs {
         let task = Task { [weak editor] in
             do {
                 let size = try await Self.displaySize(of: files[0])
+                // Gyroflow reports every frame; the bar hears of it only when it has moved (#279).
+                var throttle = ProgressThrottle()
                 for try await fraction in Gyroflow.stabilise(
                     files, into: folder, width: Int(size.width), height: Int(size.height))
-                {
+                where throttle.shouldReport(fraction) {
                     self.jobs[id]?.progress = fraction
                 }
                 let copies = files.map { Gyroflow.outputURL(for: $0, in: folder) }
@@ -73,9 +75,11 @@ final class StabilisationJobs {
         let id = input.id
         let task = Task { [weak editor] in
             do {
+                var throttle = ProgressThrottle()
                 for (index, file) in files.enumerated() where PictureMotion.saved(for: file) == nil {
                     for try await (fraction, _) in PictureMotion.analyse(file) {
-                        self.jobs[id]?.progress = (Double(index) + fraction) / Double(files.count)
+                        let overall = (Double(index) + fraction) / Double(files.count)
+                        if throttle.shouldReport(overall) { self.jobs[id]?.progress = overall }
                     }
                 }
                 editor?.updateInput(id, name: "Steady from the Picture") { input in
