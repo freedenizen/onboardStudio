@@ -87,4 +87,32 @@ extension ProjectCompiler {
         }
         return paths
     }
+
+    /// With Gyroflow, the stabilised copy of every file of `input` — first file, then each chapter —
+    /// when all of them exist; otherwise `nil`, and the recording's own picture is shown (#263).
+    static func gyroflowPictures(
+        for input: Input, settings: VideoInputSettings, in loaded: LoadedProject
+    ) -> [URL]? {
+        let stabilisation = settings.stabilisation
+        guard stabilisation.method == .gyroflow, stabilisation.gyroflowFiles.count == settings.clips.count + 1 else {
+            return nil
+        }
+        let urls = stabilisation.gyroflowFiles.map { loaded.location.resolve($0) }
+        return urls.allSatisfy { FileManager.default.fileExists(atPath: $0.path) } ? urls : nil
+    }
+
+    /// Whether some video's picture now comes from different files: Gyroflow turned on or off, or
+    /// its copies remade.
+    static func gyroflowPicturesChanged(from old: Project, to new: Project) -> Bool {
+        func pictures(_ project: Project) -> [InputID: [MediaReference]] {
+            var result: [InputID: [MediaReference]] = [:]
+            for input in project.inputs {
+                if case .video(let settings) = input.kind, settings.stabilisation.method == .gyroflow {
+                    result[input.id] = settings.stabilisation.gyroflowFiles
+                }
+            }
+            return result
+        }
+        return pictures(old) != pictures(new)
+    }
 }

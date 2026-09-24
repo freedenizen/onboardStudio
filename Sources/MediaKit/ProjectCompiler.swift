@@ -176,6 +176,8 @@ public enum ProjectCompiler {
         if old.settings.withoutFraming != new.settings.withoutFraming || old.inputs.count != new.inputs.count {
             return true
         }
+        // Gyroflow's copies replace the media the video track reads (#263).
+        if gyroflowPicturesChanged(from: old, to: new) { return true }
         // The compared lap's picture is a track cut to the laps compared (#154).
         if old.lapComparison != new.lapComparison { return true }
         for (a, b) in zip(old.inputs, new.inputs) {
@@ -257,12 +259,15 @@ public enum ProjectCompiler {
         var specInputIDs: [InputID] = []
         for input in project.inputs {
             guard case .video(let settings) = input.kind, loaded.problems[input.id] == nil else { continue }
+            // Gyroflow's stabilised copies stand in for the picture when they are all there (#263).
+            let steadied = gyroflowPictures(for: input, settings: settings, in: loaded)
             specs.append(
                 VideoInputSpec(
-                    url: loaded.mediaURLs[input.id] ?? loaded.location.resolve(input.source),
+                    url: steadied?.first ?? loaded.mediaURLs[input.id] ?? loaded.location.resolve(input.source),
                     clips: settings.clips.enumerated().map { index, clip in
                         ClipSpec(
-                            url: loaded.clipURLs[input.id]?[index] ?? loaded.location.resolve(clip.source),
+                            url: steadied.map { $0[index + 1] } ?? loaded.clipURLs[input.id]?[index]
+                                ?? loaded.location.resolve(clip.source),
                             trim: clip.trim, gapBefore: clip.gapBefore, speed: clip.speed)
                     },
                     sync: input.sync, trim: settings.trim, frame: .full, includeAudio: settings.includeAudio,

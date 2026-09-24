@@ -120,6 +120,34 @@ A video recorded with HyperSmooth is already steadied by the camera and cannot y
 further here; a video with no motion record (most cameras other than GoPro) says so in the
 inspector.
 
+#### Stabilising with Gyroflow
+
+[Gyroflow](https://gyroflow.xyz) is a free app that steadies video from the camera's gyroscope,
+corrects the lens and the rolling shutter, and handles footage recorded with HyperSmooth. Onboard
+Studio can run it for you and show its steadied copy in place of the recording.
+
+**Installing Gyroflow** (once):
+
+1. Either, in Terminal: `brew install --cask gyroflow` (needs [Homebrew](https://brew.sh)), or
+   download the macOS version from [gyroflow.xyz/download](https://gyroflow.xyz/download) and drag
+   **Gyroflow** into your **Applications** folder.
+2. Open Gyroflow once from Applications so macOS lets it run, then quit it. Onboard Studio finds it
+   in Applications (or your own Applications folder) by itself; there is nothing to set up.
+
+**Using it:** select the video, then **Stabilisation ▸ Steady ▸ With Gyroflow ▸ Stabilise with
+Gyroflow**. A progress bar follows the render — it takes a while, several times the length of the
+video for 2.7K or larger — and **Cancel** stops it. Gyroflow writes a steadied copy of each file of
+the video beside the recording (`GX010037-gyroflow.mp4`), at the recording's own size; when the
+folder cannot be written to, the copies go into Onboard Studio's Application Support folder. The
+recording itself is never changed.
+
+Only the **picture** is taken from Gyroflow's copy. Gyroflow's files lose the GPS and motion data a
+GoPro records (GoPro Player's stabilised export does too), so the embedded telemetry, the camera's
+clock for syncing and the chapters all keep coming from the recording — and the copy has exactly the
+recording's frames and length, so the sync you set still holds. If a copy goes missing, the
+recording is shown again until you choose **Stabilise Again**. Gyroflow runs as a separate program:
+it is licensed under the GPL, and is not part of Onboard Studio.
+
 **Transform and Cropping (all videos)**, in the project inspector, zoom, position and crop every
 video at once, in the same terms an editor uses (zoom factor, position as a percentage offset from
 the centre). Use it to reframe a recording without touching each chapter or each camera

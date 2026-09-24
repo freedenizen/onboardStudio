@@ -1,3 +1,4 @@
+import MediaKit
 import ProjectModel
 import SwiftUI
 
@@ -11,15 +12,26 @@ struct StabilisationSection: View {
     /// Whether the file carries the camera's motion record at all (GoPro HERO8 and later).
     var hasMotionData: Bool { editor.loaded?.mediaInfo[input.id]?.hasGPMF == true }
     var recordedWithHyperSmooth: Bool { editor.loaded?.orientations[input.id]?.stabilisedInCamera == true }
+    /// Looked up when the section is drawn, so installing Gyroflow while the app is open is noticed.
+    var gyroflowInstalled: Bool { Gyroflow.executable() != nil }
+    var jobs: GyroflowJobs { .shared }
+    /// With Gyroflow: whether a steadied copy of every file of the video is there to show.
+    var copiesReady: Bool {
+        let files = settings.stabilisation.gyroflowFiles
+        return files.count == settings.clips.count + 1
+            && files.allSatisfy { FileManager.default.fileExists(atPath: editor.location.resolve($0).path) }
+    }
 
     var body: some View {
         Section("Stabilisation") {
             Picker("Steady", selection: method) {
                 ForEach(StabilisationSettings.Method.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .disabled(!hasMotionData && !settings.stabilisation.isActive)
+            // Always open: choosing what this video or this Mac lacks says what it needs.
             .accessibilityIdentifier("stabilisation.method")
-            if settings.stabilisation.isActive {
+            if settings.stabilisation.method == .gyroflow {
+                gyroflowControls
+            } else if settings.stabilisation.isActive {
                 Slider(
                     value: field(\.smoothing, name: "Change Smoothing"), in: StabilisationSettings.smoothingRange,
                     step: 0.1
@@ -46,9 +58,37 @@ struct StabilisationSection: View {
         }
     }
 
+    /// Make the copies, follow the render, or say what is shown.
+    @ViewBuilder var gyroflowControls: some View {
+        if let job = jobs.job(for: input.id), job.task != nil {
+            ProgressView(value: job.progress) { Text("Stabilising with Gyroflow…") }
+                .accessibilityIdentifier("stabilisation.gyroflowProgress")
+            Button("Cancel") { jobs.cancel(input.id) }
+        } else if gyroflowInstalled {
+            Button(copiesReady ? "Stabilise Again" : "Stabilise with Gyroflow") { jobs.stabilise(input, in: editor) }
+                .help("Make a steadied copy of this video with Gyroflow; the recording itself is not changed")
+                .accessibilityIdentifier("stabilisation.gyroflowStart")
+        }
+        if let failure = jobs.job(for: input.id)?.failure {
+            Label(failure, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
     var explanation: String {
-        if !hasMotionData {
-            return "This video has no camera motion record. GoPro HERO8 and later record one with every video."
+        if settings.stabilisation.method == .gyroflow {
+            if !gyroflowInstalled {
+                return "Gyroflow is not installed. It is free: install it with “brew install --cask gyroflow” in "
+                    + "Terminal, or from gyroflow.xyz, then choose Stabilise with Gyroflow. See the user guide."
+            }
+            if copiesReady {
+                return "Showing Gyroflow's steadied copy. Sync, GPS and telemetry still come from the recording."
+            }
+            return "Gyroflow makes a steadied copy of the picture beside the recording, which is left as it is. "
+                + "Until it is made, the recording is shown."
+        }
+        if settings.stabilisation.method == .motionData, !hasMotionData {
+            return "This video has no camera motion record, so it is shown as recorded. GoPro HERO8 and later "
+                + "record one with every video; for others, try With Gyroflow."
         }
         if recordedWithHyperSmooth {
             return "This video was recorded with HyperSmooth, which Onboard Studio cannot yet steady further from "

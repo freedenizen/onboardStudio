@@ -216,11 +216,15 @@ public struct StabilisationSettings: Hashable, Codable, Sendable {
         case off
         /// From the orientation the camera recorded alongside the picture (GoPro HERO8 and later).
         case motionData
+        /// A copy of the picture stabilised by Gyroflow (#263), a separate app the user installs,
+        /// shown in place of the recording's picture. Everything else still comes from the recording.
+        case gyroflow
 
         public var displayName: String {
             switch self {
             case .off: "Off"
             case .motionData: "From camera motion data"
+            case .gyroflow: "With Gyroflow"
             }
         }
     }
@@ -232,11 +236,30 @@ public struct StabilisationSettings: Hashable, Codable, Sendable {
     /// How far the picture is enlarged so the frames' moved edges stay out of view; also the most a
     /// frame can be moved.
     public var zoom: Double
+    /// With Gyroflow: the stabilised copy of each file of the video, in order — the first file, then
+    /// each chapter. Empty until they have been made. Only the picture is taken from them: telemetry,
+    /// clocks and chapters still come from the recording, and the timing is identical, so the
+    /// project's sync is unchanged.
+    public var gyroflowFiles: [MediaReference]
 
-    public init(method: Method = .off, smoothing: Double = 0.5, zoom: Double = 1.15) {
+    public init(
+        method: Method = .off, smoothing: Double = 0.5, zoom: Double = 1.15, gyroflowFiles: [MediaReference] = []
+    ) {
         self.method = method
         self.smoothing = smoothing
         self.zoom = zoom
+        self.gyroflowFiles = gyroflowFiles
+    }
+
+    private enum CodingKeys: String, CodingKey { case method, smoothing, zoom, gyroflowFiles }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = StabilisationSettings()
+        method = try c.decodeIfPresent(Method.self, forKey: .method) ?? d.method
+        smoothing = try c.decodeIfPresent(Double.self, forKey: .smoothing) ?? d.smoothing
+        zoom = try c.decodeIfPresent(Double.self, forKey: .zoom) ?? d.zoom
+        gyroflowFiles = try c.decodeIfPresent([MediaReference].self, forKey: .gyroflowFiles) ?? []
     }
 
     public static let off = StabilisationSettings()
