@@ -173,6 +173,18 @@ class OnboardStudioUITestCase: XCTestCase {
         entry.click()
     }
 
+    /// The first two items of the Edit menu — Undo and Redo — as they read with the menu open.
+    @MainActor
+    func undoRedoTitles() -> (undo: String, redo: String) {
+        let edit = app.menuBarItems["Edit"]
+        edit.click()
+        let items = edit.menus.firstMatch.menuItems
+        XCTAssertTrue(items.firstMatch.waitForExistence(timeout: Self.timeout), "The Edit menu did not open")
+        let titles = (items.element(boundBy: 0).title, items.element(boundBy: 1).title)
+        app.typeKey(.escape, modifierFlags: [])
+        return titles
+    }
+
     // MARK: - Fixtures through the Testing menu
 
     func addFixtureVideo() {

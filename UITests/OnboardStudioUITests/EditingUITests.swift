@@ -160,18 +160,6 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarObject("Speedo").waitForNonExistence(timeout: Self.timeout), "Redo removes it again")
     }
 
-    /// The first two items of the Edit menu — Undo and Redo — as they read with the menu open.
-    @MainActor
-    func undoRedoTitles() -> (undo: String, redo: String) {
-        let edit = app.menuBarItems["Edit"]
-        edit.click()
-        let items = edit.menus.firstMatch.menuItems
-        XCTAssertTrue(items.firstMatch.waitForExistence(timeout: Self.timeout), "The Edit menu did not open")
-        let titles = (items.element(boundBy: 0).title, items.element(boundBy: 1).title)
-        app.typeKey(.escape, modifierFlags: [])
-        return titles
-    }
-
     /// #209: Edit ▸ Undo says what it will take back. The undo manager always had the name; the
     /// menu read a bare "Undo" whatever the edit.
     @MainActor
