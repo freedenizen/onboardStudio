@@ -57,8 +57,11 @@ struct PictureMotionTests {
         let track = try await PictureMotion.measure(url) { _ in }
         #expect(track.times.count == 30)
         // The picture moves 12 px (a thirtieth of its height) one way, then back, each frame.
-        let steps = zip(track.x.dropFirst(), track.x).map { abs($0 - $1) }
-        #expect(abs(steps.reduce(0, +) / Double(steps.count) - 12.0 / 360) < 0.01, "steps \(steps.prefix(4))")
+        let steps: [Double] = zip(track.x.dropFirst(), track.x).map { abs($0 - $1) }
+        let meanStep: Double = steps.reduce(0, +) / Double(steps.count)
+        let expected: Double = 12.0 / 360
+        let error: Double = abs(meanStep - expected)
+        #expect(error < 0.01, "mean step \(meanStep), expected \(expected)")
         // Moved by their corrections, the frames stand still.
         let path = try #require(StabilisationPath(picture: track, smoothing: 0.5, maxShift: 0.2))
         let steadied = LayerStabilisation(path: path, zoom: 1.1, sync: .identity)
