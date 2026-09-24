@@ -61,6 +61,7 @@ struct EditorView: View {
         }
         .focusedSceneValue(\.editor, editor)
         .sheet(isPresented: $editor.showExport) { ExportSheet(editor: editor) }
+        .sheet(item: $editor.clipRequest) { request in VerticalClipSheet(editor: editor, request: request) }
         .sheet(isPresented: $editor.showSaveTemplate) { SaveTemplateSheet(editor: editor) }
         .sheet(item: $editor.uploadURL) { url in UploadSheet(file: url) }
         .alert(

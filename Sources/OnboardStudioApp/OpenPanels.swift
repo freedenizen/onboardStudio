@@ -137,7 +137,9 @@ enum OpenPanels {
 
     static func chooseExportDestination(suggestedName: String, fileExtension: String = "mp4") -> URL? {
         if let directory = UITestSupport.exportDirectory {
-            return directory.appending(path: suggestedName).appendingPathExtension(fileExtension)
+            // The suggested name usually carries the extension already, as the save panel expects.
+            let url = directory.appending(path: suggestedName)
+            return url.pathExtension == fileExtension ? url : url.appendingPathExtension(fileExtension)
         }
         let panel = NSSavePanel()
         panel.title = "Export Video"

@@ -206,6 +206,10 @@ struct EditorCommands: Commands {
             }
             .disabled(editor?.project.dataInputs.isEmpty != false)
             Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
+            // One lap, laid out for a phone, in one step (#151).
+            Button("Export Lap as Vertical Clip…") { editor?.requestLapClip() }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+                .disabled(editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
             Button("Upload Video to YouTube…") {
                 if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
             }
