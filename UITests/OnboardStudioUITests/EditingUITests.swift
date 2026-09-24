@@ -321,20 +321,35 @@ final class ObjectEditingUITests: OnboardStudioUITestCase {
         }
 
         x.click()
+        waitForFocus(x)
         for _ in 0..<3 { app.typeKey(.upArrow, modifierFlags: []) }
         expectNumber(x, toBe: start + 3, "↑ should add one on every press, not just the first")
 
         let y = app.textFields["object.y"]
         reveal(y)
-        y.click()
-        for _ in 0..<2 { app.typeKey(.downArrow, modifierFlags: []) }
         guard let yStart = Double((y.value as? String) ?? "") else { return XCTFail("Y unreadable") }
-        XCTAssertLessThan(yStart, 100, "Y should have come down")
+        y.click()
+        // Keys typed before the click has moved focus go nowhere, and the undos below then take back
+        // X's steps instead of Y's — which is how this test once failed on CI (#225).
+        waitForFocus(y)
+        for _ in 0..<2 { app.typeKey(.downArrow, modifierFlags: []) }
+        expectNumber(y, toBe: yStart - 2, "↓ should take one off on every press")
 
         // The steps are ordinary edits, so undo walks back through them.
         app.typeKey("z", modifierFlags: .command)
         app.typeKey("z", modifierFlags: .command)
         expectNumber(x, toBe: start + 3, "undo should not have touched X yet")
+    }
+
+    /// Waits until `element` holds the keyboard focus, so the keys that follow reach it.
+    @MainActor
+    private func waitForFocus(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let focused = NSPredicate { value, _ in
+            ((value as? XCUIElement)?.value(forKey: "hasKeyboardFocus") as? Bool) == true
+        }
+        let result = XCTWaiter.wait(
+            for: [XCTNSPredicateExpectation(predicate: focused, object: element)], timeout: Self.timeout)
+        XCTAssertEqual(result, .completed, "\(element) never took the keyboard focus", file: file, line: line)
     }
 
     /// Compares numerically: the field formats to as many as three decimals, so the printed text

@@ -117,12 +117,20 @@ struct TypefaceTests {
         return try FrameCompositor(plan: plan).renderFrame(sources: [:], time: 12.3)
     }
 
-    func differingPixels(_ a: CVPixelBuffer, _ b: CVPixelBuffer) -> Int {
+    /// Sampled pixels that look different: some channel more than a few levels apart (#258).
+    ///
+    /// Not any difference at all. Frames are composited on the GPU, and CI's runner is a VM on a
+    /// paravirtualised one, where the same frame drawn twice can come back with a glyph edge one
+    /// level off — 24 such pixels once failed "a missing font changes nothing". A font that is
+    /// really different moves hundreds of pixels by far more than this.
+    func differingPixels(_ a: CVPixelBuffer, _ b: CVPixelBuffer, tolerance: Int = 8) -> Int {
         var count = 0
         for y in stride(from: 0, to: 400, by: 2) {
-            for x in stride(from: 0, to: 400, by: 2)
-            where PixelBuffers.pixel(in: a, x: x, y: y) != PixelBuffers.pixel(in: b, x: x, y: y) {
-                count += 1
+            for x in stride(from: 0, to: 400, by: 2) {
+                let p = PixelBuffers.pixel(in: a, x: x, y: y)
+                let q = PixelBuffers.pixel(in: b, x: x, y: y)
+                let apart = [(p.r, q.r), (p.g, q.g), (p.b, q.b), (p.a, q.a)].map { abs(Int($0) - Int($1)) }.max() ?? 0
+                if apart > tolerance { count += 1 }
             }
         }
         return count
