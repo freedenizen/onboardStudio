@@ -302,7 +302,7 @@ struct TimerInspector: View {
             Stepper("Decimals: \(params.decimals)", value: field(\.decimals, "Decimals"), in: 1...3)
             ColorPicker("Text", selection: color(\.textColor, "Text Colour"))
             ColorPicker("Background", selection: color(\.backgroundColor, "Background Colour"))
-            if params.mode == .deltaToBest {
+            if params.mode == .deltaToBest || params.mode == .projectedLap {
                 Picker("Compare with", selection: field(\.deltaReference, "Compare With")) {
                     ForEach(LapReference.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }

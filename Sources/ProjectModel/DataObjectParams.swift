@@ -253,6 +253,9 @@ public enum TimerMode: String, Codable, Sendable, CaseIterable {
     case timeOfDay
     /// Current lap time ahead (−) or behind (+) the best lap at the same distance into the lap.
     case deltaToBest
+    /// What the lap in progress will come to if the rest of it goes as the compared lap did: that
+    /// lap's time plus the delta now (#155).
+    case projectedLap
 
     public var displayName: String {
         switch self {
@@ -263,6 +266,7 @@ public enum TimerMode: String, Codable, Sendable, CaseIterable {
         case .projectTime: "Video time"
         case .timeOfDay: "Time of day"
         case .deltaToBest: "Delta to best lap"
+        case .projectedLap: "Projected lap"
         }
     }
 }
@@ -275,10 +279,10 @@ public struct TimerParams: Hashable, Codable, Sendable {
     public var backgroundColor: RGBAColor
     /// Fractional digits shown (1…3).
     public var decimals: Int
-    /// Colours for a delta readout: ahead of / behind the best lap.
+    /// Colours for a delta or projected readout: ahead of / behind the best lap.
     public var aheadColor: RGBAColor
     public var behindColor: RGBAColor
-    /// The lap a delta readout compares with. Files from before 0.17 used the best lap so far.
+    /// The lap a delta or projected readout compares with. Files from before 0.17 used the best lap so far.
     public var deltaReference: LapReference
 
     public init(

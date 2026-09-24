@@ -135,6 +135,17 @@ public enum LapComparison {
         return (time - match.current.start) - (match.referenceTime - match.reference.start)
     }
 
+    /// What the lap in progress will come to if the rest of it goes as the reference lap's did:
+    /// the reference lap's time plus the delta now (#155). On the reference lap itself it reads that
+    /// lap's time throughout, and as a lap finishes it arrives at the lap's own time. `nil` under
+    /// the same conditions as `delta`.
+    public static func projectedLapTime(at time: Double, session: TelemetrySession, reference: Reference) -> Double? {
+        guard let match = matchingMoment(at: time, session: session, reference: reference),
+            let referenceTime = match.reference.duration
+        else { return nil }
+        return referenceTime + (time - match.current.start) - (match.referenceTime - match.reference.start)
+    }
+
     /// `delta(at:session:reference: .best)`.
     public static func deltaToBest(at time: Double, session: TelemetrySession) -> Double? {
         delta(at: time, session: session, reference: .best)

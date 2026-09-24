@@ -67,7 +67,8 @@ GPX 1.0/1.1 tracks.
 - When the session has laps and distance, two more channels are derived for every object to use:
   `lapDelta` (seconds behind (+) or ahead of (−) the session's best lap at the same distance into
   the lap) and `speedDelta` (speed minus the best lap's speed at that spot, shown in the object's
-  speed unit). The best lap is the quickest *full* lap: a lap shorter than 90 % of the longest
+  speed unit), and `projectedLap` (the best lap's time plus `lapDelta`: what the lap will come to
+  at the best lap's pace from here). The best lap is the quickest *full* lap: a lap shorter than 90 % of the longest
   complete lap (an out, in or pit-lane fragment) is treated as partial everywhere.
 - The first `<trk><name>` is used as the session title.
 
