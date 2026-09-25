@@ -54,8 +54,10 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   Removing a video or data file keeps the objects that use it: they move to another file of the
   same kind, or wait for the next one you add, so replacing a log does not mean rebuilding the
   overlay.
-- **Preview (centre)**: the composed frame at the playhead, exactly as it will export. Selected
-  objects show handles; the arrow keys nudge them one pixel of the exported frame, or ten with ⇧
+- **Preview (centre)**: the composed frame at the playhead, exactly as it will export. Click an
+  object to select it. A video is not picked up by a click on the picture, since it lies under
+  everything else: choose it in the sidebar first, and then it can be dragged on the preview like
+  any other object. Selected objects show handles; the arrow keys nudge them one pixel of the exported frame, or ten with ⇧
   held (the step is set in **Settings ▸ Editing**). With nothing selected, ← and → step a frame
   instead; `,` and `.` always step a frame, whatever is selected. **J**, **K** and **L** play
   backward, stop and play forward, each further tap faster. **I** and **O** mark a range on the

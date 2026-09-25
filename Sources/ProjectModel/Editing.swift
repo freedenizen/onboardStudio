@@ -46,6 +46,16 @@ public enum ObjectHandle: Sendable, Equatable {
 public enum ObjectGeometry {
     public static let minimumSize = 0.02
 
+    /// Whether a click on the preview can pick `object`. A video is under almost every point of
+    /// the picture, so clicking beside a small gauge kept selecting it: a video is picked only
+    /// once it is already selected (from the sidebar, say) or while the picture is being cropped
+    /// or framed. A locked or hidden object is never picked (#90, #278).
+    public static func isPickable(_ object: DisplayObject, selected: Bool, editingFraming: Bool = false) -> Bool {
+        guard object.isVisible, !object.isLocked else { return false }
+        if case .video = object.kind { return selected || editingFraming }
+        return true
+    }
+
     /// Objects are allowed to hang off the edges of the frame, and some are meant to: the Glass
     /// Cockpit steering wheel is placed taller than the frame with only its upper arc showing.
     /// A drag therefore only has to leave enough of the object on screen to grab again, rather
