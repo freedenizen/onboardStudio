@@ -356,6 +356,14 @@ sheet shows the stretch it will export; **Export…** writes `<project> – Lap 
 and codec. The project itself is left exactly as it was. When it finishes, **Reveal in Finder** or
 **Upload to YouTube…** from the same sheet.
 
+### In front and behind
+
+The sidebar lists objects front first: the one at the top is drawn over everything below it.
+Select objects and choose **Arrange ▸ Bring Forward** (⌥⇧⌘F) or **Send Backward** (⌥⇧⌘B) to move
+them one place, or **Bring to Front** (⇧⌘F) and **Send to Back** (⇧⌘B) to move them all the way;
+the same commands are on each object's right-click menu. Or drag a row up or down the sidebar. A
+group moves as one, and each change is one step of Undo.
+
 ### Locking and grouping
 
 A finished object can be **locked** (**Project ▸ Lock**, ⌘L, the padlock beside it in the

@@ -259,6 +259,19 @@ struct EditorCommands: Commands {
                 .keyboardShortcut("l", modifiers: [.command, .option])
                 .disabled(editor == nil)
         }
+        // Keynote's Arrange menu and its keys (#277): ⇧⌘F and ⇧⌘B to the front and back, with ⌥
+        // one step at a time.
+        CommandMenu("Arrange") {
+            ForEach(LayerMove.allCases, id: \.self) { move in
+                Button(move.title) { editor?.arrangeSelection(move) }
+                    .keyboardShortcut(
+                        move == .forward || move == .toFront ? "f" : "b",
+                        modifiers: move == .toFront || move == .toBack
+                            ? [.command, .shift] : [.command, .shift, .option]
+                    )
+                    .disabled(editor?.canArrangeSelection(move) != true)
+            }
+        }
         CommandMenu("Marker") {
             // M to drop one, ⌘M to drop and name it, ⇧↑/⇧↓ to walk them: the Resolve bindings
             // recorded in docs/conventions.md, which Premiere shares.

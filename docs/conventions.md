@@ -211,6 +211,13 @@ Chosen against Apple's own document apps, not an editor.
 - The way in also sits at the left end of the transport, under the preview, where Final Cut and
   Resolve keep their viewer's tool pop-up — not over the picture, which is what is being judged.
 
+## Arrange (#277)
+
+- **⇧⌘F / ⇧⌘B — Bring to Front / Send to Back, ⌥⇧⌘F / ⌥⇧⌘B — Bring Forward / Send Backward**, in
+  an **Arrange** menu, as Keynote, Pages and Freeform have them. All four were free here (⌘F is
+  only the attribute window's filter). The sidebar lists objects front first, as Keynote's object
+  list does, so dragging a row up brings it forward.
+
 ## Other apps
 
 Verified from Apple's official documentation; the Premiere rows could not be confirmed against an

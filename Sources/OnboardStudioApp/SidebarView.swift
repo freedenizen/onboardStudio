@@ -132,12 +132,24 @@ struct SidebarView: View {
                     .contentShape(Rectangle())
                     .tag(SidebarItem.object(object.id))
                     .contextMenu {
+                        // On the row clicked, or the whole selection when the row is in it (#277).
+                        ForEach(LayerMove.allCases, id: \.self) { move in
+                            Button(move.title) {
+                                if !editor.selectedObjectIDs.contains(object.id) {
+                                    editor.selectObject(object.id, wholeGroup: false)
+                                }
+                                editor.arrangeSelection(move)
+                            }
+                        }
+                        Divider()
                         Button("Delete", role: .destructive) {
                             editor.selectedObjectID = object.id
                             editor.deleteSelectedObject()
                         }
                     }
                 }
+                // Drag a row up to bring it forward, down to send it back (#277).
+                .onMove { editor.moveObjectsInList($0, to: $1) }
             }
         }
         .listStyle(.sidebar)
