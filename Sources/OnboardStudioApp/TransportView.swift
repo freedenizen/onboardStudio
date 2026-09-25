@@ -5,9 +5,10 @@ struct TransportView: View {
     @Bindable var editor: EditorModel
 
     var body: some View {
-        HStack(spacing: 8) {
+        // Fits the preview column at the window's narrowest (about 700 points, on a 1024-point
+        // screen); anything wider was cut off at both ends (#275).
+        HStack(spacing: 6) {
             PictureToolMenu(editor: editor)
-            Divider().frame(height: 16)
             Button {
                 editor.seek(to: 0)
             } label: {
@@ -63,7 +64,10 @@ struct TransportView: View {
             Slider(
                 value: Binding(get: { log2(editor.timelineZoom) }, set: { editor.timelineZoom = pow(2, $0) }), in: 0...6
             )
-            .frame(width: 70)
+            // The first thing to give way when the window is narrow: the zoom buttons either side
+            // still work.
+            .frame(minWidth: 24, idealWidth: 70, maxWidth: 70)
+            .layoutPriority(-1)
             .help("Timeline zoom")
             .accessibilityLabel("Timeline Zoom")
             .accessibilityIdentifier("transport.zoom")
@@ -102,7 +106,7 @@ struct TransportClock: View {
             value: Binding(get: { editor.currentTime }, set: { editor.seek(to: $0) }),
             in: 0...max(editor.duration, 0.001)
         )
-        .frame(minWidth: 60)
+        .frame(minWidth: 40)
         .accessibilityLabel("Position")
         .accessibilityIdentifier("transport.position")
     }
