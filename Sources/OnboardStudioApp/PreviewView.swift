@@ -270,8 +270,8 @@ final class GizmoView: NSView {
         let unit = unitPoint(point)
         let handleSize = 6 / max(videoRect.width, 1)
         let extending = !event.modifierFlags.isDisjoint(with: [.shift, .command])
-        // The selection's handles win; then the topmost object under the pointer that is not
-        // locked (#90) — a click meant for the video behind a finished gauge reaches the video.
+        // The selection's handles win; then the topmost object under the pointer that can be
+        // picked: not locked (#90), and not a video unless it is already selected (#278).
         if !extending, let box = movableSelectionBox.map(handleBox),
             let handle = ObjectGeometry.handle(at: unit, in: box, handleSize: handleSize), handle != .body
         {
@@ -279,7 +279,8 @@ final class GizmoView: NSView {
             return
         }
         let framing = editor.project.settings.framing
-        for object in objects.reversed() where object.isVisible && !object.isLocked {
+        for object in objects.reversed()
+        where ObjectGeometry.isPickable(object, selected: selectedIDs.contains(object.id)) {
             if let handle = ObjectGeometry.handle(at: unit, in: object.frame, handleSize: handleSize) {
                 if extending {
                     editor.selectObject(object.id, extending: true)
