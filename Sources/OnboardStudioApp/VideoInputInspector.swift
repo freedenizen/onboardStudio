@@ -27,34 +27,50 @@ struct VideoInputInspector: View {
             )
             .font(.caption).foregroundStyle(.secondary)
         }
-        Section("Transform") {
+        // Crop (#274): this camera's own picture — cut off what should never show, turn it, flip
+        // it — as Photos' Crop tool groups them. Which part of the shot every video shows is
+        // Frame, in the project inspector.
+        Section("Crop") {
+            SliderField(
+                "Top", value: field(\.crop.top, name: "Crop Picture"), in: 0...0.45, scale: .percent, unit: "%",
+                identifier: "crop.top")
+            SliderField(
+                "Bottom", value: field(\.crop.bottom, name: "Crop Picture"), in: 0...0.45, scale: .percent,
+                unit: "%", identifier: "crop.bottom")
+            SliderField(
+                "Left", value: field(\.crop.left, name: "Crop Picture"), in: 0...0.45, scale: .percent, unit: "%",
+                identifier: "crop.left")
+            SliderField(
+                "Right", value: field(\.crop.right, name: "Crop Picture"), in: 0...0.45, scale: .percent,
+                unit: "%", identifier: "crop.right")
             Picker("Rotation", selection: field(\.rotation, name: "Rotate Picture")) {
                 Text("0°").tag(0.0)
                 Text("90°").tag(90.0)
                 Text("180°").tag(180.0)
                 Text("270°").tag(270.0)
             }
+            .accessibilityIdentifier("crop.rotation")
             HStack {
                 Text("Flip")
                 Spacer()
                 Toggle("Horizontal", isOn: field(\.mirror.horizontal, name: "Mirror Picture")).toggleStyle(.button)
                 Toggle("Vertical", isOn: field(\.mirror.vertical, name: "Mirror Picture")).toggleStyle(.button)
             }
-        }
-        Section("Cropping") {
-            SliderField(
-                "Crop top", value: field(\.crop.top, name: "Crop Picture"), in: 0...0.45, scale: .percent, unit: "%")
-            SliderField(
-                "Crop bottom", value: field(\.crop.bottom, name: "Crop Picture"), in: 0...0.45, scale: .percent,
-                unit: "%")
-            SliderField(
-                "Crop left", value: field(\.crop.left, name: "Crop Picture"), in: 0...0.45, scale: .percent, unit: "%")
-            SliderField(
-                "Crop right", value: field(\.crop.right, name: "Crop Picture"), in: 0...0.45, scale: .percent,
-                unit: "%")
-            Button("Reset Crop") { update("Reset Crop") { $0.crop = .none } }.disabled(settings.crop.isEmpty)
-            Text("This video only. Zoom, position and a crop for every video are in the project settings.")
-                .font(.caption).foregroundStyle(.secondary)
+            Button("Reset Crop") {
+                update("Reset Crop") {
+                    $0.crop = .none
+                    $0.rotation = 0
+                    $0.mirror = .none
+                }
+            }
+            .disabled(settings.crop.isEmpty && settings.rotation == 0 && settings.mirror == .none)
+            .help("Show this video's whole picture again, upright and unflipped")
+            .accessibilityIdentifier("crop.reset")
+            Text(
+                "This video's own picture: cut off what should never show, such as a visor edge or the bonnet. "
+                    + "To choose which part of the shot every video shows, use Frame in the project inspector."
+            )
+            .font(.caption).foregroundStyle(.secondary)
         }
         Section("Colour") {
             SliderField(

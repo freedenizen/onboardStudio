@@ -116,7 +116,7 @@ extension EditorModel {
         }
     }
 
-    func setFraming(_ change: (inout CameraFraming) -> Void, name: String = "Change Camera Framing") {
+    func setFraming(_ change: (inout CameraFraming) -> Void, name: String = "Change Frame") {
         edit(name) { change(&$0.settings.framing) }
     }
 
@@ -252,7 +252,7 @@ extension EditorModel {
         after.centerX = min(max(centerX, 0), 1)
         after.centerY = min(max(centerY, 0), 1)
         setFramingLive(before)
-        setFraming({ $0 = after }, name: "Pan Camera")
+        setFraming({ $0 = after }, name: "Move Frame")
     }
 }
 
