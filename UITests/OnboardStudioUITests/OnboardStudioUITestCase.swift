@@ -39,6 +39,8 @@ class OnboardStudioUITestCase: XCTestCase {
             "-SUEnableAutomaticChecks", "NO", "-SUHasLaunchedBefore", "YES",
             // Most journeys start on a blank project; the launcher tests ask for the welcome window.
             "-skipLauncher", launcher ? "NO" : "YES", "-showLauncherAtLaunch", "YES",
+            // A test that hid the inspector (#280) must not leave it hidden for the next one.
+            "-showInspector", "YES",
         ]
         app.launchArguments += extraArguments
         app.launchEnvironment["ONBOARD_FIXTURES"] = Self.fixtures.path

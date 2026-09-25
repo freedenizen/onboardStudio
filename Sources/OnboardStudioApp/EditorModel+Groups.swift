@@ -10,6 +10,20 @@ extension EditorModel {
 
     var hasMultipleSelection: Bool { selectedObjectIDs.count > 1 }
 
+    /// Whether anything is selected: an object, an input, a segment or a marker.
+    var hasSelection: Bool {
+        selectedObjectID != nil || selectedInputID != nil || selectedSegmentID != nil || selectedMarkerID != nil
+    }
+
+    /// Edit ▸ Deselect All, or a click on empty space in the sidebar: nothing selected, so the
+    /// inspector shows the project (#280).
+    func deselectAll() {
+        selectedObjectID = nil
+        selectedInputID = nil
+        selectedSegmentID = nil
+        selectedMarkerID = nil
+    }
+
     /// What a click on an object selects: on the preview, it and the rest of its group; in the
     /// sidebar, just the object, which is how one member of a group is reached to edit it. With
     /// ⌘ or ⇧ held, it is added to the selection, or taken out if it was already in it.

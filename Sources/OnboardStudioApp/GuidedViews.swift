@@ -213,6 +213,7 @@ struct ShortcutsView: View {
         ("↑ ↓ (in a number field)", "Add or subtract one"),
         ("⌘↩ (in a script)", "Apply the script"),
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
+        ("⇧⌘A", "Deselect all: the inspector shows the project"), ("⌥⌘I", "Show / hide the inspector"),
     ]
 
     var body: some View {

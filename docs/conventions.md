@@ -192,6 +192,16 @@ Not from an editor, so not verified against one; chosen against the Mac's own co
   `.searchable` field does not take ⌘F by itself (checked with the UI test with the command
   removed), so the window adds it as a menu command while it is in front.
 
+## Selection and the inspector (#280)
+
+Chosen against Apple's own document apps, not an editor.
+
+- **⇧⌘A — Edit ▸ Deselect All**, as in Keynote, Pages and Freeform; ⌘A and ⇧⌘A are Select All and
+  Deselect All across the system. A click on empty space in the sidebar does the same, as in the
+  Finder's lists.
+- **⌥⌘I — View ▸ Show/Hide Inspector**, as in Pages and Keynote, with the toggle at the trailing
+  end of the toolbar over the inspector it controls. The menu item names what it will do.
+
 ## Other apps
 
 Verified from Apple's official documentation; the Premiere rows could not be confirmed against an

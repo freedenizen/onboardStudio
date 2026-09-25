@@ -48,6 +48,9 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
 
 - **Sidebar (left)**: inputs (videos, data files, images) and display objects, bottom of the list
   is drawn first. Click to select and edit; the eye toggles an object; right-click to remove.
+  ⌘-click or ⇧-click adds objects to the selection, and ↑ and ↓ move through the list when it has
+  the focus. Click empty space below the list, or choose **Edit ▸ Deselect All** (⇧⌘A), to select
+  nothing.
   Removing a video or data file keeps the objects that use it: they move to another file of the
   same kind, or wait for the next one you add, so replacing a log does not mean rebuilding the
   overlay.
@@ -70,7 +73,9 @@ also puts the playhead where you clicked, as in any editor. The magnet button (N
 - **Inspector (right)**: settings for the selected input or object; drag its left edge to widen it.
   With nothing selected it shows the project's output size and frame rate, its details, font,
   camera framing and the Getting Started checklist; **Project ▸ Show Project Details** (⌃⌘I)
-  clears the selection to get there from anywhere. The window fits displays 1024 points wide. What you type in a
+  clears the selection to get there from anywhere. **View ▸ Hide Inspector** (⌥⌘I), or the
+  inspector button at the right-hand end of the toolbar, puts it away for a bigger preview and
+  timeline, and brings it back; the app remembers which you chose. The window fits displays 1024 points wide. What you type in a
   text field takes effect when you press Return or leave the field, so a whole name is one step
   of Edit ▸ Undo; Escape abandons what you typed. The Edit menu says what Undo and Redo will do —
   *Undo Change Sweep*, *Redo Rename Object* — before you choose them.
@@ -78,7 +83,7 @@ also puts the playhead where you clicked, as in any editor. The magnet button (N
   refused. Nothing it says is lost when the next message replaces it: the clock button at its right,
   or **View ▸ Show Activity** (⌥⌘L), lists everything the app has told you in this project, newest
   first, with **Copy All** for a bug report. Errors shown in an alert are listed there too.
-- **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export. Hover over any button without
+- **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export, and Inspector (show or hide it). Hover over any button without
   a caption, here or under the preview, for its name and shortcut.
 - **VoiceOver**: every control is named, and each object on the preview is an element of its own
   that VoiceOver can select and move with its actions (Move Left, Right, Up, Down).
