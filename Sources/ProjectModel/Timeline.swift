@@ -110,6 +110,13 @@ public struct Timeline: Hashable, Codable, Sendable {
         segments.last { $0.start <= time }
     }
 
+    /// The earliest moment that resolves exactly as `time` does: the start of the segment in effect,
+    /// or `-infinity` before the first one. Objects and the editing segment change only when this
+    /// does, so the editor can follow it instead of the playhead's every tick (#279).
+    public func resolutionTime(at time: Double) -> Double {
+        segments.last { $0.start <= time }?.start ?? -.infinity
+    }
+
     /// Segments in effect at `time`, earliest first.
     public func segments(upTo time: Double) -> [Segment] {
         segments.filter { $0.start <= time }

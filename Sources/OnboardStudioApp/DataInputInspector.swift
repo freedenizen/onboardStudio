@@ -114,7 +114,7 @@ struct DataInputInspector: View {
                         }
                     }
                 }
-                .disabled(currentPositionLine == nil)
+                .disabled(!hasPosition)
                 NumberField("Latitude", value: lineField(\.latitude), fractionDigits: 0...6, step: 0.0001)
                 NumberField("Longitude", value: lineField(\.longitude), fractionDigits: 0...6, step: 0.0001)
                 NumberField(
@@ -170,7 +170,7 @@ struct DataInputInspector: View {
                 Button("Add Gate at Preview Position") {
                     if let here = currentPositionLine { updateSectors { $0.lines.append(here) } }
                 }
-                .disabled(currentPositionLine == nil)
+                .disabled(!hasPosition)
                 ForEach(Array(settings.sectors.lines.enumerated()), id: \.offset) { index, line in
                     LabeledContent("Gate \(index + 1)") {
                         HStack {
@@ -227,7 +227,13 @@ struct DataInputInspector: View {
             set: { editor.startFinishEditing = $0 ? input.id : nil })
     }
 
-    /// Position and heading at the current preview time, mapped through this input's sync.
+    /// Whether the file records a position at all, which is what the buttons that use the preview
+    /// position need. Asking `currentPositionLine` instead sampled every channel at the playhead
+    /// twice per redraw, and made the inspector redraw on every tick of playback (#279).
+    var hasPosition: Bool { session?[.latitude] != nil && session?[.longitude] != nil }
+
+    /// Position and heading at the current preview time, mapped through this input's sync. Read
+    /// only when a button is pressed.
     var currentPositionLine: LapLineSpec? {
         guard let session else { return nil }
         let inputTime = input.sync.inputTime(forProjectTime: editor.currentTime)

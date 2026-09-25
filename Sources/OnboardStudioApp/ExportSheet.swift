@@ -322,7 +322,10 @@ extension ExportSheet {
             do {
                 let compiled = ProjectCompiler.prepareForExport(
                     try await ProjectCompiler.compile(loaded), settings: settings)
-                for try await update in Exporter.export(compiled, settings: settings, range: range, to: destination) {
+                // The exporter reports every frame written; the sheet redraws only when it shows (#279).
+                var throttle = ProgressThrottle()
+                for try await update in Exporter.export(compiled, settings: settings, range: range, to: destination)
+                where throttle.shouldReport(update.fraction) {
                     progress = update
                 }
                 finishedURL = destination
@@ -391,13 +394,15 @@ extension ExportSheet {
             do {
                 let compiled = ProjectCompiler.prepareForExport(
                     try await ProjectCompiler.compile(loaded), settings: settings)
+                var throttle = ProgressThrottle()
                 for (index, lap) in laps.enumerated() {
                     batchLabel = "Exporting Lap \(lap.lap) — \(index + 1) of \(laps.count)"
                     let url = folder.appending(path: lap.fileName(base: base, fileExtension: settings.fileExtension))
                     for try await update in Exporter.export(compiled, settings: settings, range: lap.range, to: url) {
+                        let overall = (Double(index) + update.fraction) / Double(laps.count)
+                        guard throttle.shouldReport(overall) else { continue }
                         progress = ExportProgress(
-                            fraction: (Double(index) + update.fraction) / Double(laps.count),
-                            framesWritten: update.framesWritten, currentTime: update.currentTime)
+                            fraction: overall, framesWritten: update.framesWritten, currentTime: update.currentTime)
                     }
                 }
                 batchLabel = nil

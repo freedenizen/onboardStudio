@@ -14,6 +14,9 @@ final class PreviewController {
     private(set) var duration: Double = 0
     private var timeObserver: Any?
     private var isSeeking = false
+    /// Told of every move of the playhead. The editor uses it to follow what changes at segment
+    /// boundaries without making every view that shows objects depend on `currentTime` (#279).
+    @ObservationIgnored var onTimeChange: ((Double) -> Void)?
 
     init() {
         player.actionAtItemEnd = .pause
@@ -25,15 +28,15 @@ final class PreviewController {
             let ended = (note.object as AnyObject?).map(ObjectIdentifier.init)
             MainActor.assumeIsolated {
                 guard let self, let item = self.player.currentItem, ended == ObjectIdentifier(item) else { return }
-                self.isPlaying = false
+                self.setPlaying(false)
             }
         }
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 60), queue: .main) {
             [weak self] time in
             MainActor.assumeIsolated {
                 guard let self, !self.isSeeking else { return }
-                self.currentTime = time.seconds
-                self.isPlaying = self.player.rate != 0
+                self.setTime(time.seconds)
+                self.setPlaying(self.player.rate != 0)
             }
         }
     }
@@ -71,7 +74,7 @@ final class PreviewController {
             if duration > 0, currentTime >= duration - 0.02 { seek(to: 0) }
             player.play()
         }
-        isPlaying = player.rate != 0
+        setPlaying(player.rate != 0)
     }
 
     /// J-K-L (#230): `direction` 1 plays forward, −1 backward, 0 stops. Another tap in the same
@@ -81,7 +84,7 @@ final class PreviewController {
     func shuttle(_ direction: Int) -> Bool {
         guard direction != 0 else {
             player.pause()
-            isPlaying = false
+            setPlaying(false)
             return true
         }
         if direction < 0, player.currentItem?.canPlayReverse != true { return false }
@@ -90,7 +93,7 @@ final class PreviewController {
             (current != 0 && (current > 0) == (direction > 0)) ? min(abs(current) * 2, 8) : 1
         if direction > 0, duration > 0, currentTime >= duration - 0.02 { seek(to: 0) }
         player.rate = speed * Float(direction)
-        isPlaying = player.rate != 0
+        setPlaying(player.rate != 0)
         return true
     }
 
@@ -99,11 +102,23 @@ final class PreviewController {
 
     func seek(to seconds: Double) {
         let clamped = min(max(seconds, 0), max(duration, 0))
-        currentTime = clamped
+        setTime(clamped)
         isSeeking = true
         let time = CMTime(seconds: clamped, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             MainActor.assumeIsolated { self?.isSeeking = false }
         }
+    }
+
+    /// Observation tells every reader of a property about every write, even of the same value; the
+    /// periodic observer writes 60 times a second, so both writes are skipped when nothing moved.
+    private func setTime(_ seconds: Double) {
+        guard seconds != currentTime else { return }
+        currentTime = seconds
+        onTimeChange?(seconds)
+    }
+
+    private func setPlaying(_ playing: Bool) {
+        if playing != isPlaying { isPlaying = playing }
     }
 }

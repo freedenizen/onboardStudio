@@ -90,6 +90,8 @@ final class EditorModel {
                 // objectWillChange fires before the mutation; read the new value on the next turn.
                 DispatchQueue.main.async { self?.syncFromDocument() }
             }
+        preview.onTimeChange = { [weak self] _ in self?.followPlayhead() }
+        followPlayhead()
     }
 
     func syncFromDocument() {
@@ -99,18 +101,23 @@ final class EditorModel {
         // that no longer exist would group or delete nothing, or a group of one (#90).
         if let id = selectedObjectID, project.displayObject(id) == nil { selectedObjectID = nil }
         additionalSelection = additionalSelection.filter { project.displayObject($0) != nil }
+        followPlayhead()
         scheduleCompile()
     }
+
+    /// The start of the segment in effect at the playhead (`-infinity` before the first). Objects
+    /// and the editing segment are resolved here rather than at `currentTime`: they are the same,
+    /// but this changes only at segment boundaries, so the sidebar, the inspector and the preview's
+    /// handles stop redrawing on every tick of playback — they were keeping the main thread busy
+    /// (#279).
+    /// Written only by `followPlayhead()` (EditorModel+Playhead.swift).
+    var playheadResolutionTime = -Double.infinity
+
     var location: ProjectLocation {
         ProjectLocation(fileURL ?? URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: "Untitled.onboardproj"))
     }
     var selectedObject: DisplayObject? { selectedObjectID.flatMap(project.displayObject) }
     var selectedSegment: Segment? { selectedSegmentID.flatMap(project.timeline.segment) }
-    /// The segment in effect at the playhead: visibility, position and opacity edits go there.
-    var editingSegment: Segment? { project.timeline.segment(at: currentTime) }
-    /// Objects as they appear at the playhead.
-    var resolvedObjects: [DisplayObject] { project.displayObjects(at: currentTime) }
-    func resolvedObject(_ id: DisplayObjectID) -> DisplayObject? { resolvedObjects.first { $0.id == id } }
     var selectedInput: Input? { selectedInputID.flatMap(project.input) }
     var isPlaying: Bool { preview.isPlaying }
     var currentTime: Double { preview.currentTime }
