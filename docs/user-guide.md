@@ -121,7 +121,14 @@ Two settings shape the picture, and they answer different questions:
   video shows: **Zoom** in, then move the window with **Horizontal** and **Vertical** (an offset
   from the centre, as a percentage of the frame). It applies to every video at once, so every
   chapter and every camera stays framed alike without touching each one. When zoomed in, drag
-  the picture itself in the preview to move the frame (the cursor becomes a hand). **Trim** cuts
+  the picture itself in the preview to move the frame (the cursor becomes a hand).
+
+  To frame it by eye, choose **View ▸ Frame Picture** (⇧T), the crop button at the left end of the
+  transport, or **Frame on Preview** in the Frame section. The preview shows the whole shot with
+  the overlays put away and the frame drawn over it, the rest dimmed: drag a corner in to zoom (or
+  pinch, ⌥-scroll, or press **+** and **−**), drag inside it or press the arrow keys to move it.
+  **Done** (Return) keeps it as one step of Undo; **Cancel** (Escape) puts it back as it was;
+  **Reset** shows the whole shot. **Trim** cuts
   the same amount from every video's edges before zooming, on top of each video's own crop.
   **Reset Frame** shows the whole shot again.
 

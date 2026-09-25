@@ -11,6 +11,10 @@ struct CameraFramingSection: View {
     var body: some View {
         let framing = editor.project.settings.framing
         Section("Frame (all videos)") {
+            Button("Frame on Preview") { editor.beginFraming() }
+                .disabled(!editor.canFramePicture)
+                .help("Drag the frame over the whole shot on the preview (⇧T)")
+                .accessibilityIdentifier("frame.onPreview")
             SliderField(
                 "Zoom", value: binding(\.zoom, "Zoom Frame"), in: 1...4, step: 0.05,
                 scale: .plain(fractionDigits: 2), unit: "×", identifier: "frame.zoom")
@@ -233,7 +237,8 @@ struct ShortcutsView: View {
         ("↑ ↓ (in a number field)", "Add or subtract one"),
         ("⌘↩ (in a script)", "Apply the script"),
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
-        ("⇧⌘A", "Deselect all: the inspector shows the project"), ("⌥⌘I", "Show / hide the inspector"),
+        ("⇧⌘A", "Deselect all: the inspector shows the project"), ("⇧T", "Frame the picture on the preview"),
+        ("⌥⌘I", "Show / hide the inspector"),
     ]
 
     var body: some View {

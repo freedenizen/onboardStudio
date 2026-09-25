@@ -6,6 +6,8 @@ struct TransportView: View {
 
     var body: some View {
         HStack(spacing: 8) {
+            PictureToolMenu(editor: editor)
+            Divider().frame(height: 16)
             Button {
                 editor.seek(to: 0)
             } label: {

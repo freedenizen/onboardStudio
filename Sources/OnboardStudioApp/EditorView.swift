@@ -22,6 +22,10 @@ struct EditorView: View {
                     .navigationSplitViewColumnWidth(min: 180, ideal: 240)
             } detail: {
                 VStack(spacing: 0) {
+                    if editor.pictureTool != nil {
+                        PictureToolBar(editor: editor)
+                        Divider()
+                    }
                     PreviewView(editor: editor)
                     Divider()
                     // Under the preview, not over it: manual sync is judged by looking at the

@@ -202,6 +202,14 @@ Chosen against Apple's own document apps, not an editor.
 - **⌥⌘I — View ▸ Show/Hide Inspector**, as in Pages and Keynote, with the toggle at the trailing
   end of the toolbar over the inspector it controls. The menu item names what it will do.
 
+## Framing on the preview (#275)
+
+- **⇧T — View ▸ Frame Picture**, as Final Cut Pro's Transform (⇧T; its Crop is ⇧C, kept for #276).
+  Both were free in this app. The tool's own keys follow Photos and Final Cut: Return is Done,
+  Escape is Cancel, the arrows nudge (⇧ for ten times as far), pinch and ⌥-scroll zoom.
+- The way in also sits at the left end of the transport, under the preview, where Final Cut and
+  Resolve keep their viewer's tool pop-up — not over the picture, which is what is being judged.
+
 ## Other apps
 
 Verified from Apple's official documentation; the Premiere rows could not be confirmed against an

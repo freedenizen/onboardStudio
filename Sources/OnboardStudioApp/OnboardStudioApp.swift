@@ -235,6 +235,11 @@ struct EditorCommands: Commands {
             .keyboardShortcut("i", modifiers: [.command, .option])
             .disabled(editor == nil)
             Divider()
+            // ⇧T, as Final Cut Pro's Transform (#275).
+            Button("Frame Picture") { editor?.beginFraming() }
+                .keyboardShortcut("t", modifiers: [.shift])
+                .disabled(editor?.canFramePicture != true)
+            Divider()
             Button("Zoom In Timeline") { editor?.zoomTimeline(by: 1.5) }.keyboardShortcut("=", modifiers: [.command])
             Button("Zoom Out Timeline") { editor?.zoomTimeline(by: 1 / 1.5) }.keyboardShortcut(
                 "-", modifiers: [.command])

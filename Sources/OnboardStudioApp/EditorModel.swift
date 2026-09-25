@@ -39,6 +39,11 @@ final class EditorModel {
         didSet { UserDefaults.standard.set(showInspector, forKey: "showInspector") }
     }
     var showExport = false
+    /// Framing or cropping the picture on the preview (#275, #276); `nil` when neither is on.
+    /// See EditorModel+Framing.swift.
+    var pictureTool: PictureTool? { didSet { if pictureTool != oldValue { scheduleCompile() } } }
+    /// The framing when the tool was opened, which Cancel restores and Done's undo returns to.
+    var framingAtEntry: CameraFraming?
     /// A lap or range to export as a phone clip; the sheet is open while this is set (#151).
     var clipRequest: ClipRequest?
     var showSaveTemplate = false
@@ -318,7 +323,7 @@ final class EditorModel {
             return
         }
         compileInFlight = true
-        let project = self.project
+        let project = previewProject
         let location = self.location
         let previous = reusableLoad ?? loaded
         let needsRecompile = lastCompiledProject.map { ProjectCompiler.needsRecompile(from: $0, to: project) } ?? true
@@ -330,7 +335,7 @@ final class EditorModel {
                     try await ProjectCompiler.load(project, location: location, reusing: previous)
                 }.value
                 reusableLoad = loaded
-                if project == self.project {
+                if project == self.previewProject {
                     self.loaded = loaded
                     do {
                         if needsRecompile || preview.compiled == nil {

@@ -38,6 +38,17 @@ struct PlayerAndGizmo: NSViewRepresentable {
         nsView.gizmo.startFinish = editor.startFinishTarget
         let settings = editor.project.settings
         nsView.gizmo.outputAspect = Double(settings.outputWidth) / Double(max(settings.outputHeight, 1))
+        _ = settings.framing  // redraw the framed window as the framing changes
+        // A tool that opens takes the keyboard, so the arrows, Return and Escape reach it.
+        if editor.pictureTool != nsView.gizmo.lastPictureTool {
+            nsView.gizmo.lastPictureTool = editor.pictureTool
+            nsView.needsLayout = true
+            // On the next turn: taken while the menu that opened the tool is closing, it was lost.
+            if editor.pictureTool != nil {
+                DispatchQueue.main.async { nsView.window?.makeFirstResponder(nsView.gizmo) }
+            }
+            nsView.window?.invalidateCursorRects(for: nsView.gizmo)
+        }
         nsView.gizmo.needsDisplay = true
     }
 }
@@ -60,6 +71,9 @@ final class PreviewContainerView: NSView {
         playerView.controlsStyle = .none
         playerView.showsFullScreenToggleButton = false
         playerView.videoGravity = .resizeAspect
+        // Live Text: a paused frame is analysed for text, and the overlay that lets it be selected
+        // took the keyboard from the preview, so the arrows, Return and Escape went nowhere (#275).
+        playerView.allowsVideoFrameAnalysis = false
         addSubview(playerView)
         addSubview(gizmo)
         gizmo.playerView = playerView
@@ -73,7 +87,7 @@ final class PreviewContainerView: NSView {
 
     override func layout() {
         super.layout()
-        playerView.frame = bounds
+        playerView.frame = bounds.insetBy(dx: gizmo.pictureInset, dy: gizmo.pictureInset)
         gizmo.frame = bounds
         gizmo.needsDisplay = true
     }
@@ -125,6 +139,12 @@ final class GizmoView: NSView {
 
     private var lineDrag: LineDragState?
 
+    /// Framing on the preview (#275): the drag under way, the VoiceOver element for the window
+    /// (AppKit holds it weakly), and the tool last seen, to take the keyboard when one opens.
+    var framingDrag: FramingDrag?
+    var framingElement: PreviewFramingElement?
+    var lastPictureTool: PictureTool?
+
     /// One accessibility element per object, kept rather than rebuilt per request: AppKit holds
     /// the children it is handed only weakly, so a fresh element is gone before it is read.
     var objectElements: [DisplayObjectID: PreviewObjectElement] = [:]
@@ -143,12 +163,18 @@ final class GizmoView: NSView {
     /// The rectangle the video occupies inside this view: the output frame aspect-fitted into the
     /// bounds, matching `AVPlayerView`'s `.resizeAspect` gravity.
     var videoRect: CGRect {
-        guard bounds.width > 0, bounds.height > 0, outputAspect > 0 else { return bounds }
-        let scale = min(bounds.width / outputAspect, bounds.height)
+        let area = bounds.insetBy(dx: pictureInset, dy: pictureInset)
+        guard area.width > 0, area.height > 0, outputAspect > 0 else { return area }
+        let scale = min(area.width / outputAspect, area.height)
         let width = scale * outputAspect
         let height = scale
-        return CGRect(x: (bounds.width - width) / 2, y: (bounds.height - height) / 2, width: width, height: height)
+        return CGRect(x: area.midX - width / 2, y: area.midY - height / 2, width: width, height: height)
     }
+
+    /// While a picture tool is open the picture stands back from the preview's edges, as it does
+    /// in Photos: a frame the size of the whole shot has its corners there, and at the edge they
+    /// sat on the split view's dividers, which took the drag (#275).
+    var pictureInset: CGFloat { editor.pictureTool == nil ? 0 : 28 }
 
     func unitPoint(_ point: CGPoint) -> CGPoint {
         let v = videoRect
@@ -164,6 +190,7 @@ final class GizmoView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
+        if editor.pictureTool == .frame { return drawFraming(in: context) }
         for object in objects where object.isVisible {
             let rect = viewRect(object.frame)
             let selected = selectedIDs.contains(object.id)
@@ -256,6 +283,7 @@ final class GizmoView: NSView {
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
         let point = convert(event.locationInWindow, from: nil)
+        if editor.pictureTool == .frame { return framingMouseDown(at: point) }
         // The line being placed wins over everything, including the map object under it: while
         // this mode is on, the gesture the pointer is near is the one that was meant.
         if let target = startFinish, let line = currentStartFinishLine(target),
@@ -310,6 +338,7 @@ final class GizmoView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
+        if framingDrag != nil { return framingMouseDragged(to: convert(event.locationInWindow, from: nil)) }
         if let lineDrag, let target = startFinish {
             let point = convert(event.locationInWindow, from: nil)
             // Only moving the line keeps the grab offset; an end is being pointed somewhere, and
@@ -347,6 +376,7 @@ final class GizmoView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        if framingDrag != nil { return framingMouseUp() }
         if let lineDrag {
             self.lineDrag = nil
             // One undo step per drag, and none at all for a click that moved nothing.
@@ -376,23 +406,8 @@ final class GizmoView: NSView {
 
     override func resetCursorRects() {
         super.resetCursorRects()
+        if editor.pictureTool == .frame { return framingCursorRects() }
         if editor.project.settings.framing.zoom > 1 { addCursorRect(videoRect, cursor: .openHand) }
-    }
-}
-
-/// How far one press of an arrow key moves the selected object, in output pixels.
-///
-/// The plain step is a preference so it can be matched to how fine the user's layouts are; ⇧
-/// multiplies it, which is the gesture every editor uses for "the same thing, but coarser".
-enum NudgeStep {
-    static let shiftMultiplier = 10.0
-
-    static func pixels(shift: Bool, defaults: UserDefaults = .standard) -> Double {
-        // Read through `Preferences` like every other setting. It used to be `double(forKey:)`
-        // here and `@AppStorage` in Settings — two mechanisms for one key, and this one needed a
-        // "treat zero as unset" guard to make up for `double(forKey:)` returning zero for both.
-        let step = defaults.value(for: Preferences.nudgeStepPixels)
-        return shift ? step * shiftMultiplier : step
     }
 }
 
@@ -400,6 +415,7 @@ enum NudgeStep {
 
 extension GizmoView {
     override func keyDown(with event: NSEvent) {
+        if editor.pictureTool == .frame, framingKeyDown(event) { return }
         switch event.keyCode {
         case 51, 117:  // delete, forward delete
             editor.deleteSelectedObject()

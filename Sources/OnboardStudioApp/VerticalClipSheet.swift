@@ -96,7 +96,7 @@ struct VerticalClipSheet: View {
     }
 
     func start() {
-        guard var loaded = editor.loaded else {
+        guard var loaded = editor.loadedForExport else {
             failure = "The project has not finished loading."
             return
         }
