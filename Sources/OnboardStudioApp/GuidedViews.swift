@@ -2,30 +2,48 @@ import AppKit
 import ProjectModel
 import SwiftUI
 
-/// Zoom, pan and crop shared by every video (project inspector).
+/// Frame (#274): which part of the shot the finished video shows, the same for every video so
+/// chapters and cameras stay framed alike (project inspector). A video's own crop is Crop, in the
+/// video inspector.
 struct CameraFramingSection: View {
     @Bindable var editor: EditorModel
 
     var body: some View {
         let framing = editor.project.settings.framing
-        Section("Transform (all videos)") {
+        Section("Frame (all videos)") {
             SliderField(
-                "Zoom", value: binding(\.zoom), in: 1...4, step: 0.05, scale: .plain(fractionDigits: 2), unit: "×")
-            SliderField("Position X", value: offset(\.centerX), in: -100...100, step: 1, unit: "%")
-                .disabled(framing.zoom <= 1)
-            SliderField("Position Y", value: offset(\.centerY), in: -100...100, step: 1, unit: "%")
-                .disabled(framing.zoom <= 1)
-            Text("Position is the offset of the zoomed window from the centre, as a percentage of the frame.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-        Section("Cropping (all videos)") {
-            SliderField("Crop top", value: binding(\.crop.top), in: 0...0.45, scale: .percent, unit: "%")
-            SliderField("Crop bottom", value: binding(\.crop.bottom), in: 0...0.45, scale: .percent, unit: "%")
-            SliderField("Crop left", value: binding(\.crop.left), in: 0...0.45, scale: .percent, unit: "%")
-            SliderField("Crop right", value: binding(\.crop.right), in: 0...0.45, scale: .percent, unit: "%")
-            Button("Reset Framing") { editor.setFraming({ $0 = .none }, name: "Reset Camera Framing") }
+                "Zoom", value: binding(\.zoom, "Zoom Frame"), in: 1...4, step: 0.05,
+                scale: .plain(fractionDigits: 2), unit: "×", identifier: "frame.zoom")
+            SliderField(
+                "Horizontal", value: offset(\.centerX), in: -100...100, step: 1, unit: "%",
+                identifier: "frame.horizontal"
+            )
+            .disabled(framing.zoom <= 1)
+            .help("Move the framed window left or right; there is room to move it once zoomed in")
+            SliderField(
+                "Vertical", value: offset(\.centerY), in: -100...100, step: 1, unit: "%", identifier: "frame.vertical"
+            )
+            .disabled(framing.zoom <= 1)
+            .help("Move the framed window up or down; there is room to move it once zoomed in")
+            Text(
+                "Zoom in, then move the window: its position is an offset from the centre, as a percentage of the "
+                    + "frame. On the preview, drag the zoomed picture to move it."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+            // An edge trim shared by every video, from before this was Frame; kept, since projects
+            // use it, but below the zoom that is usually what is wanted.
+            SliderField(
+                "Trim top", value: binding(\.crop.top, "Trim Frame"), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField(
+                "Trim bottom", value: binding(\.crop.bottom, "Trim Frame"), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField(
+                "Trim left", value: binding(\.crop.left, "Trim Frame"), in: 0...0.45, scale: .percent, unit: "%")
+            SliderField(
+                "Trim right", value: binding(\.crop.right, "Trim Frame"), in: 0...0.45, scale: .percent, unit: "%")
+            Button("Reset Frame") { editor.setFraming({ $0 = .none }, name: "Reset Frame") }
                 .disabled(framing.isIdentity)
-            Text("Applies on top of each video's own crop, so chapters and cameras stay framed together.")
+                .help("Show the whole shot again, for every video")
+            Text("Trimming cuts the same amount from every video's edges before zooming, on top of its own crop.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -34,13 +52,15 @@ struct CameraFramingSection: View {
     func offset(_ keyPath: WritableKeyPath<CameraFraming, Double>) -> Binding<Double> {
         Binding(
             get: { (editor.project.settings.framing[keyPath: keyPath] - 0.5) * 200 },
-            set: { value in editor.setFraming { $0[keyPath: keyPath] = min(max(value / 200 + 0.5, 0), 1) } })
+            set: { value in
+                editor.setFraming({ $0[keyPath: keyPath] = min(max(value / 200 + 0.5, 0), 1) }, name: "Move Frame")
+            })
     }
 
-    func binding<T>(_ keyPath: WritableKeyPath<CameraFraming, T>) -> Binding<T> {
+    func binding<T>(_ keyPath: WritableKeyPath<CameraFraming, T>, _ name: String) -> Binding<T> {
         Binding(
             get: { editor.project.settings.framing[keyPath: keyPath] },
-            set: { value in editor.setFraming { $0[keyPath: keyPath] = value } })
+            set: { value in editor.setFraming({ $0[keyPath: keyPath] = value }, name: name) })
     }
 }
 

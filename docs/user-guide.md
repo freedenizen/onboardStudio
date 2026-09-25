@@ -110,15 +110,20 @@ that file; 0 = whole file), a *Gap before* it (black) and a *Speed* (2 = twice a
 the input's own play speed). Trim, sync, picture settings and the
 data alignment all treat the sequence as a single video, and clips may have different orientations.
 
-**Transform and Cropping** (this video): rotation, flip, crop per edge. Then colour, sharpness, chroma key, and **Lens** for fisheye or
-360° footage (unwrap into a flat, pannable view). **Audio**: include, mute, volume, balance,
-channel selection.
+Two settings shape the picture, and they answer different questions:
 
-**Transform and Cropping (all videos)**, in the project inspector, zoom, position and crop every
-video at once, in the same terms an editor uses (zoom factor, position as a percentage offset from
-the centre). Use it to reframe a recording without touching each chapter or each camera
-separately; it applies on top of each input's own crop. When zoomed in, drag the picture itself in
-the preview to pan (the cursor becomes a hand); the video object's edge handles still resize it.
+- **Crop** (this video, in the video inspector) is for what should never show: a visor edge, the
+  bonnet, the mount. Cut any edge back with **Top**, **Bottom**, **Left** and **Right**, turn the
+  picture with **Rotation** and flip it; **Reset Crop** shows the whole picture again, upright.
+  Then colour, sharpness, chroma key, and **Lens** for fisheye or 360° footage (unwrap into a flat,
+  pannable view). **Audio**: include, mute, volume, balance, channel selection.
+- **Frame (all videos)**, in the project inspector, chooses which part of the shot the finished
+  video shows: **Zoom** in, then move the window with **Horizontal** and **Vertical** (an offset
+  from the centre, as a percentage of the frame). It applies to every video at once, so every
+  chapter and every camera stays framed alike without touching each one. When zoomed in, drag
+  the picture itself in the preview to move the frame (the cursor becomes a hand). **Trim** cuts
+  the same amount from every video's edges before zooming, on top of each video's own crop.
+  **Reset Frame** shows the whole shot again.
 
 **Multiple cameras.** Add each camera as its own video input, line them up in the video lane (or
 with the sync fields), then arrange them with **Layout** (picture-in-picture, split, quad) and
