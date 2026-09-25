@@ -118,6 +118,12 @@ struct EditorCommands: Commands {
             // Everything a bug report needs, in one file the user sends themselves (#152).
             Button("Export Diagnostics…") { DiagnosticsExport.run(editor: editor) }
         }
+        CommandGroup(after: .pasteboard) {
+            // ⇧⌘A, as in Keynote, Pages and Freeform (#280).
+            Button("Deselect All") { editor?.deselectAll() }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
+                .disabled(editor?.hasSelection != true)
+        }
         CommandMenu("Project") {
             Button("Add Video…") { editor?.addVideo() }.keyboardShortcut("i", modifiers: [.command])
             Button("Add Camera…") { editor?.addCamera() }.keyboardShortcut("i", modifiers: [.command, .shift])
@@ -222,6 +228,12 @@ struct EditorCommands: Commands {
             }
         }
         CommandGroup(after: .toolbar) {
+            // Pages and Keynote put their inspector toggle here, with ⌥⌘I (#280).
+            Button(editor?.showInspector == false ? "Show Inspector" : "Hide Inspector") {
+                editor?.showInspector.toggle()
+            }
+            .keyboardShortcut("i", modifiers: [.command, .option])
+            .disabled(editor == nil)
             Divider()
             Button("Zoom In Timeline") { editor?.zoomTimeline(by: 1.5) }.keyboardShortcut("=", modifiers: [.command])
             Button("Zoom Out Timeline") { editor?.zoomTimeline(by: 1 / 1.5) }.keyboardShortcut(

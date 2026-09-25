@@ -1,3 +1,4 @@
+import AppKit
 import ProjectModel
 import SwiftUI
 
@@ -5,7 +6,10 @@ struct SidebarView: View {
     @Bindable var editor: EditorModel
 
     var body: some View {
-        List {
+        // The list's own selection (#280): the table does what a Mac list does — a click on empty
+        // space selects nothing, ⌘- and ⇧-click extend, the arrow keys move — and the rows are
+        // highlighted as the system highlights them.
+        List(selection: selection) {
             Section("Inputs") {
                 if editor.project.inputs.isEmpty {
                     Text("Add a video and a data file to begin.").foregroundStyle(.secondary).font(.callout)
@@ -32,16 +36,7 @@ struct SidebarView: View {
                     .contentShape(Rectangle())
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("input.\(input.label)")
-                    .onTapGesture {
-                        editor.selectedInputID = input.id
-                        editor.selectedObjectID = nil
-                        editor.selectedSegmentID = nil
-                        editor.selectedMarkerID = nil
-                    }
-                    .listRowBackground(
-                        editor.selectedInputID == input.id && editor.selectedObjectID == nil
-                            ? Color.accentColor.opacity(0.2) : nil
-                    )
+                    .tag(SidebarItem.input(input.id))
                     .contextMenu { Button("Remove", role: .destructive) { editor.removeInput(input.id) } }
                     // A recording the camera split into several files is joined into one input.
                     // Listing the files under the selected row says so without making the user
@@ -84,10 +79,7 @@ struct SidebarView: View {
                         .contentShape(Rectangle())
                         .accessibilityElement(children: .combine)
                         .accessibilityIdentifier("markerRow.\(placed.marker.name)")
-                        .onTapGesture { editor.select(marker: placed.marker.id, seekTo: placed.start) }
-                        .listRowBackground(
-                            editor.selectedMarkerID == placed.marker.id ? Color.accentColor.opacity(0.2) : nil
-                        )
+                        .tag(SidebarItem.marker(placed.marker.id))
                         .contextMenu {
                             Button("Rename…") {
                                 editor.selectedMarkerID = placed.marker.id
@@ -138,14 +130,7 @@ struct SidebarView: View {
                         .accessibilityLabel(visible ? "Hide \(object.label)" : "Show \(object.label)")
                     }
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        // ⌘ or ⇧ adds to the selection, as in the Finder's lists (#90).
-                        let extending = !NSEvent.modifierFlags.isDisjoint(with: [.command, .shift])
-                        editor.selectObject(object.id, extending: extending, wholeGroup: false)
-                    }
-                    .listRowBackground(
-                        editor.selectedObjectIDs.contains(object.id) ? Color.accentColor.opacity(0.2) : nil
-                    )
+                    .tag(SidebarItem.object(object.id))
                     .contextMenu {
                         Button("Delete", role: .destructive) {
                             editor.selectedObjectID = object.id
@@ -156,6 +141,55 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
+        // SwiftUI's list keeps its selection when empty space is clicked; AppKit's clears it, and
+        // that is what a Mac user expects of a list.
+        .background(EmptyRowClick { editor.deselectAll() })
+    }
+
+    /// What a row stands for, so the list can select it.
+    enum SidebarItem: Hashable {
+        case input(InputID)
+        case object(DisplayObjectID)
+        case marker(MarkerID)
+    }
+
+    /// The editor's selection as the list sees it, and the list's changes back into the editor.
+    var selection: Binding<Set<SidebarItem>> {
+        Binding(
+            get: {
+                if !editor.selectedObjectIDs.isEmpty { return Set(editor.selectedObjectIDs.map { .object($0) }) }
+                if let marker = editor.selectedMarkerID { return [.marker(marker)] }
+                if let input = editor.selectedInputID { return [.input(input)] }
+                return []
+            },
+            set: { select($0) })
+    }
+
+    /// Objects win over the rest of a mixed selection, since only they can be edited together;
+    /// a sidebar click selects just the object, not its group, which is how one member of a
+    /// group is reached to edit it (#90).
+    func select(_ items: Set<SidebarItem>) {
+        let objects = items.compactMap { item -> DisplayObjectID? in
+            if case .object(let id) = item { id } else { nil }
+        }
+        if let first = objects.first {
+            let primary = editor.selectedObjectID.flatMap { objects.contains($0) ? $0 : nil } ?? first
+            editor.selectObject(primary, wholeGroup: false)
+            editor.additionalSelection = Set(objects).subtracting([primary])
+        } else if let marker = items.lazy.compactMap({ item -> MarkerID? in
+            if case .marker(let id) = item { id } else { nil }
+        }).first,
+            let placed = editor.markersInProjectTime.first(where: { $0.marker.id == marker })
+        {
+            editor.select(marker: marker, seekTo: placed.start)
+        } else if let input = items.lazy.compactMap({ item -> InputID? in
+            if case .input(let id) = item { id } else { nil }
+        }).first {
+            editor.deselectAll()
+            editor.selectedInputID = input
+        } else {
+            editor.deselectAll()
+        }
     }
 
     func inputDetail(_ input: Input) -> String {
@@ -202,6 +236,59 @@ struct SidebarView: View {
         case .statCard: "list.bullet.rectangle"
         case .sectorPanel: "chart.bar.doc.horizontal"
         case .steeringWheel: "steeringwheel"
+        }
+    }
+}
+
+/// Calls `action` when a click in the table behind it lands on no row (#280). A local event
+/// monitor, so the click itself still goes where it was going.
+struct EmptyRowClick: NSViewRepresentable {
+    let action: () -> Void
+
+    func makeNSView(context: Context) -> MonitorView {
+        let view = MonitorView()
+        view.action = action
+        return view
+    }
+
+    func updateNSView(_ view: MonitorView, context: Context) { view.action = action }
+
+    final class MonitorView: NSView {
+        var action: (() -> Void)?
+        private var monitor: Any?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let monitor { NSEvent.removeMonitor(monitor) }
+            monitor = nil
+            guard window != nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+                self?.handle(event)
+                return event
+            }
+        }
+
+        /// Only clicks inside this view, which lies behind the sidebar's list and has its frame,
+        /// and only those that land on no row of the table there.
+        private func handle(_ event: NSEvent) {
+            guard let window, event.window === window,
+                convert(bounds, to: nil).contains(event.locationInWindow),
+                let hit = window.contentView?.hitTest(event.locationInWindow),
+                let table = Self.table(containing: hit)
+            else { return }
+            if table.row(at: table.convert(event.locationInWindow, from: nil)) == -1 { action?() }
+        }
+
+        /// The table the click is in: an ancestor, or the document of an enclosing scroll view
+        /// (the empty space below the last row belongs to the scroll view, not the table).
+        private static func table(containing view: NSView) -> NSTableView? {
+            var current: NSView? = view
+            while let candidate = current {
+                if let table = candidate as? NSTableView { return table }
+                if let scroll = candidate as? NSScrollView { return scroll.documentView as? NSTableView }
+                current = candidate.superview
+            }
+            return nil
         }
     }
 }

@@ -30,6 +30,14 @@ final class EditorModel {
     var selectedSegmentID: SegmentID?
     var selectedMarkerID: MarkerID?
     var showSyncWizard = false
+    /// View ▸ Hide Inspector (⌥⌘I) (#280). Remembered between launches, as the sidebar is.
+    /// Read with `bool(forKey:)`: a launch argument (the UI tests pass one) arrives as a string.
+    var showInspector =
+        UserDefaults.standard.object(forKey: "showInspector") == nil
+        ? true : UserDefaults.standard.bool(forKey: "showInspector")
+    {
+        didSet { UserDefaults.standard.set(showInspector, forKey: "showInspector") }
+    }
     var showExport = false
     /// A lap or range to export as a phone clip; the sheet is open while this is set (#151).
     var clipRequest: ClipRequest?

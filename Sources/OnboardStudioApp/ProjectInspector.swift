@@ -13,6 +13,7 @@ struct ProjectInspector: View {
                     Text(option.replacingOccurrences(of: "x", with: " × ")).tag(option)
                 }
             }
+            .accessibilityIdentifier("project.outputSize")
             Picker("Frame rate", selection: frameRateBinding) {
                 Text("24").tag(24.0)
                 Text("25").tag(25.0)

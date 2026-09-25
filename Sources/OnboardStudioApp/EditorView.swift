@@ -37,8 +37,10 @@ struct EditorView: View {
             }
             .frame(minWidth: 700)
             .layoutPriority(1)
-            InspectorView(editor: editor)
-                .frame(minWidth: 280, idealWidth: 300, maxWidth: 460)
+            if editor.showInspector {
+                InspectorView(editor: editor)
+                    .frame(minWidth: 280, idealWidth: 300, maxWidth: 460)
+            }
         }
         .toolbar { EditorToolbar(editor: editor) }
         .overlay { TourOverlay(editor: editor) }
@@ -161,6 +163,17 @@ struct EditorToolbar: ToolbarContent {
             .help("Export the finished video (⌘E)")
             .accessibilityIdentifier("toolbar.export")
             .disabled(editor.project.videoInputs.isEmpty)
+        }
+        // At the trailing end, over the inspector it shows and hides, as in Pages and Keynote (#280).
+        ToolbarItem(placement: .primaryAction) {
+            Button {
+                editor.showInspector.toggle()
+            } label: {
+                Label("Inspector", systemImage: "sidebar.right")
+            }
+            .help(editor.showInspector ? "Hide the inspector (⌥⌘I)" : "Show the inspector (⌥⌘I)")
+            .accessibilityLabel(editor.showInspector ? "Hide Inspector" : "Show Inspector")
+            .accessibilityIdentifier("toolbar.inspector")
         }
     }
 }
