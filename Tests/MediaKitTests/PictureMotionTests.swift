@@ -106,3 +106,16 @@ struct PictureMotionTests {
         #expect(joined.roll == [0, 0.01, 0.01, 0.01])
     }
 }
+
+/// Measurements are kept apart for the UI tests, so none finds a video already measured (#288).
+@Suite struct PictureMotionCacheTests {
+    @Test func theUITestsFolderIsUsedWhenGiven() {
+        let folder = PictureMotion.cacheFolder(environment: ["ONBOARD_TEST_MOTION_DIR": "/tmp/motion-test"])
+        #expect(folder.path == "/tmp/motion-test")
+    }
+
+    @Test func otherwiseMeasurementsLiveInApplicationSupport() {
+        let folder = PictureMotion.cacheFolder(environment: [:])
+        #expect(folder.path.hasSuffix("Application Support/OnboardStudio/Motion"))
+    }
+}
