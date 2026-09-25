@@ -55,4 +55,21 @@ import Testing
         #expect(FramingEditing.resized(.none, toWidth: 2).zoom == 1)
         #expect(FramingEditing.resized(.none, toWidth: 0).zoom == 4)
     }
+
+    @Test func aPictureAspectAllowsForCropAndRotation() {
+        #expect(FramingEditing.pictureAspect(width: 1920, height: 1080) == 1920.0 / 1080)
+        #expect(FramingEditing.pictureAspect(width: 1920, height: 1080, rotation: 90) == 1080.0 / 1920)
+        let cropped = FramingEditing.pictureAspect(width: 1000, height: 1000, crop: CropInsets(left: 0.25, right: 0.25))
+        #expect(cropped == 0.5)
+        #expect(FramingEditing.pictureAspect(width: 0, height: 1080) == nil)
+    }
+
+    @Test func aNarrowerPictureIsPillarboxedInItsBox() {
+        // A 4:3 camera in a full 16:9 frame: bars either side.
+        let box = UnitRect(x: 0, y: 0, width: 1, height: 1)
+        let placed = FramingEditing.fitted(aspect: 4.0 / 3, in: box, boxAspect: 16.0 / 9)
+        #expect(close(placed.width, 0.75) && close(placed.x, 0.125) && placed.height == 1)
+        let wide = FramingEditing.fitted(aspect: 21.0 / 9, in: box, boxAspect: 16.0 / 9)
+        #expect(close(wide.height, 16.0 / 21) && wide.width == 1)
+    }
 }

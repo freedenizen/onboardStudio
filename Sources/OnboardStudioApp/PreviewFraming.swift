@@ -18,7 +18,8 @@ struct FramingDrag {
 /// finished video shows, with the rest dimmed. Drag inside to move it, a corner to zoom; pinch
 /// or ⌥-scroll to zoom; the arrow keys move it; Return is Done and Escape Cancel.
 extension GizmoView {
-    /// Where the shot is drawn: the largest video on screen, or the whole picture.
+    /// Where the shot is drawn: the picture of the largest video on screen, aspect-fitted into its
+    /// box as the renderer places it, or the whole output when there is no video.
     var framingTarget: CGRect {
         let videos = objects.filter { object in
             guard object.isVisible, case .video = object.kind else { return false }
@@ -26,7 +27,19 @@ extension GizmoView {
         }
         guard let largest = videos.max(by: { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height })
         else { return videoRect }
-        return viewRect(largest.frame)
+        return viewRect(pictureBox(of: largest))
+    }
+
+    /// The part of `object`'s box its picture fills (unit coordinates of the output).
+    func pictureBox(of object: DisplayObject) -> UnitRect {
+        guard let id = object.inputID, let input = editor.project.input(id), case .video(let settings) = input.kind,
+            let info = editor.loaded?.mediaInfo[id],
+            let aspect = FramingEditing.pictureAspect(
+                width: info.width, height: info.height, crop: settings.crop, rotation: settings.rotation),
+            object.frame.height > 0
+        else { return object.frame }
+        let boxAspect = object.frame.width / object.frame.height * outputAspect
+        return FramingEditing.fitted(aspect: aspect, in: object.frame, boxAspect: boxAspect)
     }
 
     /// The framed window on the preview, in view coordinates.

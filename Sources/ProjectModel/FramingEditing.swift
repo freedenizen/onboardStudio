@@ -42,4 +42,29 @@ public enum FramingEditing {
         guard width > 0 else { return zoomed(framing, by: zoomRange.upperBound / framing.zoom) }
         return zoomed(framing, by: (trimmedWidth / width) / framing.zoom)
     }
+
+    /// The shape of a video's picture as it is placed in its object: its display size, less its
+    /// own crop, turned by its rotation. The renderer aspect-fits this into the object's frame, so
+    /// the preview draws the frame over that rectangle, not the object's whole box (a 4:3 camera
+    /// in a 16:9 frame has bars either side).
+    public static func pictureAspect(
+        width: Int, height: Int, crop: CropInsets = .none, rotation: Double = 0
+    ) -> Double? {
+        let w = Double(width) * max(0, 1 - crop.left - crop.right)
+        let h = Double(height) * max(0, 1 - crop.top - crop.bottom)
+        guard w > 0, h > 0 else { return nil }
+        let quarterTurns = Int((rotation / 90).rounded()) & 3
+        return quarterTurns % 2 == 1 ? h / w : w / h
+    }
+
+    /// `aspect` (width / height) fitted inside `box`, centred, as the renderer places a picture.
+    public static func fitted(aspect: Double, in box: UnitRect, boxAspect: Double) -> UnitRect {
+        guard aspect > 0, boxAspect > 0 else { return box }
+        if aspect > boxAspect {
+            let height = box.height * boxAspect / aspect
+            return UnitRect(x: box.x, y: box.y + (box.height - height) / 2, width: box.width, height: height)
+        }
+        let width = box.width * aspect / boxAspect
+        return UnitRect(x: box.x + (box.width - width) / 2, y: box.y, width: width, height: box.height)
+    }
 }
