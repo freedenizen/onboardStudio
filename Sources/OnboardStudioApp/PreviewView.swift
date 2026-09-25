@@ -142,7 +142,7 @@ final class GizmoView: NSView {
     /// Framing on the preview (#275): the drag under way, the VoiceOver element for the window
     /// (AppKit holds it weakly), and the tool last seen, to take the keyboard when one opens.
     var framingDrag: FramingDrag?
-    var framingElement: PreviewFramingElement?
+    var framingElement: PreviewFramingElement?, cropElement: PreviewCropElement?
     var lastPictureTool: PictureTool?
 
     /// One accessibility element per object, kept rather than rebuilt per request: AppKit holds
@@ -190,7 +190,7 @@ final class GizmoView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
-        if editor.pictureTool == .frame { return drawFraming(in: context) }
+        if editor.pictureTool != nil { return drawPictureTool(in: context) }
         for object in objects where object.isVisible {
             let rect = viewRect(object.frame)
             let selected = selectedIDs.contains(object.id)
@@ -283,7 +283,7 @@ final class GizmoView: NSView {
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
         let point = convert(event.locationInWindow, from: nil)
-        if editor.pictureTool == .frame { return framingMouseDown(at: point) }
+        if editor.pictureTool != nil { return pictureToolMouseDown(at: point) }
         // The line being placed wins over everything, including the map object under it: while
         // this mode is on, the gesture the pointer is near is the one that was meant.
         if let target = startFinish, let line = currentStartFinishLine(target),
@@ -338,7 +338,7 @@ final class GizmoView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
-        if framingDrag != nil { return framingMouseDragged(to: convert(event.locationInWindow, from: nil)) }
+        if framingDrag != nil { return pictureToolMouseDragged(to: convert(event.locationInWindow, from: nil)) }
         if let lineDrag, let target = startFinish {
             let point = convert(event.locationInWindow, from: nil)
             // Only moving the line keeps the grab offset; an end is being pointed somewhere, and
@@ -406,7 +406,7 @@ final class GizmoView: NSView {
 
     override func resetCursorRects() {
         super.resetCursorRects()
-        if editor.pictureTool == .frame { return framingCursorRects() }
+        if editor.pictureTool != nil { return pictureToolCursorRects() }
         if editor.project.settings.framing.zoom > 1 { addCursorRect(videoRect, cursor: .openHand) }
     }
 }
@@ -419,7 +419,7 @@ extension GizmoView {
         // selection below, which it hides (Delete deleted an overlay no one could see). Space
         // still plays.
         if editor.pictureTool != nil {
-            if !framingKeyDown(event), event.keyCode == 49 { editor.togglePlayback() }
+            if !pictureToolKeyDown(event), event.keyCode == 49 { editor.togglePlayback() }
             return
         }
         switch event.keyCode {

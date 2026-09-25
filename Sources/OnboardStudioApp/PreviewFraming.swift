@@ -6,10 +6,12 @@ import SwiftUI
 
 /// A drag on the framed window: moving it, or one of its corners.
 struct FramingDrag {
-    enum Part { case window, corner }
+    enum Part { case window, corner, crop(ObjectHandle) }
     let part: Part
-    /// The framing when the drag began; each step is worked out from it, so nothing drifts.
-    let start: CameraFraming
+    /// The framing, or the video's picture, when the drag began; each step is worked out from it,
+    /// so nothing drifts.
+    var start: CameraFraming = .none
+    var startPicture: VideoPicture?
     let startPoint: CGPoint
 }
 
@@ -21,9 +23,10 @@ extension GizmoView {
     /// Where the shot is drawn: the picture of the largest video on screen, aspect-fitted into its
     /// box as the renderer places it, or the whole output when there is no video.
     var framingTarget: CGRect {
+        let cropping = editor.pictureTool?.cropInput
         let videos = objects.filter { object in
             guard object.isVisible, case .video = object.kind else { return false }
-            return true
+            return cropping == nil || object.inputID == cropping
         }
         guard let largest = videos.max(by: { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height })
         else { return videoRect }
@@ -35,7 +38,9 @@ extension GizmoView {
         guard let id = object.inputID, let input = editor.project.input(id), case .video(let settings) = input.kind,
             let info = editor.loaded?.mediaInfo[id],
             let aspect = FramingEditing.pictureAspect(
-                width: info.width, height: info.height, crop: settings.crop, rotation: settings.rotation),
+                width: info.width, height: info.height,
+                // While cropping it the preview shows the whole of it.
+                crop: editor.pictureTool?.cropInput == id ? .none : settings.crop, rotation: settings.rotation),
             object.frame.height > 0
         else { return object.frame }
         let boxAspect = object.frame.width / object.frame.height * outputAspect
@@ -52,44 +57,8 @@ extension GizmoView {
     }
 
     func drawFraming(in context: CGContext) {
-        let target = framingTarget
-        let window = framingWindow
-        // What the finished video leaves out, dimmed rather than hidden: it is what is being cut.
-        context.setFillColor(NSColor.black.withAlphaComponent(0.55).cgColor)
-        for piece in [
-            CGRect(x: target.minX, y: target.minY, width: target.width, height: window.minY - target.minY),
-            CGRect(x: target.minX, y: window.maxY, width: target.width, height: target.maxY - window.maxY),
-            CGRect(x: target.minX, y: window.minY, width: window.minX - target.minX, height: window.height),
-            CGRect(x: window.maxX, y: window.minY, width: target.maxX - window.maxX, height: window.height),
-        ] where piece.width > 0 && piece.height > 0 {
-            context.fill(piece)
-        }
-        // Thirds, as a camera's framing guide draws them.
-        context.setStrokeColor(NSColor.white.withAlphaComponent(0.35).cgColor)
-        context.setLineWidth(1)
-        for third in [1.0 / 3, 2.0 / 3] {
-            context.strokeLineSegments(between: [
-                CGPoint(x: window.minX + window.width * third, y: window.minY),
-                CGPoint(x: window.minX + window.width * third, y: window.maxY),
-                CGPoint(x: window.minX, y: window.minY + window.height * third),
-                CGPoint(x: window.maxX, y: window.minY + window.height * third),
-            ])
-        }
-        // White on a dark edge, so the window reads over any footage.
-        context.setStrokeColor(NSColor.black.withAlphaComponent(0.6).cgColor)
-        context.setLineWidth(4)
-        context.stroke(window)
-        context.setStrokeColor(NSColor.white.cgColor)
-        context.setLineWidth(2)
-        context.stroke(window)
-        for corner in corners(of: window) {
-            let square = CGRect(x: corner.x - 5, y: corner.y - 5, width: 10, height: 10)
-            context.setFillColor(NSColor.white.cgColor)
-            context.fill(square)
-            context.setStrokeColor(NSColor.black.withAlphaComponent(0.6).cgColor)
-            context.setLineWidth(1)
-            context.stroke(square)
-        }
+        drawDimmed(outside: framingWindow, in: framingTarget, context: context)
+        drawToolWindow(framingWindow, in: context, edgeHandles: false)
     }
 
     func corners(of rect: CGRect) -> [CGPoint] {
@@ -125,12 +94,13 @@ extension GizmoView {
             let across = 2 * abs(point.x - window.midX) / target.width
             let down = 2 * abs(point.y - window.midY) / target.height
             editor.adjustFraming { _ in FramingEditing.resized(drag.start, toWidth: across, height: down) }
+        case .crop: break  // PreviewCropping.swift
         }
         needsDisplay = true
     }
 
     func framingMouseUp() {
-        if framingDrag?.part == .window { NSCursor.pop() }
+        if case .window = framingDrag?.part { NSCursor.pop() }
         framingDrag = nil
         window?.invalidateCursorRects(for: self)
     }
@@ -240,30 +210,39 @@ nonisolated final class PreviewFramingElement: NSAccessibilityElement {
 
 // MARK: - The bar and the way in
 
-/// Across the top of the preview while a picture tool is open (#275): what it is, what it has
-/// done, and the way out. A strip of its own rather than over the picture, which is what is being
-/// judged.
+/// Across the top of the preview while a picture tool is open (#275, #276): which tool, what it
+/// has done, its own controls, and the way out. A strip of its own rather than over the picture,
+/// which is what is being judged.
 struct PictureToolBar: View {
     @Bindable var editor: EditorModel
 
+    var cropping: Bool { editor.pictureTool?.cropInput != nil }
+
     var body: some View {
-        let framing = editor.project.settings.framing
         HStack(spacing: 12) {
-            Label("Frame", systemImage: "crop").font(.headline)
-            Text(summary(framing)).foregroundStyle(.secondary).monospacedDigit()
+            Picker("Tool", selection: Binding(get: { cropping }, set: { editor.switchPictureTool(toCrop: $0) })) {
+                Label("Crop", systemImage: "crop").tag(true)
+                Label("Frame", systemImage: "viewfinder").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .help("Crop cuts this video's own picture; Frame chooses what every video shows")
+            .accessibilityIdentifier("pictureTool.switch")
+            if cropping { cropControls } else { frameSummary }
             Spacer()
-            Button("Reset") { editor.resetFramingInTool() }
-                .disabled(framing == .none)
-                .help("Show the whole shot again")
+            Button("Reset") { editor.resetPictureTool() }
+                .disabled(!canReset)
+                .help(cropping ? "Show the whole picture again, upright" : "Show the whole shot again")
                 .accessibilityIdentifier("framing.reset")
-            Button("Cancel") { editor.cancelFraming() }
+            Button("Cancel") { editor.cancelPictureTool() }
                 .keyboardShortcut(.cancelAction)
-                .help("Put the framing back as it was (Escape)")
+                .help("Put it back as it was (Escape)")
                 .accessibilityIdentifier("framing.cancel")
-            Button("Done") { editor.finishFraming() }
+            Button("Done") { editor.finishPictureTool() }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
-                .help("Keep this framing (Return)")
+                .help("Keep it (Return)")
                 .accessibilityIdentifier("framing.done")
         }
         .padding(.horizontal, 12)
@@ -271,10 +250,82 @@ struct PictureToolBar: View {
         .background(.bar)
     }
 
-    func summary(_ framing: CameraFraming) -> String {
-        guard framing.zoom > 1 else { return "The whole shot. Drag a corner in, pinch, or press + to zoom." }
-        let zoom = framing.zoom.formatted(.number.precision(.fractionLength(2)))
-        return "Zoom \(zoom)×. Drag the frame to move it."
+    var canReset: Bool {
+        if let id = editor.pictureTool?.cropInput {
+            return editor.videoPicture(of: id) != VideoPicture(crop: .none, rotation: 0, mirror: .none)
+        }
+        return editor.project.settings.framing != .none
+    }
+
+    @ViewBuilder var frameSummary: some View {
+        let framing = editor.project.settings.framing
+        Text(
+            framing.zoom > 1
+                ? "Zoom \(framing.zoom.formatted(.number.precision(.fractionLength(2))))×. Drag the frame to move it."
+                : "The whole shot. Drag a corner in, pinch, or press + to zoom."
+        )
+        .foregroundStyle(.secondary).monospacedDigit().lineLimit(1)
+    }
+
+    @ViewBuilder var cropControls: some View {
+        Picker(
+            "Shape",
+            selection: Binding(
+                get: { if case .crop(_, let aspect) = editor.pictureTool { aspect } else { .free } },
+                set: { editor.setCropAspect($0) })
+        ) {
+            ForEach(CropAspect.allCases) { Text($0.displayName).tag($0) }
+        }
+        .fixedSize()
+        .help("Hold the crop to a shape; a fixed shape is applied at once, as large as it fits")
+        .accessibilityIdentifier("crop.aspect")
+        ControlGroup {
+            Button {
+                turn(by: -90)
+            } label: {
+                Label("Rotate Left", systemImage: "rotate.left")
+            }
+            .help("Turn the picture a quarter turn to the left")
+            Button {
+                turn(by: 90)
+            } label: {
+                Label("Rotate Right", systemImage: "rotate.right")
+            }
+            .help("Turn the picture a quarter turn to the right")
+        }
+        .fixedSize()
+        ControlGroup {
+            Button {
+                flip(horizontal: true)
+            } label: {
+                Label("Flip Horizontal", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right")
+            }
+            .help("Mirror the picture left to right")
+            Button {
+                flip(horizontal: false)
+            } label: {
+                Label("Flip Vertical", systemImage: "arrow.up.and.down.righttriangle.up.righttriangle.down")
+            }
+            .help("Mirror the picture top to bottom")
+        }
+        .fixedSize()
+    }
+
+    func turn(by degrees: Double) {
+        editor.adjustPicture { picture in
+            var picture = picture
+            picture.rotation = (picture.rotation + degrees).truncatingRemainder(dividingBy: 360)
+            if picture.rotation < 0 { picture.rotation += 360 }
+            return picture
+        }
+    }
+
+    func flip(horizontal: Bool) {
+        editor.adjustPicture { picture in
+            var picture = picture
+            if horizontal { picture.mirror.horizontal.toggle() } else { picture.mirror.vertical.toggle() }
+            return picture
+        }
     }
 }
 
@@ -285,6 +336,8 @@ struct PictureToolMenu: View {
 
     var body: some View {
         Menu {
+            Button("Crop Picture") { editor.beginCropping() }
+                .disabled(!editor.canCropPicture)
             Button("Frame Picture") { editor.beginFraming() }
                 .disabled(!editor.canFramePicture)
         } label: {
@@ -295,7 +348,7 @@ struct PictureToolMenu: View {
         .fixedSize()
         .labelStyle(.iconOnly)
         .disabled(editor.pictureTool != nil)
-        .help("Frame the picture on the preview (⇧T)")
+        .help("Crop (⇧C) or frame (⇧T) the picture on the preview")
         .accessibilityLabel("Picture Tools")
         .accessibilityIdentifier("preview.tools")
     }

@@ -240,7 +240,8 @@ struct ShortcutsView: View {
         ("↑ ↓ (in a number field)", "Add or subtract one"),
         ("⌘↩ (in a script)", "Apply the script"),
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
-        ("⇧⌘A", "Deselect all: the inspector shows the project"), ("⇧T", "Frame the picture on the preview"),
+        ("⇧⌘A", "Deselect all: the inspector shows the project"),
+        ("⇧C / ⇧T", "Crop / frame the picture on the preview"),
         ("⌥⌘I", "Show / hide the inspector"),
     ]
 
