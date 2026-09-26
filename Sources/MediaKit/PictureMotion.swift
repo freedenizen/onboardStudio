@@ -100,8 +100,17 @@ public enum PictureMotion {
         else { return nil }
         let key = "\(url.standardizedFileURL.path)|\(size)|\(modified.timeIntervalSince1970)"
         let digest = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
+        return cacheFolder().appending(path: "\(digest.prefix(32)).json")
+    }
+
+    /// Where measurements are kept: Application Support, or a folder of the UI tests' own for each
+    /// launch, so no test finds a video already measured by an earlier run (#288).
+    static func cacheFolder(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
+        if let folder = environment["ONBOARD_TEST_MOTION_DIR"] {
+            return URL(fileURLWithPath: folder, isDirectory: true)
+        }
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return support.appending(path: "OnboardStudio/Motion/\(digest.prefix(32)).json")
+        return support.appending(path: "OnboardStudio/Motion")
     }
 
     /// A measurement made earlier of this very file, if there is one.

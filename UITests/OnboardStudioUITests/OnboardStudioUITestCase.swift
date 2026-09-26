@@ -49,6 +49,9 @@ class OnboardStudioUITestCase: XCTestCase {
         let templates = FileManager.default.temporaryDirectory.appending(
             path: "onboard-uitests-templates-\(UUID().uuidString)", directoryHint: .isDirectory)
         app.launchEnvironment["ONBOARD_TEST_TEMPLATES_DIR"] = templates.path
+        // And no measurement of the picture's motion left by an earlier run (#288).
+        app.launchEnvironment["ONBOARD_TEST_MOTION_DIR"] =
+            FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-motion-\(UUID().uuidString)").path
         app.launch()  // the app activates itself when the editor appears (UITestSupport.editorAppeared)
         XCTAssertTrue(
             app.windows.firstMatch.waitForExistence(timeout: Self.timeout), "No window: \(app.debugDescription)")
