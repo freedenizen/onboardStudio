@@ -166,7 +166,7 @@ struct EditorToolbar: ToolbarContent {
             }
             .help("Export the finished video (⌘E)")
             .accessibilityIdentifier("toolbar.export")
-            .disabled(editor.project.videoInputs.isEmpty)
+            .disabled(editor.project.videoInputs.isEmpty || !editor.canExport)
         }
         // At the trailing end, over the inspector it shows and hides, as in Pages and Keynote (#280).
         ToolbarItem(placement: .primaryAction) {

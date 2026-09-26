@@ -45,4 +45,26 @@ final class FramingUITests: OnboardStudioUITestCase {
         app.typeKey("z", modifierFlags: .command)
         expect(zoomBox, toRead: "1")
     }
+
+    /// While the tool is open it keeps the keyboard and holds the rest back: Delete does not reach
+    /// the overlay it hides, and Undo and Export wait until Done or Cancel.
+    @MainActor
+    func testTheSessionHoldsDeleteUndoAndExport() throws {
+        launch()
+        addFixtureVideo()
+        addFixtureData()
+        toolbarMenu("toolbar.addObject", "Speedometer")
+        XCTAssertTrue(sidebarObject("Speedometer").waitForExistence(timeout: Self.timeout))
+        menu("View", "Frame Picture")
+        XCTAssertTrue(done.waitForExistence(timeout: Self.timeout))
+        app.typeKey(.delete, modifierFlags: [])
+        app.menuBarItems["Edit"].click()
+        XCTAssertFalse(app.menuBarItems["Edit"].menus.menuItems["Undo Add Speedometer"].isEnabled, "Undo mid-session")
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertFalse(app.buttons["toolbar.export"].isEnabled, "Export mid-session")
+        app.buttons["framing.cancel"].click()
+        XCTAssertTrue(done.waitForNonExistence(timeout: Self.timeout))
+        XCTAssertTrue(sidebarObject("Speedometer").exists, "Delete reached the hidden overlay")
+        XCTAssertTrue(app.buttons["toolbar.export"].isEnabled)
+    }
 }

@@ -27,11 +27,17 @@ extension EditorModel {
     /// The loaded media with the document's own project in it, for exporting: what the preview
     /// has loaded may be the framing view of it (no overlays, no framing), or a moment behind
     /// an edit.
+    /// Nil while a tool is open: what is loaded then was loaded for the tool's view, without the
+    /// overlays and so without, for one, the track maps' backgrounds; the ways to export are off
+    /// until Done or Cancel.
     var loadedForExport: ProjectCompiler.LoadedProject? {
-        guard var loaded else { return nil }
+        guard pictureTool == nil, var loaded else { return nil }
         loaded.project = project
         return loaded
     }
+
+    /// Exporting waits until a tool on the picture is closed (see `loadedForExport`).
+    var canExport: Bool { pictureTool == nil }
 
     var canFramePicture: Bool { !project.videoInputs.isEmpty && pictureTool == nil }
 

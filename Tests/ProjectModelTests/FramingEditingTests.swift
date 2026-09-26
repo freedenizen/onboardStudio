@@ -72,4 +72,15 @@ import Testing
         let wide = FramingEditing.fitted(aspect: 21.0 / 9, in: box, boxAspect: 16.0 / 9)
         #expect(close(wide.height, 16.0 / 21) && wide.width == 1)
     }
+
+    @Test func aCornerReachingDownIsMeasuredAgainstTheVerticalTrim() {
+        // Top and bottom trimmed a quarter each, the sides not: the picture shown is half as tall.
+        let trimmed = CameraFraming(crop: CropInsets(top: 0.25, bottom: 0.25))
+        // A window a quarter of the shown picture tall is half of what is left: zoom 2, not 4.
+        let resized = FramingEditing.resized(trimmed, toWidth: 0, height: 0.25)
+        #expect(close(resized.zoom, 2))
+        // Across and down both given, the larger window wins.
+        let both = FramingEditing.resized(.none, toWidth: 0.5, height: 0.8)
+        #expect(close(both.zoom, 1.25))
+    }
 }

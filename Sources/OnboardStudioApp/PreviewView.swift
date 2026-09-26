@@ -415,7 +415,13 @@ final class GizmoView: NSView {
 
 extension GizmoView {
     override func keyDown(with event: NSEvent) {
-        if editor.pictureTool == .frame, framingKeyDown(event) { return }
+        // While a tool is open it keeps the keyboard: a key it has no use for must not reach the
+        // selection below, which it hides (Delete deleted an overlay no one could see). Space
+        // still plays.
+        if editor.pictureTool != nil {
+            if !framingKeyDown(event), event.keyCode == 49 { editor.togglePlayback() }
+            return
+        }
         switch event.keyCode {
         case 51, 117:  // delete, forward delete
             editor.deleteSelectedObject()

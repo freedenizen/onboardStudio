@@ -35,12 +35,19 @@ public enum FramingEditing {
         return moved(result, dx: 0, dy: 0)
     }
 
-    /// The framing whose window is `width` wide (a fraction of the shown picture), as dragging a
-    /// corner of it asks for; the window keeps its centre and its shape.
-    public static func resized(_ framing: CameraFraming, toWidth width: Double) -> CameraFraming {
+    /// The framing whose window reaches `width` across or `height` down (fractions of the shown
+    /// picture), whichever needs the larger window, as dragging a corner of it asks for; the window
+    /// keeps its centre and its shape. Each reach is measured against its own trim: the top and
+    /// bottom may be trimmed differently from the sides.
+    public static func resized(_ framing: CameraFraming, toWidth width: Double, height: Double = 0) -> CameraFraming {
         let trimmedWidth = max(1 - framing.crop.left - framing.crop.right, 0.0001)
-        guard width > 0 else { return zoomed(framing, by: zoomRange.upperBound / framing.zoom) }
-        return zoomed(framing, by: (trimmedWidth / width) / framing.zoom)
+        let trimmedHeight = max(1 - framing.crop.top - framing.crop.bottom, 0.0001)
+        // The zoom each reach asks for; the smaller zoom is the larger window.
+        let fromWidth = width > 0 ? trimmedWidth / width : .infinity
+        let fromHeight = height > 0 ? trimmedHeight / height : .infinity
+        let zoom = min(fromWidth, fromHeight)
+        guard zoom.isFinite else { return zoomed(framing, by: zoomRange.upperBound / framing.zoom) }
+        return zoomed(framing, by: zoom / framing.zoom)
     }
 
     /// The shape of a video's picture as it is placed in its object: its display size, less its

@@ -124,7 +124,7 @@ extension GizmoView {
             let window = framingWindow
             let across = 2 * abs(point.x - window.midX) / target.width
             let down = 2 * abs(point.y - window.midY) / target.height
-            editor.adjustFraming { _ in FramingEditing.resized(drag.start, toWidth: max(across, down)) }
+            editor.adjustFraming { _ in FramingEditing.resized(drag.start, toWidth: across, height: down) }
         }
         needsDisplay = true
     }

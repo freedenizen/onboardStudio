@@ -11,6 +11,8 @@ import SwiftUI
 /// edited still undoes its own typing.
 struct UndoCommands: Commands {
     private var state = UndoMenuState.shared
+    /// Undo and Redo wait while a tool on the picture is open, whose session is one step (#275).
+    @FocusedValue(\.editor) private var editor
 
     /// The responder-chain actions the standard items send, which take a sender: `undo:`, not
     /// `UndoManager.undo()`'s `undo`, which nothing in the chain answers.
@@ -21,10 +23,10 @@ struct UndoCommands: Commands {
         CommandGroup(replacing: .undoRedo) {
             Button(state.undoTitle) { NSApp.sendAction(Self.undoAction, to: nil, from: nil) }
                 .keyboardShortcut("z", modifiers: .command)
-                .disabled(!state.canUndo)
+                .disabled(!state.canUndo || editor?.pictureTool != nil)
             Button(state.redoTitle) { NSApp.sendAction(Self.redoAction, to: nil, from: nil) }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
-                .disabled(!state.canRedo)
+                .disabled(!state.canRedo || editor?.pictureTool != nil)
         }
     }
 }

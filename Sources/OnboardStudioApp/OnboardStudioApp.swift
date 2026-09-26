@@ -212,10 +212,13 @@ struct EditorCommands: Commands {
             }
             .disabled(editor?.project.dataInputs.isEmpty != false)
             Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
+                .disabled(editor?.canExport == false)
             // One lap, laid out for a phone, in one step (#151).
             Button("Export Lap as Vertical Clip…") { editor?.requestLapClip() }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
-                .disabled(editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
+                .disabled(
+                    editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
+                        || editor?.canExport == false)
             Divider()
             // Two laps side by side, kept level by distance (#154).
             Button("Compare Laps…") { editor?.showCompareLaps = true }
