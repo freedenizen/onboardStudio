@@ -42,8 +42,8 @@ final class EditorModel {
     /// Framing or cropping the picture on the preview (#275, #276); `nil` when neither is on.
     /// See EditorModel+Framing.swift.
     var pictureTool: PictureTool? { didSet { if pictureTool != oldValue { scheduleCompile() } } }
-    /// The framing when the tool was opened, which Cancel restores and Done's undo returns to.
-    var framingAtEntry: CameraFraming?
+    /// What the open tool had when it was opened, which Cancel restores and Done's undo returns to.
+    var pictureToolEntry: PictureToolEntry?
     /// A lap or range to export as a phone clip; the sheet is open while this is set (#151).
     var clipRequest: ClipRequest?
     var showSaveTemplate = false

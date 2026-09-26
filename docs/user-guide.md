@@ -115,6 +115,10 @@ Two settings shape the picture, and they answer different questions:
 - **Crop** (this video, in the video inspector) is for what should never show: a visor edge, the
   bonnet, the mount. Cut any edge back with **Top**, **Bottom**, **Left** and **Right**, turn the
   picture with **Rotation** and flip it; **Reset Crop** shows the whole picture again, upright.
+  To crop by eye, choose **Crop on Preview** (or **View ▸ Crop Picture**, ⇧C): the preview shows
+  the whole picture with the crop over it, the cut-away parts dimmed. Drag an edge or a corner in,
+  or inside to move it; **Shape** holds it to 16:9, 9:16, 4:3, Square or the picture's own shape;
+  the bar also turns and flips it. **Done** keeps it as one step of Undo, **Cancel** puts it back.
   Then colour, sharpness, chroma key, and **Lens** for fisheye or 360° footage (unwrap into a flat,
   pannable view). **Audio**: include, mute, volume, balance, channel selection.
 - **Frame (all videos)**, in the project inspector, chooses which part of the shot the finished

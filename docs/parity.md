@@ -8,7 +8,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | RaceRender | Onboard Studio | Notes |
 |---|---|---|
 | Video / audio / image / data files | ✅ | One input feeds many objects |
-| Trim, rotation, mirror H/V, crop per edge | ✅ | Rotation is 0/90/180/270 in the UI; any angle in the file |
+| Trim, rotation, mirror H/V, crop per edge | ✅ | Rotation is 0/90/180/270 in the UI; any angle in the file. Crop by dragging on the preview too (⇧C), held to a shape if wanted |
 | Zoom and pan the picture | ✅ ahead | One Frame for every video, set with fields or by dragging the frame over the whole shot on the preview (⇧T) |
 | Brightness / contrast / saturation / hue / sharpness | ✅ | |
 | Chroma key (colour + tolerance) | ✅ | Plus softness |

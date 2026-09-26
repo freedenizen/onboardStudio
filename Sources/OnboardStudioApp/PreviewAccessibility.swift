@@ -12,7 +12,7 @@ extension GizmoView {
     override func accessibilityLabel() -> String? { "Preview" }
 
     override func accessibilityChildren() -> [Any]? {
-        if editor.pictureTool == .frame { return framingAccessibilityChildren() }
+        if editor.pictureTool != nil { return pictureToolAccessibilityChildren() }
         let shown = objects.filter(\.isVisible).reversed()
         objectElements = objectElements.filter { id, _ in shown.contains { $0.id == id } }
         return shown.map { object in

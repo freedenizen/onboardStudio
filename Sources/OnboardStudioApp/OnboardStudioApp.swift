@@ -238,7 +238,10 @@ struct EditorCommands: Commands {
             .keyboardShortcut("i", modifiers: [.command, .option])
             .disabled(editor == nil)
             Divider()
-            // ⇧T, as Final Cut Pro's Transform (#275).
+            // ⇧C and ⇧T, as Final Cut Pro's Crop and Transform (#275, #276).
+            Button("Crop Picture") { editor?.beginCropping() }
+                .keyboardShortcut("c", modifiers: [.shift])
+                .disabled(editor?.canCropPicture != true)
             Button("Frame Picture") { editor?.beginFraming() }
                 .keyboardShortcut("t", modifiers: [.shift])
                 .disabled(editor?.canFramePicture != true)

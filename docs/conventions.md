@@ -204,8 +204,9 @@ Chosen against Apple's own document apps, not an editor.
 
 ## Framing on the preview (#275)
 
-- **⇧T — View ▸ Frame Picture**, as Final Cut Pro's Transform (⇧T; its Crop is ⇧C, kept for #276).
-  Both were free in this app. The tool's own keys follow Photos and Final Cut: Return is Done,
+- **⇧C / ⇧T — View ▸ Crop Picture / Frame Picture**, as Final Cut Pro's Crop and Transform (#276,
+  #275). Both were free in this app. The crop's shapes are Photos' (Freeform, Original, 16:9, 9:16,
+  4:3, Square), and a fixed shape is applied at once, as large as it fits, as Photos does. The tool's own keys follow Photos and Final Cut: Return is Done,
   Escape is Cancel, the arrows nudge (⇧ for ten times as far), pinch and ⌥-scroll zoom.
 - The way in also sits at the left end of the transport, under the preview, where Final Cut and
   Resolve keep their viewer's tool pop-up — not over the picture, which is what is being judged.

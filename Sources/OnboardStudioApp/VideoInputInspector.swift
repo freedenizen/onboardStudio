@@ -31,6 +31,10 @@ struct VideoInputInspector: View {
         // it — as Photos' Crop tool groups them. Which part of the shot every video shows is
         // Frame, in the project inspector.
         Section("Crop") {
+            Button("Crop on Preview") { editor.beginCropping(input.id) }
+                .disabled(editor.pictureTool != nil)
+                .help("Drag the crop over the whole picture on the preview (⇧C)")
+                .accessibilityIdentifier("crop.onPreview")
             SliderField(
                 "Top", value: field(\.crop.top, name: "Crop Picture"), in: 0...0.45, scale: .percent, unit: "%",
                 identifier: "crop.top")
@@ -72,6 +76,9 @@ struct VideoInputInspector: View {
             )
             .font(.caption).foregroundStyle(.secondary)
         }
+        // While a picture tool is open these show what it does, and wait: a change here would be
+        // an undo step inside a session that is meant to be one.
+        .disabled(editor.pictureTool != nil)
         Section("Colour") {
             SliderField(
                 "Brightness", value: field(\.color.brightness, name: "Adjust Colour"), in: 0...2, scale: .percent,
