@@ -243,6 +243,7 @@ struct ShortcutsView: View {
         ("⇧⌘A", "Deselect all: the inspector shows the project"),
         ("⇧C / ⇧T", "Crop / frame the picture on the preview"),
         ("⌥⌘I", "Show / hide the inspector"),
+        ("⇧⌘F / ⇧⌘B", "Bring to front / send to back; with ⌥, one place"),
     ]
 
     var body: some View {

@@ -142,6 +142,7 @@ struct EditorCommands: Commands {
                 Button("Image…") { editor?.addImage() }
             }
             Button("Delete Selected Object") { editor?.deleteSelectedObject() }.keyboardShortcut(.delete, modifiers: [])
+                .disabled(editor?.pictureTool != nil)
             // Keynote's and Pages's keys for the same verbs (#90); ⌘G is Find Next elsewhere.
             Button("Group") { editor?.groupSelection() }
                 .keyboardShortcut("g", modifiers: [.command, .option])
@@ -258,6 +259,19 @@ struct EditorCommands: Commands {
             Button("Show Activity") { editor?.showActivity = true }
                 .keyboardShortcut("l", modifiers: [.command, .option])
                 .disabled(editor == nil)
+        }
+        // Keynote's Arrange menu and its keys (#277): ⇧⌘F and ⇧⌘B to the front and back, with ⌥
+        // one step at a time.
+        CommandMenu("Arrange") {
+            ForEach(LayerMove.allCases, id: \.self) { move in
+                Button(move.title) { editor?.arrangeSelection(move) }
+                    .keyboardShortcut(
+                        move == .forward || move == .toFront ? "f" : "b",
+                        modifiers: move == .toFront || move == .toBack
+                            ? [.command, .shift] : [.command, .shift, .option]
+                    )
+                    .disabled(editor?.canArrangeSelection(move) != true)
+            }
         }
         CommandMenu("Marker") {
             // M to drop one, ⌘M to drop and name it, ⇧↑/⇧↓ to walk them: the Resolve bindings
