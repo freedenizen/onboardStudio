@@ -108,6 +108,8 @@ extension EditorModel {
     /// Deletes every selected object that is not locked (#90): a lock guards against the delete
     /// key as much as against the mouse.
     func deleteSelectedObject() {
+        // A picture tool hides the overlays; nothing it hides is deleted (#275, #277).
+        guard pictureTool == nil else { return }
         let ids = selectedObjectIDs.filter { project.displayObject($0)?.isLocked == false }
         guard !ids.isEmpty else {
             if !selectedObjectIDs.isEmpty { statusMessage = "Locked objects are not deleted. Unlock them first (⌘L)." }

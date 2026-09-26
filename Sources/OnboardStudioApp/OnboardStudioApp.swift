@@ -142,6 +142,7 @@ struct EditorCommands: Commands {
                 Button("Image…") { editor?.addImage() }
             }
             Button("Delete Selected Object") { editor?.deleteSelectedObject() }.keyboardShortcut(.delete, modifiers: [])
+                .disabled(editor?.pictureTool != nil)
             // Keynote's and Pages's keys for the same verbs (#90); ⌘G is Find Next elsewhere.
             Button("Group") { editor?.groupSelection() }
                 .keyboardShortcut("g", modifiers: [.command, .option])
