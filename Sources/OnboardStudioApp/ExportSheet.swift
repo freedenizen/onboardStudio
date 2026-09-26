@@ -293,7 +293,7 @@ extension ExportSheet {
     }
 
     var resolvedRange: ClosedRange<Double>? {
-        guard let loaded = editor.loaded else { return nil }
+        guard let loaded = editor.loadedForExport else { return nil }
         return ProjectCompiler.exportRange(finalSettings.range, in: loaded, duration: editor.duration)
     }
 
@@ -305,7 +305,7 @@ extension ExportSheet {
             let destination = OpenPanels.chooseExportDestination(
                 suggestedName: base + "." + settings.fileExtension, fileExtension: settings.fileExtension)
         else { return }
-        guard let loaded = editor.loaded else {
+        guard let loaded = editor.loadedForExport else {
             failure = "The project has not finished loading."
             return
         }
@@ -346,7 +346,7 @@ extension ExportSheet {
 extension ExportSheet {
     /// The laps the current options keep, as the files they will become.
     var lapExports: [LapExport] {
-        guard let loaded = editor.loaded else { return [] }
+        guard let loaded = editor.loadedForExport else { return [] }
         return ProjectCompiler.lapExports(finalSettings.range, in: loaded, duration: editor.duration)
     }
 
@@ -376,7 +376,7 @@ extension ExportSheet {
     func startEachLap() {
         let settings = finalSettings
         let laps = lapExports
-        guard let loaded = editor.loaded else {
+        guard let loaded = editor.loadedForExport else {
             failure = "The project has not finished loading."
             return
         }

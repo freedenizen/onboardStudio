@@ -22,6 +22,10 @@ struct EditorView: View {
                     .navigationSplitViewColumnWidth(min: 180, ideal: 240)
             } detail: {
                 VStack(spacing: 0) {
+                    if editor.pictureTool != nil {
+                        PictureToolBar(editor: editor)
+                        Divider()
+                    }
                     PreviewView(editor: editor)
                     Divider()
                     // Under the preview, not over it: manual sync is judged by looking at the
@@ -162,7 +166,7 @@ struct EditorToolbar: ToolbarContent {
             }
             .help("Export the finished video (⌘E)")
             .accessibilityIdentifier("toolbar.export")
-            .disabled(editor.project.videoInputs.isEmpty)
+            .disabled(editor.project.videoInputs.isEmpty || !editor.canExport)
         }
         // At the trailing end, over the inspector it shows and hides, as in Pages and Keynote (#280).
         ToolbarItem(placement: .primaryAction) {

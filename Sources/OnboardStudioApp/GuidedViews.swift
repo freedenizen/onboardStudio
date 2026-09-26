@@ -11,6 +11,10 @@ struct CameraFramingSection: View {
     var body: some View {
         let framing = editor.project.settings.framing
         Section("Frame (all videos)") {
+            Button("Frame on Preview") { editor.beginFraming() }
+                .disabled(!editor.canFramePicture)
+                .help("Drag the frame over the whole shot on the preview (⇧T)")
+                .accessibilityIdentifier("frame.onPreview")
             SliderField(
                 "Zoom", value: binding(\.zoom, "Zoom Frame"), in: 1...4, step: 0.05,
                 scale: .plain(fractionDigits: 2), unit: "×", identifier: "frame.zoom")
@@ -46,6 +50,9 @@ struct CameraFramingSection: View {
             Text("Trimming cuts the same amount from every video's edges before zooming, on top of its own crop.")
                 .font(.caption).foregroundStyle(.secondary)
         }
+        // While the frame is being dragged on the preview these show it, and wait: a change here
+        // would be an undo step inside a session that is meant to be one.
+        .disabled(editor.pictureTool != nil)
     }
 
     /// Centre 0…1 shown as −100…100 (0 = centred), like an editor's position control.
@@ -125,7 +132,7 @@ struct GettingStartedSection: View {
                 editor.showSyncWizard = true
             }
         case .applyTemplate: if let template = ProjectTemplate.builtIn.first { editor.apply(template) }
-        case .export: editor.showExport = true
+        case .export: if editor.canExport { editor.showExport = true }
         }
     }
 }
@@ -233,7 +240,8 @@ struct ShortcutsView: View {
         ("↑ ↓ (in a number field)", "Add or subtract one"),
         ("⌘↩ (in a script)", "Apply the script"),
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
-        ("⇧⌘A", "Deselect all: the inspector shows the project"), ("⌥⌘I", "Show / hide the inspector"),
+        ("⇧⌘A", "Deselect all: the inspector shows the project"), ("⇧T", "Frame the picture on the preview"),
+        ("⌥⌘I", "Show / hide the inspector"),
     ]
 
     var body: some View {

@@ -212,10 +212,13 @@ struct EditorCommands: Commands {
             }
             .disabled(editor?.project.dataInputs.isEmpty != false)
             Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
+                .disabled(editor?.canExport == false)
             // One lap, laid out for a phone, in one step (#151).
             Button("Export Lap as Vertical Clip…") { editor?.requestLapClip() }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
-                .disabled(editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
+                .disabled(
+                    editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
+                        || editor?.canExport == false)
             Divider()
             // Two laps side by side, kept level by distance (#154).
             Button("Compare Laps…") { editor?.showCompareLaps = true }
@@ -234,6 +237,11 @@ struct EditorCommands: Commands {
             }
             .keyboardShortcut("i", modifiers: [.command, .option])
             .disabled(editor == nil)
+            Divider()
+            // ⇧T, as Final Cut Pro's Transform (#275).
+            Button("Frame Picture") { editor?.beginFraming() }
+                .keyboardShortcut("t", modifiers: [.shift])
+                .disabled(editor?.canFramePicture != true)
             Divider()
             Button("Zoom In Timeline") { editor?.zoomTimeline(by: 1.5) }.keyboardShortcut("=", modifiers: [.command])
             Button("Zoom Out Timeline") { editor?.zoomTimeline(by: 1 / 1.5) }.keyboardShortcut(

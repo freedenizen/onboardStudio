@@ -12,6 +12,7 @@ extension GizmoView {
     override func accessibilityLabel() -> String? { "Preview" }
 
     override func accessibilityChildren() -> [Any]? {
+        if editor.pictureTool == .frame { return framingAccessibilityChildren() }
         let shown = objects.filter(\.isVisible).reversed()
         objectElements = objectElements.filter { id, _ in shown.contains { $0.id == id } }
         return shown.map { object in
@@ -87,5 +88,21 @@ nonisolated final class PreviewObjectElement: NSAccessibilityElement {
             target?.accessibilitySelect(id)
             return target != nil
         }
+    }
+}
+
+/// How far one press of an arrow key moves the selected object, in output pixels.
+///
+/// The plain step is a preference so it can be matched to how fine the user's layouts are; ⇧
+/// multiplies it, which is the gesture every editor uses for "the same thing, but coarser".
+enum NudgeStep {
+    static let shiftMultiplier = 10.0
+
+    static func pixels(shift: Bool, defaults: UserDefaults = .standard) -> Double {
+        // Read through `Preferences` like every other setting. It used to be `double(forKey:)`
+        // here and `@AppStorage` in Settings — two mechanisms for one key, and this one needed a
+        // "treat zero as unset" guard to make up for `double(forKey:)` returning zero for both.
+        let step = defaults.value(for: Preferences.nudgeStepPixels)
+        return shift ? step * shiftMultiplier : step
     }
 }

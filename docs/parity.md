@@ -9,6 +9,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 |---|---|---|
 | Video / audio / image / data files | ✅ | One input feeds many objects |
 | Trim, rotation, mirror H/V, crop per edge | ✅ | Rotation is 0/90/180/270 in the UI; any angle in the file |
+| Zoom and pan the picture | ✅ ahead | One Frame for every video, set with fields or by dragging the frame over the whole shot on the preview (⇧T) |
 | Brightness / contrast / saturation / hue / sharpness | ✅ | |
 | Chroma key (colour + tolerance) | ✅ | Plus softness |
 | Fisheye / 360 unwrap (FOV, pan) | ✅ | Fisheye and equirectangular, yaw/pitch/roll, runtime Metal kernel |

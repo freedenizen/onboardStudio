@@ -16,6 +16,7 @@ struct ClipRequest: Identifiable {
 extension EditorModel {
     /// Project ▸ Export Lap as Vertical Clip…: the lap at the playhead.
     func requestLapClip() {
+        guard canExport else { return }
         guard let loaded, let lap = ProjectCompiler.lap(at: currentTime, in: loaded, duration: duration) else {
             statusMessage = "Put the playhead in a lap to export it as a clip."
             return
@@ -25,6 +26,7 @@ extension EditorModel {
 
     /// A marker's range, or the lap a point marker falls in.
     func requestClip(of placed: PlacedMarker) {
+        guard canExport else { return }
         if placed.marker.isRange, placed.end > placed.start {
             let name = placed.marker.name.isEmpty ? "Range" : placed.marker.name
             clipRequest = ClipRequest(title: name, start: placed.start, end: placed.end)
@@ -96,7 +98,7 @@ struct VerticalClipSheet: View {
     }
 
     func start() {
-        guard var loaded = editor.loaded else {
+        guard var loaded = editor.loadedForExport else {
             failure = "The project has not finished loading."
             return
         }
