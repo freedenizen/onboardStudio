@@ -46,6 +46,12 @@ which adds a **Testing** menu that adds the fixture files (open panels cannot be
 identifiers (`toolbar.*`, `transport.*`, `object.<label>`, `input.<label>`, `tour.*`, `export.*`,
 `sync.*`, `status.message`); text controls are found by their titles.
 
+The Debug build the UI tests run is **`com.freedenizen.onboardstudio.dev`**, a different app to
+macOS from the installed one (#293). Sharing the installed app's identifier, test runs filled its
+**recent projects** with throwaway projects that were then deleted, emptying the list, and wrote
+its preferences. Each launch also gets its own folder for the user's templates
+(`ONBOARD_TEST_TEMPLATES_DIR`) and for picture-motion measurements (`ONBOARD_TEST_MOTION_DIR`, #288).
+
 ## 2. Headless checks with the CLI
 
 The `onboard` tool exercises the same libraries the app uses, without the GUI:
