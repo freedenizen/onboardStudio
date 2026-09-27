@@ -184,11 +184,6 @@ Every data input can be post-processed (`docs/project-format.md`, `DataInputSett
   heading tolerance, warm-up crossings to ignore) with sub-sample crossing times. On a real
   RaceChrono session this reproduces the app's own lap times to within about 10 ms.
 
-## Planned
-
-FIT (Garmin SDK), RaceChrono `.rcz` archives, and GoPro GPMF metadata tracks. See
-`docs/architecture.md`.
-
 ## GoPro GPMF (embedded telemetry)
 
 GoPro recordings carry a `gpmd` metadata track (GPMF) with GPS, accelerometer, gyroscope and

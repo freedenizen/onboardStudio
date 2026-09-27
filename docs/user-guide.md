@@ -7,6 +7,8 @@ and, ideally, a data log.
 
 ## 1. Your first overlay in five minutes
 
+![The welcome window: New Blank Project, Open Project, the built-in templates with a picture of each, recent projects and Open the Sample Project](images/welcome.png)
+
 1. **Launch Onboard Studio.** The welcome window offers a **New Blank Project**, a project **from a
    template** (gauges already laid out), **Open Project…**, your recent projects and the sample
    project. Untick *Show this window at launch* to start on a blank project instead;
@@ -45,6 +47,8 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
 **Help ▸ Show Getting Started** brings it back after you hide it.
 
 ## 2. The window
+
+![The editor: inputs and display objects on the left, the preview in the middle with the transport and timeline below it, and the project inspector on the right](images/editor.jpg)
 
 - **Sidebar (left)**: inputs (videos, data files, images) and display objects, bottom of the list
   is drawn first. Click to select and edit; the eye toggles an object; right-click to remove.
@@ -142,6 +146,8 @@ Two settings shape the picture, and they answer different questions:
   the same amount from every video's edges before zooming, on top of each video's own crop.
   **Reset Frame** shows the whole shot again.
 
+![Frame Picture: the whole camera shot with the frame drawn over it, handles at its corners, and Crop, Frame, Reset, Cancel and Done above the preview](images/frame-picture.jpg)
+
 **Multiple cameras.** Add each camera as its own video input, line them up in the video lane (or
 with the sync fields), then arrange them with **Layout** (picture-in-picture, split, quad) and
 switch between them over time with timeline segments (§6).
@@ -218,6 +224,8 @@ NMEA, Racelogic VBO, DJI SRT, GoPro GPMF (inside the video) and generic CSV/TSV 
 apps. Details and column names are in [formats.md](formats.md).
 
 ### Attributes: what your channels mean
+
+![The Attributes window: each attribute with the column it is read from, the unit it is read in and the unit it shows, for all projects, this project or one data file](images/attributes.png)
 
 Your logger names its channels its own way. One car's ABS light is `canbus:analog_1`; the same
 brake sensor is `brake_pressure_front` in a RaceChrono CSV and `66569` in the `.rcz` of the very
@@ -300,6 +308,8 @@ earlier never applies them: a project renders the way you left it, whatever the 
 since.
 
 ## 5. Objects
+
+![A tachometer selected on the preview with handles around it, its label, position, size and scale in the inspector](images/inspector-gauge.jpg)
 
 Speedometer, tachometer, custom gauge (the *Gauge Designer*: needle styles, sweep, ticks, colour
 zones, face images), bar/level, 2D graph (against time, distance, the lap with a best-lap ghost, or another channel — see below),
@@ -599,6 +609,8 @@ is why sectors are derived from your driving or drawn by you.
 
 ### Comparing two laps
 
+![Two laps side by side, each with its lap timer and speed, and the delta between them in red](images/compare-laps.jpg)
+
 **Project ▸ Compare Laps…** plays two laps side by side, kept level by distance, so the same corner
 arrives in both pictures at the same moment and you can see where one lap gained on the other. Pick
 the **lap** to play and the lap to **compare with** — any complete lap of any data file in the
@@ -617,6 +629,8 @@ Timer's *Compare with* ▸ **Compared lap** measures against it. **Undo** restor
 had; **Project ▸ Stop Comparing Laps** removes the compared lap and keeps the rest.
 
 ## 7. Export and share
+
+![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)
 
 *Export* renders through the same pipeline as the preview, so what you see is what you get.
 Presets cover 720p to 4K and vertical video; codecs are H.264, HEVC, HEVC with alpha and ProRes

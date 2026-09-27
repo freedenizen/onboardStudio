@@ -100,6 +100,30 @@ struct UITestCommands: Commands {
                 guard let url = UITestSupport.scratchProject() else { return }
                 NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, _ in }
             }
+            // The documentation screenshots (`DocumentationScreenshots`): a real project, a chosen
+            // moment and one window size, so a rerun frames every picture the same way.
+            Button("Open Screenshot Project") {
+                guard let path = ProcessInfo.processInfo.environment["ONBOARD_TEST_SCREENSHOT_PROJECT"] else { return }
+                NSDocumentController.shared.openDocument(
+                    withContentsOf: URL(fileURLWithPath: path), display: true
+                ) { _, _, _ in }
+            }
+            Button("Seek to Screenshot Time") {
+                guard let text = ProcessInfo.processInfo.environment["ONBOARD_TEST_SCREENSHOT_TIME"],
+                    let seconds = Double(text)
+                else { return }
+                editor?.seek(to: seconds)
+            }
+            Button("Size Window for Screenshots") {
+                guard let window = NSApp.keyWindow ?? NSApp.mainWindow, let screen = window.screen else { return }
+                let size = CGSize(width: 1440, height: 860)
+                let visible = screen.visibleFrame
+                window.setFrame(
+                    CGRect(
+                        x: visible.midX - size.width / 2, y: visible.maxY - size.height, width: size.width,
+                        height: size.height),
+                    display: true)
+            }
         }
     }
 
