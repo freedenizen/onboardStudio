@@ -117,7 +117,8 @@ swift run onboard bench --export --codec hevc --seconds 60
 - Secrets are referenced by name only (`MACOS_CERT_P12`, `NOTARY_KEY_P8`, `SPARKLE_PRIVATE_KEY`, …).
   `sparkle_private_key*` is gitignored and must never be committed.
 - RaceChrono Pro CSV v3 is a first-class importer and must keep working.
-- After an Xcode build, `git checkout -- Package.resolved` and revert autosaved fixture projects.
+- After an Xcode build, `git checkout -- Package.resolved`. Projects are no longer autosaved in place
+  (#300), so a fixture opened in a dev run changes only if you save it.
 
 ## Layout
 

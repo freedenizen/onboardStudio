@@ -26,6 +26,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// With the welcome window there is no untitled project until the user asks for one.
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { !LaunchOptions.showLauncher }
 
+    /// Before any document opens, restored or from the Finder: edits wait for File ▸ Save (#300).
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        MainActor.assumeIsolated { ManualSaving.install() }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = DiagnosticsExport.launchedAt
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { DiagnosticsExport.offerAfterCrash() }
