@@ -410,6 +410,17 @@ logger's steering channel (any channel whose name starts with "steer", or `SWA`)
 scale from its values: degrees, radians, or a −1…1 channel; **Invert direction** covers loggers
 that count a right turn as negative.
 
+**Cockpit with Graph** adds your inputs to that look. It keeps the wheel, the fade and the dials,
+with the tachometer turning yellow from 6,500 rpm and red from 7,200. Across the top runs the
+best / previous / current lap strip with the speed and time differences to your best lap. On the
+left, the g-force trail sits beside brake and throttle bars, each with its light above it (ABS
+over brake, traction over throttle). On the right, a graph traces brake and throttle over ten
+seconds with now in the middle, so you see the braking point coming as well as the one just
+gone. The lights find your logger's ABS and stability channels as the Indicator templates do.
+The bars and graph read the **Brake** and **Throttle** attributes; if your logger only records
+brake pressure, point the Brake attribute at that column in **Attributes**, or pick the channel
+and range in the bar's inspector.
+
 ### Deltas to your best lap
 
 No script or pre-processing is needed for delta readouts. Whenever the data has laps, Onboard Studio

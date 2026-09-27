@@ -297,8 +297,9 @@ Presets (`--preset` on the CLI, the Preset menu in the app): `720p`, `1080p`, `1
 A `.onboardtemplate` file is a project without its inputs: `settings`, `export`, `displayObjects`
 (with `inputID` cleared), `timeline`, and `videoOrdinals` (which video input, by order, each video
 object used). Applying a template keeps the project's inputs and rebinds: video objects to the
-video inputs in order (extra ones are dropped), data-driven objects to the first data input. Three
-templates are built in (Classic Dash, Minimal, Data Wall); user templates live in
+video inputs in order (extra ones are dropped), data-driven objects to the first data input. Six
+templates are built in (Classic Dash, Glass Cockpit, Cockpit with Graph, Minimal, Data Wall, Social
+(9:16)); user templates live in
 `~/Library/Application Support/OnboardStudio/Templates/`. **File ▸ New from Template**, **Project ▸
 Apply Template** and **Save as Template…** use them.
 
