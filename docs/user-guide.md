@@ -87,6 +87,12 @@ also puts the playhead where you clicked, as in any editor. The magnet button (N
   first, with **Copy All** for a bug report. Errors shown in an alert are listed there too.
 - **Toolbar**: Add Video, Add Data, Add Object, Layout, Sync, Export, and Inspector (show or hide it). Hover over any button without
   a caption, here or under the preview, for its name and shortcut.
+- **Saving**: a project changes on disk only when you save it (**File ▸ Save**, ⌘S). Until then
+  the title bar shows *Edited*, and closing the window asks whether to save — **Don't Save** leaves
+  the file as you last saved it, so you can try something and walk away from it. Your changes are
+  still kept aside every few seconds in a copy beside the project (*Name (Autosaved)*): if the app
+  quits unexpectedly, the project reopens with them, unsaved, and the copy goes away once you save
+  or discard them.
 - **VoiceOver**: every control is named, and each object on the preview is an element of its own
   that VoiceOver can select and move with its actions (Move Left, Right, Up, Down).
 

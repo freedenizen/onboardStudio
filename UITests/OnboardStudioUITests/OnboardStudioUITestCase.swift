@@ -28,12 +28,16 @@ class OnboardStudioUITestCase: XCTestCase {
         launched = nil
     }
 
-    /// Launches the app on an empty document. `tourSeen: false` shows the first-run tour.
+    /// Launches the app on an empty document. `tourSeen: false` shows the first-run tour;
+    /// `restoresState` brings back the windows of the last run, as a relaunch after a crash does.
     @discardableResult
-    func launch(tourSeen: Bool = true, launcher: Bool = false, extraArguments: [String] = []) -> XCUIApplication {
+    func launch(
+        tourSeen: Bool = true, launcher: Bool = false, restoresState: Bool = false, extraArguments: [String] = []
+    ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-ApplePersistenceIgnoreState", "YES", "-NSShowAppCentricOpenPanelInsteadOfUntitledFile", "NO",
+            "-ApplePersistenceIgnoreState", restoresState ? "NO" : "YES",
+            "-NSShowAppCentricOpenPanelInsteadOfUntitledFile", "NO",
             "-tourSeen", tourSeen ? "YES" : "NO", "-uiTesting", "YES", "-showGettingStarted", "YES",
             // Sparkle's first-launch "Check for updates automatically?" prompt would take key status.
             "-SUEnableAutomaticChecks", "NO", "-SUHasLaunchedBefore", "YES",
