@@ -167,7 +167,9 @@ public enum ProjectTemplateError: Error, CustomStringConvertible {
 
 extension ProjectTemplate {
     /// Templates shipped with the app.
-    public static let builtIn: [ProjectTemplate] = [classicDash, glassCockpit, minimal, dataWall, social]
+    public static let builtIn: [ProjectTemplate] = [
+        classicDash, glassCockpit, cockpitWithGraph, minimal, dataWall, social,
+    ]
 
     private static func make(_ name: String, _ objects: [DisplayObject]) -> ProjectTemplate {
         let camera = DisplayObject(label: "Camera", inputID: nil, frame: .full, kind: .video(VideoObjectParams()))
@@ -290,6 +292,104 @@ extension ProjectTemplate {
                     .timer(TimerParams(mode: .bestLap, showLapNumber: false, label: "Best", backgroundColor: clear)),
                     UnitRect(x: 0.03, y: 0.11, width: 0.17, height: 0.045)),
                 object("Map", .trackMap(TrackMapParams()), UnitRect(x: 0.8, y: 0.03, width: 0.17, height: 0.26)),
+            ])
+    }()
+
+    /// Glass Cockpit's wheel and ring gauges with the driver's inputs beside them (#296): the
+    /// RaceRender timing strip across the top, g-force, brake and throttle bars with ABS and
+    /// traction lights on the left, and brake and throttle traced over the seconds either side of
+    /// now on the right. Laid out on a 24 px margin at 1080p, the dials mirrored about the centre.
+    public static let cockpitWithGraph: ProjectTemplate = {
+        // Laid out in 1080p pixels, stored as fractions of the frame.
+        func rect(_ x: Double, _ y: Double, _ width: Double, _ height: Double) -> UnitRect {
+            UnitRect(x: x / 1920, y: y / 1080, width: width / 1920, height: height / 1080)
+        }
+        let margin = 24.0
+        let side = 288.0  // the bottom row's height, and the width of its square dials
+        let top = 1080 - margin - side
+        let clear = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0)
+        let glass = RGBAColor(red: 0.04, green: 0.04, blue: 0.05, alpha: 0.35)
+        let track = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.22)
+        let brakeRed = RGBAColor(red: 1, green: 0.15, blue: 0)
+        let throttleGreen = RGBAColor(red: 0, green: 0.976, blue: 0)
+        var speed = GaugeParams.speedometer()
+        speed.title = ""
+        speed.faceColor = glass
+        speed.arcTrackColor = track
+        speed.arcWidth = 0.1
+        speed.needleColor = .white
+        speed.ticks.showMinor = false
+        var rpm = GaugeParams.tachometer()
+        rpm.style = .arc
+        rpm.title = ""
+        rpm.faceColor = glass
+        rpm.arcTrackColor = track
+        rpm.arcWidth = 0.12
+        rpm.needleColor = .white
+        rpm.showValue = false
+        rpm.ticks.showMinor = false
+        rpm.ticks.labelScale = 0.1
+        rpm.zoneTargets = ZoneTargets(face: true, marks: true, needle: true, gradient: false)
+        rpm.zones = [
+            GaugeZone(from: 6500, to: 7200, color: RGBAColor(red: 1, green: 0.84, blue: 0.1)),
+            GaugeZone(from: 7200, to: nil, color: .red),
+        ]
+        func pedal(_ channel: String, _ label: String, _ color: RGBAColor) -> BarParams {
+            BarParams(
+                channel: channel, label: label, orientation: .vertical, fillColor: color, showValue: false,
+                unitLabel: "%")
+        }
+        // Centred over the bars they belong to, which are 72 px apart.
+        func light(_ glyph: IndicatorGlyph, _ label: String, flashHertz: Double = 0) -> DisplayObjectKind {
+            .indicator(IndicatorParams(glyph: glyph, label: label, flashHertz: flashHertz))
+        }
+        let rpmX = 960 - 28 - side
+        return make(
+            "Cockpit with Graph",
+            [
+                object(
+                    "Fade",
+                    .shape(
+                        ShapeParams(
+                            shape: .rectangle, fillColor: clear,
+                            gradientEndColor: RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.7))),
+                    UnitRect(x: 0, y: 0.68, width: 1, height: 0.32)),
+                // Square, centred on the bottom edge so only its upper arc shows.
+                object("Wheel", .steeringWheel(SteeringWheelParams()), rect(960 - 452, 1080 - 452, 904, 904)),
+                object("Speed", .speedometer(speed), rect(960 + 28, top, side, side)),
+                object("RPM", .tachometer(rpm), rect(rpmX, top, side, side)),
+                object(
+                    "Gear", .gear(GearParams(showLabel: false, backgroundColor: clear, fontScale: 0.9)),
+                    rect(rpmX + side / 2 - 45, top + side / 2 - 62, 90, 124)),
+                object(
+                    "G",
+                    .gForce(
+                        GForceParams(
+                            maxG: 1.5, trailSeconds: 3, gridColor: RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.35),
+                            faceColor: glass)),
+                    rect(margin, top, side, side)),
+                object(
+                    "Map",
+                    .trackMap(TrackMapParams(dotColor: RGBAColor(red: 1, green: 0.23, blue: 0.19), dotRadius: 10)),
+                    rect(margin, margin, 0.17 * 1920, 0.26 * 1080)),
+                object("Timing Panel", .lapPanel(LapPanelParams()), rect(384, margin, 1152, 108)),
+                object("Throttle", .bar(pedal("throttle", "Thr", throttleGreen)), rect(408, top, 40, side)),
+                object("DSC", light(.traction, "DSC", flashHertz: 0.2), rect(400, top - 68, 56, 56)),
+                object("ABS", light(.abs, "ABS"), rect(328, top - 68, 56, 56)),
+                object("Brake", .bar(pedal("brake", "Brk", brakeRed)), rect(336, top, 40, side)),
+                object(
+                    "Graph",
+                    .graph(
+                        GraphParams(
+                            series: [
+                                GraphSeries(
+                                    channel: "brake", color: brakeRed, usesOwnScale: true, minValue: 0, maxValue: 100),
+                                GraphSeries(
+                                    channel: "throttle", color: throttleGreen, usesOwnScale: true, minValue: 0,
+                                    maxValue: 100),
+                            ], showLabels: false)),
+                    // As wide as the G meter and bars opposite.
+                    rect(1920 - margin - 424, 1080 - margin - 176, 424, 176)),
             ])
     }()
 
