@@ -77,6 +77,10 @@ final class PreviewContainerView: NSView {
         addSubview(playerView)
         addSubview(gizmo)
         gizmo.playerView = playerView
+        // Since macOS 14 a view draws past its bounds unless told not to: an object that hangs
+        // below the picture had its outline drawn across the transport and the timeline (#305).
+        clipsToBounds = true
+        gizmo.clipsToBounds = true
         setAccessibilityElement(true)
         setAccessibilityRole(.group)
         setAccessibilityIdentifier("preview")
