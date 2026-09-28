@@ -52,6 +52,20 @@ macOS from the installed one (#293). Sharing the installed app's identifier, tes
 its preferences. Each launch also gets its own folder for the user's templates
 (`ONBOARD_TEST_TEMPLATES_DIR`) and for picture-motion measurements (`ONBOARD_TEST_MOTION_DIR`, #288).
 
+**Documentation screenshots** (#304) come from the same machinery: `DocumentationScreenshots` opens
+a real project, applies Cockpit with Graph, shows mph and takes the editor, an inspector, the export
+sheet, Frame Picture, the Attributes window, Compare Laps and the welcome window.
+`Scripts/screenshots.sh` runs it and writes them to `docs/images/` (JPEG where the picture shows
+footage, PNG otherwise). It needs a project that is not in the repository, so CI skips it:
+
+```sh
+TEST_RUNNER_ONBOARD_SCREENSHOT_PROJECT=/path/to/Sonoma.onboardproj \
+TEST_RUNNER_ONBOARD_SCREENSHOT_TIME=687.3 Scripts/screenshots.sh
+```
+
+The project is never saved. The published pictures show the Sonoma session with the owner's
+permission; retake them only from footage you may publish.
+
 ## 2. Headless checks with the CLI
 
 The `onboard` tool exercises the same libraries the app uses, without the GUI:
@@ -91,7 +105,7 @@ before tagging a release.
 | M7 gauges | `docs/qa-m7.md`; goldens in `Tests/Fixtures/Goldens` (`gauge-*`, `bar-*`, `graph-*`, `gear-*`, `lapcounter-*`, `timer-delta-*`) | Every designer option changes the preview live; a `.onboardstyle` round-trips; the delta timer reads 0.00 on the best lap |
 | M8 timeline | `docs/qa-m8.md`; `TimelineMediaTests` exports a two-camera switch at 1.5 s and pixel-probes both sides | Segment badges show what is set where; a camera switch lands on the same frame in preview and export |
 | M9 templates/export | `docs/qa-m9.md`; `ExportOptionsTests` (lap-range duration, key-colour and ProRes-alpha exports, missing media) | A lap export is exactly the lap long; a transparent export composites cleanly in another editor; templates rebind to new inputs |
-| M10 GoPro/FIT/auto-sync | `docs/qa-m10.md`; `GPMFKitTests` build a synthetic MP4 with a `gpmd` track; `FITTests` encode a FIT file in-test; set `ONBOARD_SAMPLES_DIR` to also run against a real HERO13 clip | Use Embedded GPS gives a moving map from the video alone; adding a RaceChrono file next to the GoPro clip syncs to within a second without the wizard |
+| M10 GoPro/FIT/auto-sync | `docs/qa-m10.md`; `GPMFKitTests` build a synthetic MP4 with a `gpmd` track; `FITImporterTests` encode a FIT file in-test; set `ONBOARD_SAMPLES_DIR` to also run against a real HERO13 clip | Use Embedded GPS gives a moving map from the video alone; adding a RaceChrono file next to the GoPro clip syncs to within a second without the wizard |
 | M11 scripting | `docs/qa-m11.md`; `ScriptingTests` (data API, canvas pixels, error badge, examples, RaceRender-style names, frame budget) | An example script draws live; a typo shows a badge and an inspector message, never a crash; the busy-script test stays under 4 ms/frame |
 | M12 lens/360/maps | `docs/qa-m12.md`; `LensUnwrapTests` (synthetic equirectangular and fisheye sources on both kernel backends, golden), `SphericalMetadataTests` (uuid box present, file still decodes, ffprobe reports a spherical mapping when installed), `TrackMapExtrasTests` (two-vehicle and map-background goldens) | A 360° clip shows a flat, pannable view; a tagged export plays as a panorama in QuickTime Player; a second data input appears as a second dot; a map background lines up with the outline |
 | M13 motion sync / YouTube / sidecars | `docs/qa-m13.md`; `SignalCorrelationTests`, `MotionSyncTests` (a synthetic clip with motion bursts is written with AVAssetWriter and matched against a shifted speed log), `YouTubeKitTests` (device flow, token refresh and a resumable upload with a dropped chunk against a mock Google served by a `URLProtocol`), `DJISRTTests`, `CompanionTelemetryTests` | Auto-Sync by Motion lands within a second of the manual sync on the real project; `onboard sync` prints a convincing match; a DJI clip's SRT is offered as sidecar data; an upload reaches YouTube after the device-code sign-in |
@@ -104,7 +118,7 @@ before tagging a release.
 | M17 viewer pan / clip speed / overview | `docs/qa-m17.md`; `ClipSpeedTests` (a double-speed clip takes half the sequence and shows the right frame; speed decodes) | Dragging the zoomed picture pans it; a clip's Speed field shortens the bar; the overview strip scrolls the zoomed timeline |
 | 0.19 launcher, CAN bus, steering auto-detect | `TurnDirectionTests` (yaw rate from GPS heading, correlated with the steering channel, picks the sign), `LauncherUITests` | A RaceChrono CAN export files channels as `canbus:`; the steering wheel turns the way the car does without being told |
 | 0.20 the timeline works like an editor | `docs/qa-m16.md` and `qa-m17.md` are superseded by the XCUITest journeys J3a–J3e and J8 (`MarkerUITests`, `TrimUITests`, `SplitUITests`, `DataEditingUITests`, `TimelineUITests`, `SyncUITests`); model: `MarkerTests`, `VideoSplitTests`, `SessionTrimTests`, `LapNavigationTests` | A split makes a trimmed first half, a second input, a hidden second object and a segment that swaps them; the sync panel stays under the preview |
-| 0.21 knowing the track | `SectorsTests`, `CornerDetectorTests` (12 corners on Sonoma), `CircuitCatalogTests`, `StartFinishFinderTests`, `TrackExtentTests`, `TrackMapDisplayTests` goldens, `SectorPanelTests`; `LapUITests`, the sector-panel journey in `ObjectEditingUITests`; `onboard probe` prints the circuit match, the sector table and `--corners` | The start/finish suggestion lands on the line the logger used; the pit lane drops off the map; sector deltas that round to 0.00 draw in the text colour |
+| 0.21 knowing the track | `SectorLayoutTests`, `SectorTimesTests`, `SectorSessionBuilderTests`, `CornerDetectorTests` (12 corners on Sonoma), `CircuitCatalogTests`, `StartFinishFinderTests`, `TrackExtentTests`, `TrackMapDisplayTests` goldens, `SectorPanelTests`; `LapUITests`, the sector-panel journey in `ObjectEditingUITests`; `onboard probe` prints the circuit match, the sector table and `--corners` | The start/finish suggestion lands on the line the logger used; the pit lane drops off the map; sector deltas that round to 0.00 draw in the text colour |
 | 0.21.x units | `SpeedUnitInheritanceTests`, `RecordedSpeedUnitTests` (a kph file through `SessionBuilder` answers kph, not the canonical m/s), `GraphSeriesScaleTests` | A new object shows "Automatic" and says what that resolves to; throttle and brake pressure share one graph legibly |
 | 0.22 attributes and units | `AttributeMappingTests`, `DisplayUnitTests`, `SpeedUnitInheritanceTests`, `ScaleFittingTests`, `GraphSeriesScaleTests`, `RCZTests`, `VBOUnitTests`, `ImportReportTests`; `AttributeMappingUITests`, `ImportReportUITests` | A channel mapped once is read that way in every file afterwards; units convert for display only |
 | 0.23 mapping scope | `AttributeMappingScopeTests`, `AttributeFilterTests`, `ChannelPickerTitleTests`, `GlobalMappingReloadTests`, `MappedChannelAliasTests` | A global mapping reaches an open project without reopening it |
