@@ -99,7 +99,7 @@ xcodegen generate && open OnboardStudio.xcodeproj
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md), then [architecture](docs/architecture.md),
 [testing](docs/testing.md), the [project format](docs/project-format.md) and how it compares with
-other tools in [landscape](docs/landscape.md). The app is at **v0.28.2**.
+other tools in [landscape](docs/landscape.md). The app is at **v0.28.3**.
 
 ## License
 
