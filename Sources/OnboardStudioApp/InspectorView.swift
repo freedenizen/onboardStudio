@@ -114,6 +114,9 @@ struct InputInspector: View {
                     Button("Auto-Sync from Timestamps") { editor.autoSync(input.id) }
                     Text("Aligns the data's clock with the video's \(suggestion.videoClock).").font(.caption)
                         .foregroundStyle(.secondary)
+                } else if let explanation = editor.clockGapExplanation(for: input.id) {
+                    Text(explanation + " Sync by motion or by hand instead.").font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 if input.kind.isData, !editor.project.videoInputs.isEmpty {
                     if let progress = editor.motionSyncProgress {
