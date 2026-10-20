@@ -154,11 +154,10 @@ final class EditorModel {
         guard let id = pendingAutoSync, sessions[id] != nil else { return }
         pendingAutoSync = nil
         guard project.input(id)?.sync == SyncSettings() else { return }  // the user already changed it
-        if let suggestion = suggestedSync(for: id) {
-            updateInput(id, name: "Auto-Sync from Timestamps") { $0.sync = suggestion.sync }
-            statusMessage =
-                "Synced \(project.input(id)?.label ?? "data") from timestamps using the \(suggestion.videoClock)."
-        }
+        guard let suggestion = suggestedSync(for: id) else { return motionSyncIfClocksDisagree(id) }
+        updateInput(id, name: "Auto-Sync from Timestamps") { $0.sync = suggestion.sync }
+        statusMessage =
+            "Synced \(project.input(id)?.label ?? "data") from timestamps using the \(suggestion.videoClock)."
     }
 
     // MARK: - Circuits

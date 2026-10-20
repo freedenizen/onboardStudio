@@ -35,21 +35,46 @@ struct TimestampSyncTests {
         // The video started 14 s after the data session (the real GoPro/RaceChrono relationship).
         let videoStart = 1_787_528_178.0
         let plain = TimestampSync.suggest(
-            data: session(epoch: true), video: SyncSettings(), videoStartEpoch: videoStart, videoClock: "GPS")
+            data: session(epoch: true), video: SyncSettings(), videoStartEpoch: videoStart, videoDuration: 60,
+            videoClock: "GPS")
         #expect(plain?.sync.startPositionInInput == videoStart)
         #expect(plain?.sync.offsetInProject == 0 && plain?.sync.playSpeed == 1)
         // A trimmed, offset, sped-up video: the data follows the same mapping.
         let videoSync = SyncSettings(startPositionInInput: 30, offsetInProject: 2, playSpeed: 2)
         let trimmed = TimestampSync.suggest(
-            data: session(epoch: false), video: videoSync, videoStartEpoch: videoStart, videoClock: "file")
+            data: session(epoch: false), video: videoSync, videoStartEpoch: videoStart, videoDuration: 60,
+            videoClock: "file")
         #expect(trimmed?.sync.startPositionInInput == 44.0)
         #expect(trimmed?.sync.offsetInProject == 2 && trimmed?.sync.playSpeed == 2)
         // Project time 2 shows video time 30 → wall clock videoStart + 30 → data time 44.
         #expect(trimmed?.sync.inputTime(forProjectTime: 2) == 44)
         let none = TelemetrySession(info: SessionInfo(sourceFormat: "x"), channels: [])
         #expect(
-            TimestampSync.suggest(data: none, video: SyncSettings(), videoStartEpoch: videoStart, videoClock: "x")
+            TimestampSync.suggest(
+                data: none, video: SyncSettings(), videoStartEpoch: videoStart, videoDuration: 60, videoClock: "x")
                 == nil)
+    }
+
+    @Test func refusesClocksThatPutTheVideoOutsideTheLog() {
+        // The data runs 1_787_528_164 … +100. A camera whose clock was never set (#311): its
+        // creation time reads a day and a half before the log, so nothing it shows has data.
+        let data = session(epoch: true)
+        let wrongClock = 1_787_528_164.0 - 146_014
+        let gap = TimestampSync.clockGap(data: data, videoStartEpoch: wrongClock, videoDuration: 1_427)
+        #expect(gap == -144_587.0)  // the video ends 40 hours before the log starts
+        #expect(
+            TimestampSync.suggest(
+                data: data, video: SyncSettings(), videoStartEpoch: wrongClock, videoDuration: 1_427,
+                videoClock: "file creation time") == nil)
+        // A video that starts after the log has ended is just as far off, on the other side.
+        #expect(TimestampSync.clockGap(data: data, videoStartEpoch: 1_787_528_364, videoDuration: 60) == 100)
+        // Overlapping by any amount is fine: a camera started before the logger, or the log
+        // starting in a later chapter of the recording, is how real sessions look.
+        #expect(TimestampSync.clockGap(data: data, videoStartEpoch: 1_787_528_134, videoDuration: 60) == nil)
+        #expect(TimestampSync.clockGap(data: data, videoStartEpoch: 1_787_528_264, videoDuration: 60) == nil)
+        #expect(
+            TimestampSync.clockGap(data: session(epoch: false), videoStartEpoch: 1_787_528_200, videoDuration: 1) == nil
+        )
     }
 
     @Test func recordingStartFallsBackToTheCreationDate() async throws {

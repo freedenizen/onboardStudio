@@ -31,7 +31,9 @@ and, ideally, a data log.
    **Use Sidecar Data**.
 4. **Line the data up with the video.** When the log has a clock (RaceChrono, GPX, FIT, DJI…)
    this happens automatically the moment the file is added; the status line says which clock was
-   used. Otherwise select the data input and press **Auto-Sync by Motion** (matches the video's
+   used. If the camera's clock is wrong — a GoPro with no GPS fix whose clock was never set
+   reads days off — the clocks put the video outside the log, so Onboard Studio says how far
+   apart they are and syncs by motion instead. Otherwise select the data input and press **Auto-Sync by Motion** (matches the video's
    sound and motion against the log's speed) or **Synchronize with Video…** for the manual panel.
 5. **Add gauges.** **Project ▸ Apply Template ▸ Classic Dash** gives a speedometer, tachometer,
    track map, g-force plot and lap timer at once; **Add Object** adds them one by one. Drag objects
@@ -673,6 +675,10 @@ a project, `sync` finds the data/video offset from motion, `upload` sends a file
   every normal frame rate. You can move the video against the data as well as the data against
   the video. Or run Auto-Sync by Motion. GoPro creation times can be tens of
   seconds off, which is why the GPS clock is preferred when the clip has one.
+- **The data was not synced from timestamps when I added it.** The status line (and **View ▸
+  Show Activity**) says why. *The video's file creation time puts it 1 day, 16 hours before the
+  log starts* means the camera's clock is wrong; Onboard Studio has synced by motion instead. To
+  get timestamp sync back, turn GPS on in the camera or let GoPro Quik set its clock.
 - **A GoPro clip appears upside down.** Onboard Studio honours the camera's orientation flag; use
   Rotation 180° in the Picture section if the camera was mounted inverted without setting it.
 - **Stabilisation does little, or nothing.** Choose the method the camera supports: *From camera

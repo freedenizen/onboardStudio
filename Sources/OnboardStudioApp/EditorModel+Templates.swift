@@ -118,13 +118,53 @@ extension EditorModel {
         return TimestampSync.recordingStart(of: url, info: info)
     }
 
-    /// Sync settings that line `dataID` up with the first video by timestamps, if both carry a clock.
+    /// Sync settings that line `dataID` up with the first video by timestamps, if both carry a clock
+    /// and the clocks agree that the video was recorded while the data was being logged.
     func suggestedSync(for dataID: InputID) -> TimestampSync.Suggestion? {
         guard let session = sessions[dataID], session.hasAbsoluteTime, let video = project.videoInputs.first,
             let start = recordingStart(of: video)
         else { return nil }
         return TimestampSync.suggest(
-            data: session, video: video.sync, videoStartEpoch: start.epoch, videoClock: start.source)
+            data: session, video: video.sync, videoStartEpoch: start.epoch, videoDuration: videoRunTime,
+            videoClock: start.source)
+    }
+
+    /// How far the first video's clock puts it from `dataID`'s log, when the two do not overlap
+    /// at all: the sign of a camera clock that was never set (#311).
+    func timestampClockGap(for dataID: InputID) -> (seconds: Double, videoClock: String)? {
+        guard let session = sessions[dataID], session.hasAbsoluteTime, let video = project.videoInputs.first,
+            let start = recordingStart(of: video),
+            let gap = TimestampSync.clockGap(data: session, videoStartEpoch: start.epoch, videoDuration: videoRunTime)
+        else { return nil }
+        return (gap, start.source)
+    }
+
+    /// Every video's length added up: the longest the first camera could have been running, as
+    /// its chapters are separate inputs.
+    private var videoRunTime: Double {
+        project.videoInputs.reduce(0) { $0 + (loaded?.mediaInfo[$1.id]?.duration ?? 0) }
+    }
+
+    /// Why timestamps cannot sync `dataID`, in a sentence, when its clock and the video's disagree.
+    func clockGapExplanation(for dataID: InputID) -> String? {
+        guard let gap = timestampClockGap(for: dataID) else { return nil }
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .full
+        formatter.allowedUnits = [.day, .hour, .minute, .second]
+        formatter.maximumUnitCount = 2
+        let distance = formatter.string(from: abs(gap.seconds)) ?? "\(Int(abs(gap.seconds))) seconds"
+        let side = gap.seconds > 0 ? "after the log ends" : "before the log starts"
+        return "The video's \(gap.videoClock) puts it \(distance) \(side), so the camera's clock is probably wrong."
+    }
+
+    /// When the clocks would put `dataID` where the video never reaches, says so and matches the
+    /// picture and the sound instead, which do not depend on the camera's clock (#311).
+    func motionSyncIfClocksDisagree(_ dataID: InputID) {
+        guard let explanation = clockGapExplanation(for: dataID) else { return }
+        motionSync(dataID)
+        statusMessage =
+            explanation
+            + (motionSyncTask == nil ? " Use Synchronize with Video… to line it up." : " Syncing by motion instead…")
     }
 
     /// Applies the timestamp-based sync to a data input.
