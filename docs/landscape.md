@@ -133,13 +133,15 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 9. **Graph X-Y axis against an arbitrary channel** — *Another channel (X-Y)* on the graph, and the
    playhead moved off the right edge of time and distance graphs so the future shows (#156, v0.26.0).
 
-**Filed**
+**Filed and under way**
 
-Nothing: every filed item has shipped.
+10. **Coaching** — the step none of the surveyed overlay tools takes and every coaching product
+    does: rank the corners by time lost, say which phase and what to try. Milestones v0.29.0,
+    v0.30.0 and v0.31.0 (#315–#335); design in `docs/coaching.md`.
 
 **Not filed**
 
-10. **Bézier curves in the script canvas** — the remaining scripting gap.
+11. **Bézier curves in the script canvas** — the remaining scripting gap.
 
 Also recorded in `parity.md` and not filed: no heading-offset field, no `.rrp` import, no Sony
 `rtmd` embedded GPS. (`.rcz` import shipped in v0.22.0.)
@@ -150,13 +152,16 @@ Recorded so it stops being re-proposed.
 
 - **Live / in-car use** — real-time overlay on a connected device, live coaching cues, predictive
   timing during the session. This is RaceChrono, Garmin Catalyst and Apex Pro territory, and it
-  implies a fundamentally different application.
+  implies a fundamentally different application. Coaching *after* the session is in scope and
+  under way — see `docs/coaching.md`.
 - **Cloud and sharing** — accounts, cloud project sync, a shared template gallery. Implies a
   backend and ongoing cost.
 
-Lap comparison (v0.26.0) and social / vertical export (v0.25.0) have shipped. Still in scope but
-not started: **telemetry analysis for its own sake** — sector analysis and channel maths as a
-study tool rather than as overlay.
+Lap comparison (v0.26.0) and social / vertical export (v0.25.0) have shipped. **Telemetry analysis
+for its own sake** is now the Coaching milestones (v0.29.0–v0.31.0): any two laps aligned by
+distance or position, the fastest rolling lap and the spliced optimal lap as references, per-corner
+metrics with the time lost in each phase, ranked opportunities with plain-language notes, then the
+same in the video and across sessions. The survey behind it is in `docs/coaching.md`.
 
 ## Unverified
 

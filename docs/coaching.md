@@ -1,0 +1,225 @@
+# Coaching
+
+Design for the coaching features: what the app says about a lap beyond showing its numbers, and
+what it says to try next time. Written from a survey of the coaching tools drivers actually use,
+from the data-analysis literature, and from how HPDE instructors debrief, all recorded below so the
+reasoning can be re-checked rather than taken on trust.
+
+Milestones: **v0.29.0 — Coaching: where the time went** (#315–#322), **v0.30.0 — Coaching in the
+video** (#323–#329), **v0.31.0 — Coaching between sessions** (#330–#335).
+
+## The gap
+
+Onboard Studio measures a lot — laps, sectors, the optimal lap time, deltas to the best lap,
+Compare Laps side by side, the corners of the circuit — and interprets none of it. A driver still
+reads a delta graph and works out for themselves that the time went in Turn 4 because they braked
+early. Every coaching product surveyed does that step for the driver, and an instructor does it in
+person after each session, with a track map and three things to try in the next one.
+
+Two forms were asked for: **in the app**, after the session, interactively; and **in the video**,
+so a rendered lap can carry its own debrief. Real-time in-car coaching is not one of them (see
+*Deliberately not doing*).
+
+## What the field does
+
+Surveyed 2026-11-01. The products converge on one shape, and the shape is what is built here.
+
+| Product | What it does with a lap | Source |
+| --- | --- | --- |
+| **Coach Dave Delta — Auto Insights** (sim) | Splits every corner into **braking, entry, apex, exit**, says which phase cost time against a reference lap, ranks the corners, and in 2.0 recognises **linked corners** ("compromising T3 for T4") | [docs](https://coachdaveacademy.com/documentation/how-to-use-auto-insights-ai-coaching-in-delta/), [2.0 announcement](https://coachdaveacademy.com/announcements/auto-insights-2-ai-driving-coach-delta/) |
+| **Garmin Catalyst** (real cars) | After the session, the **top three opportunities** ranked by time available; for braking, a **video frame at the better lap's brake point** as a sight picture; a **True Optimal Lap** spliced from the best segments; audio cues in the car | [Grassroots Motorsports, a year on](https://grassrootsmotorsports.com/articles/year-later-garmin-catalyst-still-revolution/), [Speed Secrets](https://speedsecrets.com/q-can-you-tell-me-about-the-garmin-catalyst/) |
+| **Trophi.ai** (sim) | Corner-by-corner time-loss ranking, technique grading per phase, reference laps from experts and the community | [features](https://www.trophi.ai/sim-racing-coaching) |
+| **Track Titan** (sim) | "Coaching Flows": the single biggest mistake across the lap and how to fix it; braking-zone by braking-zone analysis | [tracktitan.io](https://www.tracktitan.io/), [review](https://moorepodiums.com/track-titan-review-iracing-ai-coaching/) |
+| **Garage 61** (sim) | The delta graph first ("look for where the line is steepest"), a **driving-line offset graph** (left/right of the reference), brake and throttle overlays against thousands of laps | [changelog](https://garage61.net/whatsnew) |
+| **Racelogic Circuit Tools** (real cars) | **Delta-T** aligned by **GPS position** rather than distance, because two drivers' lines differ by more than 10 m over a lap; side-by-side video stepped a sample at a time; "are you braking where the faster driver brakes?" as the method | [How to use Circuit Tools to become faster](https://en.racelogic.support/VBOX_Motorsport/Software_Info/Circuit_Tools/Knowledge_Base/How_to_Use_Circuit_Tools_to_Become_Faster), [Delta-T](https://www.racedatasystems.com/pages/analysis-software-racelogic-circuit-tools-html) |
+| **AiM Race Studio 3** | Time Compare; the map coloured by it; per-corner and per-straight **reports** with braking and acceleration items; math channels for time spent braking, cornering and **coasting** | [analysis manual](https://www.aim-sportline.com/docs/racestudio3/manual/html/analysis.html) |
+| **MoTeC i2** | Time Variance; section **channel reports** (min, average per section); the **fastest rolling lap** — a real contiguous lap-length stretch timed from anywhere — beside the theoretical ("eclectic") lap; consistency highlighting | [forum](https://www.motec.com.au/forum/viewtopic.php?f=26&t=3664), [product page](https://www.motec.com.au/products/I2) |
+| **Apex Pro** | A grip-utilisation score from an IMU model, shown as lights | [apextrackcoach.com](https://apextrackcoach.com/) — a different idea, not pursued here |
+| **Blayze** (human coaches) | A 10–12 minute video debrief, corner by corner, to re-watch between sessions; the car's view out of the windscreen is what matters, overlays are not needed | [methodology](https://blayze.io/blog/car-racing/blayze-motorsports-coaching-methodology) |
+
+What an engineer or coach reads off a corner, from Segers' *Analysis Techniques for Racecar Data
+Acquisition* (SAE, 2nd ed., chapter 14 "Analyzing the Driver"), AiM's sample math channels and
+OptimumG's columns in *Racecar Engineering*: the brake point and how hard; where the brakes came
+off and how much of that overlapped with cornering (trail braking); the turn-in point; the
+**minimum speed and where it fell relative to the apex**; entry and exit speed; where the throttle
+came back and where it reached full; **coasting** (neither pedal); time in the corner; peak lateral
+G; steering smoothness. And across laps, **consistency**: the spread of brake point and minimum
+speed in each corner. A recurring warning in all three: brake-point comparison is meaningless once
+the two laps' distances have drifted apart by more than about 5 m.
+
+How instructors debrief, from the Metro NY Region PCA instructor training manual and Ross Bentley's
+*Speed Secrets* column: with a track map; three goals for the next session; goals phrased as
+**experiments** ("brake at the 2 board instead of the 3 and see whether exit speed improves"), not
+targets ("two seconds faster"); from the second session on, one or two corners at a time.
+
+## The shape
+
+Everything below is one pipeline. Each stage is a plain value in `TelemetryKit`, so the window,
+the CLI, the video objects and the next-session plan read the same result.
+
+```
+LapProfile(lap)  ──┐
+                   ├─ LapDeltaTrace ─┐
+LapProfile(ref)  ──┘                 ├─ CornerComparison per corner ─ Opportunity, ranked ─ CoachingNote
+CornerDetector(ref) ─────────────────┘
+```
+
+### Profiles: a lap as functions of distance
+
+`Sources/TelemetryKit/LapProfile.swift` (#315). A `LapProfile` is a stretch of session time — a
+lap, or any window — resampled onto a grid every 2 m of distance travelled. It carries elapsed
+time, position and heading, and the recorded channels that matter to driving (speed, throttle,
+brake, brake pressures, longitudinal and lateral G, steering, RPM, gear), each in its canonical
+unit.
+
+**The grid is in metres, not seconds**, for the same reason `CornerDetector` resamples: a brake
+point found on a 10 Hz GoPro log and one found on a 100 Hz RaceChrono log must be the same kind of
+number. Two metres is finer than any GPS fix and coarser than nothing a driver can act on.
+
+**What the logger did not record is derived where the physics allows**, and the profile says so:
+
+| Channel | When derived | How | `source(of:)` |
+| --- | --- | --- | --- |
+| Speed | no speed channel | distance per time across the step either side of each grid point | `.speedTrace` |
+| Longitudinal G | no `longitudinalG` channel | `v · dv/ds`, smoothed over 25 m | `.speedTrace` |
+| Lateral G | no `lateralG` channel | `v² · κ`, κ the heading change per metre of the path, smoothed over 25 m; positive turning right, the sign the recorded channel uses | `.position` |
+| Heading | always, when there is position | bearing from the grid point before to the one after | `.position` |
+
+A GoPro, a phone, a RaceBox record none of throttle, brake or steering; these derivations are
+what let the rest of the pipeline say anything about a braking zone for them. The derived values
+exist only in the profile. They are never added to the session, so no saved project renders
+differently because they exist.
+
+### Alignment: lining two laps up
+
+`Sources/TelemetryKit/LapDelta.swift` (#315). A `LapDeltaTrace` is the lap's elapsed time minus
+the reference's at each grid point of the reference, positive behind; the change in it across a
+stretch is the time lost there, which is what "0.3 s lost in Turn 4" means. Two alignments so far:
+
+- **By distance**, metre for metre. Right when both laps follow the same line, which two laps of
+  one session do to about a metre: lap-to-lap spread on the reference Sonoma session is 0.9 m
+  median (`docs/tracks-and-sectors.md`). It is what sectors, the delta channels and the Sector
+  Times panel already use, so the coaching numbers agree with the overlays.
+- **By fraction of lap**, for two laps of different length without positions: what `LapTimeWarp`
+  does to keep two pictures level. A fallback, and the trace's `confidence` says so.
+
+**Across sessions, by position** (#316, next). A different line, a different logger or a
+start/finish line placed a few metres differently changes a lap's length by around 1 %, and by
+fraction that is 30 m by the end of a 3 km lap — the drift MoTeC warns makes brake-point
+comparison meaningless. Each point of the compared lap is projected onto the reference's line
+(nearest segment within ±60 m of the previous match, so the match never runs backwards), which
+gives the reference distance and, for free, the signed lateral offset between the two lines.
+Racelogic's Delta-T is built the same way for the same reason. If the residual exceeds 30 m the
+trace falls back to fraction of lap with `confidence = 0`, and the window says "approximate".
+
+`confidence` is a guide, not a measurement: 1 when the two laps are the same length to within
+2 %, falling to 0 at a 10 % difference by distance or 20 % by fraction.
+
+### References: what a lap is compared with
+
+Four, all producing a `LapProfile` (#317 for the last two):
+
+| Reference | What it is | Why |
+| --- | --- | --- |
+| **Best lap** | the session's quickest complete lap (`LapDeltas.sessionBest`) | the default; zero setup |
+| **A lap from another input** | another session's or another driver's lap, as Compare Laps already takes | the coaching case with the most to teach; aligned by position |
+| **Optimal lap (spliced)** | the best sector of each lap, joined by distance; MoTeC's eclectic lap, Garmin's True Optimal Lap | the lap the driver has already shown they can do, 1:54.54 against 1:56.88 at Sonoma; speed is discontinuous at the seams and the UI says which laps it was spliced from |
+| **Fastest rolling lap** | the quickest lap-length stretch starting anywhere, found by sliding a window of the median lap length over the distance channel within the complete laps so the pit lane cannot win | the timing line cuts a driver's best sequence of corners in two more often than not; MoTeC's term |
+
+A rolling lap starts mid-lap, so its profile carries the distance into the containing lap at which
+it began, and its corners line up with a normal lap's.
+
+### Corners: phases, metrics, time lost
+
+Corners come from `CornerDetector` run on the **reference** lap and are applied to the compared lap
+by distance, exactly as sectors are (`docs/tracks-and-sectors.md`). Each corner is split into four
+phases that tile a window around it, so the time lost in the phases adds up to the time lost in the
+corner:
+
+| Phase | From | To |
+| --- | --- | --- |
+| Braking | the brake point | turn-in (the corner's start) |
+| Entry | turn-in | the minimum-speed point |
+| Apex | the minimum-speed point | throttle pick-up |
+| Exit | throttle pick-up | the corner's end, extended to full throttle, capped at the next corner's brake point |
+
+A corner never braked for has an empty braking phase. Without a throttle channel the apex phase
+ends where longitudinal acceleration turns positive.
+
+Per corner, per lap (#318): brake point (metres before the apex), peak braking G, brake release,
+trail-braking overlap, entry speed, minimum speed and where it fell relative to the apex, exit
+speed, throttle pick-up, full throttle, coasting time, peak lateral G, time in corner, steering
+smoothness, and — approximately — the line offset at the apex. Every threshold is a fraction of the
+channel's own range or a value in g, in an `Options` struct with defaults; none is tied to a
+logger. Every metric records which channel it came from, so the window can say "from the speed
+trace".
+
+### Opportunities and notes
+
+(#319.) Corners are ranked by time lost against the reference; the phase with the largest loss is
+the opportunity's phase. The top three are the headline, the rest are in the table. Rules, in
+order, pick the note: braked earlier by more than 5 m; over-slowed (minimum speed more than 2 %
+lower); minimum speed more than 10 m after the apex ("trail the brakes to the apex"); throttle
+more than 5 m later; more than 0.3 s more coasting. A linked-corner rule drops a corner whose
+exit loss is followed by a larger gain on the straight: the compromise paid.
+
+Consistency is measured first: the spread of brake point and minimum speed in each corner across
+the session's complete laps. An inconsistent corner gets "repeat the best lap's brake point"
+before anything else, because every coach says consistency before speed; a consistent but slow
+one gets an experiment.
+
+Notes are **rule-based and offline**: deterministic phrase templates filled from the metrics,
+unit-aware through the display units, golden-tested. The wording adapts to the reference: "than
+your best lap", "than lap 5", "than the rolling lap", "than the optimal lap", "than Alex (Sunday
+session)".
+
+## In the app (#321, #322)
+
+A **Coaching window** beside the document, opened from Project ▸ Coaching…: a lap picker and a
+*Compared with* picker; the top three opportunities as cards with a *Show Me* button that moves
+the playhead to the reference's brake point; a sortable corner table; a detail pane for the
+selected corner with the time lost per phase, both laps' metrics side by side with their sources,
+and the two lines through the corner on a small map with brake points and apexes marked; and
+*Compare in Video*, which lays the project out as Compare Laps does over that corner's span.
+
+A window rather than an inspector section because a corner table needs width and the inspector is a
+column (#192, `.claude/rules/appui.md`); rather than a sheet because it exists to drive the preview.
+The chosen reference is saved in the project (`Project.coaching`, optional, so no migration) and
+changing it is undoable; the selected row is view state.
+
+The GPS caveat is stated where the lines are drawn: lap-to-lap spread is about a metre and absolute
+accuracy one to three, so two lines are a relative comparison, never a measurement of where the car
+was on the tarmac.
+
+## In the video (v0.30.0)
+
+A Corner Callout object that shows the current corner's note as the car arrives (#323); the
+reference line, gain/loss colouring and brake-point markers on the Track Map, all off by default
+(#324); a choosable graph ghost (#325); per-corner comparison clips with the better lap's brake-point
+frame held as a sight picture (#326); a Coaching Debrief template and export (#327); the spliced
+optimal lap as a picture (#328); corners and the comparison on the scripting bridge (#329).
+
+## Between sessions (v0.31.0)
+
+A next-session plan of three experiments kept with the circuit's track definition (#330); a
+printable one-page debrief with the map (#331); per-corner trends across visits (#332); position
+alignment for two laps of one session that took different lines (#333); a line heat map (#334); a
+spoken debrief (#335).
+
+## Measurements
+
+Filled in as each piece lands and is run against the reference Sonoma session (local only, never
+committed).
+
+- Profile of a lap at 2 m: **to be measured** (#315 shipped the type; the CLI that times it is #320).
+
+## Deliberately not doing
+
+- **Real-time in-car coaching.** Audio cues or lights while driving need a live GPS feed and a
+  different application; Garmin Catalyst, Apex Pro and the phone apps do this. Everything here is
+  after the session.
+- **A language model writing the debrief.** The notes are rules over measured numbers: the same
+  answer every time, testable against fixtures, no network, no key, nothing leaves the Mac.
+- **Treating two GPS lines as truth.** The offset between two lines is shown, with the caveat,
+  because it is useful relatively; it is never turned into "you were 1.4 m off the apex".
+- **An absolute grip score** (Apex Pro's). It needs a vehicle model the data cannot supply.
