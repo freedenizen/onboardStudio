@@ -178,6 +178,12 @@ Two details worth noting because they contradict what is widely repeated online:
 - **Up/Down arrows move the selection between edits**, so Resolve does not reserve the arrow keys
   for the playhead the way the secondary sources implied. Only left/right step frames.
 
+## The Coaching window (#321)
+
+- **⌃⌘C — Coaching…** ⌘C copies and ⌥⌘C copies an object's style, so the plain and option forms
+  are taken; ⌃⌘ is the pattern Show Project Details (⌃⌘I) set for "show me a view of the
+  project". Unused elsewhere in the app and not a system shortcut.
+
 ## The attribute window (#200)
 
 Not from an editor, so not verified against one; chosen against the Mac's own conventions.

@@ -104,6 +104,7 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
 | Niche | Theoretical / optimal lap | Yes — *Optimal* on the Sector Times panel, and in the data inspector |
 | Emerging | Video stabilisation of helmet or chest footage | Yes — from GoPro's motion data, from the picture's own movement, or with a user-installed Gyroflow, keeping telemetry and sync (#140) |
+| Emerging | After-session coaching: corners ranked by time lost, with what to change | Yes — the Coaching window and `onboard coach` (#321, #320): phases, brake point, minimum speed, throttle, consistency, against the best lap, the fastest rolling lap, the spliced optimal lap or another driver's lap; see `docs/coaching.md` |
 | Emerging | Vertical / social export with stat cards | Yes — a Stat Card object, a Social (9:16) template, and one lap or marker exported as a vertical clip in one action (#151) |
 
 ## Candidate work

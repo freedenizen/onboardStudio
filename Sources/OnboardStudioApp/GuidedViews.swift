@@ -229,6 +229,7 @@ struct ShortcutsView: View {
         ("⇧⌘D", "Add data file"),
         ("⌘Y", "Synchronize data"), ("⌥⌘A", "Map attributes, for the selected data file"),
         ("⌘1 / ⌘2 / ⌘F", "In the attribute window: attributes, import report, filter"),
+        ("⌃⌘C", "Coaching: where a lap lost time, corner by corner"),
         ("⌘E", "Export video"), ("⌘K", "Add timeline segment at playhead"),
         ("M / ⌘M", "Add a marker at the playhead; ⌘M names it too"),
         ("⇧↑ / ⇧↓", "Previous / next marker"), ("⌥↑ / ⌥↓", "Previous / next lap"),

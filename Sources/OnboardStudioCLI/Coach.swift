@@ -173,19 +173,9 @@ struct Coach: AsyncParsableCommand {
     // MARK: - Text report
 
     private func printReport(_ analysis: CoachingAnalysis, lapNumber: Int, units: CoachingUnits) {
-        let format = CoachingNotes.Formatter(units: units)
-        let behind = analysis.totalLoss >= 0 ? "behind" : "ahead"
-        print(
-            "Lap \(lapNumber) (\(TimeParsing.lapTimeString(analysis.lap.duration, decimals: 2))) against "
-                + "\(analysis.referencePhrase) (\(analysis.reference.label), "
-                + "\(TimeParsing.lapTimeString(analysis.reference.duration, decimals: 2))): "
-                + "\(format.seconds(abs(analysis.totalLoss))) \(behind)")
-        if analysis.reference.isSpliced {
-            let laps = analysis.reference.pieces.map { String($0.lapNumber) }.joined(separator: ", ")
-            print("Spliced from laps \(laps).")
-        }
-        let confidence = String(format: "%.2f", analysis.delta.confidence)
-        print("Aligned by \(alignmentName(analysis.delta.alignment)), confidence \(confidence)")
+        print(analysis.headline(lapNumber: lapNumber, units: units))
+        if let spliced = analysis.splicedFrom { print(spliced + ".") }
+        print(analysis.alignmentLine)
 
         let shown = all ? analysis.opportunities : analysis.top
         print("\nOpportunities" + (shown.isEmpty ? ": none — nothing lost against \(analysis.referencePhrase)." : ""))
@@ -196,65 +186,22 @@ struct Coach: AsyncParsableCommand {
         }
 
         print("\nCorners")
-        let header = [
-            pad("Turn", 6), pad("Lost", 8, left: true), pad("Phase", 9), pad("Brake", 12), pad("Min speed", 12),
-            pad("Where", 9), pad("Exit", 10), pad("Throttle", 11), "Consistent",
-        ]
-        print("  " + header.joined(separator: " "))
-        for corner in analysis.corners {
-            print("  " + row(for: corner, analysis: analysis, format: format).joined(separator: " "))
+        let widths = [6, 8, 9, 12, 12, 9, 10, 11]
+        let header = ["Turn", "Lost", "Phase", "Brake", "Min speed", "Where", "Exit", "Throttle"]
+        print("  " + zip(header, widths).map { pad($0, $1, left: $0 == "Lost") }.joined(separator: " ") + " Consistent")
+        let format = CoachingNotes.Formatter(units: units)
+        for row in analysis.rows(units: units) {
+            let lost = (row.timeLost >= 0 ? "+" : "−") + format.seconds(abs(row.timeLost))
+            let cells = [
+                row.label, lost, row.phase, row.brake, row.minimumSpeed, row.minimumPoint, row.exitSpeed, row.throttle,
+            ]
+            let line = zip(cells, widths).map { pad($0, $1, left: $0 == lost) }.joined(separator: " ")
+            print("  " + line + " " + row.consistent)
         }
 
         if !analysis.warnings.isEmpty {
             print("\nNotes")
             for warning in analysis.warnings { print("  • \(describe(warning))") }
-        }
-    }
-
-    private func row(
-        for corner: CornerComparison, analysis: CoachingAnalysis, format: CoachingNotes.Formatter
-    ) -> [String] {
-        let lap = corner.lap
-        let reference = corner.reference
-        func metres(_ difference: Double?, early: String, late: String) -> String {
-            guard let difference, abs(difference) >= 1 else { return difference == nil ? "–" : "same" }
-            return "\(format.metres(abs(difference))) \(difference > 0 ? early : late)"
-        }
-        func speed(_ difference: Double) -> String {
-            let text = format.speed(abs(difference))
-            return text.hasPrefix("0 ") ? "same" : (difference >= 0 ? "+" : "−") + text
-        }
-        let brake: Double? = {
-            guard let own = lap.brakePointMeters, let theirs = reference.brakePointMeters else { return nil }
-            return own - theirs
-        }()
-        let throttle: Double? = {
-            guard let own = lap.throttlePickupMeters, let theirs = reference.throttlePickupMeters else { return nil }
-            return own - theirs
-        }()
-        let consistent: String = {
-            guard let spread = analysis.consistency?.spread(ofCorner: corner.index) else { return "–" }
-            guard let brakeSpread = spread.brakePointSpread else { return spread.isConsistent ? "yes" : "no" }
-            return (spread.isConsistent ? "yes" : "no") + " (\(format.metres(brakeSpread)))"
-        }()
-        return [
-            pad(corner.label, 6),
-            pad((corner.timeLost >= 0 ? "+" : "−") + format.seconds(abs(corner.timeLost)), 8, left: true),
-            pad(corner.worstPhase?.displayName.lowercased() ?? "–", 9),
-            pad(metres(brake, early: "early", late: "late"), 12),
-            pad(speed(lap.minimumSpeed - reference.minimumSpeed), 12),
-            pad(metres(lap.minimumSpeedMeters - reference.minimumSpeedMeters, early: "late", late: "early"), 9),
-            pad(speed(lap.exitSpeed - reference.exitSpeed), 10),
-            pad(metres(throttle, early: "late", late: "early"), 11),
-            consistent,
-        ]
-    }
-
-    private func alignmentName(_ alignment: LapAlignment) -> String {
-        switch alignment {
-        case .distance: "distance"
-        case .fractionOfLap: "fraction of lap (approximate)"
-        case .position: "position"
         }
     }
 

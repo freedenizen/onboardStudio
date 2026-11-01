@@ -62,6 +62,10 @@ struct OnboardStudioApp: App {
             AttributeMappingWindow()
         }
         .defaultSize(width: 900, height: 560)
+        Window("Coaching", id: CoachingWindow.windowID) {
+            CoachingWindow()
+        }
+        .defaultSize(width: 960, height: 620)
         Window("Keyboard Shortcuts", id: "shortcuts") {
             ShortcutsView()
         }
@@ -226,6 +230,10 @@ struct EditorCommands: Commands {
                 .disabled(editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
             Button("Stop Comparing Laps") { editor?.stopComparingLaps() }
                 .disabled(editor?.project.lapComparison == nil)
+            // ⌃⌘C: where the time went, in a window beside the document (#321). ⌘C copies, ⌥⌘C
+            // copies an object's style; ⌃⌘ is the pattern Show Project Details (⌃⌘I) set.
+            Button("Coaching…") { CoachingWindow.open(openWindow) }
+                .keyboardShortcut("c", modifiers: [.command, .control])
             Divider()
             Button("Upload Video to YouTube…") {
                 if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
