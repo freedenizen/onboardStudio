@@ -29,7 +29,7 @@ public enum CornerPhase: String, CaseIterable, Sendable, Codable {
 /// are relative to the apex are negative before it and positive after. Every pedal measurement
 /// says where it came from, because a GoPro or a phone records no pedals and the brake point then
 /// comes from the speed trace, which is a different kind of number and should be shown as one.
-public struct CornerMetrics: Sendable, Equatable {
+public struct CornerMetrics: Sendable, Equatable, Codable {
     /// What a pedal measurement was read from.
     public enum Source: String, Sendable, Codable {
         /// The brake channel: a switch or a position.

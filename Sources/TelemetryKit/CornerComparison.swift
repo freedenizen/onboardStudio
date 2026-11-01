@@ -6,7 +6,7 @@ import Foundation
 /// The loss is read off the delta trace between the phase's bounds on the reference lap, with
 /// one change: the braking phase begins at the earlier of the two brake points, so braking early
 /// shows up as time lost in braking rather than leaking into the straight before.
-public struct CornerComparison: Sendable, Equatable {
+public struct CornerComparison: Sendable, Equatable, Codable {
     public let index: Int
     /// What the circuit calls it ("4", "3a") when the labels are known, else its number.
     public let label: String
