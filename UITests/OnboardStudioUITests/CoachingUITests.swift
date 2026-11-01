@@ -21,11 +21,12 @@ final class CoachingUITests: OnboardStudioUITestCase {
 
         // The slow lap has plenty to say: two corners, the biggest loss first, with a way to see it.
         choosePopUpItem("Lap 2 — 0:44.60", in: app.popUpButtons["coaching.lap"])
-        let first = app.descendants(matching: .any).matching(identifier: "coaching.opportunity.1").firstMatch
-        XCTAssertTrue(first.waitForExistence(timeout: Self.timeout * 2), "No opportunity for the slow lap")
+        // A card's Show Me button is the element to wait for: a button always carries its identifier.
+        let showMe = app.buttons["coaching.showMe.1"]
+        XCTAssertTrue(showMe.waitForExistence(timeout: Self.timeout * 2), "No opportunity for the slow lap")
         XCTAssertTrue(headline.label.hasPrefix("Lap 2 "), "\(headline.label)")
         XCTAssertEqual(transportTime.value as? String, "0:00.00")
-        app.buttons["coaching.showMe.1"].click()
+        showMe.click()
         let moved = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "value != %@", "0:00.00"), object: transportTime)
         XCTAssertEqual(
@@ -33,7 +34,7 @@ final class CoachingUITests: OnboardStudioUITestCase {
 
         // Show Me also selects the corner, which opens its detail: the phases, both laps' readings,
         // the two lines, and the way to the video.
-        let detail = app.descendants(matching: .any).matching(identifier: "coaching.detail").firstMatch
+        let detail = app.staticTexts["Time lost by phase"]
         XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "Selecting a corner showed no detail")
         let compareInVideo = app.buttons["coaching.compareInVideo"]
         XCTAssertTrue(compareInVideo.waitForExistence(timeout: Self.timeout), "No Compare in Video for a real lap")
