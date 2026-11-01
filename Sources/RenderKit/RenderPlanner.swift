@@ -147,7 +147,8 @@ public enum RenderPlanner {
         mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:],
         appSpeedUnit: SpeedUnitSetting = .automatic,
         globalAttributeMappings: AttributeMappingTable = AttributeMappingTable(),
-        lapComparison: LapTimeWarp? = nil
+        lapComparison: LapTimeWarp? = nil,
+        coaching: [InputID: CoachingTrack] = [:]
     ) -> [any OverlayDrawing] {
         (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
@@ -165,7 +166,8 @@ public enum RenderPlanner {
                     for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit,
                     globalAttributeMappings: globalAttributeMappings),
                 typeface: typeface(for: object, in: project), textScale: object.textScale ?? 1,
-                lapComparison: lapComparison, followsComparedLap: object.followsComparedLap)
+                lapComparison: lapComparison, followsComparedLap: object.followsComparedLap,
+                coaching: dataInputID.flatMap { coaching[$0] })
             let image =
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }
@@ -228,6 +230,7 @@ public enum RenderPlanner {
         case .lapPanel(let params): LapPanelRenderer(context: context, params: params)
         case .statCard(let params): StatCardRenderer(context: context, params: params)
         case .sectorPanel(let params): SectorPanelRenderer(context: context, params: params)
+        case .cornerCallout(let params): CornerCalloutRenderer(context: context, params: params)
         case .steeringWheel(let params): SteeringWheelRenderer(context: context, params: params)
         case .scripted: nil  // needs the Scripting module; see `overlays(scriptRenderer:)`
         }

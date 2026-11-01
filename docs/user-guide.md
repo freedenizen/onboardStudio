@@ -670,6 +670,15 @@ mph and feet when the app's speed unit is mph. The lap and reference you chose a
 project; changing them is undoable. The method, its thresholds and the research behind it are in
 [coaching.md](coaching.md); `onboard coach` does the same from the command line (§8).
 
+**In the video.** Add a **Corner Callout** object (toolbar ▸ Add Object ▸ Corner Callout) and the
+rendered lap carries its own debrief: as the car approaches each corner the card appears with that
+corner's headline ("Turn 4: 0.31 s lost on entry"), the evidence and what to try, stays through
+the corner and a moment after, and is blank on the straights. It reads the lap being driven
+against the reference chosen in Project ▸ Coaching… (your best lap until you choose one), so a
+rendered session comments on every lap, not only the one the window shows. The inspector sets how
+early it appears and how long it stays, whether to show the evidence and the suggestion, whether to
+keep quiet on corners where no time was lost, and the colours. Notes follow the object's speed unit.
+
 ## 7. Export and share
 
 ![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)

@@ -247,6 +247,7 @@ struct SidebarView: View {
         case .lapPanel: "timer"
         case .statCard: "list.bullet.rectangle"
         case .sectorPanel: "chart.bar.doc.horizontal"
+        case .cornerCallout: "text.bubble"
         case .steeringWheel: "steeringwheel"
         }
     }
