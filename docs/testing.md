@@ -74,11 +74,18 @@ The `onboard` tool exercises the same libraries the app uses, without the GUI:
 swift run onboard probe path/to/session.csv            # what channels/laps were read?
 swift run onboard probe session.csv --at 95.5          # interpolated values at a time
 swift run onboard probe session.csv --json             # machine-readable
+swift run onboard coach session.csv                    # where a lap lost time against the best, corner by corner
+swift run onboard coach session.csv --reference rolling --lap 5 --json   # against the fastest rolling lap, as data
 
 swift run onboard render --video clip.mp4 --out out.mp4 --range 0:10      # M2 pipeline check
 swift run onboard render --video clip.mp4 --out out.mp4 --preset 720p --codec hevc --speed 2
 swift run -c release onboard bench --project my.onboardproj --export --codec hevc --seconds 60   # M14 speed check
 ```
+
+`coach` is the check for the coaching analysis against real data: on the reference Sonoma
+session (`ONBOARD_SAMPLES_DIR`, never committed) it must find 12 corners, report the optimal lap
+within a few hundredths of the Sector Times panel's theoretical time for the same sectors, and a
+rolling lap no slower than the best lap. The numbers it last gave are in `docs/coaching.md`.
 
 `render` re-encodes the clip through the AVFoundation composition and custom compositor with a
 burned-in project-time stamp. Open the result in QuickTime Player: the clock in the corner should
