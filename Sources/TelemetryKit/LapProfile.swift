@@ -169,7 +169,10 @@ public struct LapProfile: Sendable {
         if let recordedSpeed = recorded[.speed] {
             speed = recordedSpeed
         } else {
-            speed = smoothed(speeds(distances: distances, elapsed: elapsed), points: smoothingPoints)
+            // Not smoothed: the step either side of a grid point already averages over two steps,
+            // and smoothing a speed trace lifts every minimum, which is the one number a corner
+            // reading must not move.
+            speed = speeds(distances: distances, elapsed: elapsed)
             channels[.speed] = speed
             sources[.speed] = .speedTrace
         }

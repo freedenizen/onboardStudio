@@ -293,6 +293,11 @@ result independent of the logger's sample rate — then heading change per metre
 25 m, and maximal same-signed runs above a curvature threshold become corners. Runs the same way
 less than 40 m apart merge, so an esses is one corner and not four.
 
+A corner's apex is the middle of the stretch where the smoothed curvature is within 2 % of its
+peak, not the single highest sample: a constant-radius bend has no single tightest point, and the
+highest sample of a flat plateau is whichever end floating point favours, which put the number on
+the map at one end of such a bend and the coaching brake point a bend's half-length out (#318).
+
 **Validated against the reference session: it finds exactly 12 corners on a lap of Sonoma Raceway,
 which has 12 turns.** The two 180°-plus readings are the Carousel and the final hairpin.
 `onboard probe <file> --corners` prints them.

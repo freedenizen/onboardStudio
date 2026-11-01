@@ -146,13 +146,41 @@ corner:
 A corner never braked for has an empty braking phase. Without a throttle channel the apex phase
 ends where longitudinal acceleration turns positive.
 
-Per corner, per lap (#318): brake point (metres before the apex), peak braking G, brake release,
-trail-braking overlap, entry speed, minimum speed and where it fell relative to the apex, exit
-speed, throttle pick-up, full throttle, coasting time, peak lateral G, time in corner, steering
-smoothness, and — approximately — the line offset at the apex. Every threshold is a fraction of the
-channel's own range or a value in g, in an `Options` struct with defaults; none is tied to a
-logger. Every metric records which channel it came from, so the window can say "from the speed
-trace".
+Per corner, per lap (`Sources/TelemetryKit/CornerMetrics.swift`, `CornerMeasurement.swift`,
+#318): brake point (metres before the apex), peak braking G, brake release, trail-braking overlap,
+entry speed, minimum speed and where it fell relative to the apex, exit speed, throttle pick-up,
+full throttle, coasting time, peak lateral G, time in corner and steering smoothness. Every
+threshold is a fraction of the channel's own range or a value in g, in `CornerMetrics.Options`
+with defaults; none is tied to a logger. Every pedal reading records which channel it came from
+(`CornerMetrics.Source`), so the window can say "from the speed trace".
+
+Three decisions in the reading are worth not re-deriving:
+
+- **Pedals by priority, then physics.** Brake point from the brake channel, else a brake
+  pressure, else deceleration (a recorded accelerometer, else the speed trace) at or beyond 0.25 g.
+  Throttle from the throttle channel, else acceleration beyond 0.05 g. Coasting and full throttle
+  are reported only from recorded pedals: the physics cannot tell a lifted throttle from a light
+  brake.
+- **A deceleration threshold reads late.** On a smoothed trace the crossing comes some metres
+  after the pedal went down — about `(threshold / effort − ½) × smoothing`, 8 m for a gentle
+  0.3 g stop. The reading walks back to where the trace crosses half the threshold, which lands
+  within two or three metres of the onset whatever the effort. On the synthetic fixture the
+  speed-trace brake point is within 3 m of the recorded pedal's.
+- **The straight after a corner is its exit.** A slow exit costs time all the way to the next
+  brake point, so the exit phase runs there (the last corner's to the end of the lap), and the
+  comparison hands over from one corner to the next at the earlier of the two laps' brake points.
+  Nothing between the first brake point and the line is counted twice or left out; what is lost
+  before the first brake point belongs to the previous lap's last corner.
+
+The apex a corner's metrics are relative to is `Corner.apexDistance`, and #318 changed how the
+detector finds it: the middle of the stretch where curvature is within 2 % of its peak, rather than
+the single highest sample. A constant-radius bend has no single tightest point and the old rule
+put its apex at one end; the track map's corner numbers moved to the middle of such bends with it.
+
+`CornerComparison` (`CornerComparison.swift`) pairs the two laps' readings for each corner and
+reads the time lost in each phase off the delta trace, with the circuit's own corner labels when
+`TelemetrySession.cornerLabels` has them. The line offset at the apex comes with position
+alignment (#316).
 
 ### Opportunities and notes
 
@@ -212,6 +240,10 @@ Filled in as each piece lands and is run against the reference Sonoma session (l
 committed).
 
 - Profile of a lap at 2 m: **to be measured** (#315 shipped the type; the CLI that times it is #320).
+- Corner metrics on the synthetic fixture (`Tests/TelemetryKitTests/CoachingFixture.swift`: 40 m/s
+  straights, a 0.41 g stop to 15 m/s at the apex): brake point within 1 m of the construction from
+  recorded pedals and within 3 m from the speed trace; minimum speed within 0.2 m/s; the time lost
+  in the four phases sums to the corner's loss to 1 µs. The Sonoma numbers come with #320.
 
 ## Deliberately not doing
 
