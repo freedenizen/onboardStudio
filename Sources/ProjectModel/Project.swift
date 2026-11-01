@@ -96,6 +96,8 @@ public struct Project: Hashable, Codable, Sendable {
     /// Two laps side by side, the second kept level with the first by distance (#154); `nil` when
     /// the project is not comparing laps.
     public var lapComparison: LapComparisonSettings?
+    /// What the Coaching window reads (#321); `nil` until it has been opened for this project.
+    public var coaching: CoachingSettings?
 
     public init(
         schemaVersion: Int = Project.currentSchemaVersion,
@@ -106,7 +108,8 @@ public struct Project: Hashable, Codable, Sendable {
         timeline: Timeline = .empty,
         markers: [Marker] = [],
         details: ProjectDetails = ProjectDetails(),
-        lapComparison: LapComparisonSettings? = nil
+        lapComparison: LapComparisonSettings? = nil,
+        coaching: CoachingSettings? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.settings = settings
@@ -117,10 +120,12 @@ public struct Project: Hashable, Codable, Sendable {
         self.markers = markers
         self.details = details
         self.lapComparison = lapComparison
+        self.coaching = coaching
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, settings, inputs, displayObjects, export, timeline, markers, details, lapComparison
+        case coaching
     }
 
     public init(from decoder: any Decoder) throws {
@@ -138,6 +143,8 @@ public struct Project: Hashable, Codable, Sendable {
         details = try c.decodeIfPresent(ProjectDetails.self, forKey: .details) ?? ProjectDetails()
         // Absent before laps could be compared, and absent means not comparing: no render changes.
         lapComparison = try c.decodeIfPresent(LapComparisonSettings.self, forKey: .lapComparison)
+        // Absent before the Coaching window existed; it changes no render either way.
+        coaching = try c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
     }
 
     /// The objects as they appear at project `time`, with timeline overrides applied.
