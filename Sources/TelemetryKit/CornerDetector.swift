@@ -270,7 +270,7 @@ public enum CornerDetector {
                 wrapped ? Array(run.lower..<smooth.count) + Array(0...run.upper) : Array(run.lower...run.upper)
             let change = indices.reduce(0.0) { $0 + raw[$1] * path.step }
             guard abs(change) >= options.minTurnDegrees else { return nil }
-            let apex = indices.max { abs(smooth[$0]) < abs(smooth[$1]) } ?? run.lower
+            let apex = Self.apex(of: indices, curvature: smooth)
             return Corner(
                 startDistance: path.distances[run.lower], endDistance: path.distances[run.upper],
                 apexDistance: path.distances[apex], headingChangeDegrees: change,
@@ -280,6 +280,22 @@ public enum CornerDetector {
         // them. Joining a corner across the line can put it either end depending on where its
         // apex fell, so sorting is not optional.
         return corners.sorted { $0.apexDistance < $1.apexDistance }
+    }
+
+    /// The tightest point of a corner: the middle of the stretch where curvature is within a
+    /// few per cent of its peak. A constant-radius bend has no single tightest point, and taking
+    /// the first or last sample of the plateau would put the apex at one end of the bend.
+    static func apex(of indices: [Int], curvature: [Double]) -> Int {
+        guard let first = indices.first else { return 0 }
+        let peak = indices.map { abs(curvature[$0]) }.max() ?? 0
+        guard peak > 0 else { return first }
+        let plateau = indices.enumerated().filter { abs(curvature[$0.element]) >= peak * 0.98 }.map(\.offset)
+        guard let top = plateau.first else { return first }
+        // The contiguous stretch of the plateau around its first point, in `indices` order
+        // (which runs round the line for a wrapped corner).
+        var upper = top
+        while upper + 1 < indices.count, abs(curvature[indices[upper + 1]]) >= peak * 0.98 { upper += 1 }
+        return indices[(top + upper) / 2]
     }
 
     /// Midpoints of the straights *between* corners, which is where a sector boundary belongs.
