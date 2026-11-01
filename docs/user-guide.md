@@ -653,9 +653,21 @@ one-time Google API setup described in [youtube.md](youtube.md).
 
 ## 8. Command line
 
-`onboard` does the same work without the app: `probe` inspects a data file, `render` exports
-a project, `sync` finds the data/video offset from motion, `upload` sends a file to YouTube and
-`bench` measures speed. See [testing.md](testing.md).
+`onboard` does the same work without the app: `probe` inspects a data file, `coach` reads one
+lap against another and says where the time went, `render` exports a project, `sync` finds the
+data/video offset from motion, `upload` sends a file to YouTube and `bench` measures speed. See
+[testing.md](testing.md).
+
+`onboard coach session.csv` reads the quickest lap that is not the best against the best lap:
+the top three corners by time lost, each with what happened ("Braked 22 m earlier than your best
+lap", "Coasted 0.49 s longer") and what to try, then every corner in a table with its brake point,
+minimum speed, exit speed and throttle against the reference, and whether the corner is driven
+consistently across the session. `--lap 5` picks the lap; `--reference rolling` compares with the
+fastest rolling lap (the quickest lap-length stretch starting anywhere, which often beats the best
+timed lap), `--reference optimal` with the best sectors spliced together, `--reference lap:6` with
+another lap; `--units imperial` writes the notes in mph and feet; `--json` prints everything as
+data. A project works too: `onboard coach my.onboardproj` reads its first data input, with the
+sectors and corner names the project has. The method is in [coaching.md](coaching.md).
 
 ## 9. Troubleshooting
 

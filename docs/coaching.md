@@ -241,8 +241,11 @@ Every threshold is in `CoachingOptions`.
 
 **Consistency first.** `ConsistencyStats` reads every complete lap's corners and keeps the
 spread (sample standard deviation) of brake point, minimum speed and time in corner, plus the
-lap-time spread; a corner is consistent when the brake points lie within 10 m and the minima
-within 2 %. Three laps is the minimum. An inconsistent corner's suggestion begins "This corner
+lap-time spread, over the **flying laps** — complete laps within 10 % of the best, so an out lap,
+an in lap or a lap behind traffic says nothing about repeatability. A corner is consistent when
+the brake points lie within 10 m and the minima within 5 %: on five flying laps at Sonoma the
+minimum speeds spread 3–10 % by corner, and the corners a coach would call repeatable sit under
+5 %. Three flying laps is the minimum. An inconsistent corner's suggestion begins "This corner
 varies lap to lap (brake point spread 23 m): repeat your best lap's brake point first, then …",
 because every coach says consistency before speed.
 
@@ -260,6 +263,17 @@ version of the plateau rule took a contiguous run from the first such sample and
 first numerical dip, which put a constant-radius bend's apex a third of the way in when the
 corners were found on a profile rather than a lap; the median is the middle of a plateau and the
 peak of a point, and the track map's numbers did not move.
+
+## On the command line (#320)
+
+`onboard coach <file|project> [--lap N] [--reference best|rolling|optimal|lap:N] [--units metric|imperial] [--all] [--json]`
+(`Sources/OnboardStudioCLI/Coach.swift`) runs the analysis without the app: the headline, the top
+three opportunities as notes, the corner table and the warnings, or the whole `CoachingReport` as
+JSON (`Sources/TelemetryKit/CoachingReport.swift`: words and numbers, never samples). Without
+`--lap` it reads the quickest lap that is not the reference, so the comparison has something to
+say; the last complete lap, the obvious default, is usually the cool-down lap. A project is read
+through `ProjectCompiler.load`, so it carries the project's sectors and corner names. This is how
+every later piece is checked against the real sessions before it reaches the window.
 
 ## In the app (#321, #322)
 
@@ -299,7 +313,16 @@ spoken debrief (#335).
 Filled in as each piece lands and is run against the reference Sonoma session (local only, never
 committed).
 
-- Profile of a lap at 2 m: **to be measured** (#315 shipped the type; the CLI that times it is #320).
+- **The reference Sonoma session through `onboard coach`** (RaceChrono v3, 93 Hz, 8 complete
+  laps, best 1:56.88): 12 corners, as the detector always found. The **fastest rolling lap is
+  1:55.81**, spliced from laps 3 and 2 across the line — 1.07 s quicker than the best timed lap,
+  which the app had never shown. The optimal lap with four corner-aware sectors is 1:54.52
+  (laps 2, 3, 3, 6). Lap 2 (1:56.90) against the best lap: 0.01 s behind over the lap but ±0.6 s
+  by corner, the top three being Turn 12 (0.63 s, exit: braked 22 m earlier, coasted 0.49 s
+  longer), Turn 7 (0.46 s, exit: 12 km/h slower at the minimum) and Turn 8 (0.43 s, braking:
+  braked 12 m earlier). Across the five flying laps, brake points spread 2–8 m at Turns 1, 2, 3
+  and 5 and 15–51 m at Turns 7, 8, 11 and 12. Analysis time is lost in the noise next to the
+  import: a debug build takes 6.2 s to import the file alone and 5.7 s to import and analyse it.
 - Corner metrics on the synthetic fixture (`Tests/TelemetryKitTests/CoachingFixture.swift`: 40 m/s
   straights, a 0.41 g stop to 15 m/s at the apex): brake point within 1 m of the construction from
   recorded pedals and within 3 m from the speed trace; minimum speed within 0.2 m/s; the time lost
