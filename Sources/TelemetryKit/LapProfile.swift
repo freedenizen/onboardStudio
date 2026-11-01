@@ -62,9 +62,29 @@ public struct LapProfile: Sendable {
     /// G in g); otherwise as recorded.
     public let channels: [ChannelRole: [Double]]
     public let sources: [ChannelRole: Source]
+    /// The laps this profile was cut from, in grid order. One entry for a plain lap; several for
+    /// a rolling lap re-based to the line or an optimal lap spliced from the best sectors.
+    public let pieces: [Piece]
+
+    /// A stretch of one lap that makes up part of a profile.
+    public struct Piece: Sendable, Hashable, Codable {
+        public let lapNumber: Int
+        /// Distances into the profile this piece covers.
+        public let range: ClosedRange<Double>
+
+        public init(lapNumber: Int, range: ClosedRange<Double>) {
+            self.lapNumber = lapNumber
+            self.range = range
+        }
+    }
 
     public var lengthMeters: Double { distances.last ?? 0 }
-    public var duration: Double { window.duration }
+    /// Seconds the profile took, start to finish.
+    public var duration: Double { elapsed.last ?? 0 }
+    /// Distances into the profile where one piece hands over to the next; empty for a plain lap.
+    public var seams: [Double] { pieces.dropFirst().map(\.range.lowerBound) }
+    /// Whether this is one real stretch of driving (a lap, a rolling lap) or several joined.
+    public var isSpliced: Bool { pieces.count > 1 }
     public var hasPosition: Bool { latitude != nil && longitude != nil }
     public var count: Int { distances.count }
 
@@ -72,50 +92,66 @@ public struct LapProfile: Sendable {
     public init?(lap: Lap, in session: TelemetrySession, stepMeters: Double = 2) {
         guard let end = lap.end else { return nil }
         self.init(
-            window: Window(start: lap.start, end: end), in: session, label: "Lap \(lap.number)", stepMeters: stepMeters)
+            window: Window(start: lap.start, end: end), in: session, label: "Lap \(lap.number)", stepMeters: stepMeters,
+            lapNumber: lap.number)
     }
 
     /// `window` of `session` on a grid every `stepMeters`. `nil` without a distance channel, for a
     /// window that does not move at least a few steps, or for one outside the recording.
     ///
     /// `smoothingMeters` is the moving-average window for the derived channels only; a recorded
-    /// channel is sampled as it is.
+    /// channel is sampled as it is. `lapNumber` names the piece; 0 when the window is not a lap.
     public init?(
         window: Window, in session: TelemetrySession, label: String, stepMeters: Double = 2,
-        roles: [ChannelRole] = LapProfile.defaultRoles, smoothingMeters: Double = 25
+        roles: [ChannelRole] = LapProfile.defaultRoles, smoothingMeters: Double = 25, lapNumber: Int = 0
     ) {
         let step = max(0.5, stepMeters)
         guard let distance = session[.distance], let grid = Self.grid(window: window, distance: distance, step: step)
         else { return nil }
+        self.init(
+            window: window, label: label, stepMeters: step, distances: grid.distances, times: grid.times,
+            elapsed: grid.times.map { $0 - window.start },
+            pieces: [Piece(lapNumber: lapNumber, range: 0...(grid.distances.last ?? 0))], session: session,
+            roles: roles, smoothingMeters: smoothingMeters)
+    }
+
+    /// Samples `session` at `times`, one per grid point, and derives what is missing. The grid,
+    /// the elapsed times and the pieces are the caller's: a window supplies one piece, a splice
+    /// several.
+    init(
+        window: Window, label: String, stepMeters: Double, distances: [Double], times: [Double], elapsed: [Double],
+        pieces: [Piece], session: TelemetrySession, roles: [ChannelRole], smoothingMeters: Double
+    ) {
         self.window = window
         self.label = label
-        self.stepMeters = step
-        self.distances = grid.distances
-        self.elapsed = grid.times.map { $0 - window.start }
+        self.stepMeters = stepMeters
+        self.distances = distances
+        self.elapsed = elapsed
+        self.pieces = pieces
 
         var channels: [ChannelRole: [Double]] = [:]
         var sources: [ChannelRole: Source] = [:]
         for role in roles {
             guard let channel = session[role], !channel.isEmpty else { continue }
-            channels[role] = Self.sample(channel, at: grid.times, as: role)
+            channels[role] = Self.sample(channel, at: times, as: role)
             sources[role] = .recorded
         }
 
         if let latChannel = session[.latitude], let lonChannel = session[.longitude] {
-            let lat = grid.times.map { latChannel.value(at: $0) ?? 0 }
-            let lon = grid.times.map { lonChannel.value(at: $0) ?? 0 }
+            let lat = times.map { latChannel.value(at: $0) ?? 0 }
+            let lon = times.map { lonChannel.value(at: $0) ?? 0 }
             latitude = lat
             longitude = lon
             heading = Self.headings(latitude: lat, longitude: lon)
         } else {
             latitude = nil
             longitude = nil
-            heading = session[.heading].map { channel in grid.times.map { channel.value(at: $0) ?? 0 } }
+            heading = session[.heading].map { channel in times.map { channel.value(at: $0) ?? 0 } }
         }
 
         let derived = Self.derived(
             from: channels, distances: distances, elapsed: elapsed, heading: heading,
-            smoothingPoints: max(1, Int((smoothingMeters / step).rounded())))
+            smoothingPoints: max(1, Int((smoothingMeters / stepMeters).rounded())))
         self.channels = channels.merging(derived.channels) { recorded, _ in recorded }
         self.sources = sources.merging(derived.sources) { recorded, _ in recorded }
     }
@@ -254,81 +290,5 @@ public struct LapProfile: Sendable {
         guard values.count == count, count >= 2 else { return values.first ?? 0 }
         let segment = segment(at: distance)
         return values[segment.lower] + (values[segment.upper] - values[segment.lower]) * segment.fraction
-    }
-
-    // MARK: - Derivation
-
-    /// Bearing at each grid point from the points either side of it, so one jittery fix cannot
-    /// swing it; one-sided at the ends.
-    static func headings(latitude: [Double], longitude: [Double]) -> [Double] {
-        let count = latitude.count
-        guard count >= 2 else { return Array(repeating: 0, count: count) }
-        return (0..<count).map { index in
-            let from = max(0, index - 1)
-            let to = min(count - 1, index + 1)
-            return DerivedChannels.bearing(
-                lat1: latitude[from], lon1: longitude[from], lat2: latitude[to], lon2: longitude[to])
-        }
-    }
-
-    /// Speed at each grid point from how long the step either side of it took.
-    static func speeds(distances: [Double], elapsed: [Double]) -> [Double] {
-        let count = distances.count
-        guard count >= 2 else { return Array(repeating: 0, count: count) }
-        var result = [Double](repeating: 0, count: count)
-        for index in 0..<count {
-            let from = max(0, index - 1)
-            let to = min(count - 1, index + 1)
-            let dt = elapsed[to] - elapsed[from]
-            result[index] = dt > 0 ? (distances[to] - distances[from]) / dt : 0
-        }
-        return result
-    }
-
-    /// `v · dv/ds` in g: how hard the car was accelerating (+) or braking (−) at each grid point.
-    static func longitudinalG(speed: [Double], distances: [Double]) -> [Double] {
-        let count = speed.count
-        guard count >= 2 else { return Array(repeating: 0, count: count) }
-        var result = [Double](repeating: 0, count: count)
-        for index in 0..<count {
-            let from = max(0, index - 1)
-            let to = min(count - 1, index + 1)
-            let ds = distances[to] - distances[from]
-            result[index] = ds > 0 ? speed[index] * (speed[to] - speed[from]) / ds / gravity : 0
-        }
-        return result
-    }
-
-    /// `v² · κ` in g, where κ is the heading change per metre; positive turning right, which is
-    /// the sign the recorded `lateralG` channel uses.
-    static func lateralG(speed: [Double], heading: [Double], distances: [Double]) -> [Double] {
-        let count = speed.count
-        guard count >= 2 else { return Array(repeating: 0, count: count) }
-        var result = [Double](repeating: 0, count: count)
-        for index in 0..<count {
-            let from = max(0, index - 1)
-            let to = min(count - 1, index + 1)
-            let ds = distances[to] - distances[from]
-            var turn = heading[to] - heading[from]
-            if turn > 180 { turn -= 360 }
-            if turn < -180 { turn += 360 }
-            let curvature = ds > 0 ? turn * .pi / 180 / ds : 0
-            result[index] = speed[index] * speed[index] * curvature / gravity
-        }
-        return result
-    }
-
-    /// Centred moving average over `points` grid points (made odd), shrinking at the ends.
-    static func smoothed(_ values: [Double], points: Int) -> [Double] {
-        let half = max(0, (points - 1) / 2)
-        guard half > 0, values.count > 2 else { return values }
-        var prefix = [0.0]
-        prefix.reserveCapacity(values.count + 1)
-        for value in values { prefix.append(prefix[prefix.count - 1] + value) }
-        return (0..<values.count).map { index in
-            let lower = max(0, index - half)
-            let upper = min(values.count - 1, index + half)
-            return (prefix[upper + 1] - prefix[lower]) / Double(upper - lower + 1)
-        }
     }
 }
