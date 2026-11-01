@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Distances are metres into the lap, so a corner found on one lap names the same piece of
 /// tarmac on every other lap of the same session.
-public struct Corner: Sendable, Equatable {
+public struct Corner: Sendable, Equatable, Codable {
     public let startDistance: Double
     public let endDistance: Double
     /// The tightest point of the turn — where a circuit diagram would put the apex.
@@ -88,6 +88,13 @@ public enum CornerDetector {
         return corners(along: path, options: options)
     }
 
+    /// The corners of a profile, which need not be one lap: a rolling lap re-based to the line or
+    /// an optimal lap spliced from several has corners like any other.
+    public static func corners(of profile: LapProfile, options: Options = Options()) -> [Corner] {
+        guard let path = Path(profile: profile, step: options.stepMeters) else { return [] }
+        return corners(along: path, options: options)
+    }
+
     // MARK: - The trace, resampled to a fixed distance step
 
     /// A lap's positions at a uniform spacing, which is what makes curvature comparable between
@@ -120,6 +127,27 @@ public enum CornerDetector {
                 distances.append(travelled)
                 latitudes.append(lat)
                 longitudes.append(lon)
+                travelled += step
+            }
+            guard distances.count >= 4 else { return nil }
+            self.distances = distances
+            self.latitude = latitudes
+            self.longitude = longitudes
+            self.step = step
+        }
+
+        /// The profile's positions, re-read at `step` from its finer grid.
+        init?(profile: LapProfile, step: Double) {
+            guard profile.hasPosition, profile.lengthMeters > step * 4 else { return nil }
+            var distances: [Double] = []
+            var latitudes: [Double] = []
+            var longitudes: [Double] = []
+            var travelled = 0.0
+            while travelled <= profile.lengthMeters {
+                guard let position = profile.position(atDistance: travelled) else { break }
+                distances.append(travelled)
+                latitudes.append(position.latitude)
+                longitudes.append(position.longitude)
                 travelled += step
             }
             guard distances.count >= 4 else { return nil }
@@ -282,20 +310,17 @@ public enum CornerDetector {
         return corners.sorted { $0.apexDistance < $1.apexDistance }
     }
 
-    /// The tightest point of a corner: the middle of the stretch where curvature is within a
-    /// few per cent of its peak. A constant-radius bend has no single tightest point, and taking
-    /// the first or last sample of the plateau would put the apex at one end of the bend.
+    /// The tightest point of a corner: the middle one of the samples whose curvature is within a
+    /// few per cent of the peak. A constant-radius bend has no single tightest point, and taking
+    /// the single highest sample put the apex wherever floating point happened to peak, one end
+    /// of the bend as often as not; a run from the first such sample broke at the first numerical
+    /// dip. The median of all of them is the middle of a plateau and the peak of a point.
     static func apex(of indices: [Int], curvature: [Double]) -> Int {
         guard let first = indices.first else { return 0 }
         let peak = indices.map { abs(curvature[$0]) }.max() ?? 0
         guard peak > 0 else { return first }
-        let plateau = indices.enumerated().filter { abs(curvature[$0.element]) >= peak * 0.98 }.map(\.offset)
-        guard let top = plateau.first else { return first }
-        // The contiguous stretch of the plateau around its first point, in `indices` order
-        // (which runs round the line for a wrapped corner).
-        var upper = top
-        while upper + 1 < indices.count, abs(curvature[indices[upper + 1]]) >= peak * 0.98 { upper += 1 }
-        return indices[(top + upper) / 2]
+        let plateau = indices.filter { abs(curvature[$0]) >= peak * 0.95 }
+        return plateau.isEmpty ? first : plateau[plateau.count / 2]
     }
 
     /// Midpoints of the straights *between* corners, which is where a sector boundary belongs.

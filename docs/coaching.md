@@ -219,22 +219,47 @@ alignment (#316).
 
 ### Opportunities and notes
 
-(#319.) Corners are ranked by time lost against the reference; the phase with the largest loss is
-the opportunity's phase. The top three are the headline, the rest are in the table. Rules, in
-order, pick the note: braked earlier by more than 5 m; over-slowed (minimum speed more than 2 %
-lower); minimum speed more than 10 m after the apex ("trail the brakes to the apex"); throttle
-more than 5 m later; more than 0.3 s more coasting. A linked-corner rule drops a corner whose
-exit loss is followed by a larger gain on the straight: the compromise paid.
+`Sources/TelemetryKit/Coaching.swift`, `CoachingNotes.swift`, `ConsistencyStats.swift` (#319).
+`CoachingAnalysis.analyse` runs the whole pipeline for one lap against a reference: profiles,
+alignment (by distance within a session, by position across two, unless the options say
+otherwise), corners found on the **reference** and read on the lap at the aligned place, the
+comparison per corner, the opportunities, consistency and a list of warnings for the window to
+say out loud (alignment fell back; pedals read from the speed trace; a spliced reference changes
+lap inside these corners; too few laps to judge consistency).
 
-Consistency is measured first: the spread of brake point and minimum speed in each corner across
-the session's complete laps. An inconsistent corner gets "repeat the best lap's brake point"
-before anything else, because every coach says consistency before speed; a consistent but slow
-one gets an experiment.
+**Ranking.** Corners that lost at least 0.03 s, biggest loss first; the phase with the largest
+loss is the opportunity's phase. A corner whose loss the next corner wins back entirely is a
+compromise that paid — Coach Dave Delta's linked-corner case — and is not an opportunity. The top
+three are the headline; every corner that lost time is in the list.
 
-Notes are **rule-based and offline**: deterministic phrase templates filled from the metrics,
-unit-aware through the display units, golden-tested. The wording adapts to the reference: "than
-your best lap", "than lap 5", "than the rolling lap", "than the optimal lap", "than Alex (Sunday
-session)".
+**Kind.** One of nine, by the first rule that fits the worst phase: braked early or late (brake
+point more than 5 m from the reference's), braked softer (peak braking 15 % weaker), over-slowed
+(minimum speed more than 2 % lower), minimum too late (slowest point more than 10 m after the
+reference's), throttle late (pick-up more than 5 m later), coasting (0.3 s more off both pedals),
+slow exit, and *line* when none of the pedals explains it, which sends the driver to the video.
+Every threshold is in `CoachingOptions`.
+
+**Consistency first.** `ConsistencyStats` reads every complete lap's corners and keeps the
+spread (sample standard deviation) of brake point, minimum speed and time in corner, plus the
+lap-time spread; a corner is consistent when the brake points lie within 10 m and the minima
+within 2 %. Three laps is the minimum. An inconsistent corner's suggestion begins "This corner
+varies lap to lap (brake point spread 23 m): repeat your best lap's brake point first, then …",
+because every coach says consistency before speed.
+
+**Notes** are deterministic phrase templates filled from the numbers, in the units asked for
+(km/h and metres, or mph and feet): a headline ("Turn 4: 0.31 s lost on entry"), the evidence
+that applies ("Braked 18 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later",
+"Throttle 9 m later", "Pedals read from the speed trace") and one suggestion per kind, phrased as
+an experiment ("Try braking where your best lap did, 18 m later, with the same pressure, and see
+whether the minimum speed comes up"). The reference is named the way the driver thinks of it:
+"your best lap", "lap 5", "the rolling lap", "the optimal lap", or the other input's name. The
+same lap gives the same note every time, which a test holds it to.
+
+The corner detector's apex is the median of the samples within 5 % of peak curvature. The first
+version of the plateau rule took a contiguous run from the first such sample and broke at the
+first numerical dip, which put a constant-radius bend's apex a third of the way in when the
+corners were found on a profile rather than a lap; the median is the middle of a plateau and the
+peak of a point, and the track map's numbers did not move.
 
 ## In the app (#321, #322)
 
