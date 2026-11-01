@@ -630,6 +630,46 @@ Everything in the layout is an ordinary object you can move, restyle or add to. 
 Timer's *Compare with* ▸ **Compared lap** measures against it. **Undo** restores the layout you
 had; **Project ▸ Stop Comparing Laps** removes the compared lap and keeps the rest.
 
+### Coaching: where the time went
+
+**Project ▸ Coaching…** (⌃⌘C) opens a window beside the project that reads one lap against a
+reference and says where the time went. Choose the **Lap** (it starts on the lap at the playhead)
+and what it is **Compared with**: your **best lap**; the **fastest rolling lap** — the quickest
+lap-length stretch of the session starting anywhere, which the timing line often cuts in two and
+which is frequently quicker than any timed lap; the **optimal lap (spliced)** — the best sector of
+each lap joined into one, the lap you have already shown you can do; **another lap**; or a lap of
+**another data file** in the project, which is how you compare with a friend's or an instructor's
+session (the two lines are matched by position, so a different line through a corner still meets
+the same corner).
+
+The headline says how far behind the lap finished. Below it the **top three opportunities** are
+cards: which turn, how much time and in which phase (braking, entry, apex or exit), what happened
+("Braked 22 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later", "Coasted
+0.49 s longer") and what to try next time, phrased as an experiment. A corner you drive
+differently every lap is told so, and asked for the same brake point first. **Show Me** puts the
+playhead where that corner's braking began on the lap being read, so the preview shows it.
+
+Every corner is in the table below, sortable by any column: time lost, the phase, and how the
+brake point, minimum speed and where it fell, exit speed and throttle pick-up compare with the
+reference, plus whether the corner is consistent across your flying laps (the spread of brake
+points in brackets). Selecting a row moves the playhead to that corner's turn-in and opens the
+corner's **detail** beside the table: the time lost in each phase as bars, both laps' readings
+side by side (brake point, peak braking, where the brakes came off, trail braking, entry and
+minimum and exit speed, where the slowest point fell, throttle pick-up, full throttle, coasting,
+peak lateral G, time in corner) with where each reading came from, and the two lines through the
+corner drawn from GPS with the brake points and slowest points marked — a relative picture, since
+lap-to-lap spread is about a metre and absolute accuracy one to three. **Compare in Video** lays
+the project out as Compare Laps does, with both laps' pictures, over that corner only: the
+playhead goes to the brake point and the export range is the corner, so one export is the clip.
+It is offered when the reference is a real lap with a camera; the rolling and spliced laps are
+data only.
+
+When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
+points are read from the speed trace and the window says so. Notes are in km/h and metres, or in
+mph and feet when the app's speed unit is mph. The lap and reference you chose are saved with the
+project; changing them is undoable. The method, its thresholds and the research behind it are in
+[coaching.md](coaching.md); `onboard coach` does the same from the command line (§8).
+
 ## 7. Export and share
 
 ![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)

@@ -21,12 +21,24 @@ struct UndoCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .undoRedo) {
-            Button(state.undoTitle) { NSApp.sendAction(Self.undoAction, to: nil, from: nil) }
-                .keyboardShortcut("z", modifiers: .command)
-                .disabled(!state.canUndo || editor?.pictureTool != nil)
-            Button(state.redoTitle) { NSApp.sendAction(Self.redoAction, to: nil, from: nil) }
-                .keyboardShortcut("z", modifiers: [.command, .shift])
-                .disabled(!state.canRedo || editor?.pictureTool != nil)
+            Button(state.undoTitle) {
+                if let manager = state.documentUndoManagerForKeyWindow {
+                    manager.undo()
+                } else {
+                    NSApp.sendAction(Self.undoAction, to: nil, from: nil)
+                }
+            }
+            .keyboardShortcut("z", modifiers: .command)
+            .disabled(!state.canUndo || editor?.pictureTool != nil)
+            Button(state.redoTitle) {
+                if let manager = state.documentUndoManagerForKeyWindow {
+                    manager.redo()
+                } else {
+                    NSApp.sendAction(Self.redoAction, to: nil, from: nil)
+                }
+            }
+            .keyboardShortcut("z", modifiers: [.command, .shift])
+            .disabled(!state.canRedo || editor?.pictureTool != nil)
         }
     }
 }
@@ -58,9 +70,29 @@ struct UndoCommands: Commands {
         }
     }
 
+    /// Windows that edit the front document without being it — the Coaching window — register
+    /// here (`DocumentWindowTag`). Their own undo managers are empty; what the user means by Undo
+    /// there is the document's last edit.
+    @ObservationIgnored private var documentWindows: Set<ObjectIdentifier> = []
+
+    func register(_ window: NSWindow) {
+        documentWindows.insert(ObjectIdentifier(window))
+        scheduleRefresh()
+    }
+
+    func unregister(_ window: NSWindow) { documentWindows.remove(ObjectIdentifier(window)) }
+
+    /// The front document's undo manager when the key window is one that edits it from outside,
+    /// else `nil` and the responder chain decides as usual.
+    var documentUndoManagerForKeyWindow: UndoManager? {
+        guard let window = NSApp.keyWindow, documentWindows.contains(ObjectIdentifier(window)) else { return nil }
+        return ActiveEditor.shared.editor?.undoManager
+    }
+
     /// The undo manager the standard items would use: the first responder's, which is the key
-    /// window's unless a view keeps its own.
+    /// window's unless a view keeps its own — or the document's, from a window that edits it.
     private var undoManager: UndoManager? {
+        if let document = documentUndoManagerForKeyWindow { return document }
         guard let window = NSApp.keyWindow else { return nil }
         return window.firstResponder?.undoManager ?? window.undoManager
     }

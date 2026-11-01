@@ -47,8 +47,11 @@ from your camera, driven by the data your logger recorded.
 - Crop and frame the picture by eye on the preview; flatten fisheye and 360° footage.
 - Steady shaky footage from GoPro motion data, from the picture itself, or with Gyroflow.
 
-**Laps and export**
+**Laps, coaching and export**
 - Compare two laps side by side, kept level corner by corner, from one session or two.
+- Coaching: the corners that cost the most against your best lap, the fastest rolling lap, the
+  optimal lap spliced from your best sectors or another driver's lap — what happened in which
+  phase, what to try, and how consistent you were ([coaching](docs/coaching.md)).
 - Export up to 4K, every lap as its own file, a vertical clip for phones, or the overlays alone on
   a transparent background for Final Cut or Premiere; upload straight to YouTube.
 

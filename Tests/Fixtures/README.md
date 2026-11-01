@@ -6,6 +6,7 @@ All fixtures are small and synthetic; none are copied from third-party files.
 |---|---|---|
 | `test-3s.mp4` | H.264/AAC video | 3 s, 640×360, 30 fps `testsrc2` + 440 Hz sine. Regenerate with `Scripts/make-fixture-video.sh`. |
 | `racerender-basic.csv` | RaceRender CSV | `# RaceRender Data` header, two `# Lap N:` tags, `hh:mm:ss.nn` times, MPH speed, `*OBD` column with `OBD_Update`, one row with a missing field. |
+| `coaching-laps.csv` | RaceRender CSV | Four laps of a synthetic stadium circuit at 5 Hz, driven fast, slow, fast, fast, with brake and throttle columns: corners, a best lap and something for the Coaching window to say. Regenerate with `Scripts/make-coaching-fixture.py`. |
 | `racechrono-v3.csv` | RaceChrono Pro CSV v3 | Metadata preamble, units + source rows, duplicate `speed` columns from gps/calc/obd, one duplicated timestamp row, blank OBD cells, lap_number 8→9→10. |
 | `racechrono-v2.csv` | RaceChrono Pro CSV v2 | Same preamble as v3 but a single header row of display names with units in parentheses and ` *calc`/`*canbus`/`*acc`/`*gyro` source suffixes; `Lap #` blank before lap 1, blank CAN cells. |
 | `activity.tcx` | TCX | Two laps of two trackpoints with HR, cadence, speed and power extensions. |

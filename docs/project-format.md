@@ -130,6 +130,12 @@ the fraction of the lap covered, and objects with `followsComparedLap` show it. 
 comparing, which is what every project saved before it was. A timer's `deltaReference`
 `comparedLap` measures against it (falling back to `sessionBest` without a comparison).
 
+`coaching` (optional, #321) is what the Coaching window reads:
+`{ "dataInputID", "lap": 5, "reference": { "sessionBest": {} } | { "lap": { "_0": 3 } } | { "fastestRolling": {} } | { "compositeOptimal": {} } | { "otherInput": { "dataInputID", "lap": 2 } } }`.
+`lap` absent follows the playhead. It is window state kept with the project so the same analysis
+comes back on reopening, and nothing in it changes how the project renders; absent means the
+window has not been opened for this project.
+
 `settings.typeface` (optional, `{ "family", "face" }`) is the font for every object that has not
 chosen its own `typeface`; absent means the built-in fonts.
 
