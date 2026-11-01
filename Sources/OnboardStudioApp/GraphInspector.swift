@@ -53,8 +53,21 @@ struct GraphInspector: View {
                 OptionalNumberField(
                     "Horizontal max", value: field(\.xMaxValue, "Horizontal Maximum"), placeholder: "auto")
             } else {
-                Toggle("Show best lap as ghost", isOn: field(\.compareBestLap, "Ghost Lap"))
-                ColorPicker("Ghost colour", selection: color(\.ghostColor, "Ghost Colour"))
+                Toggle("Show a ghost lap", isOn: field(\.compareBestLap, "Ghost Lap"))
+                if params.compareBestLap {
+                    Picker("Ghost", selection: field(\.ghost, "Ghost")) {
+                        ForEach(GraphGhost.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    }
+                    if params.ghost == .coachingReference {
+                        Text(
+                            "The lap chosen in Project ▸ Coaching… — your best lap, the fastest rolling lap, the "
+                                + "optimal lap or another file's lap. Channels the reference does not carry draw "
+                                + "no ghost."
+                        )
+                        .font(.caption).foregroundStyle(.secondary)
+                    }
+                    ColorPicker("Ghost colour", selection: color(\.ghostColor, "Ghost Colour"))
+                }
             }
             NumberField(
                 "Minimum (blank = auto)",

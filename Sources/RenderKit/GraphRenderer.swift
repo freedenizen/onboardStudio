@@ -309,7 +309,12 @@ extension GraphRenderer {
         }
         var traces: [Trace] = []
         var xMax = max((distance.value(at: now) ?? startDistance) - startDistance, 1)
-        if params.compareBestLap, let bestNumber = timing.bestLapNumber,
+        let coachingGhost = params.ghost == .coachingReference ? context.coaching?.reference : nil
+        if params.compareBestLap, let reference = coachingGhost {
+            // The coaching reference as the ghost (#325): see `ghosts(of:)`.
+            xMax = max(xMax, reference.lengthMeters)
+            traces.append(contentsOf: ghosts(of: reference))
+        } else if params.compareBestLap, let bestNumber = timing.bestLapNumber,
             let best = session.laps.first(where: { $0.number == bestNumber }), let bestEnd = best.end,
             let bestStartDistance = distance.value(at: best.start)
         {
