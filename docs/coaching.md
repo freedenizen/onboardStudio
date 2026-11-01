@@ -126,8 +126,25 @@ Four, all producing a `LapProfile` (#317 for the last two):
 | **Optimal lap (spliced)** | the best sector of each lap, joined by distance; MoTeC's eclectic lap, Garmin's True Optimal Lap | the lap the driver has already shown they can do, 1:54.54 against 1:56.88 at Sonoma; speed is discontinuous at the seams and the UI says which laps it was spliced from |
 | **Fastest rolling lap** | the quickest lap-length stretch starting anywhere, found by sliding a window of the median lap length over the distance channel within the complete laps so the pit lane cannot win | the timing line cuts a driver's best sequence of corners in two more often than not; MoTeC's term |
 
-A rolling lap starts mid-lap, so its profile carries the distance into the containing lap at which
-it began, and its corners line up with a normal lap's.
+Both of the last two are **spliced profiles** (`Sources/TelemetryKit/LapProfile+Splicing.swift`,
+`CoachingReference.swift`, #317): stretches of several laps joined end to end on one grid, the
+clock running on across the joins. A rolling lap that straddles the line is re-based to it — the
+piece after the line first, then the piece before it — so its distances are distances into a lap
+and its corners line up with every other lap's; one that happens to lie within a lap is that lap.
+The optimal lap is one cut per sector, from the lap that set that sector's best, over the
+layout's distances, so its duration is the Sector Times panel's theoretical time to the
+microsecond. Every profile lists its `pieces`; `seams` is where they join, for a tick on the map
+and for a warning when a corner straddles one, since speed and the pedals can step there.
+
+The rolling window is found by sliding one lap length along the distance channel within the
+complete laps — so the pit lane and an out lap can never be part of it — and interpolating the
+moment the length is reached; a later window must be quicker by more than a millisecond to take
+over, so steady laps give the first lap rather than wherever floating point dipped. The optimal
+lap uses the session's own sectors when it has them, and corner-aware sectors otherwise.
+
+Measured on the synthetic fixtures: a fast stretch the timing line splits in two is found as the
+rolling lap within 0.5 s of its true start and is quicker than any whole lap; the spliced optimal
+lap's duration equals `theoreticalLapTime` to 1 µs and its position is continuous at the seams.
 
 ### Corners: phases, metrics, time lost
 
