@@ -94,7 +94,7 @@ differently because they exist.
 
 `Sources/TelemetryKit/LapDelta.swift` (#315). A `LapDeltaTrace` is the lap's elapsed time minus
 the reference's at each grid point of the reference, positive behind; the change in it across a
-stretch is the time lost there, which is what "0.3 s lost in Turn 4" means. Two alignments so far:
+stretch is the time lost there, which is what "0.3 s lost in Turn 4" means. Three alignments:
 
 - **By distance**, metre for metre. Right when both laps follow the same line, which two laps of
   one session do to about a metre: lap-to-lap spread on the reference Sonoma session is 0.9 m
@@ -103,17 +103,35 @@ stretch is the time lost there, which is what "0.3 s lost in Turn 4" means. Two 
 - **By fraction of lap**, for two laps of different length without positions: what `LapTimeWarp`
   does to keep two pictures level. A fallback, and the trace's `confidence` says so.
 
-**Across sessions, by position** (#316, next). A different line, a different logger or a
-start/finish line placed a few metres differently changes a lap's length by around 1 %, and by
-fraction that is 30 m by the end of a 3 km lap — the drift MoTeC warns makes brake-point
-comparison meaningless. Each point of the compared lap is projected onto the reference's line
-(nearest segment within ±60 m of the previous match, so the match never runs backwards), which
-gives the reference distance and, for free, the signed lateral offset between the two lines.
-Racelogic's Delta-T is built the same way for the same reason. If the residual exceeds 30 m the
-trace falls back to fraction of lap with `confidence = 0`, and the window says "approximate".
+- **By position** (`Sources/TelemetryKit/PositionMatcher.swift`, #316), for a lap from another
+  session or another driver. A different line, a different logger or a start/finish line placed
+  a few metres differently changes a lap's length by around 1 %, and by fraction that is 30 m by
+  the end of a 3 km lap — the drift MoTeC warns makes brake-point comparison meaningless. Each
+  point of the reference's grid is matched to the nearest point of the other lap's line, looking
+  only ±60 m along that line from the previous match so the match never jumps to the far side of
+  a tight circuit and never runs the lap backwards. That gives the other lap's distance at the
+  same place and, for free, the **lateral offset** between the two lines, positive to the right
+  of the reference's direction of travel. Racelogic's Delta-T is built the same way for the same
+  reason.
 
-`confidence` is a guide, not a measurement: 1 when the two laps are the same length to within
-2 %, falling to 0 at a 10 % difference by distance or 20 % by fraction.
+  Three details worth keeping: the first point is looked for in the first quarter of the other
+  lap and, failing that, the last quarter, because two lines overlap at the start/finish and the
+  nearest point to the reference's start is as likely to be just before the other lap's end as
+  just after its start — a closed lap is searched round its ends for the same reason; the match
+  falls back to fraction of lap with `confidence = 0` when more than a twentieth of the points
+  are further from the line than the tolerance (30 m by default), or when the other lap does not
+  begin near the reference's start, so a lap timed from elsewhere on the circuit is refused
+  rather than mis-aligned; and `lapDistances` is kept on the trace, which is how a corner found
+  on the reference is read at the right place on the other lap.
+
+`confidence` is a guide, not a measurement: by distance, 1 when the two laps are the same length
+to within 2 %, falling to 0 at a 10 % difference; by fraction, 0 at 20 %; by position, one minus
+the median separation of the two lines over the tolerance, and 0 after a fallback. Measured on the
+synthetic circuit moved 3 m sideways: matched within 3 m everywhere (an east–west straight is 3 m
+further along one line than the other), the offset reads −3 m through the right-hander that heads
+south and +3 m through the one that heads north, and nothing on the straights that run east and
+west. On a circuit with 1 % longer straights, each apex meets its own apex within 1.5 m where
+alignment by distance is 6 m out.
 
 ### References: what a lap is compared with
 
