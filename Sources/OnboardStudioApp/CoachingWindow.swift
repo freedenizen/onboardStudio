@@ -21,6 +21,10 @@ struct CoachingWindow: View {
         Group {
             if let editor = active.editor {
                 CoachingContent(editor: editor)
+                    // The menu bar reaches this document from here too: Edit ▸ Undo names and takes
+                    // back the last edit, and the Project menu's items apply to it.
+                    .focusedSceneValue(\.editor, editor)
+                    .background(DocumentWindowTag())
             } else {
                 ContentUnavailableView(
                     "No Project Open", systemImage: "flag.checkered",

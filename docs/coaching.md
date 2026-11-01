@@ -287,7 +287,10 @@ the table cells are the ones `onboard coach` prints (`CoachingRows.swift`), so t
 disagree. The analysis runs off the main thread and is re-read when the lap, the reference or the
 data changes. The window follows the front document through `ActiveEditor`, as the attribute
 window does, and its choices live in `Project.coaching`, so they come back on reopening and each
-change is one undo step ("Change Coaching Lap", "Change Coaching Reference").
+change is one undo step ("Change Coaching Lap", "Change Coaching Reference"). Edit ▸ Undo works
+from the window: a separate window has its own, empty undo manager, so the window registers itself
+(`DocumentWindowTag`) and `UndoMenuState` names and performs the document's undo while it is key;
+the editor is published to the menu bar from the window too, so the Project menu applies.
 
 Without a choice the lap read is the lap at the playhead when it is complete and not the
 reference, else the quickest lap that is not the reference. Units follow the app's speed unit:
