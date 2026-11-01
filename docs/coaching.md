@@ -293,10 +293,14 @@ Without a choice the lap read is the lap at the playhead when it is complete and
 reference, else the quickest lap that is not the reference. Units follow the app's speed unit:
 mph gives mph and feet, anything else km/h and metres.
 
-#322 adds a detail pane for the selected corner with the time lost per phase, both laps' metrics
-side by side with their sources, the two lines through the corner on a small map with brake
-points and apexes marked, and *Compare in Video*, which lays the project out as Compare Laps does
-over that corner's span.
+The selected corner's **detail** (`CoachingDetail.swift`, #322) sits beside the table: the time
+lost per phase as bars, both laps' readings side by side with where each came from, and the two
+lines through the corner drawn in a `Canvas` from the profiles' positions — the lap's at the
+aligned distances, so a lap from another session draws at the right place — with the brake points
+and slowest points marked, north up, in metres about the reference's apex. *Compare in Video*
+calls the existing Compare Laps with the corner's span as the range (one undo step, "Compare
+Laps"), so the export is the corner's clip; it is offered only when the reference is a real lap
+with a camera, because a rolling or spliced lap has no single picture until #328.
 
 A window rather than an inspector section because a corner table needs width and the inspector is a
 column (#192, `.claude/rules/appui.md`); rather than a sheet because it exists to drive the preview.

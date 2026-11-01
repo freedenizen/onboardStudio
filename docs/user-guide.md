@@ -652,7 +652,17 @@ playhead where that corner's braking began on the lap being read, so the preview
 Every corner is in the table below, sortable by any column: time lost, the phase, and how the
 brake point, minimum speed and where it fell, exit speed and throttle pick-up compare with the
 reference, plus whether the corner is consistent across your flying laps (the spread of brake
-points in brackets). Selecting a row moves the playhead to that corner's turn-in.
+points in brackets). Selecting a row moves the playhead to that corner's turn-in and opens the
+corner's **detail** beside the table: the time lost in each phase as bars, both laps' readings
+side by side (brake point, peak braking, where the brakes came off, trail braking, entry and
+minimum and exit speed, where the slowest point fell, throttle pick-up, full throttle, coasting,
+peak lateral G, time in corner) with where each reading came from, and the two lines through the
+corner drawn from GPS with the brake points and slowest points marked — a relative picture, since
+lap-to-lap spread is about a metre and absolute accuracy one to three. **Compare in Video** lays
+the project out as Compare Laps does, with both laps' pictures, over that corner only: the
+playhead goes to the brake point and the export range is the corner, so one export is the clip.
+It is offered when the reference is a real lap with a camera; the rolling and spliced laps are
+data only.
 
 When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
 points are read from the speed trace and the window says so. Notes are in km/h and metres, or in

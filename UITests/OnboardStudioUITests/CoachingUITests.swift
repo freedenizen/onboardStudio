@@ -31,6 +31,17 @@ final class CoachingUITests: OnboardStudioUITestCase {
         XCTAssertEqual(
             XCTWaiter().wait(for: [moved], timeout: Self.timeout), .completed, "Show Me did not move the playhead")
 
+        // Show Me also selects the corner, which opens its detail: the phases, both laps' readings,
+        // the two lines, and the way to the video.
+        let detail = app.descendants(matching: .any).matching(identifier: "coaching.detail").firstMatch
+        XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "Selecting a corner showed no detail")
+        let compareInVideo = app.buttons["coaching.compareInVideo"]
+        XCTAssertTrue(compareInVideo.waitForExistence(timeout: Self.timeout), "No Compare in Video for a real lap")
+        compareInVideo.click()
+        XCTAssertTrue(sidebarObject("Compared Lap Picture").waitForExistence(timeout: Self.timeout), "No comparison")
+        menu("Edit", "Undo Compare Laps")
+        XCTAssertTrue(sidebarObject("Compared Lap Picture").waitForNonExistence(timeout: Self.timeout))
+
         // The reference is a choice too, and both choices are one undo step each.
         choosePopUpItem("Fastest rolling lap", in: app.popUpButtons["coaching.reference"])
         let rolling = XCTNSPredicateExpectation(

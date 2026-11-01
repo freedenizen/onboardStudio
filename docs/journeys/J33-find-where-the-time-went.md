@@ -1,5 +1,5 @@
 # J33 Find where the time went
-*Source: #321 — every coaching product surveyed ranks the corners by time lost and says what to
+*Source: #321, #322 — every coaching product surveyed ranks the corners by time lost and says what to
 change; the app showed sector deltas and left the rest to the driver.*
 
 1. **Project ▸ Coaching…** (⌃⌘C). The window opens on the lap at the playhead against the
@@ -10,8 +10,12 @@ change; the app showed sector deltas and left the rest to the driver.*
    happened and what to try. **Show Me** moves the playhead to where braking began for that corner
    on the lap being read, and the preview shows it.
 4. Sort the **corner table** by any column — time lost, brake point, minimum speed, exit speed,
-   throttle, consistency — and select a row to go to that corner's turn-in.
-5. **Undo** steps back through the lap and reference choices; both are saved with the project.
+   throttle, consistency — and select a row to go to that corner's turn-in. The corner's detail
+   opens beside the table: the time lost per phase, both laps' readings with their sources, and
+   the two lines through the corner with brake points and slowest points marked.
+5. **Compare in Video** lays the project out with both laps' pictures over that corner, the
+   export range set to it; **Undo Compare Laps** puts the layout back.
+6. **Undo** steps back through the lap and reference choices; both are saved with the project.
 
 Tests: `CoachingUITests.testTheCoachingWindowRanksCornersAndShowsThem`. Model:
 `CoachingAnalysisTests`, `CornerMetricsTests`, `CoachingReferenceTests`, `LapAlignmentTests`,

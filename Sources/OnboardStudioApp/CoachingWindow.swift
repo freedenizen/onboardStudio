@@ -29,7 +29,7 @@ struct CoachingWindow: View {
                             + "lost time."))
             }
         }
-        .frame(minWidth: 760, minHeight: 480)
+        .frame(minWidth: 880, minHeight: 480)
     }
 }
 
@@ -149,10 +149,24 @@ struct CoachingContent: View {
                     "Coaching compares complete laps. Set a start/finish line in the data file's inspector, or check "
                         + "that the file has position and distance."))
         } else if let selection = selection(input: input, session: session) {
-            VStack(spacing: 0) {
-                choices(selection: selection, laps: laps)
-                Divider()
-                results(selection: selection, input: input, session: session)
+            HSplitView {
+                VStack(spacing: 0) {
+                    choices(selection: selection, laps: laps)
+                    Divider()
+                    results(selection: selection, input: input, session: session)
+                }
+                .frame(minWidth: 560)
+                .layoutPriority(1)
+                if let analysis, analysed == selection, let corner = selectedCorner,
+                    let comparison = analysis.corners.first(where: { $0.index == corner })
+                {
+                    CornerDetailView(
+                        analysis: analysis, comparison: comparison, units: units,
+                        compareInVideo: compareAction(
+                            for: comparison, analysis: analysis, selection: selection, session: session)
+                    )
+                    .frame(minWidth: 300, idealWidth: 340, maxWidth: 440)
+                }
             }
             .task(id: selection) { await analyse(selection, session: session) }
             .onChange(of: selectedCorner) { _, corner in
@@ -326,6 +340,34 @@ extension CoachingContent {
         guard !Task.isCancelled else { return }
         analysis = result
         analysed = selection
+    }
+
+    /// Compare Laps over this corner, when the reference is a real lap with a camera; `nil` for
+    /// a rolling or spliced lap, which has no single picture.
+    func compareAction(
+        for comparison: CornerComparison, analysis: CoachingAnalysis, selection: CoachingSelection,
+        session: TelemetrySession
+    ) -> (() -> Void)? {
+        let referenceSide: (input: InputID, lap: Int)?
+        switch selection.reference {
+        case .sessionBest: referenceSide = LapDeltas.sessionBest(in: session).map { (selection.input.id, $0.number) }
+        case .lap(let number): referenceSide = (selection.input.id, number)
+        case .otherInput(let id, let number): referenceSide = (id, number)
+        case .fastestRolling, .compositeOptimal: referenceSide = nil
+        }
+        guard let side = referenceSide, side.lap != selection.lapNumber || side.input != selection.input.id,
+            let camera = editor.camera(for: selection.input.id), let referenceCamera = editor.camera(for: side.input)
+        else { return nil }
+        let settings = LapComparisonSettings(
+            lap: .init(dataInputID: selection.input.id, videoInputID: camera, lap: selection.lapNumber),
+            comparedLap: .init(dataInputID: side.input, videoInputID: referenceCamera, lap: side.lap),
+            layout: .sideBySide)
+        let input = selection.input
+        let start = input.sync.projectTime(forInputTime: analysis.lap.time(atDistance: comparison.lap.phaseStart))
+        let endDistance = min(analysis.lap.lengthMeters, comparison.lap.corner.endDistance + 100)
+        let end = input.sync.projectTime(forInputTime: analysis.lap.time(atDistance: endDistance))
+        let editor = editor
+        return { editor.compareLaps(settings, range: end > start ? max(0, start)...end : nil) }
     }
 
     /// Moves the playhead to `distance` metres into the lap being read.

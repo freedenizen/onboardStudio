@@ -65,7 +65,7 @@ struct OnboardStudioApp: App {
         Window("Coaching", id: CoachingWindow.windowID) {
             CoachingWindow()
         }
-        .defaultSize(width: 960, height: 620)
+        .defaultSize(width: 1000, height: 640)
         Window("Keyboard Shortcuts", id: "shortcuts") {
             ShortcutsView()
         }

@@ -5,8 +5,10 @@ import TelemetryKit
 
 extension EditorModel {
     /// Project ▸ Compare Laps… (#154).
-    func compareLaps(_ settings: LapComparisonSettings) {
-        let range = projectRange(ofLap: settings.lap.lap, in: settings.lap.dataInputID)
+    /// `range` narrows the export range (and where the playhead goes) to part of the lap — one
+    /// corner, from the Coaching window (#322); by default it is the whole lap.
+    func compareLaps(_ settings: LapComparisonSettings, range: ClosedRange<Double>? = nil) {
+        let range = range ?? projectRange(ofLap: settings.lap.lap, in: settings.lap.dataInputID)
         edit("Compare Laps") { $0.compareLaps(settings, lapRange: range) }
         selectedObjectID = nil
         selectedSegmentID = nil
