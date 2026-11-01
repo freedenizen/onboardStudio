@@ -57,7 +57,7 @@ extension LapProfile {
                 elapsed.append(clock + at - startTime)
                 gridDistance += step
             }
-            pieces.append(Piece(lapNumber: cut.lap.number, range: offset...(offset + cut.length)))
+            pieces.append(Piece(lapNumber: cut.lap.number, range: offset...(offset + cut.length), sourceFrom: cut.from))
             offset += cut.length
             clock += endTime - startTime
         }

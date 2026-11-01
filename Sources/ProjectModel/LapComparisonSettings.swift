@@ -21,14 +21,43 @@ public struct LapComparisonSettings: Hashable, Codable, Sendable {
         }
     }
 
+    /// A compared side that is not one lap but several spliced (#328): the fastest rolling lap or
+    /// the optimal lap of `comparedLap`'s data input, whose picture is cut from the laps it came
+    /// from. `comparedLap.lap` is then only a placeholder.
+    public enum ComparedSplice: String, Codable, Sendable, CaseIterable {
+        case fastestRolling
+        case compositeOptimal
+
+        public var displayName: String {
+            switch self {
+            case .fastestRolling: "Fastest rolling lap"
+            case .compositeOptimal: "Optimal lap (spliced)"
+            }
+        }
+    }
+
     public var lap: Side
     public var comparedLap: Side
     public var layout: LapComparisonLayout
+    /// `nil` compares with `comparedLap` itself, as every project saved before #328 does.
+    public var comparedSplice: ComparedSplice?
 
-    public init(lap: Side, comparedLap: Side, layout: LapComparisonLayout = .sideBySide) {
+    public init(
+        lap: Side, comparedLap: Side, layout: LapComparisonLayout = .sideBySide, comparedSplice: ComparedSplice? = nil
+    ) {
         self.lap = lap
         self.comparedLap = comparedLap
         self.layout = layout
+        self.comparedSplice = comparedSplice
+    }
+
+    /// What the compared side is called in the layout: "Compared Lap", "Optimal Lap", "Rolling Lap".
+    public var comparedName: String {
+        switch comparedSplice {
+        case nil: "Compared Lap"
+        case .fastestRolling: "Rolling Lap"
+        case .compositeOptimal: "Optimal Lap"
+        }
     }
 }
 
@@ -95,7 +124,7 @@ extension Project {
         var objects: [DisplayObject] = []
         for (index, (side, place)) in zip([settings.lap, settings.comparedLap], places).enumerated() {
             let follows = index == 1
-            let name = follows ? "Compared Lap" : "Lap"
+            let name = follows ? settings.comparedName : "Lap"
             objects.append(
                 DisplayObject(
                     label: "\(name) Picture", inputID: side.videoInputID, frame: place.picture,

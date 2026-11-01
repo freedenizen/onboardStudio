@@ -80,12 +80,87 @@ public struct LapTimeWarp: Sendable, Equatable {
             let comparedSession = sessions[settings.comparedLap.dataInputID],
             let input = project.input(settings.lap.dataInputID),
             let comparedInput = project.input(settings.comparedLap.dataInputID),
-            let lap = session.laps.first(where: { $0.number == settings.lap.lap }),
-            let compared = comparedSession.laps.first(where: { $0.number == settings.comparedLap.lap })
+            let lap = session.laps.first(where: { $0.number == settings.lap.lap })
         else { return nil }
+        if let splice = settings.comparedSplice {
+            let reference: CoachingReference = splice == .fastestRolling ? .fastestRolling : .compositeOptimal
+            guard let profile = reference.resolve(in: comparedSession) else { return nil }
+            self.init(
+                lap: lap, in: session, sync: input.sync, splice: profile, in: comparedSession,
+                comparedSync: comparedInput.sync)
+            return
+        }
+        guard let compared = comparedSession.laps.first(where: { $0.number == settings.comparedLap.lap }) else {
+            return nil
+        }
         self.init(
             lap: lap, in: session, sync: input.sync, compared: compared, in: comparedSession,
             comparedSync: comparedInput.sync)
+    }
+
+    /// Knots every `step` seconds of `lap` against a spliced profile (#328): the fastest rolling lap
+    /// or the optimal lap, whose pieces come from different laps. Within a piece the compared time
+    /// runs in that lap; at a seam it jumps to the next lap's, so the knots either side of a seam
+    /// sit a hair apart and nothing is interpolated across the join.
+    public init?(
+        lap: Lap, in session: TelemetrySession, sync: SyncSettings, splice: LapProfile,
+        in comparedSession: TelemetrySession, comparedSync: SyncSettings, step: Double = 0.25
+    ) {
+        guard let distance = session[.distance], let comparedDistance = comparedSession[.distance], let end = lap.end,
+            end > lap.start, let from = distance.value(at: lap.start), let to = distance.value(at: end), to > from,
+            splice.lengthMeters > 0, !splice.pieces.isEmpty
+        else { return nil }
+        let length = to - from
+        /// The compared session's time at a distance into the splice.
+        func comparedTime(atSplice distance: Double) -> Double? {
+            guard let piece = splice.piece(at: distance),
+                let sourceLap = comparedSession.laps.first(where: { $0.number == piece.lapNumber }),
+                let sourceEnd = sourceLap.end, let sourceStart = comparedDistance.value(at: sourceLap.start)
+            else { return nil }
+            let into = piece.sourceDistance(at: min(distance, piece.range.upperBound))
+            return LapComparison.time(
+                atDistance: sourceStart + into, in: comparedDistance, between: sourceLap.start, and: sourceEnd)
+                ?? sourceEnd
+        }
+        var lapTimes: [Double] = []
+        var comparedTimes: [Double] = []
+        func add(fraction: Double, lapTime: Double, pieceEnd: Bool = false) {
+            let spliceDistance = fraction * splice.lengthMeters
+            // Just inside the piece that is ending, or just inside the one beginning.
+            let probe = pieceEnd ? spliceDistance - 1e-6 : spliceDistance
+            guard let comparedTime = comparedTime(atSplice: max(0, probe)) else { return }
+            let projectTime = sync.projectTime(forInputTime: lapTime)
+            if let last = lapTimes.last, projectTime <= last { return }
+            lapTimes.append(projectTime)
+            comparedTimes.append(comparedSync.projectTime(forInputTime: comparedTime))
+        }
+        // Knots every `step` seconds, plus a pair at every seam.
+        let seamFractions = splice.seams.map { $0 / splice.lengthMeters }
+        var seamIndex = 0
+        let count = max(Int(((end - lap.start) / max(step, 0.01)).rounded(.up)), 1)
+        var lastFraction = 0.0
+        for index in 0...count {
+            let time = index == count ? end : lap.start + Double(index) * step
+            let measured = min(max(((distance.value(at: time) ?? from) - from) / length, 0), 1)
+            let fraction = index == 0 ? 0 : index == count ? 1 : measured
+            while seamIndex < seamFractions.count, seamFractions[seamIndex] <= fraction {
+                let seam = seamFractions[seamIndex]
+                if seam > lastFraction {
+                    // The lap's own time at the seam, by its fraction.
+                    let seamTime =
+                        LapComparison.time(atDistance: from + seam * length, in: distance, between: lap.start, and: end)
+                        ?? time
+                    add(fraction: seam, lapTime: seamTime - 1e-4, pieceEnd: true)
+                    add(fraction: seam, lapTime: seamTime)
+                }
+                seamIndex += 1
+            }
+            add(fraction: fraction, lapTime: time)
+            lastFraction = fraction
+        }
+        guard lapTimes.count >= 2 else { return nil }
+        self.lapTimes = lapTimes
+        self.comparedTimes = comparedTimes
     }
 
     /// The project time at which the compared lap was as far round as the lap playing is at `time`.

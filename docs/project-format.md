@@ -129,6 +129,9 @@ The project plays `lap`; `comparedLap` — from the same inputs or others — is
 the fraction of the lap covered, and objects with `followsComparedLap` show it. Absent means not
 comparing, which is what every project saved before it was. A timer's `deltaReference`
 `comparedLap` measures against it (falling back to `sessionBest` without a comparison).
+`comparedSplice` (optional, #328: `fastestRolling` | `compositeOptimal`) makes the compared side a
+spliced lap of `comparedLap`'s data input — its picture cut from the laps it came from, jumping at
+each join — and `comparedLap.lap` a placeholder; absent means the lap itself.
 
 `coaching` (optional, #321) is what the Coaching window reads:
 `{ "dataInputID", "lap": 5, "reference": { "sessionBest": {} } | { "lap": { "_0": 3 } } | { "fastestRolling": {} } | { "compositeOptimal": {} } | { "otherInput": { "dataInputID", "lap": 2 } } }`.

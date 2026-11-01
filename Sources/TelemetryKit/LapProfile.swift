@@ -71,11 +71,23 @@ public struct LapProfile: Sendable {
         public let lapNumber: Int
         /// Distances into the profile this piece covers.
         public let range: ClosedRange<Double>
+        /// Distance into the source lap at which the piece begins, so a profile distance can be
+        /// taken back to the lap it came from: `sourceFrom + (distance − range.lowerBound)`.
+        public let sourceFrom: Double
 
-        public init(lapNumber: Int, range: ClosedRange<Double>) {
+        public init(lapNumber: Int, range: ClosedRange<Double>, sourceFrom: Double = 0) {
             self.lapNumber = lapNumber
             self.range = range
+            self.sourceFrom = sourceFrom
         }
+
+        /// Distance into the source lap of a distance into the profile within this piece.
+        public func sourceDistance(at distance: Double) -> Double { sourceFrom + (distance - range.lowerBound) }
+    }
+
+    /// The piece a distance into the profile falls in.
+    public func piece(at distance: Double) -> Piece? {
+        pieces.last { $0.range.lowerBound <= distance } ?? pieces.first
     }
 
     public var lengthMeters: Double { distances.last ?? 0 }
