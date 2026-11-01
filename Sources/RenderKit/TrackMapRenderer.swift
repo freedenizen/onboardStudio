@@ -41,14 +41,19 @@ public struct TrackMapRenderer: OverlayDrawing {
 
     public func draw(in cg: CGContext, size: CGSize, time: Double) {
         let rect = context.rect(in: size)
-        guard let projection, rect.width > 4, rect.height > 4 else { return }
+        guard let whole = self.projection, rect.width > 4, rect.height > 4 else { return }
         cg.setAlpha(context.opacity)
+        // The coaching reading at this moment (#324): which lap is being driven and, when the map
+        // follows the corner in play, which corner. The cached image is per lap and per corner.
+        let reading = coachingReading(at: context.inputTime(time))
+        let projection = reading.projection ?? whole
         let key = context.cacheKey(
-            "trackmap|\(params.hashValue)|\(background?.request.hashValue ?? 0)", size: size)
+            "trackmap|\(params.hashValue)|\(background?.request.hashValue ?? 0)|\(reading.cacheSuffix)", size: size)
         if let trace = context.cache.image(
             for: key, size: rect.size,
             draw: { traceContext, traceSize in
                 drawTrace(in: traceContext, size: traceSize, projection: projection)
+                drawCoaching(reading, in: traceContext, size: traceSize, projection: projection)
             })
         {
             context.cache.drawImage(trace, in: rect, context: cg)

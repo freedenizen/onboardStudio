@@ -73,8 +73,11 @@ extension Project {
     /// per compile for every data input.
     public var needsCoaching: Bool {
         displayObjects.contains { object in
-            if case .cornerCallout = object.kind { return true }
-            return false
+            switch object.kind {
+            case .cornerCallout: return true
+            case .trackMap(let params): return params.usesCoaching
+            default: return false
+            }
         }
     }
 }

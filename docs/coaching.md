@@ -334,6 +334,15 @@ play — the headline coloured by loss or gain, the evidence, what to try wrappe
 the headline shrunk to fit rather than clipped. With no session at all (a template's picture) it
 draws an example card. Golden `corner-callout-turn1.png` on the committed coaching fixture.
 
+**Track Map** (`RenderKit/TrackMapRenderer+Coaching.swift`, #324): four options, all off by
+default so a saved map draws as it did. The reference's line is the coaching reference's profile
+positions, dashed. Colour by delta paints the lap being driven over the outline in runs where the
+delta grew or shrank by more than 0.03 s over 20 m, leaving level stretches to the plain line.
+Brake marks are a circle at the brake point and a square at the slowest point for both laps. Follow
+builds a projection over the corner's time span (brake point − 60 m to exit + 60 m) and frames it;
+the cached trace image is keyed per lap and per followed corner, so the first frame of each pays
+and the rest are a blit.
+
 Still to come: the
 reference line, gain/loss colouring and brake-point markers on the Track Map, all off by default
 (#324); a choosable graph ghost (#325); per-corner comparison clips with the better lap's brake-point

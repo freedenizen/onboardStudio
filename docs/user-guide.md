@@ -679,6 +679,14 @@ rendered session comments on every lap, not only the one the window shows. The i
 early it appears and how long it stays, whether to show the evidence and the suggestion, whether to
 keep quiet on corners where no time was lost, and the colours. Notes follow the object's speed unit.
 
+The **Track Map** has a Coaching section too, all off until you turn them on: the **reference
+lap's line** drawn dashed beside the outline, so a different line through a corner shows; the lap
+being driven **coloured by time gained and lost** against the reference (red where the gap grew,
+green where it closed, the plain outline where it held); **brake points and slowest points** as a
+circle and a square for both laps; and **Follow the corner in play**, which frames the map on the
+corner from its brake point to its exit and shows the whole circuit on the straights. They read the
+same reference as the callout.
+
 ## 7. Export and share
 
 ![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)
