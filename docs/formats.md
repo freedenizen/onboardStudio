@@ -266,3 +266,13 @@ sync wizard. On the HERO13 + RaceChrono reference session the audio match lands 
 GPS-verified offset with a correlation of 0.9, whereas picture motion alone is unreliable on
 dash-cam footage (people walking past a parked car change as many pixels as driving does), which is
 why it is only the fallback. `onboard sync --dump signals.csv` writes the signals for inspection.
+
+## Logbook entry (`.onboardsession`)
+
+One JSON file per session in `~/Library/Application Support/OnboardStudio/Logbook` (#345), written
+by `Logbook.write` with ISO 8601 dates and sorted keys: `id`, `file` (`path`, `bookmark` as
+base64, `contentHash` SHA-256 hex, `byteCount`, `importerID`), `circuitID`, `trackName`, `date`,
+`car`, `driver`, `laps` (`[{ number, seconds, isComplete }]`), `bestLap`, `bestLapNumber`,
+`optimalLap`, `fastestRollingLap`, `topSpeed` (m/s), `notes`, `tags`, `projects`
+(`[{ path, name }]`), `added`, `modified`. Only `file` is required to read one. `garage.json` in the
+same folder is `[{ id, name, notes }]`. Design in [logbook.md](logbook.md).
