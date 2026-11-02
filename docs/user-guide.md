@@ -354,7 +354,10 @@ sentence on how far the best moved, narrowed to one car when you have more than 
 visit's spread of flying laps as consistency; and corner by corner, the latest visit against the
 one before and against the personal best's session — brake point, minimum speed and time in the
 corner. Click a point to open that session. Sessions entered before corners were kept offer
-**Read Their Corners**.
+**Read Their Corners**. With two cars at the circuit, **Car against car** at the foot of Trends
+reads each car's best lap against the other's: which is quicker and by how much, both speed traces
+over distance, and a sentence per corner naming the car — where one brakes later, carries more
+speed through the apex or leaves faster.
 
 The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
 folder of one file per session (narrow the table first to export only a circuit, a car or a year),

@@ -39,6 +39,10 @@ struct LogbookTrendsView: View {
                         consistency
                     }
                     corners(circuitKey: circuitKey)
+                    if cars.count >= 2 {
+                        Divider()
+                        CarVersusCarSection(entries: entries, circuitKey: circuitKey, cars: cars)
+                    }
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
