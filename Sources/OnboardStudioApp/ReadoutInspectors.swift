@@ -323,6 +323,27 @@ struct TrackMapInspector: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
+        Section("Coaching") {
+            Toggle("Reference lap's line", isOn: field(\.showReferenceLine, "Reference Line"))
+            Toggle("Colour the lap by time gained and lost", isOn: field(\.colorByDelta, "Delta Colouring"))
+            Toggle("Brake points and slowest points", isOn: field(\.showBrakeMarks, "Brake Marks"))
+            Toggle("Follow the corner in play", isOn: field(\.followCorner, "Follow Corner"))
+            if params.showReferenceLine || params.showBrakeMarks {
+                ColorPicker("Reference", selection: color(\.referenceLineColor, "Reference Line Colour"))
+            }
+            if params.colorByDelta {
+                ColorPicker("Time gained", selection: color(\.gainColor, "Gain Colour"))
+                ColorPicker("Time lost", selection: color(\.lossColor, "Loss Colour"))
+            }
+            if params.usesCoaching {
+                Text(
+                    "The lap being driven is read against the reference chosen in Project ▸ Coaching… — your best "
+                        + "lap until you choose one. Following frames the corner from its brake point to its exit and "
+                        + "shows the whole circuit on the straights."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
+        }
         Section("Second Vehicle") {
             Picker("Data input", selection: field(\.secondInputID, "Second Data Input")) {
                 Text("None").tag(InputID?.none)

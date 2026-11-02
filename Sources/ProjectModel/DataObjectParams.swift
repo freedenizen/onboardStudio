@@ -69,6 +69,20 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
     public var labelColor: RGBAColor
     /// Label size as a fraction of the map's shorter side.
     public var labelScale: Double
+    /// The coaching reference's line beside the outline (#324): the best lap, the rolling lap, the
+    /// optimal lap or another driver's lap, whatever Project ▸ Coaching… chose.
+    public var showReferenceLine: Bool
+    public var referenceLineColor: RGBAColor
+    /// Paints the lap being driven by where it gained and lost against the reference.
+    public var colorByDelta: Bool
+    public var gainColor: RGBAColor
+    public var lossColor: RGBAColor
+    /// A circle at each brake point and a square at each slowest point, for the lap being driven
+    /// (in the line colour) and the reference (in its colour).
+    public var showBrakeMarks: Bool
+    /// Frames the corner in play rather than the whole circuit, from the brake point to the exit,
+    /// and the whole circuit on the straights.
+    public var followCorner: Bool
 
     public init(
         lineColor: RGBAColor = .white,
@@ -86,7 +100,14 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         showSectorTicks: Bool = false,
         showCornerNumbers: Bool = false,
         labelColor: RGBAColor = .white,
-        labelScale: Double = 0.09
+        labelScale: Double = 0.09,
+        showReferenceLine: Bool = false,
+        referenceLineColor: RGBAColor = RGBAColor(red: 0.75, green: 0.75, blue: 0.78),
+        colorByDelta: Bool = false,
+        gainColor: RGBAColor = RGBAColor(red: 0.13, green: 0.75, blue: 0.25),
+        lossColor: RGBAColor = RGBAColor(red: 0.88, green: 0.19, blue: 0.19),
+        showBrakeMarks: Bool = false,
+        followCorner: Bool = false
     ) {
         self.lineColor = lineColor
         self.lineWidth = lineWidth
@@ -104,7 +125,17 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         self.showCornerNumbers = showCornerNumbers
         self.labelColor = labelColor
         self.labelScale = labelScale
+        self.showReferenceLine = showReferenceLine
+        self.referenceLineColor = referenceLineColor
+        self.colorByDelta = colorByDelta
+        self.gainColor = gainColor
+        self.lossColor = lossColor
+        self.showBrakeMarks = showBrakeMarks
+        self.followCorner = followCorner
     }
+
+    /// Whether any option reads the coaching analysis.
+    public var usesCoaching: Bool { showReferenceLine || colorByDelta || showBrakeMarks || followCorner }
 
     /// Three colours that stay apart on a dark video and for the common colour blindness, so a
     /// sector can be told from its neighbour without reading the numbers.
@@ -118,6 +149,7 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         case lineColor, lineWidth, dotColor, dotRadius, rotation, backgroundColor
         case background, secondInputID, secondDotColor
         case trace, colorBySector, sectorColors, showSectorTicks, showCornerNumbers, labelColor, labelScale
+        case showReferenceLine, referenceLineColor, colorByDelta, gainColor, lossColor, showBrakeMarks, followCorner
     }
 
     public init(from decoder: any Decoder) throws {
@@ -147,6 +179,14 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         showCornerNumbers = try c.decodeIfPresent(Bool.self, forKey: .showCornerNumbers) ?? d.showCornerNumbers
         labelColor = try c.decodeIfPresent(RGBAColor.self, forKey: .labelColor) ?? d.labelColor
         labelScale = try c.decodeIfPresent(Double.self, forKey: .labelScale) ?? d.labelScale
+        // The coaching options (#324), all off by default: a map saved before them draws as it did.
+        showReferenceLine = try c.decodeIfPresent(Bool.self, forKey: .showReferenceLine) ?? d.showReferenceLine
+        referenceLineColor = try c.decodeIfPresent(RGBAColor.self, forKey: .referenceLineColor) ?? d.referenceLineColor
+        colorByDelta = try c.decodeIfPresent(Bool.self, forKey: .colorByDelta) ?? d.colorByDelta
+        gainColor = try c.decodeIfPresent(RGBAColor.self, forKey: .gainColor) ?? d.gainColor
+        lossColor = try c.decodeIfPresent(RGBAColor.self, forKey: .lossColor) ?? d.lossColor
+        showBrakeMarks = try c.decodeIfPresent(Bool.self, forKey: .showBrakeMarks) ?? d.showBrakeMarks
+        followCorner = try c.decodeIfPresent(Bool.self, forKey: .followCorner) ?? d.followCorner
     }
 }
 
@@ -433,42 +473,4 @@ public struct TextDataParams: Hashable, Codable, Sendable {
         fontName = try c.decodeIfPresent(String.self, forKey: .fontName) ?? d.fontName
         zones = try c.decodeIfPresent([GaugeZone].self, forKey: .zones) ?? []
     }
-}
-
-/// A JavaScript-drawn object: `background(canvas)` runs once per output size for static parts,
-/// `frame(canvas, data)` runs every frame. See `docs/scripting.md`.
-public struct ScriptedParams: Hashable, Codable, Sendable {
-    public var source: String
-
-    public init(source: String = ScriptedParams.defaultSource) {
-        self.source = source
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case source
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        source = try c.decodeIfPresent(String.self, forKey: .source) ?? Self.defaultSource
-    }
-
-    // swiftlint:disable line_length
-    public static let defaultSource = """
-        // Drawn once: a translucent rounded panel.
-        function background(canvas) {
-            canvas.fill("#00000088");
-            canvas.roundRect(0, 0, canvas.width, canvas.height, canvas.height * 0.15);
-        }
-
-        // Drawn every frame: the speed in big digits.
-        function frame(canvas, data) {
-            const speed = data.speed("mph");
-            canvas.fill("#ffffff");
-            canvas.text(speed === null ? "--" : speed.toFixed(0), canvas.width * 0.5, canvas.height * 0.55,
-                        { size: canvas.height * 0.6, align: "center", bold: true, mono: true });
-            canvas.text("mph", canvas.width * 0.5, canvas.height * 0.9, { size: canvas.height * 0.18, align: "center" });
-        }
-        """
-    // swiftlint:enable line_length
 }
