@@ -246,13 +246,17 @@ struct Render: AsyncParsableCommand {
 
 extension Render {
     private func loadProject(_ path: String, range: ClosedRange<Double>?) async throws -> LoadedForRender {
-        var loaded = try await ProjectCompiler.load(URL(fileURLWithPath: path))
+        // The template goes on before the load, which reads what the objects need: the map
+        // backgrounds and the coaching track.
+        let location = ProjectLocation(URL(fileURLWithPath: path))
+        var project = try location.load()
         if let template {
             let chosen =
                 try ProjectTemplate.builtIn.first { $0.name.caseInsensitiveCompare(template) == .orderedSame }
                 ?? ProjectTemplate(data: Data(contentsOf: URL(fileURLWithPath: template)))
-            chosen.apply(to: &loaded.project)
+            chosen.apply(to: &project)
         }
+        var loaded = try await ProjectCompiler.load(project, location: location)
         // Lights and steering wheels without a channel take the one this logger offers.
         loaded.project.bindEmptyChannels(loaded.channelSummaries)
         for (id, problem) in loaded.problems {
