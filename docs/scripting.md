@@ -50,6 +50,18 @@ Colours: `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `rgb(r,g,b)`, `rgba(r,g,b,a)`, or `whit
 | `lap` | `{ number, elapsed, last, best, bestNumber, delta }` (`delta` = seconds behind (+) / ahead (−) the best lap at the same distance; needs a distance channel) |
 | `laps` | `[{ number, start, duration }]` |
 | `time`, `inputTime`, `duration` | Project time, time inside the data file, session length |
+| `reference` | The coaching reference (Project ▸ Coaching…, else the best lap): `{ label, phrase, length, duration }`; `{}` without one |
+| `corners` | The reference lap's corners: `[{ index, label, start, end, apex }]`, metres into the lap |
+| `coaching` | The corner in play — the one being driven, the next one from three seconds before its brake point, or the last one for two seconds after it — compared with the reference, or `null` on a straight: `{ index, label, lapNumber, phase, secondsToBrake, held, timeLost, worstPhase, phaseLoss: { braking, entry, apex, exit }, headline, evidence: [...], suggestion, lap: {…}, reference: {…} }` |
+
+`coaching.lap` and `coaching.reference` are the two laps' readings of that corner, as the
+Coaching window shows them: `brakePoint` (metres before the apex), `brakeSource`, `peakBrakingG`,
+`brakeRelease`, `trailBraking`, `entrySpeed`, `minimumSpeed`, `minimumSpeedAt` (metres after the
+apex), `exitSpeed`, `throttlePickup`, `throttleSource`, `fullThrottle`, `coasting`, `peakLateralG`,
+`timeInCorner`, `steeringSmoothness`; speeds in m/s, `null` for what the data cannot say.
+`headline`, `evidence` and `suggestion` are the words a Corner Callout would show, in the object's
+speed unit. The coaching read happens at compile when a script mentions `coaching`, `corners` or
+`reference`, so a script that does not pays nothing. See [coaching.md](coaching.md).
 
 Helpers: `clamp(v, lo, hi)`, `lerp(a, b, t)`, `formatTime(seconds, decimals)` → `1:23.46`,
 `formatDelta(seconds, decimals)` → `+0.35` / `−0.12`. `data.value("lapDelta")` and

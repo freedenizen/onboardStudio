@@ -9,6 +9,13 @@ public struct ScriptedParams: Hashable, Codable, Sendable {
         self.source = source
     }
 
+    /// Whether the script reads `data.corners`, `data.reference` or `data.coaching`, so the
+    /// compile knows to read the coaching track. A mention is enough; a false positive only
+    /// costs the read.
+    public var usesCoaching: Bool {
+        source.contains("coaching") || source.contains("corners") || source.contains("reference")
+    }
+
     private enum CodingKeys: String, CodingKey {
         case source
     }

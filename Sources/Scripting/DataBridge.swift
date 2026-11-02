@@ -18,6 +18,12 @@ import TelemetryKit
     var laps: [[String: Any]] { get }
     /// Session length in seconds.
     var duration: Double { get }
+    /// The coaching reference: `{ label, phrase, length, duration }`, or `{}` without coaching.
+    var reference: [String: Any] { get }
+    /// The reference lap's corners: `[{ index, label, start, end, apex }]` in metres into the lap.
+    var corners: [[String: Any]] { get }
+    /// The corner in play and this lap's comparison with the reference there, or null.
+    var coaching: Any? { get }
     func has(_ channel: String) -> Bool
     /// The channel's value in its canonical unit (speed in m/s, distances in m, angles in degrees), or null.
     func value(_ channel: String) -> Any?
