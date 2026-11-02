@@ -308,7 +308,26 @@ struct LogbookDetail: View {
                 if !entry.projects.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Projects").font(.subheadline.weight(.semibold))
-                        ForEach(entry.projects, id: \.path) { Text($0.name).font(.callout) }
+                        ForEach(entry.projects, id: \.path) { link in
+                            Button(link.name) {
+                                let url = URL(fileURLWithPath: link.path)
+                                NSDocumentController.shared.openDocument(withContentsOf: url, display: true) {
+                                    _, _, _ in
+                                }
+                            }
+                            .buttonStyle(.link).font(.callout)
+                        }
+                    }
+                }
+                if !entry.exports.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Exports").font(.subheadline.weight(.semibold))
+                        ForEach(entry.exports, id: \.path) { link in
+                            Button(link.name) {
+                                NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: link.path)])
+                            }
+                            .buttonStyle(.link).font(.callout)
+                        }
                     }
                 }
                 Text(entry.file.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)

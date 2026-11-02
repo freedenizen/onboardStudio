@@ -68,6 +68,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// Weather, track, temperature, tyres and setup (#348); empty until the driver fills it in.
     public var conditions: SessionConditions
     public var projects: [ProjectLink]
+    /// The videos exported from projects made from it (#349).
+    public var exports: [ProjectLink]
     public var added: Date
     public var modified: Date
 
@@ -76,8 +78,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         car: String = "", driver: String = "", laps: [LapRecord] = [], bestLap: Double? = nil,
         bestLapNumber: Int? = nil, optimalLap: Double? = nil, fastestRollingLap: Double? = nil,
         topSpeed: Double? = nil, notes: String = "", tags: [String] = [],
-        conditions: SessionConditions = SessionConditions(), projects: [ProjectLink] = [], added: Date = Date(),
-        modified: Date = Date()
+        conditions: SessionConditions = SessionConditions(), projects: [ProjectLink] = [], exports: [ProjectLink] = [],
+        added: Date = Date(), modified: Date = Date()
     ) {
         self.id = id
         self.file = file
@@ -96,6 +98,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.tags = tags
         self.conditions = conditions
         self.projects = projects
+        self.exports = exports
         self.added = added
         self.modified = modified
     }
@@ -128,7 +131,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
-        case fastestRollingLap, topSpeed, notes, tags, conditions, projects, added, modified
+        case fastestRollingLap, topSpeed, notes, tags, conditions, projects, exports, added, modified
     }
 
     public init(from decoder: any Decoder) throws {
@@ -150,6 +153,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         conditions = try c.decodeIfPresent(SessionConditions.self, forKey: .conditions) ?? SessionConditions()
         projects = try c.decodeIfPresent([ProjectLink].self, forKey: .projects) ?? []
+        exports = try c.decodeIfPresent([ProjectLink].self, forKey: .exports) ?? []
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }

@@ -91,6 +91,20 @@ Return or losing focus, never per keystroke. `summary` is the table's column and
 future "what the day was like". These are library files, not a document, so the edits are not
 undoable, as the track definitions' are not.
 
+## Projects and the logbook (#349)
+
+`ProjectLogbook` (`MediaKit/ProjectLogbook.swift`) and `EditorModel+Logbook.swift`. A data file
+the user has just added is entered after its first compile — the same moment the track definition
+and the details are applied, and under the same rule: only for a file just added, never on
+opening a saved project. The entry is found by the file's bytes or made, the input keeps its
+`logbookEntryID` as bookkeeping written without an undo step of its own (an undo of Add Data
+takes the whole input away anyway), and blank car and driver details are filled from the entry.
+`Preferences.logbookAutoAdd` (Settings ▸ Logbook) turns it off. A project with a place on disk is
+recorded on its entries' `projects` after each compile; every finished export (the sheet, the
+vertical clip, the debrief) on `exports`. Relinking runs once per load: an input whose file is
+missing takes the entry's bookmark's place as an undoable *Relink Data File*; an entry whose path
+is stale while the project's is good learns the new one.
+
 ## What comes next
  #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as

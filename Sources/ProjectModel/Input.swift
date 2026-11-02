@@ -251,6 +251,9 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// Seconds of the data file to keep, in its own time. Applied before laps are detected, so a
     /// trimmed-away out-lap is not counted and does not compete for the best lap.
     public var trim: TrimRange
+    /// The logbook entry made from this file when it was added (#349); `nil` before the logbook
+    /// existed, or when the preference was off. Bookkeeping only: it changes no render.
+    public var logbookEntryID: UUID?
 
     public init(
         importerID: String? = nil,
@@ -289,6 +292,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID
         case cornerLabels, trim
+        case logbookEntryID
     }
 
     public init(from decoder: any Decoder) throws {
@@ -316,6 +320,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         cornerLabels = try c.decodeIfPresent([String].self, forKey: .cornerLabels) ?? []
         // Absent in projects saved before data could be trimmed; no trim is the right reading.
         trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
+        logbookEntryID = try c.decodeIfPresent(UUID.self, forKey: .logbookEntryID)
     }
 }
 

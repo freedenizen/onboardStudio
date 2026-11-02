@@ -152,6 +152,9 @@ final class EditorModel {
 
     /// A data input added by the user that should be synced from timestamps once it has loaded.
     var pendingAutoSync: InputID?
+    /// A data input added by the user that goes into the logbook once it has loaded (#349).
+    var pendingLogbook: InputID?
+    var relinkedThroughLogbook = false
 
     /// Called after every compile: applies a pending timestamp sync when the clocks allow it.
     func applyPendingAutoSync() {
@@ -351,6 +354,8 @@ final class EditorModel {
                     applyPendingAutoSync()
                     applyPendingTrackDefinition()
                     applyPendingDetails()
+                    enterPendingInLogbook()
+                    relinkThroughLogbook()
                     bindEmptyChannels()
                 } else {
                     compilePending = true  // superseded by a newer edit

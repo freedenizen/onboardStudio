@@ -100,6 +100,8 @@ public enum Preferences {
     // MARK: - First run and the welcome window
 
     public static let showLauncherAtLaunch = Preference(key: "showLauncherAtLaunch", unset: true)
+    /// A data file added to a project is entered in the logbook too (#349).
+    public static let logbookAutoAdd = Preference(key: "logbookAutoAdd", unset: true)
     public static let tourSeen = Preference(key: "tourSeen", unset: false)
     public static let showGettingStarted = Preference(key: "showGettingStarted", unset: true)
 

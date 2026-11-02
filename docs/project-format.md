@@ -158,7 +158,7 @@ chosen its own `typeface`; absent means the built-in fonts.
 |---|---|
 | `id` | UUID, referenced by display objects |
 | `source.path` | file path, relative to the package or absolute |
-| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … } } }` |
+| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … , "logbookEntryID": <uuid> } } }` — `logbookEntryID` (optional, #349) is the logbook entry the file was entered as when it was added; absent before the logbook existed or with the preference off; bookkeeping that changes no render |
 | `sync` | `startPositionInInput`, `offsetInProject`, `playSpeed` — `inputTime = (t − offsetInProject) × playSpeed + startPositionInInput` |
 
 Data input settings (all optional):
