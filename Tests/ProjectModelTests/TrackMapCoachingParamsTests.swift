@@ -8,7 +8,11 @@ struct TrackMapCoachingParamsTests {
     @Test func theCoachingOptionsAreOffUnlessAFileSaysOtherwise() throws {
         let older = try JSONDecoder().decode(TrackMapParams.self, from: Data(#"{"lineWidth": 3}"#.utf8))
         #expect(!older.showReferenceLine && !older.colorByDelta && !older.showBrakeMarks && !older.followCorner)
+        #expect(!older.showLineSpread)
         #expect(!older.usesCoaching)
+        let spread = try JSONDecoder().decode(TrackMapParams.self, from: Data(#"{"showLineSpread": true}"#.utf8))
+        #expect(spread.showLineSpread && spread.usesCoaching)
+        #expect(spread.spreadColor == TrackMapParams().spreadColor)
         let follow = try JSONDecoder().decode(TrackMapParams.self, from: Data(#"{"followCorner": true}"#.utf8))
         #expect(follow.followCorner)
         #expect(follow.usesCoaching)

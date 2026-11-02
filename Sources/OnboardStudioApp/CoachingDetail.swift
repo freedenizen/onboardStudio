@@ -8,6 +8,8 @@ struct CornerDetailView: View {
     let analysis: CoachingAnalysis
     let comparison: CornerComparison
     let units: CoachingUnits
+    /// Every other complete lap of the session, for the spread of lines through the corner (#334).
+    var others: [LapProfile] = []
     /// `nil` when the reference cannot be filmed: a spliced lap, or a file without a camera.
     let compareInVideo: (() -> Void)?
 
@@ -18,7 +20,7 @@ struct CornerDetailView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Turn \(comparison.label)").font(.title3.weight(.semibold))
                 phases
-                CornerLinesView(analysis: analysis, comparison: comparison, units: units)
+                CornerLinesView(analysis: analysis, comparison: comparison, units: units, others: others)
                 readings
                 if let compareInVideo {
                     Button("Compare in Video", action: compareInVideo)
@@ -127,6 +129,7 @@ struct CornerLinesView: View {
     let analysis: CoachingAnalysis
     let comparison: CornerComparison
     let units: CoachingUnits
+    var others: [LapProfile] = []
 
     struct Mark {
         var point: CGPoint
@@ -148,6 +151,7 @@ struct CornerLinesView: View {
             HStack(spacing: 12) {
                 Label("This lap", systemImage: "line.diagonal").foregroundStyle(Color.accentColor)
                 Label(analysis.reference.label, systemImage: "line.diagonal").foregroundStyle(.secondary)
+                if !others.isEmpty { Label("Other laps", systemImage: "line.diagonal").foregroundStyle(.tertiary) }
                 Label("Brake point", systemImage: "circle.fill")
                 Label("Slowest", systemImage: "square.fill")
             }
@@ -170,6 +174,7 @@ struct CornerLinesView: View {
     struct Lines {
         var reference: [CGPoint] = []
         var lap: [CGPoint] = []
+        var others: [[CGPoint]] = []
         var marks: [Mark] = []
     }
 
@@ -189,11 +194,16 @@ struct CornerLinesView: View {
         let to = min(analysis.reference.lengthMeters, corner.endDistance + margin)
         var reference: [CGPoint] = []
         var lap: [CGPoint] = []
+        var otherLines = Array(repeating: [CGPoint](), count: others.count)
         var distance = from
         while distance <= to {
             if let position = analysis.reference.position(atDistance: distance) { reference.append(local(position)) }
             let onLap = analysis.delta.lapDistance(atReferenceDistance: distance)
             if let position = analysis.lap.position(atDistance: onLap) { lap.append(local(position)) }
+            // The other laps by distance: same session, same line to a metre, which is the point.
+            for (index, other) in others.enumerated() {
+                if let position = other.position(atDistance: distance) { otherLines[index].append(local(position)) }
+            }
             distance += 2
         }
         var marks: [Mark] = []
@@ -208,13 +218,13 @@ struct CornerLinesView: View {
         }
         mark(comparison.reference, profile: analysis.reference, isReference: true)
         mark(comparison.lap, profile: analysis.lap, isReference: false)
-        return Lines(reference: reference, lap: lap, marks: marks)
+        return Lines(reference: reference, lap: lap, others: otherLines, marks: marks)
     }
 
     private func draw(in context: inout GraphicsContext, size: CGSize) {
         let lines = lines()
         let (reference, lap, marks) = (lines.reference, lines.lap, lines.marks)
-        let all = reference + lap
+        let all = reference + lap + lines.others.flatMap { $0 }
         guard let minX = all.map(\.x).min(), let maxX = all.map(\.x).max(), let minY = all.map(\.y).min(),
             let maxY = all.map(\.y).max()
         else { return }
@@ -234,6 +244,7 @@ struct CornerLinesView: View {
             for point in points.dropFirst() { path.addLine(to: place(point)) }
             return path
         }
+        for other in lines.others { context.stroke(path(other), with: .color(.secondary.opacity(0.35)), lineWidth: 1) }
         context.stroke(path(reference), with: .color(.secondary), lineWidth: 2)
         context.stroke(path(lap), with: .color(.accentColor), lineWidth: 2)
         for mark in marks {

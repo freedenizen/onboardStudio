@@ -57,6 +57,9 @@ extension TrackMapRenderer {
         let scale = max(0.5, min(size.width, size.height) / 300)
         cg.setLineJoin(.round)
         cg.setLineCap(.round)
+        if params.showLineSpread {
+            drawSpread(except: reading.lap?.number, in: cg, scale: scale, projection: projection, bounds: bounds)
+        }
         if params.showReferenceLine, let reference = reading.reference {
             let points = Self.points(of: reference, projection: projection, bounds: bounds)
             cg.setStrokeColor(params.referenceLineColor.cgColor)
@@ -85,6 +88,27 @@ extension TrackMapRenderer {
                         projection: projection, bounds: bounds, in: cg)
                 }
             }
+        }
+    }
+
+    /// Every other complete lap's line, faint, under everything else; the quickest of them at
+    /// full strength and a little wider, so the spread through a corner and the line that worked
+    /// are both seen (#334).
+    func drawSpread(
+        except driven: Int?, in cg: CGContext, scale: Double, projection: TrackProjection, bounds: CGRect
+    ) {
+        guard let track = context.coaching else { return }
+        let others = track.laps.filter { $0.number != driven }
+        let fastest = others.min { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }?.number
+        let color = params.spreadColor
+        let full = RGBAColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
+        for lap in others {
+            guard let profile = track.analyses[lap.number]?.lap else { continue }
+            let points = Self.points(of: profile, projection: projection, bounds: bounds)
+            let isFastest = lap.number == fastest
+            cg.setStrokeColor((isFastest ? full : color).cgColor)
+            cg.setLineWidth(max(0.8, params.lineWidth * scale * (isFastest ? 0.6 : 0.35)))
+            stroke(points, in: cg)
         }
     }
 

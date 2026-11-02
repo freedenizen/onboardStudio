@@ -702,9 +702,12 @@ The **Track Map** has a Coaching section too, all off until you turn them on: th
 lap's line** drawn dashed beside the outline, so a different line through a corner shows; the lap
 being driven **coloured by time gained and lost** against the reference (red where the gap grew,
 green where it closed, the plain outline where it held); **brake points and slowest points** as a
-circle and a square for both laps; and **Follow the corner in play**, which frames the map on the
-corner from its brake point to its exit and shows the whole circuit on the straights. They read the
-same reference as the callout.
+circle and a square for both laps; **Follow the corner in play**, which frames the map on the
+corner from its brake point to its exit and shows the whole circuit on the straights; and **Every
+lap's line, the quickest brighter**, which draws every other complete lap of the session faintly
+under the outline with the quickest of them at full strength — the spread of lines through each
+corner, and the one that worked, seen rather than inferred. They read the same reference as the
+callout. The Coaching window's corner detail draws the other laps' lines through the corner too.
 
 A lap-axis **Graph** can draw the coaching reference as its ghost instead of the session's best
 lap (Ghost ▸ Coaching reference): the fastest rolling lap, the spliced optimal lap or another
