@@ -78,6 +78,8 @@ swift run onboard coach session.csv                    # where a lap lost time a
 swift run onboard coach session.csv --reference rolling --lap 5 --json   # against the fastest rolling lap, as data
 swift run onboard coach session.csv --lap 5 --markdown                   # the debrief sheet as Markdown
 swift run onboard coach session.csv --lap 5 --align position              # two laps of one session matched by place
+swift run onboard logbook add ~/TrackDays/2026-08-23 --car Miata          # a day's files into the logbook
+swift run onboard logbook list                                            # what the logbook holds
 swift run onboard render --project my.onboardproj --out clips --corners opportunities   # one clip per corner that lost time
 swift run onboard render --project my.onboardproj --out debrief.mp4 --debrief            # cards + the top corners as one video
 swift run onboard render --project my.onboardproj --out debrief.mp4 --debrief --narrate  # the same, read aloud

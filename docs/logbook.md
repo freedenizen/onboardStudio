@@ -52,9 +52,22 @@ sector times per lap (read from the file when the detail pane wants them, #347),
 later build might compute differently from the same file — an entry records what the app read
 when it was added, like a project does, and is re-read only when the user asks.
 
+## Adding a track day (#346)
+
+`TrackDayImport` (`Sources/MediaKit/TrackDayImport.swift`) takes files and folders: folders are
+walked (hidden files and packages left alone) for every importer's extensions plus camera clips;
+each file is hashed first and skipped when the logbook already has those bytes; `FormatDetector`
+names the importer; the session is built with default options and the circuit identified; a file
+with no laps at a circuit whose start/finish the track library knows is read again with that line,
+as adding it to a project would; the car is the batch's, else the last session's at that circuit;
+the driver is the batch's, else the file's, else the last session's. Every file gets a `Report`
+whose `line` is the sentence the sheet and the CLI print. Project ▸ Add Track Day to Logbook… runs
+it off the main thread behind a sheet (`TrackDayImportSheet`); `onboard logbook add` and `list`
+do it on the command line. Under UI tests the app's logbook is a scratch folder
+(`ONBOARD_TEST_LOGBOOK_DIR`), as the templates are.
+
 ## What comes next
 
-#346 adds track days in bulk (files or folders, GoPro clips included, duplicates skipped by hash);
-#347 the Logbook window; #348 conditions; #349 the two-way link with projects; #350 export, import,
+#347 the Logbook window (with drag-and-drop onto it); #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as
 coaching references, trends per corner, car against car, a season summary.

@@ -29,6 +29,15 @@ enum UITestSupport {
         }
     }
 
+    /// `ONBOARD_TEST_LOGBOOK_DIR`: a scratch logbook, so a test never writes a track day into
+    /// the real one. `nil` outside the UI tests.
+    static var logbookDirectory: URL? {
+        guard isActive else { return nil }
+        return ProcessInfo.processInfo.environment["ONBOARD_TEST_LOGBOOK_DIR"].map {
+            URL(fileURLWithPath: $0, isDirectory: true)
+        }
+    }
+
     static func fixture(_ name: String) -> URL? { fixtures?.appending(path: name) }
 
     /// The editor that appeared last. Headless CI runners do not always give the document window
@@ -93,6 +102,9 @@ struct UITestCommands: Commands {
             Button("Add Fixture Data (Noisy CAN)") { add(data: "racechrono-v3-noisy.csv") }
             Button("Add Fixture Data (GPX)") { add(data: "track.gpx") }
             Button("Add Fixture Data (Coaching Laps)") { add(data: "coaching-laps.csv") }
+            Button("Add Fixture Track Day") {
+                if let folder = UITestSupport.fixtures { editor?.trackDayRequest = TrackDayRequest(urls: [folder]) }
+            }
             Button("Add Fixture Image") {
                 if let url = UITestSupport.fixture("arrow.png") { editor?.addImage(at: url) }
             }

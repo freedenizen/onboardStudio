@@ -309,6 +309,19 @@ filled in, so you set a venue up once rather than once a session. Opening a proj
 earlier never applies them: a project renders the way you left it, whatever the app has learned
 since.
 
+### The logbook: every track day in one place
+
+The app keeps a **logbook** of the sessions it has read — which file, where and when it was driven,
+the car, every lap's time, the best, optimal and fastest rolling lap — separately from any project,
+in one small file per session beside the saved tracks, and never uploaded. **Project ▸ Add Track Day
+to Logbook…** takes a day's files or the folders holding them: every telemetry file the app reads
+and every camera clip with GPS in it becomes an entry; the circuit is recognised, the date read
+from the file, the car taken from your last session at that circuit; a file already in the logbook
+is skipped, whatever it is called now. The sheet says what happened to each file in plain words.
+From the command line, `onboard logbook add <files or folders>` (`--car`, `--driver`) and
+`onboard logbook list`. The window that shows it all, and the way from a session into a project,
+come next.
+
 ## 5. Objects
 
 ![A tachometer selected on the preview with handles around it, its label, position, size and scale in the inspector](images/inspector-gauge.jpg)

@@ -55,6 +55,9 @@ class OnboardStudioUITestCase: XCTestCase {
         let templates = FileManager.default.temporaryDirectory.appending(
             path: "onboard-uitests-templates-\(UUID().uuidString)", directoryHint: .isDirectory)
         app.launchEnvironment["ONBOARD_TEST_TEMPLATES_DIR"] = templates.path
+        // And an empty logbook, so a track day added by a test never reaches the real one (#346).
+        app.launchEnvironment["ONBOARD_TEST_LOGBOOK_DIR"] =
+            FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-logbook-\(UUID().uuidString)").path
         // And no measurement of the picture's motion left by an earlier run (#288).
         app.launchEnvironment["ONBOARD_TEST_MOTION_DIR"] =
             FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-motion-\(UUID().uuidString)").path

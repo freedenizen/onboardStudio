@@ -46,6 +46,8 @@ final class EditorModel {
     var pictureToolEntry: PictureToolEntry?
     /// A lap or range to export as a phone clip; the sheet is open while this is set (#151).
     var clipRequest: ClipRequest?
+    /// Files and folders being entered in the logbook; the sheet is open while this is set (#346).
+    var trackDayRequest: TrackDayRequest?
     /// Project ▸ Export Coaching Debrief… is open (#327).
     var showDebrief = false
     var showSaveTemplate = false
@@ -270,12 +272,6 @@ final class EditorModel {
         }
     }
 
-    func forgetTrackDefinition(for id: InputID) {
-        guard let match = circuit(for: id) else { return }
-        try? trackLibrary.remove(id: match.circuit.id)
-        statusMessage = "Forgot the saved settings for \(match.circuit.name)."
-    }
-
     /// Adds an image input and an image object showing it.
     func addImage() {
         guard let url = OpenPanels.chooseImage() else { return }
@@ -385,8 +381,10 @@ extension EditorModel {
         addVideos(at: urls)
     }
 
-    func addData() {
-        guard let url = OpenPanels.chooseData() else { return }
-        addData(at: url)
+    func forgetTrackDefinition(for id: InputID) {
+        guard let match = circuit(for: id) else { return }
+        try? trackLibrary.remove(id: match.circuit.id)
+        statusMessage = "Forgot the saved settings for \(match.circuit.name)."
     }
+
 }
