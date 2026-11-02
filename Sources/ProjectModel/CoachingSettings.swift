@@ -18,6 +18,9 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
         case compositeOptimal
         /// A lap of another data input: another session, or another driver.
         case otherInput(dataInputID: InputID, lap: Int)
+        /// A session in the logbook at the same circuit (#352): its `lap`, else its best lap;
+        /// read in on demand, matched by position as another file's lap is.
+        case logbook(entryID: UUID, lap: Int?)
     }
 
     /// The data input the lap comes from.

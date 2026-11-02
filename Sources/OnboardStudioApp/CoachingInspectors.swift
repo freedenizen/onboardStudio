@@ -1,3 +1,4 @@
+import MediaKit
 import ProjectModel
 import SwiftUI
 
@@ -19,6 +20,9 @@ struct CornerCalloutInspector: View {
         case .fastestRolling: return "the fastest rolling lap"
         case .compositeOptimal: return "the optimal lap"
         case .otherInput(let id, let lap): return "\(editor.project.input(id)?.label ?? "another file") lap \(lap)"
+        case .logbook(let entryID, let lap):
+            return LogbookModel.shared.entries.first { $0.id == entryID }
+                .map { LogbookReferences.phrase(for: $0, lap: lap) } ?? "a logbook session"
         }
     }
 

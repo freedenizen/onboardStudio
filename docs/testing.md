@@ -78,6 +78,7 @@ swift run onboard coach session.csv                    # where a lap lost time a
 swift run onboard coach session.csv --reference rolling --lap 5 --json   # against the fastest rolling lap, as data
 swift run onboard coach session.csv --lap 5 --markdown                   # the debrief sheet as Markdown
 swift run onboard coach session.csv --lap 5 --align position              # two laps of one session matched by place
+swift run onboard coach session.csv --reference logbook:pb                # against the logbook's personal best here
 swift run onboard logbook add ~/TrackDays/2026-08-23 --car Miata          # a day's files into the logbook
 swift run onboard logbook list                                            # what the logbook holds
 swift run onboard logbook export ~/Desktop/Logbook --with-files            # the logbook as a folder, data files beside

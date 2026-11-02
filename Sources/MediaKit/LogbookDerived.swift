@@ -6,7 +6,7 @@ import TelemetryKit
 /// `{visits}` for the circuit the project's data is at, and the personal-best lap's profile for a
 /// timer measuring against it. Read only when the project asks (`usesLogbookKeys`,
 /// `needsPersonalBest`), so a project that does not pays nothing.
-enum LogbookDerived {
+public enum LogbookDerived {
     struct Result: Sendable {
         var details: [String: String] = [:]
         var personalBests: [InputID: LapProfile] = [:]
@@ -14,7 +14,7 @@ enum LogbookDerived {
 
     /// The key the logbook files a session under, for a data input: the circuit the project
     /// recorded, else the one the session looks like, else the file's track name, else its name.
-    static func circuitKey(for input: Input, session: TelemetrySession, url: URL) -> String {
+    public static func circuitKey(for input: Input, session: TelemetrySession, url: URL) -> String {
         if let recorded = input.dataSettings?.circuitID { return recorded }
         if let match = CircuitCatalog.identify(session) { return match.circuit.id }
         if let name = session.info.trackName, !name.isEmpty { return name }

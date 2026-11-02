@@ -105,6 +105,19 @@ struct UITestCommands: Commands {
             Button("Add Fixture Track Day") {
                 if let folder = UITestSupport.fixtures { editor?.trackDayRequest = TrackDayRequest(urls: [folder]) }
             }
+            // A second visit to the coaching fixture's "circuit": the same file name, one row
+            // shorter, so it is another session at the same place (#352).
+            Button("Add Fixture Second Visit") {
+                guard let fixture = UITestSupport.fixture("coaching-laps.csv"),
+                    let text = try? String(contentsOf: fixture, encoding: .utf8)
+                else { return }
+                let folder = FileManager.default.temporaryDirectory.appending(path: "second-visit-\(UUID().uuidString)")
+                try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                let copy = folder.appending(path: "coaching-laps.csv")
+                let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+                try? lines.dropLast(2).joined(separator: "\n").write(to: copy, atomically: true, encoding: .utf8)
+                editor?.trackDayRequest = TrackDayRequest(urls: [copy])
+            }
             Button("Add Fixture Image") {
                 if let url = UITestSupport.fixture("arrow.png") { editor?.addImage(at: url) }
             }
