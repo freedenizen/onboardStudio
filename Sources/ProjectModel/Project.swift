@@ -98,6 +98,8 @@ public struct Project: Hashable, Codable, Sendable {
     public var lapComparison: LapComparisonSettings?
     /// What the Coaching window reads (#321); `nil` until it has been opened for this project.
     public var coaching: CoachingSettings?
+    /// What to try next session (#330); `nil` until a plan is made.
+    public var plan: NextSessionPlan?
 
     public init(
         schemaVersion: Int = Project.currentSchemaVersion,
@@ -109,7 +111,8 @@ public struct Project: Hashable, Codable, Sendable {
         markers: [Marker] = [],
         details: ProjectDetails = ProjectDetails(),
         lapComparison: LapComparisonSettings? = nil,
-        coaching: CoachingSettings? = nil
+        coaching: CoachingSettings? = nil,
+        plan: NextSessionPlan? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.settings = settings
@@ -121,11 +124,12 @@ public struct Project: Hashable, Codable, Sendable {
         self.details = details
         self.lapComparison = lapComparison
         self.coaching = coaching
+        self.plan = plan
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, settings, inputs, displayObjects, export, timeline, markers, details, lapComparison
-        case coaching
+        case coaching, plan
     }
 
     public init(from decoder: any Decoder) throws {
@@ -145,6 +149,8 @@ public struct Project: Hashable, Codable, Sendable {
         lapComparison = try c.decodeIfPresent(LapComparisonSettings.self, forKey: .lapComparison)
         // Absent before the Coaching window existed; it changes no render either way.
         coaching = try c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
+        // Absent before plans existed; a plan changes no render.
+        plan = try c.decodeIfPresent(NextSessionPlan.self, forKey: .plan)
     }
 
     /// The objects as they appear at project `time`, with timeline overrides applied.

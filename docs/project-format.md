@@ -139,6 +139,12 @@ each join — and `comparedLap.lap` a placeholder; absent means the lap itself.
 comes back on reopening, and nothing in it changes how the project renders; absent means the
 window has not been opened for this project.
 
+`plan` (optional, #330) is what to try next session:
+`{ "experiments": [{ "id", "cornerLabel": "4", "text": "…" }], "fromLap": 5, "referencePhrase": "your best lap", "made": <date> }`.
+Written by the Coaching window's Make a Plan and edited by the user; absent means no plan. It
+changes no render. The same structure is kept as `plan` on the circuit's `.onboardtrack`
+definition, which is how the next project at that circuit learns what was planned.
+
 `settings.typeface` (optional, `{ "family", "face" }`) is the font for every object that has not
 chosen its own `typeface`; absent means the built-in fonts.
 

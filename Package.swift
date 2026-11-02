@@ -60,7 +60,7 @@ let package = Package(
         ),
 
         // MARK: Tests
-        .testTarget(name: "ProjectModelTests", dependencies: ["ProjectModel"], swiftSettings: strict),
+        .testTarget(name: "ProjectModelTests", dependencies: ["ProjectModel", "Importers"], swiftSettings: strict),
         .testTarget(name: "TelemetryKitTests", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .testTarget(
             name: "ImportersTests",

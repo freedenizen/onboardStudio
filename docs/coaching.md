@@ -371,6 +371,17 @@ motion through the braking zone and the held frame of the reference's brake poin
 the issue are not in this version; they need a per-piece playback rate the composition does not
 have yet and are filed separately.
 
+## Between sessions (v0.31.0)
+
+**Next-session plan** (#330, `ProjectModel/NextSessionPlan.swift`): `NextSessionPlan.suggested(from:)`
+takes the top opportunities as `PlannedExperiment`s — the corner's label and the note's suggestion,
+nothing reworded — and the driver edits them in the Coaching window's Next Session section, each
+change one undo on the document. `Project.plan` keeps it with the project; `TrackDefinition.plan`
+keeps the latest for the circuit, written on every change when a circuit is recognised, so the
+next project there shows it as "last time you planned to try…" with Use It Again. The plan's date
+is whole seconds, because the track library writes ISO 8601 and a plan read back must still equal
+the one in the project.
+
 **Coaching Debrief** (#327, `MediaKit/Debrief.swift`, `DebriefExporter.swift`): Project ▸ Export
 Coaching Debrief… writes one video from a `DebriefPlan` — a title card (track, day, best, optimal
 and fastest rolling lap, and how far behind the reference the lap read finished), the top

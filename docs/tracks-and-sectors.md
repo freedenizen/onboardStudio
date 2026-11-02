@@ -85,6 +85,12 @@ project does none of this and never will. A definition saved last week must not 
 project made last month renders — a project-wide rule, and the reason
 `DataInputSettings.circuitID` is left as it was found rather than recomputed on open.
 
+**A definition also remembers the plan** (#330): `TrackDefinition.plan` is the next-session plan
+the Coaching window last made at that circuit, written whenever the plan in a project changes and
+the circuit is recognised (`EditorModel.rememberPlan`), and read — never applied — when a project
+at the same circuit opens the Coaching window, as "Last time at Sonoma you planned to try…". It
+rides along when a definition is exported and imported.
+
 The inspector shows the match with its distance and its runner-up, says so when the match is not
 confident, and offers *Not This Circuit* and a search box. Nothing is insisted on.
 
