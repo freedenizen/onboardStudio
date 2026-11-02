@@ -73,9 +73,15 @@ struct LogbookWindow: View {
     @SceneStorage("logbook.view") private var view: LogbookView = .sessions
 
     enum LogbookView: String, CaseIterable, Identifiable {
-        case sessions, trends
+        case sessions, trends, season
         var id: String { rawValue }
-        var title: String { self == .sessions ? "Sessions" : "Trends" }
+        var title: String {
+            switch self {
+            case .sessions: "Sessions"
+            case .trends: "Trends"
+            case .season: "Season"
+            }
+        }
     }
     @State var scope: LogbookScope = .all
     @State private var search = ""
@@ -104,7 +110,10 @@ struct LogbookWindow: View {
                         }
                         .pickerStyle(.segmented)
                         .labelsHidden()
-                        .help("The sessions, or how the lap times and corners moved across visits to a circuit")
+                        .help(
+                            "The sessions; how the lap times and corners moved across visits to a circuit; "
+                                + "or a year on one page"
+                        )
                         .accessibilityIdentifier("logbook.view")
                     }
                     ToolbarItem(placement: .primaryAction) {
@@ -214,6 +223,13 @@ struct LogbookWindow: View {
                     if !urls.isEmpty { trackDay = TrackDayRequest(urls: urls) }
                 }
             }
+        } else if view == .season {
+            SeasonView(
+                entries: model.entries, plans: (active.editor?.trackLibrary ?? TrackLibrary()).all(),
+                onOpen: { id in
+                    selection = id
+                    view = .sessions
+                })
         } else if view == .trends {
             LogbookTrendsView(
                 entries: model.entries, circuitKey: trendsCircuit?.id, circuitTitle: trendsCircuit?.title ?? "",

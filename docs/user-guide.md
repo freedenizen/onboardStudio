@@ -359,6 +359,13 @@ reads each car's best lap against the other's: which is quicker and by how much,
 over distance, and a sentence per corner naming the car — where one brakes later, carries more
 speed through the apex or leaves faster.
 
+**Season** (the third view) sums a year up — pick the year and, with more than one car, the car:
+track days, sessions, laps and kilometres; personal bests set; the best at each circuit with its
+date, car and visits, starred when it was new; a chart of every circuit's best by visit; the most
+improved and the most costly corner against the visit before; and the plans still open at the
+circuits you visited. **Export as PDF…** for paper, **Export Card…** for a 1080 × 1920 picture to
+post.
+
 The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
 folder of one file per session (narrow the table first to export only a circuit, a car or a year),
 **…with Data Files** copies the data files in beside them, **Export Sessions as CSV…** and
