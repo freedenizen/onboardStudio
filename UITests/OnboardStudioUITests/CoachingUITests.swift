@@ -55,6 +55,19 @@ final class CoachingUITests: OnboardStudioUITestCase {
         let best = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "value CONTAINS %@", "your best lap"), object: headline)
         XCTAssertEqual(XCTWaiter().wait(for: [best], timeout: Self.timeout * 2), .completed, headlineText())
+        // Lining the laps up by position is a choice and an undo step too (#333).
+        let byPosition = app.checkBoxes["coaching.alignByPosition"]
+        XCTAssertTrue(byPosition.waitForExistence(timeout: Self.timeout), "No Line up by position toggle")
+        byPosition.click()
+        let positioned = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS %@", "by position"),
+            object: app.staticTexts["coaching.alignment"])
+        XCTAssertEqual(XCTWaiter().wait(for: [positioned], timeout: Self.timeout * 2), .completed)
+        menu("Edit", "Undo Change Coaching Alignment")
+        let distanced = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS %@", "by distance"),
+            object: app.staticTexts["coaching.alignment"])
+        XCTAssertEqual(XCTWaiter().wait(for: [distanced], timeout: Self.timeout * 2), .completed)
         menu("Edit", "Undo Change Coaching Lap")
         let notSlow = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "NOT (value BEGINSWITH %@)", "Lap 2 "), object: headline)

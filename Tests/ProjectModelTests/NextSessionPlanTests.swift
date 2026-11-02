@@ -26,6 +26,23 @@ struct NextSessionPlanTests {
         #expect(NextSessionPlan.suggested(from: analysis, lapNumber: 2, count: 1).experiments.count == 1)
     }
 
+    /// #333: the option the window offers, on two laps of one session.
+    @Test func twoLapsOfOneSessionCanBeLinedUpByPosition() throws {
+        let session = try RaceRenderCSVImporter().importSession(at: Self.fixture, options: SessionBuilder.Options())
+        let slow = session.laps[1]
+        var options = CoachingOptions()
+        options.alignment = .byPosition
+        let byPosition = try #require(
+            CoachingAnalysis.analyse(lap: slow, reference: .sessionBest, in: session, options: options))
+        let byDistance = try #require(CoachingAnalysis.analyse(lap: slow, reference: .sessionBest, in: session))
+        #expect(byPosition.delta.alignment == .byPosition)
+        #expect(byDistance.delta.alignment == .distance)
+        #expect(byPosition.alignmentLine.hasPrefix("Aligned by position"))
+        // The same line driven twice reads the same either way, to within the matching step.
+        #expect(abs(byPosition.totalLoss - byDistance.totalLoss) < 0.3)
+        #expect(byPosition.corners.count == byDistance.corners.count)
+    }
+
     @Test func thePlanRoundTripsInTheProjectAndIsAbsentInOlderFiles() throws {
         let plan = NextSessionPlan(
             experiments: [

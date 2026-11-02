@@ -25,10 +25,27 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
     /// The lap to read; `nil` follows the playhead.
     public var lap: Int?
     public var reference: Reference
+    /// Line the two laps up by place rather than metre for metre (#333): for two laps of one
+    /// session driven on deliberately different lines, where distance into the lap drifts
+    /// through the corner. Off is how every reading was made before it existed.
+    public var alignByPosition: Bool
 
-    public init(dataInputID: InputID, lap: Int? = nil, reference: Reference = .sessionBest) {
+    public init(
+        dataInputID: InputID, lap: Int? = nil, reference: Reference = .sessionBest, alignByPosition: Bool = false
+    ) {
         self.dataInputID = dataInputID
         self.lap = lap
         self.reference = reference
+        self.alignByPosition = alignByPosition
+    }
+
+    private enum CodingKeys: String, CodingKey { case dataInputID, lap, reference, alignByPosition }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dataInputID = try c.decode(InputID.self, forKey: .dataInputID)
+        lap = try c.decodeIfPresent(Int.self, forKey: .lap)
+        reference = try c.decodeIfPresent(Reference.self, forKey: .reference) ?? .sessionBest
+        alignByPosition = try c.decodeIfPresent(Bool.self, forKey: .alignByPosition) ?? false
     }
 }

@@ -382,6 +382,13 @@ next project there shows it as "last time you planned to try…" with Use It Aga
 is whole seconds, because the track library writes ISO 8601 and a plan read back must still equal
 the one in the project.
 
+**Lining up two laps of one session by position** (#333): the window's *Line up by position*
+toggle sets `CoachingSettings.alignByPosition`, which the window, the compile (`CoachingTracks`)
+and `onboard coach --align position` turn into `CoachingOptions.alignment = .byPosition` — the
+matcher Milestone A built for another session's lap, now a choice for one session. Off by default
+and absent in older settings, so nothing already read reads differently. Disabled for another
+file's lap, which is always matched by position.
+
 **Coaching sheet** (#331, `ProjectModel/CoachingSheet.swift`, app `CoachingSheetExport.swift`): the
 reading as a page — `CoachingSheet` holds the headline, the top opportunities, the corner rows,
 the plan and the reference lap's outline scaled into a unit square with each corner's apex marked,

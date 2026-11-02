@@ -26,15 +26,21 @@ enum CoachingTracks {
                 tracks[input.id] = cached
                 continue
             }
-            let reference: CoachingSettings.Reference =
-                settings?.dataInputID == input.id ? (settings?.reference ?? .sessionBest) : .sessionBest
+            let own = settings?.dataInputID == input.id ? settings : nil
+            let reference = own?.reference ?? .sessionBest
+            var options = CoachingOptions()
+            if own?.alignByPosition == true { options.alignment = .byPosition }
             let track: CoachingTrack?
             switch reference {
-            case .sessionBest: track = CoachingTrack.make(session: session, reference: .sessionBest, units: units)
-            case .lap(let number): track = CoachingTrack.make(session: session, reference: .lap(number), units: units)
-            case .fastestRolling: track = CoachingTrack.make(session: session, reference: .fastestRolling, units: units)
+            case .sessionBest:
+                track = CoachingTrack.make(session: session, reference: .sessionBest, units: units, options: options)
+            case .lap(let number):
+                track = CoachingTrack.make(session: session, reference: .lap(number), units: units, options: options)
+            case .fastestRolling:
+                track = CoachingTrack.make(session: session, reference: .fastestRolling, units: units, options: options)
             case .compositeOptimal:
-                track = CoachingTrack.make(session: session, reference: .compositeOptimal, units: units)
+                track = CoachingTrack.make(
+                    session: session, reference: .compositeOptimal, units: units, options: options)
             case .otherInput(let id, let number):
                 guard let other = sessions[id], let otherInput = project.input(id),
                     let lap = other.laps.first(where: { $0.number == number }),
@@ -45,7 +51,7 @@ enum CoachingTracks {
                 }
                 track = CoachingTrack.make(
                     session: session, reference: profile, referencePhrase: "\(otherInput.label) lap \(number)",
-                    sameSession: false, units: units)
+                    sameSession: false, units: units, options: options)
             }
             if let track { tracks[input.id] = track }
         }
