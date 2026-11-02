@@ -56,6 +56,17 @@ struct Render: AsyncParsableCommand {
             """)
     var corners: String?
 
+    @Flag(
+        name: .long,
+        help: """
+            Write the coaching debrief as one video (project only): a title card, the corners of the coaching lap \
+            that lost the most time as clips in the project's layout, and a closing card with what to try next.
+            """)
+    var debrief = false
+
+    @Option(name: .long, help: "With --debrief: how many corners to include (default 3).")
+    var debriefCorners = 3
+
     @Flag(name: .long, help: "With --laps each: also the out-lap and in-lap, which do not start or end at the line.")
     var includePartialLaps = false
 
@@ -104,6 +115,7 @@ struct Render: AsyncParsableCommand {
         var compiled: CompiledComposition
         var settings: ExportSettings
         var batch: [BatchFile] = []
+        var debriefPlan: (plan: DebriefPlan, project: Project)?
         if let project {
             guard video == nil else { throw ValidationError("Use either --video or --project, not both.") }
             let result = try await loadProject(project, range: exportRange)
@@ -111,6 +123,7 @@ struct Render: AsyncParsableCommand {
             settings = result.settings
             exportRange = result.range
             batch = result.batch
+            debriefPlan = result.debrief
         } else {
             guard let video else { throw ValidationError("Provide --video or --project.") }
             let inputURL = URL(fileURLWithPath: video)
@@ -143,6 +156,11 @@ struct Render: AsyncParsableCommand {
             print("Project:  \(fmt(compiled.duration)) s\(rangeText)")
         }
 
+        if let debriefPlan {
+            try await exportDebrief(
+                debriefPlan.plan, of: debriefPlan.project, compiled, settings: settings, to: outputURL)
+            return
+        }
         guard !batch.isEmpty, let project else {
             try await export(compiled, settings: settings, range: exportRange, to: outputURL)
             return
@@ -155,6 +173,31 @@ struct Render: AsyncParsableCommand {
             if !json { print("\(file.title): \(fmt(file.range.lowerBound))–\(fmt(file.range.upperBound)) s") }
             try await export(compiled, settings: settings, range: file.range, to: url)
         }
+    }
+
+    /// `--debrief`: the segments, then one file.
+    private func exportDebrief(
+        _ plan: DebriefPlan, of project: Project, _ compiled: CompiledComposition, settings: ExportSettings,
+        to outputURL: URL
+    ) async throws {
+        if !json {
+            print("Debrief:  \(plan.segmentTitles.joined(separator: " · "))  (\(fmt(plan.duration)) s)")
+        }
+        var lastPrinted = -1
+        for try await progress in DebriefExporter.export(
+            compiled, project: project, plan: plan, settings: settings, to: outputURL)
+        {
+            if json {
+                print(#"{"fraction":\#(progress.fraction),"time":\#(progress.currentTime)}"#)
+            } else {
+                let percent = Int(progress.fraction * 100)
+                if percent / 10 != lastPrinted / 10 {
+                    print("  \(percent)%")
+                    lastPrinted = percent
+                }
+            }
+        }
+        if !json { print("Wrote \(outputURL.path)") }
     }
 
     /// One file of a batch: a lap or a corner.
@@ -195,19 +238,25 @@ struct Render: AsyncParsableCommand {
         var range: ClosedRange<Double>?
         /// The files of `--laps each` or `--corners`; empty otherwise.
         var batch: [BatchFile] = []
+        /// `--debrief`: the pieces of the one video, and the project they are cut from.
+        var debrief: (plan: DebriefPlan, project: Project)?
     }
 
 }
 
 extension Render {
     private func loadProject(_ path: String, range: ClosedRange<Double>?) async throws -> LoadedForRender {
-        var loaded = try await ProjectCompiler.load(URL(fileURLWithPath: path))
+        // The template goes on before the load, which reads what the objects need: the map
+        // backgrounds and the coaching track.
+        let location = ProjectLocation(URL(fileURLWithPath: path))
+        var project = try location.load()
         if let template {
             let chosen =
                 try ProjectTemplate.builtIn.first { $0.name.caseInsensitiveCompare(template) == .orderedSame }
                 ?? ProjectTemplate(data: Data(contentsOf: URL(fileURLWithPath: template)))
-            chosen.apply(to: &loaded.project)
+            chosen.apply(to: &project)
         }
+        var loaded = try await ProjectCompiler.load(project, location: location)
         // Lights and steering wheels without a channel take the one this logger offers.
         loaded.project.bindEmptyChannels(loaded.channelSummaries)
         for (id, problem) in loaded.problems {
@@ -218,7 +267,12 @@ extension Render {
         let settings = resolveProjectSettings(loaded.project)
         var exportRange = range
         var batch: [BatchFile] = []
-        if let corners {
+        var debriefPlan: DebriefPlan?
+        if debrief {
+            guard let plan = DebriefPlan.make(in: loaded, duration: compiled.duration, cornerCount: debriefCorners)
+            else { throw ValidationError("No lap could be read for a debrief from the project's data.") }
+            debriefPlan = plan
+        } else if let corners {
             let onlyOpportunities: Bool
             switch corners {
             case "all": onlyOpportunities = false
@@ -249,7 +303,9 @@ extension Render {
             let counts = "\(loaded.project.inputs.count) inputs, \(loaded.sessions.count) data sessions"
             print("Project:  \(counts); objects: \(objects)")
         }
-        return LoadedForRender(compiled: compiled, settings: settings, range: exportRange, batch: batch)
+        return LoadedForRender(
+            compiled: compiled, settings: settings, range: exportRange, batch: batch,
+            debrief: debriefPlan.map { ($0, loaded.project) })
     }
 
     /// Project export settings with CLI overrides applied.

@@ -40,6 +40,36 @@ extension ProjectCompiler {
         -> [CornerExport]
     {
         guard case .eachCorner(let onlyOpportunities) = range else { return [] }
+        guard let read = coachingLap(in: loaded) else { return [] }
+        let (input, lap, analysis) = (read.input, read.lap, read.analysis)
+        let corners = onlyOpportunities ? analysis.opportunities.map(\.corner) : analysis.corners
+        return corners.compactMap { comparison in
+            let metrics = comparison.lap
+            let from = lap.start + analysis.lap.elapsed(atDistance: metrics.phaseStart) - cornerClipLeadSeconds
+            let exit = analysis.lap.elapsed(atDistance: metrics.corner.endDistance)
+            let to = lap.start + exit + cornerClipHoldSeconds
+            let start = min(max(input.sync.projectTime(forInputTime: from), 0), duration)
+            let stop = min(max(input.sync.projectTime(forInputTime: to), start), duration)
+            guard stop > start else { return nil }
+            return CornerExport(
+                index: comparison.index, label: comparison.label, range: start...stop,
+                timeLost: comparison.timeLost)
+        }
+    }
+
+    /// The lap a coaching export reads, and its reading.
+    public struct CoachingLap: Sendable {
+        public let input: Input
+        public let session: TelemetrySession
+        public let track: CoachingTrack
+        public let lap: Lap
+        public let analysis: CoachingAnalysis
+    }
+
+    /// The coaching lap of the first data input that reads: the lap chosen in Project ▸ Coaching…,
+    /// else the lap being compared, else the first lap read, against the project's reference.
+    /// The track is the compile's when it carried one, else read now.
+    public static func coachingLap(in loaded: LoadedProject) -> CoachingLap? {
         let project = loaded.project
         for input in project.dataInputs {
             guard let session = loaded.sessions[input.id] else { continue }
@@ -52,22 +82,8 @@ extension ProjectCompiler {
                 ?? project.lapComparison.flatMap { $0.lap.dataInputID == input.id ? $0.lap.lap : nil }
             let lap = track.laps.first { $0.number == chosen } ?? track.laps[0]
             guard let analysis = track.analyses[lap.number] else { continue }
-            let corners =
-                onlyOpportunities ? analysis.opportunities.map(\.corner) : analysis.corners
-            _ = session
-            return corners.compactMap { comparison in
-                let metrics = comparison.lap
-                let from = lap.start + analysis.lap.elapsed(atDistance: metrics.phaseStart) - cornerClipLeadSeconds
-                let exit = analysis.lap.elapsed(atDistance: metrics.corner.endDistance)
-                let to = lap.start + exit + cornerClipHoldSeconds
-                let start = min(max(input.sync.projectTime(forInputTime: from), 0), duration)
-                let stop = min(max(input.sync.projectTime(forInputTime: to), start), duration)
-                guard stop > start else { return nil }
-                return CornerExport(
-                    index: comparison.index, label: comparison.label, range: start...stop,
-                    timeLost: comparison.timeLost)
-            }
+            return CoachingLap(input: input, session: session, track: track, lap: lap, analysis: analysis)
         }
-        return []
+        return nil
     }
 }

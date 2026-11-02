@@ -722,6 +722,19 @@ corners where time went against the reference, biggest loss first. With a Compar
 a Corner Callout in the project that is a corner-by-corner debrief, one file per corner, from one
 Export. On the command line: `onboard render --project X --out folder --corners all|opportunities`.
 
+**Export Coaching Debrief…** (Project menu) writes the session as one short video to watch
+before the next one: a title card with the track, the day, the best lap, the optimal lap and the
+fastest rolling lap; then the corners of the coaching lap that cost the most against the reference
+(three at first; **Corners** sets how many), biggest loss first, each as a clip in your project's
+own layout from two seconds before the brake point to two seconds after the corner; then a closing
+card, *Next session, try…*, with one experiment per corner from the Coaching window's notes. The
+sheet lists the pieces and the running time before you start; one progress bar covers them all,
+and the pieces are joined into `<project> – Coaching Debrief.mp4` in the project's size and codec.
+**Project ▸ Apply Template ▸ Coaching Debrief** gives the clips a Corner Callout, a track map that
+follows the corner with the reference line and both brake points, the lap timer, the delta and the
+speed; a Compare Laps layout gives them both laps' pictures. The project itself is not changed.
+From the command line: `onboard render --project X --out debrief.mp4 --debrief`.
+
 **Upload to YouTube** signs in with a short code and uploads with automatic resume; it needs a
 one-time Google API setup described in [youtube.md](youtube.md).
 

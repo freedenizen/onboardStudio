@@ -224,6 +224,11 @@ struct EditorCommands: Commands {
                 .disabled(
                     editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
                         || editor?.canExport == false)
+            // The session's debrief as one video: cards and the corners that cost the most (#327).
+            Button("Export Coaching Debrief…") { editor?.showDebrief = true }
+                .disabled(
+                    editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
+                        || editor?.canExport == false)
             Divider()
             // Two laps side by side, kept level by distance (#154).
             Button("Compare Laps…") { editor?.showCompareLaps = true }

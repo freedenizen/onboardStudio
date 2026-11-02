@@ -46,6 +46,8 @@ final class EditorModel {
     var pictureToolEntry: PictureToolEntry?
     /// A lap or range to export as a phone clip; the sheet is open while this is set (#151).
     var clipRequest: ClipRequest?
+    /// Project ▸ Export Coaching Debrief… is open (#327).
+    var showDebrief = false
     var showSaveTemplate = false
     /// Project ▸ Compare Laps… is open (#154).
     var showCompareLaps = false

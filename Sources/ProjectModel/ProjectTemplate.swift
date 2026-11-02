@@ -168,8 +168,37 @@ public enum ProjectTemplateError: Error, CustomStringConvertible {
 extension ProjectTemplate {
     /// Templates shipped with the app.
     public static let builtIn: [ProjectTemplate] = [
-        classicDash, glassCockpit, cockpitWithGraph, minimal, dataWall, social,
+        classicDash, glassCockpit, cockpitWithGraph, minimal, dataWall, social, coachingDebrief,
     ]
+
+    /// The look of a coaching debrief's corner clips (#327): the camera, a Corner Callout with
+    /// the note for the corner in play, a track map that follows the corner with the reference
+    /// line, the gains and losses and both brake points, the lap timer, the delta to the best lap
+    /// and the speed. What Export Coaching Debrief… cuts the corners from.
+    public static let coachingDebrief: ProjectTemplate = {
+        var map = TrackMapParams()
+        map.showReferenceLine = true
+        map.colorByDelta = true
+        map.showBrakeMarks = true
+        map.followCorner = true
+        return make(
+            "Coaching Debrief",
+            [
+                object(
+                    "Lap", .timer(TimerParams(mode: .currentLap)),
+                    UnitRect(x: 0.03, y: 0.04, width: 0.26, height: 0.08)),
+                object(
+                    "Delta", .timer(TimerParams(mode: .deltaToBest, showLapNumber: false, label: "DELTA")),
+                    UnitRect(x: 0.31, y: 0.04, width: 0.18, height: 0.08)),
+                object("Map", .trackMap(map), UnitRect(x: 0.71, y: 0.04, width: 0.26, height: 0.42)),
+                object(
+                    "Corner Callout", .cornerCallout(CornerCalloutParams()),
+                    UnitRect(x: 0.03, y: 0.56, width: 0.4, height: 0.32)),
+                object(
+                    "Speed", .textData(TextDataParams(channel: "speed", label: "SPEED", alignment: .trailing)),
+                    UnitRect(x: 0.78, y: 0.86, width: 0.19, height: 0.09)),
+            ])
+    }()
 
     private static func make(_ name: String, _ objects: [DisplayObject]) -> ProjectTemplate {
         let camera = DisplayObject(label: "Camera", inputID: nil, frame: .full, kind: .video(VideoObjectParams()))
