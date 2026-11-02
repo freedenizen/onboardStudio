@@ -137,6 +137,31 @@ public struct CoachingAnalysis: Sendable {
             sameSession: true, units: units, options: options)
     }
 
+    /// A reference read once and shared by every lap measured against it: its corners and how it
+    /// took them, how the notes name it, and the session's consistency when it is the same session
+    /// (`CoachingTrack` reads a whole session this way).
+    public struct ReferenceReading: Sendable {
+        public let profile: LapProfile
+        public let corners: [Corner]
+        public let metrics: [CornerMetrics]
+        public let phrase: String
+        public let sameSession: Bool
+        public let consistency: ConsistencyStats?
+
+        /// `consistency` is read from `session` when `sameSession`, over the reference's corners.
+        public init(
+            profile: LapProfile, phrase: String, sameSession: Bool, session: TelemetrySession,
+            options: CoachingOptions = CoachingOptions()
+        ) {
+            self.profile = profile
+            self.phrase = phrase
+            self.sameSession = sameSession
+            corners = CornerDetector.corners(of: profile, options: options.corners)
+            metrics = CornerMetrics.measure(corners: corners, of: profile, options: options.metrics)
+            consistency = sameSession ? ConsistencyStats.measure(in: session, corners: corners, options: options) : nil
+        }
+    }
+
     /// A lap profile against a reference profile, from the same session or another: `sameSession`
     /// picks distance alignment when the options leave it open, and lets consistency be read
     /// from `session`'s other laps.
@@ -144,10 +169,24 @@ public struct CoachingAnalysis: Sendable {
         lap: LapProfile, in session: TelemetrySession, reference: LapProfile, referencePhrase: String,
         sameSession: Bool, units: CoachingUnits = .metric, options: CoachingOptions = CoachingOptions()
     ) -> CoachingAnalysis? {
+        let reading = ReferenceReading(
+            profile: reference, phrase: referencePhrase, sameSession: sameSession, session: session, options: options)
+        return analyse(lap: lap, in: session, against: reading, units: units, options: options)
+    }
+
+    /// The reading with the reference already read.
+    public static func analyse(
+        lap: LapProfile, in session: TelemetrySession, against reading: ReferenceReading, units: CoachingUnits,
+        options: CoachingOptions
+    ) -> CoachingAnalysis? {
+        let reference = reading.profile
+        let referencePhrase = reading.phrase
+        let sameSession = reading.sameSession
+        let consistency = reading.consistency
         let alignment = options.alignment ?? (sameSession ? .distance : .byPosition)
         guard let delta = LapDeltaTrace(lap: lap, reference: reference, alignment: alignment) else { return nil }
-        let referenceCorners = CornerDetector.corners(of: reference, options: options.corners)
-        let referenceMetrics = CornerMetrics.measure(corners: referenceCorners, of: reference, options: options.metrics)
+        let referenceCorners = reading.corners
+        let referenceMetrics = reading.metrics
         // The same corners on the lap, wherever the alignment says they are.
         let lapCorners = referenceCorners.map { corner in
             Corner(
@@ -159,9 +198,6 @@ public struct CoachingAnalysis: Sendable {
         let lapMetrics = CornerMetrics.measure(corners: lapCorners, of: lap, options: options.metrics)
         let comparisons = CornerComparison.compare(
             lap: lapMetrics, reference: referenceMetrics, delta: delta, labels: session.cornerLabels)
-        let consistency =
-            sameSession
-            ? ConsistencyStats.measure(in: session, corners: referenceCorners, options: options) : nil
         var warnings: [CoachingWarning] = []
         if delta.confidence == 0 && alignment != delta.alignment { warnings.append(.approximateAlignment) }
         if lapMetrics.contains(where: { $0.brakeSource == .speedTrace }) { warnings.append(.pedalsFromSpeedTrace) }
@@ -253,7 +289,9 @@ public enum Coaching {
     }
 
     /// What kind of difference the worst phase shows, by the first rule that fits.
-    static func kind(of comparison: CornerComparison, phase: CornerPhase, options: CoachingOptions) -> OpportunityKind {
+    public static func kind(
+        of comparison: CornerComparison, phase: CornerPhase, options: CoachingOptions
+    ) -> OpportunityKind {
         let differences = Differences(comparison, options: options)
         switch phase {
         case .braking: return brakingKind(differences, options: options)

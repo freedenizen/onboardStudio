@@ -189,6 +189,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
     case statCard(StatCardParams)
     case sectorPanel(SectorPanelParams)
     case steeringWheel(SteeringWheelParams)
+    case cornerCallout(CornerCalloutParams)
 
     public var typeName: String {
         switch self {
@@ -212,6 +213,7 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         case .lapPanel: "Timing Panel"
         case .statCard: "Stat Card"
         case .sectorPanel: "Sector Times"
+        case .cornerCallout: "Corner Callout"
         case .steeringWheel: "Steering Wheel"
         }
     }

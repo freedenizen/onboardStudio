@@ -68,7 +68,7 @@ let package = Package(
             resources: [.copy("../Fixtures")],
             swiftSettings: strict
         ),
-        .testTarget(name: "RenderKitTests", dependencies: ["RenderKit"], swiftSettings: strict),
+        .testTarget(name: "RenderKitTests", dependencies: ["RenderKit", "Importers"], swiftSettings: strict),
         .testTarget(name: "GPMFKitTests", dependencies: ["GPMFKit"], swiftSettings: strict),
         .testTarget(
             name: "MediaKitTests",

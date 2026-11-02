@@ -66,7 +66,7 @@ public enum CoachingNotes {
     }
 
     /// The differences worth saying, in driving order: brakes, minimum, throttle, exit.
-    static func evidence(_ context: Context) -> [String] {
+    public static func evidence(_ context: Context) -> [String] {
         let format = context.format
         let options = context.options
         let lap = context.lap
@@ -115,7 +115,7 @@ public enum CoachingNotes {
         return lines
     }
 
-    static func suggestion(_ context: Context) -> String {
+    public static func suggestion(_ context: Context) -> String {
         let format = context.format
         let phrase = context.referencePhrase
         switch context.kind {

@@ -38,6 +38,9 @@ public enum ProjectCompiler {
         /// The global attribute mapping the sessions were imported under. It lives in preferences,
         /// not in the project, so it has to be remembered here to know when a session is stale.
         public var globalAttributeMappings = AttributeMappingTable()
+        /// Every lap of each data input against the project's coaching reference (#323), read
+        /// once here and handed to the renderers; empty when nothing in the project draws from it.
+        public var coaching: [InputID: CoachingTrack] = [:]
 
         public init(
             project: Project,
@@ -116,6 +119,9 @@ public enum ProjectCompiler {
             } else if let fetched = await MapSnapshotService.background(for: request) {
                 loaded.mapBackgrounds[request] = fetched
             }
+        }
+        if project.needsCoaching {
+            loaded.coaching = CoachingTracks.make(for: project, sessions: loaded.sessions, previous: previous)
         }
         return loaded
     }
@@ -243,7 +249,7 @@ public enum ProjectCompiler {
                 // function of what it is given.
                 globalAttributeMappings: AttributeMappingTable(
                     json: UserDefaults.standard.value(for: Preferences.attributeMappings)),
-                lapComparison: lapComparison)
+                lapComparison: lapComparison, coaching: loaded.coaching)
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms,
                 comparedTrackID: comparedTrackID, stabilisationPaths: stabilisationPaths, lapComparison: lapComparison)

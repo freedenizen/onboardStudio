@@ -316,7 +316,25 @@ was on the tarmac.
 
 ## In the video (v0.30.0)
 
-A Corner Callout object that shows the current corner's note as the car arrives (#323); the
+**Every lap, read once per compile.** The window reads one lap; a video plays them all. A
+`CoachingTrack` (`Sources/TelemetryKit/CoachingTrack.swift`) reads every complete lap of a data
+input against the project's coaching reference — the reference's corners and the session's
+consistency read once and shared, so thirty laps cost thirty profiles rather than nine hundred —
+and answers, at any moment, which lap is being driven and which corner is in play: the one being
+driven, else the next one from a lead time before its brake point, else the last one for a hold
+time after its end. `ProjectCompiler.load` builds one per data input (`MediaKit/CoachingTracks.swift`)
+when anything in the project draws from it (`Project.needsCoaching`), off the main thread and reused
+across compiles while the inputs, their sessions and the reference are unchanged, and
+`RenderPlanner` hands it to each renderer through `ObjectContext.coaching`. The notes are written
+in the app's speed unit, the same reading the window makes; the callout re-words its own card in
+the object's resolved unit, so an object pinned to mph says feet.
+
+**Corner Callout** (`RenderKit/CornerCalloutRenderer.swift`, #323): the card for the corner in
+play — the headline coloured by loss or gain, the evidence, what to try wrapped to the card's width,
+the headline shrunk to fit rather than clipped. With no session at all (a template's picture) it
+draws an example card. Golden `corner-callout-turn1.png` on the committed coaching fixture.
+
+Still to come: the
 reference line, gain/loss colouring and brake-point markers on the Track Map, all off by default
 (#324); a choosable graph ghost (#325); per-corner comparison clips with the better lap's brake-point
 frame held as a sight picture (#326); a Coaching Debrief template and export (#327); the spliced

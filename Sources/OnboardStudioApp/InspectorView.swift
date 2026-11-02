@@ -240,6 +240,8 @@ struct ObjectInspector: View {
             StatCardInspector(editor: editor, object: object, params: params)
         case .sectorPanel(let params):
             SectorPanelInspector(editor: editor, object: object, params: params)
+        case .cornerCallout(let params):
+            CornerCalloutInspector(editor: editor, object: object, params: params)
         case .trackMap(let params):
             TrackMapInspector(editor: editor, object: object, params: params)
         case .gForce(let params):
