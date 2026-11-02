@@ -31,5 +31,11 @@ struct CornerCalloutParamsTests {
         #expect(project.needsCoaching)
         project.displayObjects = []
         #expect(!project.needsCoaching)
+        // A script that mentions the coaching members asks for the read; the default script does not.
+        let script = ScriptedParams(source: "function frame(c, d) { if (d.coaching) c.text(d.coaching.headline) }")
+        #expect(script.usesCoaching)
+        #expect(!ScriptedParams().usesCoaching)
+        project.displayObjects = [DisplayObject(label: "Script", inputID: nil, frame: .full, kind: .scripted(script))]
+        #expect(project.needsCoaching)
     }
 }

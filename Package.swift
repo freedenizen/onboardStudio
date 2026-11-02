@@ -76,7 +76,7 @@ let package = Package(
             resources: [.copy("../Fixtures")],
             swiftSettings: strict
         ),
-        .testTarget(name: "ScriptingTests", dependencies: ["Scripting"], swiftSettings: strict),
+        .testTarget(name: "ScriptingTests", dependencies: ["Scripting", "Importers"], swiftSettings: strict),
         .testTarget(name: "YouTubeKitTests", dependencies: ["YouTubeKit"], swiftSettings: strict),
     ]
 )

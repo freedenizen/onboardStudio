@@ -34,10 +34,15 @@ public struct CornerCalloutRenderer: OverlayDrawing {
             let moment = track.moment(
                 atInputTime: inputTime, leadSeconds: params.leadSeconds, holdSeconds: params.holdSeconds)
         else { return nil }
-        return card(for: moment.comparison, analysis: moment.analysis)
+        return Self.card(for: moment.comparison, analysis: moment.analysis, params: params, units: units)
     }
 
-    func card(for comparison: CornerComparison, analysis: CoachingAnalysis) -> Card? {
+    /// The card for one corner's comparison: the headline, the evidence and the suggestion a
+    /// Corner Callout would show, worded for `units`. `nil` when `params.onlyOpportunities` and
+    /// the corner lost nothing. Shared with the scripting bridge's `data.coaching`.
+    public static func card(
+        for comparison: CornerComparison, analysis: CoachingAnalysis, params: CornerCalloutParams, units: CoachingUnits
+    ) -> Card? {
         let options = analysis.options
         let lost = comparison.timeLost
         if params.onlyOpportunities, lost < options.minimumLossSeconds { return nil }

@@ -328,6 +328,10 @@ across compiles while the inputs, their sessions and the reference are unchanged
 `RenderPlanner` hands it to each renderer through `ObjectContext.coaching`. The notes are written
 in the app's speed unit, the same reading the window makes; the callout re-words its own card in
 the object's resolved unit, so an object pinned to mph says feet.
+A Script object reads the same track as `data.reference`, `data.corners` and `data.coaching`
+(`Sources/Scripting/DataBridge+Coaching.swift`, documented in `docs/scripting.md`) — the corner in
+play with both laps' metrics and the callout's own words — so a user can draw a callout the
+built-in object does not offer; the compile reads the track when the script mentions them.
 
 **Corner Callout** (`RenderKit/CornerCalloutRenderer.swift`, #323): the card for the corner in
 play — the headline coloured by loss or gain, the evidence, what to try wrapped to the card's width,
