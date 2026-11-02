@@ -353,19 +353,27 @@ extension CoachingContent {
         session: TelemetrySession
     ) -> (() -> Void)? {
         let referenceSide: (input: InputID, lap: Int)?
+        var splice: LapComparisonSettings.ComparedSplice?
         switch selection.reference {
         case .sessionBest: referenceSide = LapDeltas.sessionBest(in: session).map { (selection.input.id, $0.number) }
         case .lap(let number): referenceSide = (selection.input.id, number)
         case .otherInput(let id, let number): referenceSide = (id, number)
-        case .fastestRolling, .compositeOptimal: referenceSide = nil
+        case .fastestRolling:
+            // A spliced lap's picture is cut from the laps it came from (#328).
+            referenceSide = (selection.input.id, selection.lapNumber)
+            splice = .fastestRolling
+        case .compositeOptimal:
+            referenceSide = (selection.input.id, selection.lapNumber)
+            splice = .compositeOptimal
         }
-        guard let side = referenceSide, side.lap != selection.lapNumber || side.input != selection.input.id,
+        guard let side = referenceSide,
+            splice != nil || side.lap != selection.lapNumber || side.input != selection.input.id,
             let camera = editor.camera(for: selection.input.id), let referenceCamera = editor.camera(for: side.input)
         else { return nil }
         let settings = LapComparisonSettings(
             lap: .init(dataInputID: selection.input.id, videoInputID: camera, lap: selection.lapNumber),
             comparedLap: .init(dataInputID: side.input, videoInputID: referenceCamera, lap: side.lap),
-            layout: .sideBySide)
+            layout: .sideBySide, comparedSplice: splice)
         let input = selection.input
         let start = input.sync.projectTime(forInputTime: analysis.lap.time(atDistance: comparison.lap.phaseStart))
         let endDistance = min(analysis.lap.lengthMeters, comparison.lap.corner.endDistance + 100)

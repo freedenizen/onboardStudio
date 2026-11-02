@@ -691,6 +691,12 @@ A lap-axis **Graph** can draw the coaching reference as its ghost instead of the
 lap (Ghost ▸ Coaching reference): the fastest rolling lap, the spliced optimal lap or another
 driver's lap behind the live trace. A channel the reference does not carry draws no ghost.
 
+**Compare Laps** can put the **fastest rolling lap** or the **optimal lap (spliced)** beside a lap
+as a picture: choose it where the compared lap is chosen, or press Compare in Video in the Coaching
+window with that reference. The picture is cut from the laps it came from, kept level with the lap
+playing, so it jumps at each join; its readouts show the lap it is in at that moment. This is the
+lap you have already driven in pieces, watched as one.
+
 ## 7. Export and share
 
 ![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)

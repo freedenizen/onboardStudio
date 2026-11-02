@@ -58,16 +58,45 @@ struct CompareLapsSheet: View {
     @State private var comparedData: InputID?
     @State private var comparedLap: Int?
     @State private var comparedVideo: InputID?
+    /// The compared side as a spliced lap (#328) rather than one of its laps.
+    @State private var comparedSplice: LapComparisonSettings.ComparedSplice?
     @State private var layout = LapComparisonLayout.sideBySide
 
+    /// What the compared side's lap picker offers: a lap, or a spliced lap of the same data.
+    enum ComparedChoice: Hashable {
+        case lap(Int)
+        case splice(LapComparisonSettings.ComparedSplice)
+    }
+
     var settings: LapComparisonSettings? {
-        guard let lapData, let lap, let lapVideo, let comparedData, let comparedLap, let comparedVideo else {
-            return nil
-        }
+        guard let lapData, let lap, let lapVideo, let comparedData, let comparedVideo else { return nil }
+        // A spliced side needs a lap number only as a placeholder: the lap playing will do.
+        guard let comparedLap = comparedLap ?? (comparedSplice != nil ? lap : nil) else { return nil }
         let first = LapComparisonSettings.Side(dataInputID: lapData, videoInputID: lapVideo, lap: lap)
         let second = LapComparisonSettings.Side(
             dataInputID: comparedData, videoInputID: comparedVideo, lap: comparedLap)
-        return first == second ? nil : LapComparisonSettings(lap: first, comparedLap: second, layout: layout)
+        if first == second, comparedSplice == nil { return nil }
+        return LapComparisonSettings(lap: first, comparedLap: second, layout: layout, comparedSplice: comparedSplice)
+    }
+
+    var comparedChoice: Binding<ComparedChoice?> {
+        Binding(
+            get: {
+                if let comparedSplice { return .splice(comparedSplice) }
+                return comparedLap.map { .lap($0) }
+            },
+            set: { choice in
+                switch choice {
+                case .lap(let number):
+                    comparedLap = number
+                    comparedSplice = nil
+                case .splice(let splice):
+                    comparedSplice = splice
+                case nil:
+                    comparedLap = nil
+                    comparedSplice = nil
+                }
+            })
     }
 
     var body: some View {
@@ -84,8 +113,8 @@ struct CompareLapsSheet: View {
                 }
                 Section("Compared with") {
                     side(
-                        data: $comparedData, lap: $comparedLap, video: $comparedVideo, identifier: "compare.comparedLap"
-                    )
+                        data: $comparedData, lap: $comparedLap, video: $comparedVideo,
+                        identifier: "compare.comparedLap", choice: comparedChoice)
                 }
                 Picker("Layout", selection: $layout) {
                     ForEach(LapComparisonLayout.allCases, id: \.self) { Text($0.displayName).tag($0) }
@@ -93,9 +122,16 @@ struct CompareLapsSheet: View {
                 .pickerStyle(.segmented)
             }
             .formStyle(.grouped)
-            if settings == nil, lap != nil, comparedLap != nil {
+            if settings == nil, lap != nil, comparedLap != nil, comparedSplice == nil {
                 Label("Choose two different laps.", systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            if comparedSplice != nil {
+                Text(
+                    "A spliced lap's picture is cut from the laps it came from, so it jumps at each join; its "
+                        + "readouts show the lap it is in at that moment."
+                )
+                .font(.caption).foregroundStyle(.secondary)
             }
             Text("Replaces the objects in this project with the comparison layout. Undo puts them back.")
                 .font(.caption).foregroundStyle(.secondary)
@@ -119,10 +155,12 @@ struct CompareLapsSheet: View {
     }
 
     /// A data input (when there is more than one), one of its laps, and its camera (likewise).
+    /// `choice`, for the compared side, offers the spliced laps as well (#328).
     @ViewBuilder
-    func side(data: Binding<InputID?>, lap: Binding<Int?>, video: Binding<InputID?>, identifier: String)
-        -> some View
-    {
+    func side(
+        data: Binding<InputID?>, lap: Binding<Int?>, video: Binding<InputID?>, identifier: String,
+        choice: Binding<ComparedChoice?>? = nil
+    ) -> some View {
         let dataInputs = editor.project.dataInputs
         if dataInputs.count > 1 {
             Picker("Data", selection: data) {
@@ -135,13 +173,29 @@ struct CompareLapsSheet: View {
             }
         }
         let laps = data.wrappedValue.map(editor.comparableLaps) ?? []
-        Picker("Lap", selection: lap) {
-            ForEach(laps, id: \.number) { lap in
-                Text("Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))")
-                    .monospacedDigit().tag(Optional(lap.number))
+        if let choice {
+            Picker("Lap", selection: choice) {
+                ForEach(laps, id: \.number) { lap in
+                    Text("Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))")
+                        .monospacedDigit().tag(Optional(ComparedChoice.lap(lap.number)))
+                }
+                if laps.count > 1 {
+                    Divider()
+                    ForEach(LapComparisonSettings.ComparedSplice.allCases, id: \.self) { splice in
+                        Text(splice.displayName).tag(Optional(ComparedChoice.splice(splice)))
+                    }
+                }
             }
+            .accessibilityIdentifier(identifier)
+        } else {
+            Picker("Lap", selection: lap) {
+                ForEach(laps, id: \.number) { lap in
+                    Text("Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))")
+                        .monospacedDigit().tag(Optional(lap.number))
+                }
+            }
+            .accessibilityIdentifier(identifier)
         }
-        .accessibilityIdentifier(identifier)
         if laps.isEmpty {
             Text("This data has no complete laps.").font(.caption).foregroundStyle(.secondary)
         }
@@ -160,6 +214,7 @@ struct CompareLapsSheet: View {
             (comparedData, comparedLap, comparedVideo) = (
                 current.comparedLap.dataInputID, current.comparedLap.lap, current.comparedLap.videoInputID
             )
+            comparedSplice = current.comparedSplice
             layout = current.layout
             return
         }

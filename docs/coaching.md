@@ -349,6 +349,15 @@ canonically as the session's are, so the same display conversion applies; a chan
 does not carry (an OBD temperature, say) has no ghost rather than a wrong one. Older files keep the
 best lap.
 
+**The spliced lap as a picture** (#328, `LapTimeWarp(lap:in:sync:splice:in:comparedSync:)`):
+Compare Laps' compared side can be the fastest rolling lap or the optimal lap of the same data
+input (`LapComparisonSettings.comparedSplice`). The warp maps the lap playing by fraction onto the
+splice's distances and takes each distance back to its source lap through the profile's pieces
+(`Piece.sourceFrom`), with a pair of knots a hair apart at every seam so nothing is interpolated
+across a join; `insertWarped` already cuts the picture at every knot and never inserts before the
+end of what it has, so a jump back in session time is just another cut. The Coaching window's
+Compare in Video now offers it for those references.
+
 Still to come: the
 reference line, gain/loss colouring and brake-point markers on the Track Map, all off by default
 (#324); a choosable graph ghost (#325); per-corner comparison clips with the better lap's brake-point
