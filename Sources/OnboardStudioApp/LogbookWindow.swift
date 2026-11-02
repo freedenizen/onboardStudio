@@ -54,16 +54,24 @@ struct LogbookWindow: View {
     static let windowID = "logbook"
 
     @SceneStorage("logbook.scope") private var storedScope = "all"
-    @State private var scope: LogbookScope = .all
+    /// Sessions, or the trends across visits (#353).
+    @SceneStorage("logbook.view") private var view: LogbookView = .sessions
+
+    enum LogbookView: String, CaseIterable, Identifiable {
+        case sessions, trends
+        var id: String { rawValue }
+        var title: String { self == .sessions ? "Sessions" : "Trends" }
+    }
+    @State var scope: LogbookScope = .all
     @State private var search = ""
     @State private var selection: UUID?
     @State private var sortOrder = [KeyPathComparator(\LogbookEntry.date, order: .reverse)]
     @State private var trackDay: TrackDayRequest?
     @State private var confirmRemoval: LogbookEntry?
     /// What the last export or import did, under the table (#350).
-    @State private var message: String?
+    @State var message: String?
     @Environment(\.openWindow) private var openWindow
-    private var model = LogbookModel.shared
+    var model = LogbookModel.shared
     private var active = ActiveEditor.shared
 
     static func open(_ openWindow: OpenWindowAction) { openWindow(id: windowID) }
@@ -75,6 +83,15 @@ struct LogbookWindow: View {
             content
                 .frame(minWidth: 720, minHeight: 420)
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Picker("View", selection: $view) {
+                            ForEach(LogbookView.allCases) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .help("The sessions, or how the lap times and corners moved across visits to a circuit")
+                        .accessibilityIdentifier("logbook.view")
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Button("Add Track Day…", systemImage: "plus") {
                             let urls = OpenPanels.chooseTrackDay()
@@ -164,7 +181,7 @@ struct LogbookWindow: View {
 
     // MARK: - Table and detail
 
-    private var shown: [LogbookEntry] {
+    var shown: [LogbookEntry] {
         LogbookFilter.apply(model.entries, scope: scope, search: search).sorted(using: sortOrder)
     }
 
@@ -182,6 +199,13 @@ struct LogbookWindow: View {
                     if !urls.isEmpty { trackDay = TrackDayRequest(urls: urls) }
                 }
             }
+        } else if view == .trends {
+            LogbookTrendsView(
+                entries: model.entries, circuitKey: trendsCircuit?.id, circuitTitle: trendsCircuit?.title ?? "",
+                onOpen: { id in
+                    selection = id
+                    view = .sessions
+                })
         } else {
             HSplitView {
                 VStack(spacing: 0) {
@@ -215,6 +239,14 @@ struct LogbookWindow: View {
 
     private func circuitKey(of entry: LogbookEntry) -> String { LogbookFilter.circuitKey(of: entry) }
 
+    /// The circuit the trends are of: the one chosen in the sidebar, else the only one there is.
+    private var trendsCircuit: (id: String, title: String)? {
+        if case .circuit(let id, let title) = scope { return (id, title) }
+        let circuits = LogbookFilter.circuits(in: model.entries)
+        if circuits.count == 1, case .circuit(let id, let title) = circuits[0].scope { return (id, title) }
+        return nil
+    }
+
     // MARK: - Into a project
 
     func openAsProject(_ entry: LogbookEntry) {
@@ -227,70 +259,6 @@ struct LogbookWindow: View {
         guard let editor = active.editor, let url = entry.resolveFile() else { return }
         editor.addData(at: url)
         NSApp.activate()
-    }
-
-    // MARK: - Taking it with you (#350)
-
-    /// What goes out: the sessions shown, which is the whole logbook unless it is narrowed.
-    private var exported: [LogbookEntry] { shown }
-
-    func exportLogbook(includingFiles: Bool) {
-        guard
-            let folder = OpenPanels.chooseExportFolder(
-                title: "Export Logbook", message: "Each session is written here as its own file.")
-        else { return }
-        do {
-            let destination = folder.appending(path: "Logbook")
-            let summary = try LogbookTransfer.export(
-                exported, cars: model.cars, to: destination, includingFiles: includingFiles)
-            let files = includingFiles ? ", \(summary.filesCopied) data files copied" : ""
-            message = "Wrote \(summary.written) sessions to \(destination.lastPathComponent)\(files)."
-        } catch {
-            message = "Could not export the logbook: \(error.localizedDescription)"
-        }
-    }
-
-    func exportCSV(laps: Bool) {
-        let name = laps ? "Logbook laps" : "Logbook"
-        guard
-            let url = OpenPanels.chooseDocumentDestination(
-                title: "Export as CSV", suggestedName: name, type: .commaSeparatedText, fileExtension: "csv")
-        else { return }
-        let text = laps ? LogbookTransfer.lapsCSV(exported) : LogbookTransfer.sessionsCSV(exported)
-        write(text, to: url, what: laps ? "the laps" : "\(exported.count) sessions")
-    }
-
-    func exportMarkdown() {
-        guard
-            let url = OpenPanels.chooseDocumentDestination(
-                title: "Export as Markdown", suggestedName: "Logbook",
-                type: UTType(filenameExtension: "md") ?? .plainText, fileExtension: "md")
-        else { return }
-        write(LogbookTransfer.markdown(exported, title: scope.title), to: url, what: "\(exported.count) sessions")
-    }
-
-    private func write(_ text: String, to url: URL, what: String) {
-        do {
-            try text.write(to: url, atomically: true, encoding: .utf8)
-            message = "Wrote \(what) to \(url.lastPathComponent)."
-        } catch {
-            message = "Could not write \(url.lastPathComponent): \(error.localizedDescription)"
-        }
-    }
-
-    func importLogbook() {
-        guard let folder = OpenPanels.chooseLogbookFolder() else { return }
-        // A folder written by Export Logbook… holds its sessions in "Logbook"; either is fine.
-        let inner = folder.appending(path: "Logbook")
-        let source = FileManager.default.fileExists(atPath: inner.path) ? inner : folder
-        do {
-            let summary = try LogbookTransfer.import(from: source, into: AppLogbook.shared)
-            model.reload()
-            message =
-                "\(summary.added) sessions added, \(summary.updated) updated, \(summary.skipped) already here."
-        } catch {
-            message = "Could not read that folder: \(error.localizedDescription)"
-        }
     }
 
     static func urls(from providers: [NSItemProvider]) async -> [URL] {
