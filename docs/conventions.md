@@ -184,6 +184,13 @@ Two details worth noting because they contradict what is widely repeated online:
   are taken; ⌃⌘ is the pattern Show Project Details (⌃⌘I) set for "show me a view of the
   project". Unused elsewhere in the app and not a system shortcut.
 
+## The Logbook window (#347)
+
+- **⌃⌘L — Logbook.** ⌘L is Go to Line in Xcode and Location in browsers; ⇧⌘L is Library in
+  Keynote; ⌃⌘L is unused in this app and not a system shortcut. ⌃⌘ is the pattern Show Project
+  Details (⌃⌘I) and Coaching (⌃⌘C) set for "show me a view". In the Window menu, since the
+  logbook is not a view of one project.
+
 ## The attribute window (#200)
 
 Not from an editor, so not verified against one; chosen against the Mac's own conventions.

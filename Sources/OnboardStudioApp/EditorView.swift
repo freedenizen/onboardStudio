@@ -98,6 +98,11 @@ struct EditorView: View {
                 PendingTemplate.shared.template = nil
                 editor.apply(template)
             }
+            // A session opened from the logbook (#347): its file into the fresh project.
+            if let entry = PendingLogbookOpen.shared.entry, editor.project.inputs.isEmpty {
+                PendingLogbookOpen.shared.entry = nil
+                if let url = entry.resolveFile() { editor.addData(at: url) }
+            }
             editor.scheduleCompile()
         }
         .onChange(of: undoManager) { _, newValue in editor.undoManager = newValue }

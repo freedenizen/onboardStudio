@@ -66,8 +66,21 @@ it off the main thread behind a sheet (`TrackDayImportSheet`); `onboard logbook 
 do it on the command line. Under UI tests the app's logbook is a scratch folder
 (`ONBOARD_TEST_LOGBOOK_DIR`), as the templates are.
 
-## What comes next
+## The window (#347)
 
-#347 the Logbook window (with drag-and-drop onto it); #348 conditions; #349 the two-way link with projects; #350 export, import,
+`LogbookWindow` (`Sources/OnboardStudioApp/LogbookWindow.swift`), Window ▸ Logbook, ⌃⌘L — a
+`Window` scene like Attributes and Coaching, not a document: a `NavigationSplitView` whose sidebar
+is the scopes `LogbookFilter` computes (all, circuits by most sessions, cars, years) and whose
+detail is an `HSplitView` of a sortable `Table` and `LogbookDetail`. `LogbookFilter`
+(`ProjectModel/LogbookFilter.swift`) does the choosing — scope and a case-insensitive any-word
+search over circuit, car, driver, notes, tags and file name — so it is tested without a view.
+`LogbookModel.shared` holds the entries and re-reads them after any write. **Open as Project**
+hands the entry to the next editor through `PendingLogbookOpen`, as New from Template hands a
+template; **Add to Current Project** calls the front editor's `addData(at:)`. The toolbar's Add
+Track Day… and a drop of files or folders on the window run `TrackDayImport` behind the same
+sheet. Fits 1024×768 (sidebar 170–280, detail 720 minimum).
+
+## What comes next
+ #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as
 coaching references, trends per corner, car against car, a season summary.
