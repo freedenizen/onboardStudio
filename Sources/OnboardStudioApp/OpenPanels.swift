@@ -135,6 +135,22 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
+    /// A save panel for a document the app writes — a PDF, a Markdown file — skipped under UI
+    /// tests, which write into `ONBOARD_TEST_EXPORT_DIR`.
+    static func chooseDocumentDestination(title: String, suggestedName: String, type: UTType, fileExtension: String)
+        -> URL?
+    {
+        if let directory = UITestSupport.exportDirectory {
+            return directory.appending(path: suggestedName).appendingPathExtension(fileExtension)
+        }
+        let panel = NSSavePanel()
+        panel.title = title
+        panel.allowedContentTypes = [type]
+        panel.nameFieldStringValue = suggestedName + "." + fileExtension
+        panel.canCreateDirectories = true
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
     static func chooseExportDestination(suggestedName: String, fileExtension: String = "mp4") -> URL? {
         if let directory = UITestSupport.exportDirectory {
             // The suggested name usually carries the extension already, as the save panel expects.

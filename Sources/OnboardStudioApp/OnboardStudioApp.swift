@@ -49,6 +49,7 @@ struct OnboardStudioApp: App {
             EditorCommands()
             UndoCommands()
             AttributeWindowCommands()
+            CoachingSheetCommands()
             if UITestSupport.isActive { UITestCommands() }
         }
         Window("Welcome to Onboard Studio", id: "launcher") {

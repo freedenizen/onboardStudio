@@ -382,6 +382,14 @@ next project there shows it as "last time you planned to try…" with Use It Aga
 is whole seconds, because the track library writes ISO 8601 and a plan read back must still equal
 the one in the project.
 
+**Coaching sheet** (#331, `ProjectModel/CoachingSheet.swift`, app `CoachingSheetExport.swift`): the
+reading as a page — `CoachingSheet` holds the headline, the top opportunities, the corner rows,
+the plan and the reference lap's outline scaled into a unit square with each corner's apex marked,
+and writes itself as Markdown; the app draws it as US Letter through `ImageRenderer` into a PDF
+context, black on white regardless of appearance. The items live in the File menu through a
+focused scene value the Coaching window publishes while it has a reading, so they exist only when
+there is something to export. `onboard coach --markdown` prints the same Markdown.
+
 **Coaching Debrief** (#327, `MediaKit/Debrief.swift`, `DebriefExporter.swift`): Project ▸ Export
 Coaching Debrief… writes one video from a `DebriefPlan` — a title card (track, day, best, optimal
 and fastest rolling lap, and how far behind the reference the lap read finished), the top

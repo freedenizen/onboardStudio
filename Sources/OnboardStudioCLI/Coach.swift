@@ -37,6 +37,9 @@ struct Coach: AsyncParsableCommand {
     @Flag(name: .long, help: "List every corner that lost time, not only the top three.")
     var all = false
 
+    @Flag(name: .long, help: "Print the debrief sheet as Markdown: the notes, the opportunities and the corner table.")
+    var markdown = false
+
     @Flag(name: .long, help: "Print the analysis as JSON instead of text.")
     var json = false
 
@@ -89,6 +92,12 @@ struct Coach: AsyncParsableCommand {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(CoachingReport(analysis))
             print(String(data: data, encoding: .utf8) ?? "{}")
+        } else if markdown {
+            let sheet = CoachingSheet(
+                analysis: analysis, lapNumber: chosen.number, units: units, title: session.info.trackName ?? "",
+                subtitle: session.info.createdAt.map(ProjectDetails.iso) ?? "",
+                warnings: analysis.warnings.map(describe))
+            print(sheet.markdown)
         } else {
             printReport(analysis, lapNumber: chosen.number, units: units)
         }
