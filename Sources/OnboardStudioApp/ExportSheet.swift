@@ -24,6 +24,9 @@ struct ExportSheet: View {
     @State private var skipSlowLaps = false
     @State private var slowLapPercent = 10
     @State private var batchLabel: String?
+    /// Every-corner export (#326): only the corners that lost time, and the files it would write.
+    @State private var onlyOpportunityCorners = false
+    @State private var cornerFiles: [CornerExport] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -107,8 +110,10 @@ struct ExportSheet: View {
                         }
                         Text("Laps").tag("laps").disabled(lapCount == 0)
                         Text("Every lap, one file each").tag("eachLap").disabled(lapCount == 0)
+                        Text("Every corner, one file each").tag("eachCorner").disabled(lapCount == 0)
                     }
                     if rangeMode == "eachLap" { eachLapOptions }
+                    if rangeMode == "eachCorner" { eachCornerOptions }
                     if rangeMode == "span" {
                         HStack {
                             TextField("From (s)", value: $spanStart, format: .number.precision(.fractionLength(0...2)))
@@ -175,6 +180,9 @@ struct ExportSheet: View {
 
     // MARK: - State
 
+}
+
+extension ExportSheet {
     func load() {
         settings = editor.project.export.reconciled
         settings.frameRate = editor.project.settings.frameRate
@@ -199,6 +207,9 @@ struct ExportSheet: View {
             completeLapsOnly = completeOnly
             skipSlowLaps = slowerThanBest != nil
             if let slowerThanBest { slowLapPercent = Int((slowerThanBest * 100).rounded()) }
+        case .eachCorner(let onlyOpportunities):
+            rangeMode = "eachCorner"
+            onlyOpportunityCorners = onlyOpportunities
         }
         if spanEnd == 0 { spanEnd = editor.duration }
         // A range marked with I and O is what the user means to export, as in any editor (#230).
@@ -263,17 +274,6 @@ struct ExportSheet: View {
                 preset = "custom"
             })
     }
-}
-
-extension ExportSheet {
-    var lapSession: TelemetrySession? {
-        editor.project.dataInputs.lazy.compactMap { editor.sessions[$0.id] }.first { !$0.laps.isEmpty }
-    }
-    var lapCount: Int { lapSession?.laps.count ?? 0 }
-    var lapNumbers: ClosedRange<Int> {
-        let numbers = lapSession?.laps.map(\.number) ?? []
-        return (numbers.min() ?? 0)...(numbers.max() ?? 0)
-    }
 
     var finalSettings: ExportSettings {
         var s = settings.reconciled
@@ -285,6 +285,7 @@ extension ExportSheet {
         case "eachLap":
             s.range = .eachLap(
                 completeOnly: completeLapsOnly, slowerThanBest: skipSlowLaps ? Double(slowLapPercent) / 100 : nil)
+        case "eachCorner": s.range = .eachCorner(onlyOpportunities: onlyOpportunityCorners)
         default: s.range = .whole
         }
         s.width -= s.width % 2
@@ -297,8 +298,22 @@ extension ExportSheet {
         return ProjectCompiler.exportRange(finalSettings.range, in: loaded, duration: editor.duration)
     }
 
+    var lapSession: TelemetrySession? {
+        editor.project.dataInputs.lazy.compactMap { editor.sessions[$0.id] }.first { !$0.laps.isEmpty }
+    }
+    var lapCount: Int { lapSession?.laps.count ?? 0 }
+    var lapNumbers: ClosedRange<Int> {
+        let numbers = lapSession?.laps.map(\.number) ?? []
+        return (numbers.min() ?? 0)...(numbers.max() ?? 0)
+    }
+
     func start() {
-        if rangeMode == "eachLap" { return startEachLap() }
+        if rangeMode == "eachLap" {
+            return startBatch(lapExports.map { BatchFile(title: "Lap \($0.lap)", range: $0.range) }, noun: "lap")
+        }
+        if rangeMode == "eachCorner" {
+            return startBatch(cornerFiles.map { BatchFile(title: $0.title, range: $0.range) }, noun: "corner")
+        }
         let settings = finalSettings
         let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
         guard
@@ -350,6 +365,9 @@ extension ExportSheet {
         return ProjectCompiler.lapExports(finalSettings.range, in: loaded, duration: editor.duration)
     }
 
+}
+
+extension ExportSheet {
     @ViewBuilder var eachLapOptions: some View {
         Toggle("Complete laps only", isOn: $completeLapsOnly)
             .accessibilityIdentifier("export.completeLapsOnly")
@@ -371,17 +389,49 @@ extension ExportSheet {
         .accessibilityIdentifier("export.lapFiles")
     }
 
-    /// Writes one file per kept lap into a folder the user chooses, one after another, under one
+    /// Every corner's clip, read off the main thread when the choice changes (#326).
+    @ViewBuilder var eachCornerOptions: some View {
+        Toggle("Only corners that lost time", isOn: $onlyOpportunityCorners)
+            .accessibilityIdentifier("export.onlyOpportunityCorners")
+            .help("Leave out the corners where no time was lost against the coaching reference")
+        Text(
+            cornerFiles.isEmpty
+                ? "No corners read yet; the lap needs position, distance and a reference lap."
+                : "Writes \(cornerFiles.count) \(cornerFiles.count == 1 ? "file" : "files"): "
+                    + cornerFiles.map(\.title).joined(separator: ", ")
+                    + ", each from two seconds before the brake point to two seconds after the corner."
+        )
+        .font(.caption).foregroundStyle(.secondary)
+        .accessibilityIdentifier("export.cornerFiles")
+        .task(id: onlyOpportunityCorners) {
+            guard let loaded = editor.loadedForExport else { return }
+            let range = ExportRange.eachCorner(onlyOpportunities: onlyOpportunityCorners)
+            let duration = editor.duration
+            cornerFiles = await Task.detached(priority: .userInitiated) {
+                ProjectCompiler.cornerExports(range, in: loaded, duration: duration)
+            }.value
+        }
+    }
+
+    /// One file of a batch export: a lap or a corner.
+    struct BatchFile {
+        let title: String
+        let range: ClosedRange<Double>
+
+        func fileName(base: String, fileExtension: String) -> String { "\(base) – \(title).\(fileExtension)" }
+    }
+
+    /// Writes one file per item into a folder the user chooses, one after another, under one
     /// progress bar.
-    func startEachLap() {
+    func startBatch(_ files: [BatchFile], noun: String) {
         let settings = finalSettings
-        let laps = lapExports
+        let laps = files
         guard let loaded = editor.loadedForExport else {
             failure = "The project has not finished loading."
             return
         }
         guard !laps.isEmpty else {
-            failure = "No laps match, so there is nothing to export."
+            failure = "No \(noun)s match, so there is nothing to export."
             return
         }
         guard let folder = OpenPanels.chooseExportFolder() else { return }
@@ -396,7 +446,7 @@ extension ExportSheet {
                     try await ProjectCompiler.compile(loaded), settings: settings)
                 var throttle = ProgressThrottle()
                 for (index, lap) in laps.enumerated() {
-                    batchLabel = "Exporting Lap \(lap.lap) — \(index + 1) of \(laps.count)"
+                    batchLabel = "Exporting \(lap.title) — \(index + 1) of \(laps.count)"
                     let url = folder.appending(path: lap.fileName(base: base, fileExtension: settings.fileExtension))
                     for try await update in Exporter.export(compiled, settings: settings, range: lap.range, to: url) {
                         let overall = (Double(index) + update.fraction) / Double(laps.count)
@@ -407,10 +457,10 @@ extension ExportSheet {
                 }
                 batchLabel = nil
                 finishedURL = folder
-                let count = laps.count == 1 ? "1 lap" : "\(laps.count) laps"
+                let count = laps.count == 1 ? "1 \(noun)" : "\(laps.count) \(noun)s"
                 editor.statusMessage = "Exported \(count) to \(folder.lastPathComponent)."
             } catch is CancellationError {
-                failure = "Export cancelled. The laps already written are kept."
+                failure = "Export cancelled. The \(noun)s already written are kept."
                 progress = nil
                 batchLabel = nil
             } catch {

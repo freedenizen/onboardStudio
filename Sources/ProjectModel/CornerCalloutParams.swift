@@ -72,7 +72,8 @@ extension Project {
     /// Whether anything in the project draws from the coaching analysis, which is then read once
     /// per compile for every data input.
     public var needsCoaching: Bool {
-        displayObjects.contains { object in
+        if case .eachCorner = export.range { return true }
+        return displayObjects.contains { object in
             switch object.kind {
             case .cornerCallout: return true
             case .trackMap(let params): return params.usesCoaching

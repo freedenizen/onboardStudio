@@ -26,6 +26,10 @@ public enum ExportRange: Hashable, Codable, Sendable {
     /// start or end was not at the line — the out-lap and the in-lap; `slowerThanBest`, when set,
     /// leaves out laps slower than the best complete lap by more than that fraction (0.1 = 10 %).
     case eachLap(completeOnly: Bool, slowerThanBest: Double?)
+    /// One file per corner of the coaching lap (#326): from two seconds before the brake point to
+    /// two seconds after the corner. `onlyOpportunities` keeps the corners where time was lost
+    /// against the reference, biggest loss first.
+    case eachCorner(onlyOpportunities: Bool)
 }
 
 /// Output video encoding settings.

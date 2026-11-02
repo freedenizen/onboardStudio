@@ -76,6 +76,7 @@ swift run onboard probe session.csv --at 95.5          # interpolated values at 
 swift run onboard probe session.csv --json             # machine-readable
 swift run onboard coach session.csv                    # where a lap lost time against the best, corner by corner
 swift run onboard coach session.csv --reference rolling --lap 5 --json   # against the fastest rolling lap, as data
+swift run onboard render --project my.onboardproj --out clips --corners opportunities   # one clip per corner that lost time
 
 swift run onboard render --video clip.mp4 --out out.mp4 --range 0:10      # M2 pipeline check
 swift run onboard render --video clip.mp4 --out out.mp4 --preset 720p --codec hevc --speed 2

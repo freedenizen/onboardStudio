@@ -715,6 +715,13 @@ percentage you set. The sheet says which files it will write before you start, a
 covers them all. From the command line: `onboard render --project X --laps each --out <folder>`,
 with `--include-partial-laps` and `--skip-slower-than 10`.
 
+**Every corner, one file each** writes a clip per corner of the coaching lap (the lap chosen in
+Project ▸ Coaching…, else the lap being compared), each from two seconds before the brake point to
+two seconds after the corner, named *Project – Turn 4*; **Only corners that lost time** keeps the
+corners where time went against the reference, biggest loss first. With a Compare Laps layout and
+a Corner Callout in the project that is a corner-by-corner debrief, one file per corner, from one
+Export. On the command line: `onboard render --project X --out folder --corners all|opportunities`.
+
 **Upload to YouTube** signs in with a short code and uploads with automatic resume; it needs a
 one-time Google API setup described in [youtube.md](youtube.md).
 

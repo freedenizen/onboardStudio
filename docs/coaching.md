@@ -358,6 +358,15 @@ across a join; `insertWarped` already cuts the picture at every knot and never i
 end of what it has, so a jump back in session time is just another cut. The Coaching window's
 Compare in Video now offers it for those references.
 
+**Compare Corners** (#326, `MediaKit/CornerExports.swift`): `ExportRange.eachCorner` writes one
+file per corner of the coaching lap, each from two seconds before its brake point to two seconds
+after it, in the project's own layout — so with Compare Laps and a Corner Callout it is the
+side-by-side corner clip with the note on it. The corners come from the coaching track (read at
+compile when the range asks for it, or on demand for the sheet's preview of the files). The slow
+motion through the braking zone and the held frame of the reference's brake point described in
+the issue are not in this version; they need a per-piece playback rate the composition does not
+have yet and are filed separately.
+
 Still to come: the
 reference line, gain/loss colouring and brake-point markers on the Track Map, all off by default
 (#324); a choosable graph ghost (#325); per-corner comparison clips with the better lap's brake-point
