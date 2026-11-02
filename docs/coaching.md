@@ -371,6 +371,17 @@ motion through the braking zone and the held frame of the reference's brake poin
 the issue are not in this version; they need a per-piece playback rate the composition does not
 have yet and are filed separately.
 
+**Coaching Debrief** (#327, `MediaKit/Debrief.swift`, `DebriefExporter.swift`): Project ▸ Export
+Coaching Debrief… writes one video from a `DebriefPlan` — a title card (track, day, best, optimal
+and fastest rolling lap, and how far behind the reference the lap read finished), the top
+opportunities of the coaching lap as `CornerExport` clips in the project's own layout, and a
+closing card with one suggestion per corner from `CoachingNotes`. Each card is one frame drawn by
+the project's text objects (`CardWriter`, which wraps the lines itself since the text renderer does
+not) and written for its length with the export's codec; each clip is an ordinary range export;
+`MovieStitcher` joins the pieces in an `AVMutableComposition` and writes them through a
+passthrough export, so nothing is encoded twice. The **Coaching Debrief** template is the layout
+the clips are meant to have. The CLI's `--debrief` does the same.
+
 Still to come: the
 reference line, gain/loss colouring and brake-point markers on the Track Map, all off by default
 (#324); a choosable graph ghost (#325); per-corner comparison clips with the better lap's brake-point
