@@ -405,6 +405,14 @@ context, black on white regardless of appearance. The items live in the File men
 focused scene value the Coaching window publishes while it has a reading, so they exist only when
 there is something to export. `onboard coach --markdown` prints the same Markdown.
 
+**Narration** (#335, `MediaKit/DebriefNarration.swift`): with *Read the notes aloud*,
+`DebriefNarrator` speaks each card's text and each corner's headline-and-suggestion through
+`AVSpeechSynthesizer.write` into Core Audio files, the plan is refitted so a card plays at least as
+long as its words, and `MovieStitcher` lays the voices on a track of their own at each piece's
+start, ducking the clips' sound to 30 % while a voice speaks (`AVMutableAudioMix`). A mix cannot
+pass through, so a narrated debrief is encoded once more by `AVAssetExportSession`; the silent one
+still passes through untouched. Off by default; the toggle is disabled on a Mac with no voice.
+
 **Coaching Debrief** (#327, `MediaKit/Debrief.swift`, `DebriefExporter.swift`): Project ▸ Export
 Coaching Debrief… writes one video from a `DebriefPlan` — a title card (track, day, best, optimal
 and fastest rolling lap, and how far behind the reference the lap read finished), the top

@@ -11,12 +11,17 @@ struct DebriefSheet: View {
     @Bindable var editor: EditorModel
     @Environment(\.dismiss) private var dismiss
     @State private var cornerCount = 3
+    @State private var narrated = false
     @State private var plan: DebriefPlan?
     @State private var reading = true
     @State private var progress: ExportProgress?
     @State private var task: Task<Void, Never>?
     @State private var finishedURL: URL?
     @State private var failure: String?
+
+    private static let narrationHelp =
+        "The system voice reads the title card, each corner's note and the plan over the video; "
+        + "the clips' own sound comes down while it speaks."
 
     private var hasCallout: Bool {
         editor.project.displayObjects.contains {
@@ -50,6 +55,10 @@ struct DebriefSheet: View {
                 Text("Corners: \(cornerCount)")
             }
             .accessibilityIdentifier("debrief.corners")
+            Toggle("Read the notes aloud", isOn: $narrated)
+                .disabled(!DebriefNarrator.isAvailable)
+                .help(Self.narrationHelp)
+                .accessibilityIdentifier("debrief.narrated")
             segments
             if let progress {
                 ProgressView(value: progress.fraction) {
@@ -150,7 +159,7 @@ struct DebriefSheet: View {
                     try await ProjectCompiler.compile(loaded), settings: settings)
                 var throttle = ProgressThrottle()
                 for try await update in DebriefExporter.export(
-                    compiled, project: loaded.project, plan: plan, settings: settings, to: url)
+                    compiled, project: loaded.project, plan: plan, settings: settings, narrated: narrated, to: url)
                 where throttle.shouldReport(update.fraction) {
                     progress = update
                 }

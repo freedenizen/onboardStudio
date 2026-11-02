@@ -10,7 +10,8 @@ coaches send one; Garmin builds one. Here it was a day of manual editing.*
    following track map on the clips; any layout works, including Compare Laps' two pictures.
 3. **Project ▸ Export Coaching Debrief…**. The sheet lists what it will write: the title card, the
    corners that cost the most (biggest loss first, with the seconds lost), and the closing card,
-   with the running time. **Corners** sets how many.
+   with the running time. **Corners** sets how many; **Read the notes aloud** adds the system
+   voice over the cards and the clips (#335).
 4. **Export…**, choose where. One progress bar covers the cards and the clips; the pieces are
    joined into one file named `<project> – Coaching Debrief.mp4`, in the project's codec and size.
 5. When it finishes, **Reveal in Finder** or **Upload to YouTube…**. The project is left exactly

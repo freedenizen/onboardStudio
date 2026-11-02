@@ -21,12 +21,15 @@ public struct DebriefPlan: Sendable, Equatable {
     public var title: Card
     /// The corner clips in the order they play: the biggest loss first.
     public var corners: [CornerExport]
+    /// What to say over each clip, in the same order: the headline and what to try (#335).
+    public var cornerNotes: [String]
     public var closing: Card
 
-    public init(title: Card, corners: [CornerExport], closing: Card) {
+    public init(title: Card, corners: [CornerExport], closing: Card, cornerNotes: [String] = []) {
         self.title = title
         self.corners = corners
         self.closing = closing
+        self.cornerNotes = cornerNotes
     }
 
     /// How long the debrief plays.
@@ -57,10 +60,12 @@ public struct DebriefPlan: Sendable, Equatable {
         guard let read = ProjectCompiler.coachingLap(in: loaded) else { return nil }
         let clips = ProjectCompiler.cornerExports(.eachCorner(onlyOpportunities: true), in: loaded, duration: duration)
         let kept = Array(clips.prefix(max(cornerCount, 0)))
-        let keptIndices = Set(kept.map(\.index))
         let title = titleCard(for: read, project: loaded.project)
-        let tries = read.analysis.opportunities.filter { keptIndices.contains($0.corner.index) }
-            .map { "Turn \($0.corner.label): \($0.note.suggestion)" }
+        let keptOpportunities = kept.compactMap { clip in
+            read.analysis.opportunities.first { $0.corner.index == clip.index }
+        }
+        let tries = keptOpportunities.map { "Turn \($0.corner.label): \($0.note.suggestion)" }
+        let notes = keptOpportunities.map { "\($0.note.headline). \($0.note.suggestion)" }
         let closingLines =
             tries.isEmpty
             ? ["This lap matched \(read.track.referencePhrase) in every corner. Drive it again the same way."]
@@ -68,7 +73,7 @@ public struct DebriefPlan: Sendable, Equatable {
         let closing = Card(
             title: "Next session, try…", lines: closingLines,
             seconds: max(closingSecondsMinimum, Double(closingLines.count) * closingSecondsPerLine))
-        return DebriefPlan(title: title, corners: kept, closing: closing)
+        return DebriefPlan(title: title, corners: kept, closing: closing, cornerNotes: notes)
     }
 
     /// The session, the track and the day, then the lap read, what it was read against, and the

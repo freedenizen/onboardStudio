@@ -67,6 +67,9 @@ struct Render: AsyncParsableCommand {
     @Option(name: .long, help: "With --debrief: how many corners to include (default 3).")
     var debriefCorners = 3
 
+    @Flag(name: .long, help: "With --debrief: the system voice reads the cards and the notes over the video.")
+    var narrate = false
+
     @Flag(name: .long, help: "With --laps each: also the out-lap and in-lap, which do not start or end at the line.")
     var includePartialLaps = false
 
@@ -185,7 +188,7 @@ struct Render: AsyncParsableCommand {
         }
         var lastPrinted = -1
         for try await progress in DebriefExporter.export(
-            compiled, project: project, plan: plan, settings: settings, to: outputURL)
+            compiled, project: project, plan: plan, settings: settings, narrated: narrate, to: outputURL)
         {
             if json {
                 print(#"{"fraction":\#(progress.fraction),"time":\#(progress.currentTime)}"#)
