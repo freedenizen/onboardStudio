@@ -34,6 +34,13 @@ extension ProjectCompiler {
             let laps = lapExports(range, in: loaded, duration: duration)
             guard let first = laps.first, let last = laps.last else { return nil }
             return first.range.lowerBound...last.range.upperBound
+        case .eachCorner:
+            // Likewise several files (#326); as one range, the span from the earliest clip to the
+            // latest, which is the lap's corners in order.
+            let corners = cornerExports(range, in: loaded, duration: duration)
+            guard let start = corners.map(\.range.lowerBound).min(), let end = corners.map(\.range.upperBound).max()
+            else { return nil }
+            return start...end
         }
     }
 

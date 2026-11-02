@@ -48,6 +48,14 @@ struct Render: AsyncParsableCommand {
             """)
     var laps: String?
 
+    @Option(
+        name: .long,
+        help: """
+            Corners of the coaching lap to export, one file each into the --out folder (project only): "all", or \
+            "opportunities" for the corners that lost time against the reference, biggest loss first.
+            """)
+    var corners: String?
+
     @Flag(name: .long, help: "With --laps each: also the out-lap and in-lap, which do not start or end at the line.")
     var includePartialLaps = false
 
@@ -95,14 +103,14 @@ struct Render: AsyncParsableCommand {
         var exportRange = try range.map(Self.parseRange)
         var compiled: CompiledComposition
         var settings: ExportSettings
-        var eachLap: [LapExport] = []
+        var batch: [BatchFile] = []
         if let project {
             guard video == nil else { throw ValidationError("Use either --video or --project, not both.") }
             let result = try await loadProject(project, range: exportRange)
             compiled = result.compiled
             settings = result.settings
             exportRange = result.range
-            eachLap = result.eachLap
+            batch = result.batch
         } else {
             guard let video else { throw ValidationError("Provide --video or --project.") }
             let inputURL = URL(fileURLWithPath: video)
@@ -135,18 +143,24 @@ struct Render: AsyncParsableCommand {
             print("Project:  \(fmt(compiled.duration)) s\(rangeText)")
         }
 
-        guard !eachLap.isEmpty, let project else {
+        guard !batch.isEmpty, let project else {
             try await export(compiled, settings: settings, range: exportRange, to: outputURL)
             return
         }
-        // One file per lap, into the --out folder (#150).
+        // One file per lap (#150) or per corner (#326), into the --out folder.
         try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
         let base = URL(fileURLWithPath: project).deletingPathExtension().lastPathComponent
-        for lap in eachLap {
-            let url = outputURL.appending(path: lap.fileName(base: base, fileExtension: settings.fileExtension))
-            if !json { print("Lap \(lap.lap): \(fmt(lap.range.lowerBound))–\(fmt(lap.range.upperBound)) s") }
-            try await export(compiled, settings: settings, range: lap.range, to: url)
+        for file in batch {
+            let url = outputURL.appending(path: "\(base) – \(file.title).\(settings.fileExtension)")
+            if !json { print("\(file.title): \(fmt(file.range.lowerBound))–\(fmt(file.range.upperBound)) s") }
+            try await export(compiled, settings: settings, range: file.range, to: url)
         }
+    }
+
+    /// One file of a batch: a lap or a corner.
+    struct BatchFile {
+        let title: String
+        let range: ClosedRange<Double>
     }
 
     private func export(
@@ -179,10 +193,13 @@ struct Render: AsyncParsableCommand {
         var compiled: CompiledComposition
         var settings: ExportSettings
         var range: ClosedRange<Double>?
-        /// The files of `--laps each`; empty otherwise.
-        var eachLap: [LapExport] = []
+        /// The files of `--laps each` or `--corners`; empty otherwise.
+        var batch: [BatchFile] = []
     }
 
+}
+
+extension Render {
     private func loadProject(_ path: String, range: ClosedRange<Double>?) async throws -> LoadedForRender {
         var loaded = try await ProjectCompiler.load(URL(fileURLWithPath: path))
         if let template {
@@ -200,12 +217,24 @@ struct Render: AsyncParsableCommand {
         let compiled = try await ProjectCompiler.compile(loaded)
         let settings = resolveProjectSettings(loaded.project)
         var exportRange = range
-        var eachLap: [LapExport] = []
-        if laps == "each" {
-            eachLap = ProjectCompiler.lapExports(
+        var batch: [BatchFile] = []
+        if let corners {
+            let onlyOpportunities: Bool
+            switch corners {
+            case "all": onlyOpportunities = false
+            case "opportunities": onlyOpportunities = true
+            default: throw ValidationError("--corners must be all or opportunities.")
+            }
+            let files = ProjectCompiler.cornerExports(
+                .eachCorner(onlyOpportunities: onlyOpportunities), in: loaded, duration: compiled.duration)
+            guard !files.isEmpty else { throw ValidationError("No corners could be read from the project's data.") }
+            batch = files.map { BatchFile(title: $0.title, range: $0.range) }
+        } else if laps == "each" {
+            let eachLap = ProjectCompiler.lapExports(
                 .eachLap(completeOnly: !includePartialLaps, slowerThanBest: skipSlowerThan.map { $0 / 100 }),
                 in: loaded, duration: compiled.duration)
             guard !eachLap.isEmpty else { throw ValidationError("No laps in the project's data match.") }
+            batch = eachLap.map { BatchFile(title: "Lap \($0.lap)", range: $0.range) }
         } else if let laps {
             let parts = laps.split(separator: ":").compactMap { Int($0) }
             guard parts.count == 2 else { throw ValidationError("--laps expects first:last, e.g. 2:4.") }
@@ -220,7 +249,7 @@ struct Render: AsyncParsableCommand {
             let counts = "\(loaded.project.inputs.count) inputs, \(loaded.sessions.count) data sessions"
             print("Project:  \(counts); objects: \(objects)")
         }
-        return LoadedForRender(compiled: compiled, settings: settings, range: exportRange, eachLap: eachLap)
+        return LoadedForRender(compiled: compiled, settings: settings, range: exportRange, batch: batch)
     }
 
     /// Project export settings with CLI overrides applied.
