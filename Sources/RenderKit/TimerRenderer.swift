@@ -73,6 +73,16 @@ public struct TimerRenderer: OverlayDrawing {
             let other = context.followsComparedLap ? warp.lapDuration : warp.comparedDuration
             let color = color(forDelta: TimeParsing.deltaString(delta, decimals: decimals))
             return Readout(text: lapTime(other + delta, decimals: decimals), color: color)
+        case .deltaToBest where params.deltaReference == .personalBest && context.personalBest != nil:
+            guard let delta = deltaToPersonalBest(sample: sample) else { return Readout(text: "--.--", color: nil) }
+            let text = TimeParsing.deltaString(delta, decimals: decimals)
+            return Readout(text: text, color: color(forDelta: text))
+        case .projectedLap where params.deltaReference == .personalBest && context.personalBest != nil:
+            guard let pb = context.personalBest, let delta = deltaToPersonalBest(sample: sample) else {
+                return Readout(text: "--:--.--", color: nil)
+            }
+            let color = color(forDelta: TimeParsing.deltaString(delta, decimals: decimals))
+            return Readout(text: lapTime(pb.duration + delta, decimals: decimals), color: color)
         case .deltaToBest:
             guard let sample, let session = context.sampler?.session,
                 let delta = LapComparison.delta(
@@ -90,6 +100,19 @@ public struct TimerRenderer: OverlayDrawing {
             let color = color(forDelta: TimeParsing.deltaString(delta, decimals: decimals))
             return Readout(text: lapTime(projected, decimals: decimals), color: color)
         }
+    }
+
+    /// Seconds behind (+) or ahead (−) of the logbook's personal best at the same distance into
+    /// the lap (#351): the two laps are of different sessions, so distance is the best alignment
+    /// a live readout can have.
+    func deltaToPersonalBest(sample: TelemetrySample?) -> Double? {
+        guard let sample, let pb = context.personalBest, let session = context.sampler?.session,
+            let lap = sample.lapTiming.currentLap, let elapsed = sample.lapTiming.elapsedInLap,
+            let distance = session[.distance],
+            let into = LapComparison.distanceIntoLap(at: sample.time, lap: lap, distance: distance),
+            into <= pb.lengthMeters
+        else { return nil }
+        return elapsed - pb.elapsed(atDistance: into)
     }
 
     /// Ahead or behind by the delta as shown: one that rounds to zero is neither.

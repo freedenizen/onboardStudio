@@ -33,12 +33,16 @@ public struct ObjectContext: Sendable {
     /// Every lap of this object's data input read against the project's coaching reference
     /// (#323), when the project has something that draws from it; built once per compile.
     public let coaching: CoachingTrack?
+    /// The personal best lap at this circuit from the logbook (#351), for a timer measuring
+    /// against it; `nil` when the project asked for none or the logbook had none.
+    public let personalBest: LapProfile?
 
     public init(
         objectID: DisplayObjectID, frame: UnitRect, opacity: Double, sampler: TelemetrySampler?, sync: SyncSettings,
         cache: RenderCache, speedUnit: SpeedDisplayUnit = UnitResolver.lastResort,
         units: DisplayUnits? = nil, typeface: Typeface? = nil, textScale: Double = 1,
-        lapComparison: LapTimeWarp? = nil, followsComparedLap: Bool = false, coaching: CoachingTrack? = nil
+        lapComparison: LapTimeWarp? = nil, followsComparedLap: Bool = false, coaching: CoachingTrack? = nil,
+        personalBest: LapProfile? = nil
     ) {
         self.objectID = objectID
         self.frame = frame
@@ -55,6 +59,7 @@ public struct ObjectContext: Sendable {
         self.lapComparison = lapComparison
         self.followsComparedLap = followsComparedLap && lapComparison != nil
         self.coaching = coaching
+        self.personalBest = personalBest
     }
 
     /// `style` in this object's chosen font and text size. Every renderer passes its text styles

@@ -239,7 +239,7 @@ extension LapReference {
     /// falls back to the session best, as the setting says.
     var comparison: LapComparison.Reference {
         switch self {
-        case .sessionBest, .comparedLap: .sessionBest
+        case .sessionBest, .comparedLap, .personalBest: .sessionBest
         case .bestLap: .best
         case .previousLap: .previous
         }

@@ -340,6 +340,14 @@ driver are filled from what the logbook knows. A saved project is listed on its 
 **Projects**, every video exported from it under **Exports**, both as links. A data file you have
 moved is found again through whichever side still knows where it is, once, when the project opens.
 
+The **PB** column stars every session that set a personal best at its circuit when it was driven,
+overall or in its car, and a selected session's **Personal best here** says the best at that
+circuit, when, in what, and how many visits you have had. In a project, a Text object or Title
+Card can show `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` for the circuit its data is at (in the
+project's car when the logbook has one there), and a Timer's *Delta* or *Projected lap* can
+**Compare with ▸ Personal best (logbook)** — the gap to your personal best lap at the same
+distance, that session read on demand, the session best when the logbook has nothing to offer.
+
 The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
 folder of one file per session (narrow the table first to export only a circuit, a car or a year),
 **…with Data Files** copies the data files in beside them, **Export Sessions as CSV…** and
@@ -523,7 +531,7 @@ Any **Text** object shows a detail by naming it in braces — `{track} · {date}
 {tyres}` — and **Insert Detail** in its inspector adds one without typing, each item saying what
 it stands for now. **Add Object ▸ Title Card** starts with `{track} · {date}`. A detail with
 nothing entered stays in its braces, so a title card asks for what is missing rather than
-quietly leaving a gap. Details belong to the project, not to templates: a template with a title
+quietly leaving a gap. `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` come from the logbook (§4). Details belong to the project, not to templates: a template with a title
 card picks up each project's own track and day.
 
 ### Fonts

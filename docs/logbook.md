@@ -121,6 +121,20 @@ a spreadsheet needs no parsing; **Markdown**: a table of the sessions and each s
 notes. The window exports what the table shows, so a scope or a search is the selection; the CLI
 exports the whole book. Zip is left to the Finder.
 
+## Personal bests (#351, Milestone E)
+
+`PersonalBests` (`ProjectModel/PersonalBests.swift`) is queries over the entries: the best at a
+circuit key, narrowed to a car and a year; the visits; the sessions that set a best when driven
+(a chronological sweep per circuit and per circuit-and-car, which is what the window's star
+means); and the text keys. At compile, `LogbookDerived` (MediaKit) reads the user's logbook —
+`ProjectCompiler.logbookDirectory`, a scratch folder under UI tests — only when the project names
+a key (`Project.usesLogbookKeys`) or has a timer against the personal best (`needsPersonalBest`):
+the keys go into `LoadedProject.derivedDetails` and reach text through `ProjectDetails.adding`,
+under any detail the user typed; the personal-best lap's session is read on demand and its
+`LapProfile` handed to the timer through `ObjectContext.personalBest`, except when the best is
+this very session (same bytes), where the session best already measures it. The timer's delta is
+by distance into the lap, the one alignment a live readout can have across sessions.
+
 ## What comes next
  #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as
