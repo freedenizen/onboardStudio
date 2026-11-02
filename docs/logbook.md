@@ -80,6 +80,17 @@ template; **Add to Current Project** calls the front editor's `addData(at:)`. Th
 Track Day… and a drop of files or folders on the window run `TrackDayImport` behind the same
 sheet. Fits 1024×768 (sidebar 170–280, detail 720 minimum).
 
+## Conditions and notes (#348)
+
+`SessionConditions` (`ProjectModel/SessionConditions.swift`) — weather and track from short
+lists, the air temperature in °C, tyres and setup as text — sits on the entry as `conditions`,
+beside `notes`; every part optional and the decoder forgiving of words a later build adds (an
+unknown weather reads as not noted rather than failing the entry). `ConditionsEditor` in the
+window's detail writes straight to the entry: pickers and the temperature as set, text fields on
+Return or losing focus, never per keystroke. `summary` is the table's column and the sheet's
+future "what the day was like". These are library files, not a document, so the edits are not
+undoable, as the track definitions' are not.
+
 ## What comes next
  #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as

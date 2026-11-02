@@ -328,7 +328,11 @@ numbers, every lap with the best marked, the notes, the projects made from it an
 is. **Open as Project** starts a new project with that session's data file; **Add to Current
 Project** adds it to the project in front; **Add Track Day…** in the toolbar, or files and folders
 dropped on the window, enter more. **Remove from Logbook…** takes a session out; the file is not
-touched.
+touched. Under **Conditions** in the detail, note the weather, the track (dry, damp, wet, drying,
+greasy), the air temperature, the tyres and the setup, and anything else under **Notes**: pickers
+and the temperature are kept as soon as set, text on Return or when you leave the field; the
+table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and
+the search finds it. Nothing is required.
 
 ## 5. Objects
 
