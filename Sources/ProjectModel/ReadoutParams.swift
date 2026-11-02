@@ -156,6 +156,22 @@ public struct GraphSeries: Hashable, Codable, Sendable, Identifiable {
 }
 
 /// A scrolling line graph of one or more channels against time or distance.
+/// Which lap a lap-axis graph draws as its ghost (#325).
+public enum GraphGhost: String, Codable, Sendable, CaseIterable {
+    /// The session's best lap, as the graph always drew.
+    case bestLap
+    /// The project's coaching reference: the best lap, the fastest rolling lap, the optimal lap or
+    /// another driver's lap, as chosen in Project ▸ Coaching….
+    case coachingReference
+
+    public var displayName: String {
+        switch self {
+        case .bestLap: "Best lap"
+        case .coachingReference: "Coaching reference"
+        }
+    }
+}
+
 public struct GraphParams: Hashable, Codable, Sendable {
     public var series: [GraphSeries]
     public var axis: GraphAxis
@@ -180,6 +196,8 @@ public struct GraphParams: Hashable, Codable, Sendable {
     /// For `.lap`: also draw the best lap's trace in `ghostColor`.
     public var compareBestLap: Bool
     public var ghostColor: RGBAColor
+    /// Which lap the ghost is (#325); the best lap unless a project says otherwise.
+    public var ghost: GraphGhost
     /// For `.channel`: what the horizontal axis plots, and its range (`nil` fits the trail).
     public var xChannel: String
     public var xMinValue: Double?
@@ -214,7 +232,8 @@ public struct GraphParams: Hashable, Codable, Sendable {
         xMinValue: Double? = nil,
         xMaxValue: Double? = nil,
         playheadPosition: Double = GraphParams.middlePlayheadPosition,
-        showPlayheadLine: Bool = true
+        showPlayheadLine: Bool = true,
+        ghost: GraphGhost = .bestLap
     ) {
         self.series = series
         self.axis = axis
@@ -237,6 +256,7 @@ public struct GraphParams: Hashable, Codable, Sendable {
         self.xMaxValue = xMaxValue
         self.playheadPosition = playheadPosition
         self.showPlayheadLine = showPlayheadLine
+        self.ghost = ghost
     }
 
     public init(from decoder: any Decoder) throws {
@@ -265,6 +285,8 @@ public struct GraphParams: Hashable, Codable, Sendable {
         // line; `pinningPlayheadToTheRightEdge()` restores that in each file type's migration.
         playheadPosition = try c.decodeIfPresent(Double.self, forKey: .playheadPosition) ?? d.playheadPosition
         showPlayheadLine = try c.decodeIfPresent(Bool.self, forKey: .showPlayheadLine) ?? d.showPlayheadLine
+        // Absent before the ghost could be chosen: the best lap, as the graph always drew (#325).
+        ghost = try c.decodeIfPresent(GraphGhost.self, forKey: .ghost) ?? d.ghost
     }
 
     /// How every graph drew before #156: the current moment at the right edge, marked by the

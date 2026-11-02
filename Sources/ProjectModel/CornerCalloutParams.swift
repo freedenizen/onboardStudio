@@ -76,6 +76,8 @@ extension Project {
             switch object.kind {
             case .cornerCallout: return true
             case .trackMap(let params): return params.usesCoaching
+            case .graph(let params):
+                return params.axis == .lap && params.compareBestLap && params.ghost == .coachingReference
             default: return false
             }
         }

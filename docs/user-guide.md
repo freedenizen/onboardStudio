@@ -687,6 +687,10 @@ circle and a square for both laps; and **Follow the corner in play**, which fram
 corner from its brake point to its exit and shows the whole circuit on the straights. They read the
 same reference as the callout.
 
+A lap-axis **Graph** can draw the coaching reference as its ghost instead of the session's best
+lap (Ghost ▸ Coaching reference): the fastest rolling lap, the spliced optimal lap or another
+driver's lap behind the live trace. A channel the reference does not carry draws no ghost.
+
 ## 7. Export and share
 
 ![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)

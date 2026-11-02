@@ -343,6 +343,12 @@ builds a projection over the corner's time span (brake point − 60 m to exit + 
 the cached trace image is keyed per lap and per followed corner, so the first frame of each pays
 and the rest are a blit.
 
+**Graph ghost** (#325): a lap-axis graph's ghost can be the coaching reference. The reference is a
+profile on a distance grid, which is what the lap axis plots against, and its channels are stored
+canonically as the session's are, so the same display conversion applies; a channel the profile
+does not carry (an OBD temperature, say) has no ghost rather than a wrong one. Older files keep the
+best lap.
+
 Still to come: the
 reference line, gain/loss colouring and brake-point markers on the Track Map, all off by default
 (#324); a choosable graph ghost (#325); per-corner comparison clips with the better lap's brake-point
