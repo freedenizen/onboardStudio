@@ -261,10 +261,12 @@ public struct Logbook: Sendable {
         entries().first { $0.file.contentHash == hash }
     }
 
-    public func save(_ entry: LogbookEntry) throws {
+    /// Writes the entry, stamping `modified` with now — unless `keepingModified`, for an entry
+    /// arriving from elsewhere whose own date is the truth (#350).
+    public func save(_ entry: LogbookEntry, keepingModified: Bool = false) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var stamped = entry
-        stamped.modified = Date()
+        if !keepingModified { stamped.modified = Date() }
         try Self.write(stamped, to: url(for: entry.id))
     }
 

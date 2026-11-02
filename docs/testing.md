@@ -80,6 +80,9 @@ swift run onboard coach session.csv --lap 5 --markdown                   # the d
 swift run onboard coach session.csv --lap 5 --align position              # two laps of one session matched by place
 swift run onboard logbook add ~/TrackDays/2026-08-23 --car Miata          # a day's files into the logbook
 swift run onboard logbook list                                            # what the logbook holds
+swift run onboard logbook export ~/Desktop/Logbook --with-files            # the logbook as a folder, data files beside
+swift run onboard logbook export sessions.csv                              # one line per session (--laps: per lap)
+swift run onboard logbook import ~/Desktop/Logbook                         # merge a folder back, by each file's bytes
 swift run onboard render --project my.onboardproj --out clips --corners opportunities   # one clip per corner that lost time
 swift run onboard render --project my.onboardproj --out debrief.mp4 --debrief            # cards + the top corners as one video
 swift run onboard render --project my.onboardproj --out debrief.mp4 --debrief --narrate  # the same, read aloud
