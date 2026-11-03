@@ -26,6 +26,9 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     public var cornerLabels: [String]
     /// When it was last written. Two drivers swapping definitions need to know which is newer.
     public var modified: Date
+    /// What the driver planned to try next time here (#330), kept so the next project at this
+    /// circuit opens knowing it.
+    public var plan: NextSessionPlan?
 
     public init(
         circuitID: String? = nil,
@@ -35,7 +38,8 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         startFinish: LapLineSpec? = nil,
         sectors: SectorSpec = SectorSpec(),
         cornerLabels: [String] = [],
-        modified: Date = Date()
+        modified: Date = Date(),
+        plan: NextSessionPlan? = nil
     ) {
         self.circuitID = circuitID
         self.name = name
@@ -45,6 +49,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         self.sectors = sectors
         self.cornerLabels = cornerLabels
         self.modified = modified
+        self.plan = plan
     }
 
     /// What the definition is filed under: the Wikidata id where there is one, otherwise a slug
@@ -71,7 +76,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case circuitID, name, latitude, longitude, startFinish, sectors, cornerLabels, modified
+        case circuitID, name, latitude, longitude, startFinish, sectors, cornerLabels, modified, plan
     }
 
     public init(from decoder: any Decoder) throws {
@@ -84,6 +89,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         sectors = try c.decodeIfPresent(SectorSpec.self, forKey: .sectors) ?? SectorSpec()
         cornerLabels = try c.decodeIfPresent([String].self, forKey: .cornerLabels) ?? []
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? Date(timeIntervalSince1970: 0)
+        plan = try c.decodeIfPresent(NextSessionPlan.self, forKey: .plan)
     }
 }
 

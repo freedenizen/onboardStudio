@@ -243,6 +243,8 @@ struct CoachingContent: View {
                 .padding(.horizontal)
                 .padding(.top, 12)
                 opportunities(analysis, input: input)
+                NextSessionPlanView(editor: editor, input: input, analysis: analysis, lapNumber: selection.lapNumber)
+                    .padding(.horizontal)
                 CornerTable(
                     rows: analysis.rows(units: units), selection: $selectedCorner, sortOrder: $sortOrder, units: units)
                 if !analysis.warnings.isEmpty {

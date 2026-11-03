@@ -25,7 +25,7 @@ let package = Package(
     ],
     targets: [
         // MARK: Libraries
-        .target(name: "ProjectModel", swiftSettings: strict),
+        .target(name: "ProjectModel", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .target(name: "TelemetryKit", resources: [.copy("Resources/circuits.csv")], swiftSettings: strict),
         .target(name: "GPMFKit", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .target(name: "Importers", dependencies: ["TelemetryKit", "GPMFKit"], swiftSettings: strict),
@@ -60,7 +60,7 @@ let package = Package(
         ),
 
         // MARK: Tests
-        .testTarget(name: "ProjectModelTests", dependencies: ["ProjectModel"], swiftSettings: strict),
+        .testTarget(name: "ProjectModelTests", dependencies: ["ProjectModel", "Importers"], swiftSettings: strict),
         .testTarget(name: "TelemetryKitTests", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .testTarget(
             name: "ImportersTests",

@@ -664,6 +664,15 @@ playhead goes to the brake point and the export range is the corner, so one expo
 It is offered when the reference is a real lap with a camera; the rolling and spliced laps are
 data only.
 
+**Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
+time, one per corner that cost the most, in the window's own words; edit any line to say it your
+way (Return or leaving the field keeps it), **Add Experiment** adds a line for the lap as a whole,
+the minus removes one, **Start Over** rewrites the plan from the current opportunities. The plan is
+saved with the project and, when the circuit is recognised, remembered for the circuit in its
+track definition — so the next project at the same circuit opens the Coaching window with **Last
+time at Sonoma you planned to try…** and **Use It Again**. Every step is one undo (*Undo Make
+Plan*, *Undo Edit Plan*, *Undo Remove Experiment*).
+
 When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
 points are read from the speed trace and the window says so. Notes are in km/h and metres, or in
 mph and feet when the app's speed unit is mph. The lap and reference you chose are saved with the
