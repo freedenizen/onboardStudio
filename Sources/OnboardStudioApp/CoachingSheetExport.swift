@@ -181,3 +181,43 @@ struct CoachingSheetView: View {
         }
     }
 }
+
+extension CoachingContent {
+    /// The page for File ▸ Export Coaching Sheet (#331): this reading, the project's details and plan.
+    func sheet(_ analysis: CoachingAnalysis, selection: CoachingSelection, session: TelemetrySession) -> CoachingSheet {
+        let details = editor.project.details
+        func text(_ value: String) -> String? {
+            let trimmed = value.trimmingCharacters(in: .whitespaces)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        let title = text(details.track) ?? session.info.trackName ?? ""
+        let subtitle = [text(details.date), text(details.driver), text(details.car), text(details.event)]
+            .compactMap { $0 }.joined(separator: " · ")
+        return CoachingSheet(
+            analysis: analysis, lapNumber: selection.lapNumber, units: units, title: title, subtitle: subtitle,
+            plan: editor.project.plan, warnings: analysis.warnings.map(describe))
+    }
+
+    func referenceName(_ reference: CoachingSettings.Reference) -> String {
+        switch reference {
+        case .sessionBest: CoachingReference.sessionBest.phrase
+        case .lap(let number): CoachingReference.lap(number).phrase
+        case .fastestRolling: CoachingReference.fastestRolling.phrase
+        case .compositeOptimal: CoachingReference.compositeOptimal.phrase
+        case .otherInput(let id, let lap): "\(editor.project.input(id)?.label ?? "the other file") lap \(lap)"
+        }
+    }
+
+    func describe(_ warning: CoachingWarning) -> String {
+        switch warning {
+        case .approximateAlignment:
+            "The two laps could not be lined up by place; distances are approximate."
+        case .pedalsFromSpeedTrace:
+            "No brake or throttle channel: brake and throttle points were read from the speed trace."
+        case .seamInCorner(let labels):
+            "The reference changes lap inside turn \(labels.joined(separator: ", ")), so its speed can step there."
+        case .tooFewLapsForConsistency:
+            "Fewer than three flying laps: nothing to say about consistency."
+        }
+    }
+}

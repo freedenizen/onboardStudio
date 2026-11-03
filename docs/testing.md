@@ -77,6 +77,7 @@ swift run onboard probe session.csv --json             # machine-readable
 swift run onboard coach session.csv                    # where a lap lost time against the best, corner by corner
 swift run onboard coach session.csv --reference rolling --lap 5 --json   # against the fastest rolling lap, as data
 swift run onboard coach session.csv --lap 5 --markdown                   # the debrief sheet as Markdown
+swift run onboard coach session.csv --lap 5 --align position              # two laps of one session matched by place
 swift run onboard render --project my.onboardproj --out clips --corners opportunities   # one clip per corner that lost time
 swift run onboard render --project my.onboardproj --out debrief.mp4 --debrief            # cards + the top corners as one video
 

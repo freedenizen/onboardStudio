@@ -31,6 +31,11 @@ struct Coach: AsyncParsableCommand {
     @Option(name: .long, help: "The data input to read, by name, when the project has several.")
     var input: String?
 
+    @Option(
+        name: .long,
+        help: "How the two laps are lined up: distance (metre for metre, the default within a session) or position.")
+    var align: String?
+
     @Option(name: .long, help: "Units for the notes: metric (km/h, m) or imperial (mph, ft).")
     var units: String = "metric"
 
@@ -81,7 +86,16 @@ struct Coach: AsyncParsableCommand {
         case "imperial": units = .imperial
         default: throw ValidationError("--units must be metric or imperial.")
         }
-        guard let analysis = CoachingAnalysis.analyse(lap: chosen, reference: reference, in: session, units: units)
+        var options = CoachingOptions()
+        switch align?.lowercased() {
+        case nil: break
+        case "distance": options.alignment = .distance
+        case "position": options.alignment = .byPosition
+        default: throw ValidationError("--align must be distance or position.")
+        }
+        guard
+            let analysis = CoachingAnalysis.analyse(
+                lap: chosen, reference: reference, in: session, units: units, options: options)
         else {
             throw ValidationError(
                 "Lap \(chosen.number) cannot be read against \(reference.displayName.lowercased()): "

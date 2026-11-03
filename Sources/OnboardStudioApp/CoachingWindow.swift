@@ -43,10 +43,21 @@ struct CoachingSelection: Hashable, Sendable {
     var input: Input
     var lapNumber: Int
     var reference: CoachingSettings.Reference
+    var alignByPosition: Bool
     /// A cheap fingerprint of the session, so a re-import re-reads the analysis.
     var sessionStamp: Int
 
-    var settings: CoachingSettings { CoachingSettings(dataInputID: input.id, lap: lapNumber, reference: reference) }
+    var settings: CoachingSettings {
+        CoachingSettings(
+            dataInputID: input.id, lap: lapNumber, reference: reference, alignByPosition: alignByPosition)
+    }
+
+    /// The analysis options the choices amount to.
+    var options: CoachingOptions {
+        var options = CoachingOptions()
+        if alignByPosition { options.alignment = .byPosition }
+        return options
+    }
 }
 
 struct CoachingContent: View {
@@ -62,7 +73,7 @@ struct CoachingContent: View {
     @State private var selectingForShowMe = false
     @State private var sortOrder = [KeyPathComparator(\CornerRow.timeLost, order: .reverse)]
 
-    private var units: CoachingUnits { appSpeedUnit == SpeedUnitSetting.mph.rawValue ? .imperial : .metric }
+    var units: CoachingUnits { appSpeedUnit == SpeedUnitSetting.mph.rawValue ? .imperial : .metric }
 
     var body: some View {
         if let input = currentInput {
@@ -126,7 +137,9 @@ struct CoachingContent: View {
             ?? defaultLap(in: laps, input: input, reference: reference)
         guard let lap else { return nil }
         let stamp = session.laps.count &* 31 &+ Int(session.duration * 10)
-        return CoachingSelection(input: input, lapNumber: lap.number, reference: reference, sessionStamp: stamp)
+        return CoachingSelection(
+            input: input, lapNumber: lap.number, reference: reference, alignByPosition: saved?.alignByPosition ?? false,
+            sessionStamp: stamp)
     }
 
     private func setLap(_ number: Int, selection: CoachingSelection) {
@@ -139,6 +152,12 @@ struct CoachingContent: View {
         var settings = selection.settings
         settings.reference = reference
         editor.edit("Change Coaching Reference") { $0.coaching = settings }
+    }
+
+    private func setAlignByPosition(_ byPosition: Bool, selection: CoachingSelection) {
+        var settings = selection.settings
+        settings.alignByPosition = byPosition
+        editor.edit("Change Coaching Alignment") { $0.coaching = settings }
     }
 
     // MARK: - Layout
@@ -223,6 +242,17 @@ struct CoachingContent: View {
                 }
             }
             .accessibilityIdentifier("coaching.reference")
+            Toggle(
+                "Line up by position",
+                isOn: Binding(
+                    get: { selection.alignByPosition }, set: { setAlignByPosition($0, selection: selection) })
+            )
+            .help(
+                "Match the two laps by where the car was rather than metre for metre: for two laps of one session "
+                    + "driven on different lines. A lap from another file is always matched by position."
+            )
+            .disabled({ if case .otherInput = selection.reference { true } else { false } }())
+            .accessibilityIdentifier("coaching.alignByPosition")
             Spacer()
             if isAnalysing { ProgressView().controlSize(.small) }
         }
@@ -239,6 +269,7 @@ struct CoachingContent: View {
                         .accessibilityIdentifier("coaching.headline")
                     Text([analysis.splicedFrom, analysis.alignmentLine].compactMap { $0 }.joined(separator: ". "))
                         .font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("coaching.alignment")
                 }
                 .padding(.horizontal)
                 .padding(.top, 12)
@@ -324,6 +355,7 @@ extension CoachingContent {
             other = nil
         }
         let reference = selection.reference
+        let options = selection.options
         let result = await Task.detached(priority: .userInitiated) { () -> CoachingAnalysis? in
             if let other {
                 guard let lapProfile = LapProfile(lap: lap, in: session),
@@ -332,7 +364,8 @@ extension CoachingContent {
                 else { return nil }
                 return CoachingAnalysis.analyse(
                     lap: lapProfile, in: session, reference: referenceProfile,
-                    referencePhrase: "\(other.label) lap \(other.lap)", sameSession: false, units: units)
+                    referencePhrase: "\(other.label) lap \(other.lap)", sameSession: false, units: units,
+                    options: options)
             }
             let same: CoachingReference
             switch reference {
@@ -342,7 +375,7 @@ extension CoachingContent {
             case .compositeOptimal: same = .compositeOptimal
             case .otherInput: return nil
             }
-            return CoachingAnalysis.analyse(lap: lap, reference: same, in: session, units: units)
+            return CoachingAnalysis.analyse(lap: lap, reference: same, in: session, units: units, options: options)
         }.value
         guard !Task.isCancelled else { return }
         analysis = result
@@ -385,49 +418,12 @@ extension CoachingContent {
         return { editor.compareLaps(settings, range: end > start ? max(0, start)...end : nil) }
     }
 
-    /// The page for File ▸ Export Coaching Sheet (#331): this reading, the project's details and plan.
-    func sheet(_ analysis: CoachingAnalysis, selection: CoachingSelection, session: TelemetrySession) -> CoachingSheet {
-        let details = editor.project.details
-        func text(_ value: String) -> String? {
-            let trimmed = value.trimmingCharacters(in: .whitespaces)
-            return trimmed.isEmpty ? nil : trimmed
-        }
-        let title = text(details.track) ?? session.info.trackName ?? ""
-        let subtitle = [text(details.date), text(details.driver), text(details.car), text(details.event)]
-            .compactMap { $0 }.joined(separator: " · ")
-        return CoachingSheet(
-            analysis: analysis, lapNumber: selection.lapNumber, units: units, title: title, subtitle: subtitle,
-            plan: editor.project.plan, warnings: analysis.warnings.map(describe))
-    }
-
     /// Moves the playhead to `distance` metres into the lap being read.
     func seek(to distance: Double, in analysis: CoachingAnalysis, input: Input) {
         let dataTime = analysis.lap.time(atDistance: distance)
         editor.seek(to: max(0, input.sync.projectTime(forInputTime: dataTime)))
     }
 
-    func referenceName(_ reference: CoachingSettings.Reference) -> String {
-        switch reference {
-        case .sessionBest: CoachingReference.sessionBest.phrase
-        case .lap(let number): CoachingReference.lap(number).phrase
-        case .fastestRolling: CoachingReference.fastestRolling.phrase
-        case .compositeOptimal: CoachingReference.compositeOptimal.phrase
-        case .otherInput(let id, let lap): "\(editor.project.input(id)?.label ?? "the other file") lap \(lap)"
-        }
-    }
-
-    func describe(_ warning: CoachingWarning) -> String {
-        switch warning {
-        case .approximateAlignment:
-            "The two laps could not be lined up by place; distances are approximate."
-        case .pedalsFromSpeedTrace:
-            "No brake or throttle channel: brake and throttle points were read from the speed trace."
-        case .seamInCorner(let labels):
-            "The reference changes lap inside turn \(labels.joined(separator: ", ")), so its speed can step there."
-        case .tooFewLapsForConsistency:
-            "Fewer than three flying laps: nothing to say about consistency."
-        }
-    }
 }
 
 /// One opportunity: what happened, the evidence, what to try, and the way to the video.

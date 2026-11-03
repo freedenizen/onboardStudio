@@ -640,7 +640,9 @@ which is frequently quicker than any timed lap; the **optimal lap (spliced)** â€
 each lap joined into one, the lap you have already shown you can do; **another lap**; or a lap of
 **another data file** in the project, which is how you compare with a friend's or an instructor's
 session (the two lines are matched by position, so a different line through a corner still meets
-the same corner).
+the same corner). Two laps of one session are matched metre for metre, which is right when they
+follow the same line; when you drove a corner two different ways on purpose, turn on **Line up by
+position** and they are matched by where the car was instead (undoable, saved with the project).
 
 The headline says how far behind the lap finished. Below it the **top three opportunities** are
 cards: which turn, how much time and in which phase (braking, entry, apex or exit), what happened

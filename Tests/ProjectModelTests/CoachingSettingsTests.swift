@@ -26,4 +26,20 @@ struct CoachingSettingsTests {
         let older = try Project.decode(try JSONSerialization.data(withJSONObject: json))
         #expect(older.coaching == nil)
     }
+
+    @Test func liningUpByPositionIsOffUnlessAskedAndAbsentInOlderSettings() throws {
+        let data = Input(label: "Data", source: MediaReference(path: "/tmp/s.csv"), kind: .data(DataInputSettings()))
+        var project = Project(inputs: [data])
+        project.coaching = CoachingSettings(dataInputID: data.id, lap: 2, alignByPosition: true)
+        let reopened = try Project.decode(try project.encoded())
+        #expect(reopened.coaching?.alignByPosition == true)
+        // Settings saved before the option existed have no key and read as off.
+        var json = try #require(try JSONSerialization.jsonObject(with: try project.encoded()) as? [String: Any])
+        var coaching = try #require(json["coaching"] as? [String: Any])
+        coaching["alignByPosition"] = nil
+        json["coaching"] = coaching
+        let older = try Project.decode(try JSONSerialization.data(withJSONObject: json))
+        #expect(older.coaching?.alignByPosition == false)
+        #expect(older.coaching?.lap == 2)
+    }
 }

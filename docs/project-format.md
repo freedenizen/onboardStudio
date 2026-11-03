@@ -135,6 +135,8 @@ each join — and `comparedLap.lap` a placeholder; absent means the lap itself.
 
 `coaching` (optional, #321) is what the Coaching window reads:
 `{ "dataInputID", "lap": 5, "reference": { "sessionBest": {} } | { "lap": { "_0": 3 } } | { "fastestRolling": {} } | { "compositeOptimal": {} } | { "otherInput": { "dataInputID", "lap": 2 } } }`.
+`alignByPosition` (optional, #333, default false) lines two laps of one session up by place rather than
+metre for metre, for laps driven on different lines; absent means off, how every earlier reading was made.
 `lap` absent follows the playhead. It is window state kept with the project so the same analysis
 comes back on reopening, and nothing in it changes how the project renders; absent means the
 window has not been opened for this project.

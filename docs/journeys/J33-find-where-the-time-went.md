@@ -6,6 +6,8 @@ change; the app showed sector deltas and left the rest to the driver.*
    session's best lap. The headline says how far behind it finished and how the two were lined up.
 2. Choose the **Lap** to read and what it is **Compared with**: the best lap, the fastest rolling
    lap, the optimal lap spliced from the best sectors, another lap, or a lap of another data file.
+   **Line up by position** matches two laps of one session by where the car was instead of metre
+   for metre, for a corner driven two different ways on purpose (#333).
 3. Read the **Opportunities**: the three corners that cost the most, each with the phase, what
    happened and what to try. **Show Me** moves the playhead to where braking began for that corner
    on the lap being read, and the preview shows it.
