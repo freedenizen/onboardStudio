@@ -22,6 +22,12 @@ import TelemetryKit
         try? AppLogbook.shared.remove(id: entry.id)
         reload()
     }
+
+    /// Writes an edited entry — its conditions and notes (#348) — and shows it.
+    func save(_ entry: LogbookEntry) {
+        try? AppLogbook.shared.save(entry)
+        reload()
+    }
 }
 
 /// Hands a session to the next editor that appears (Open as Project).
@@ -156,7 +162,8 @@ struct LogbookWindow: View {
                         entry: entry, hasProject: active.editor != nil,
                         openAsProject: { openAsProject(entry) },
                         addToProject: { addToCurrentProject(entry) },
-                        remove: { confirmRemoval = entry }
+                        remove: { confirmRemoval = entry },
+                        save: { model.save($0) }
                     )
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: 420)
                 }
@@ -219,6 +226,7 @@ struct LogbookTable: View {
                 Text(entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
             }
             .width(min: 70, ideal: 80)
+            TableColumn("Conditions", value: \.conditions.summary).width(min: 90, ideal: 140)
         }
         .accessibilityIdentifier("logbook.table")
     }
@@ -262,6 +270,7 @@ struct LogbookDetail: View {
     let openAsProject: () -> Void
     let addToProject: () -> Void
     let remove: () -> Void
+    let save: (LogbookEntry) -> Void
 
     var body: some View {
         ScrollView {
@@ -295,7 +304,7 @@ struct LogbookDetail: View {
                         }
                     }
                 }
-                if !entry.notes.isEmpty { Text(entry.notes).font(.callout) }
+                ConditionsEditor(entry: entry, save: save)
                 if !entry.projects.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Projects").font(.subheadline.weight(.semibold))
@@ -343,5 +352,115 @@ struct LogbookDetail: View {
                 }
             }
         }
+    }
+}
+
+/// Weather, track, temperature, tyres, setup and notes, written to the entry as they are set:
+/// pickers and the temperature at once, text when Return is pressed or the field is left (#348).
+struct ConditionsEditor: View {
+    let entry: LogbookEntry
+    let save: (LogbookEntry) -> Void
+    @State private var temperature = ""
+    @State private var tyres = ""
+    @State private var setup = ""
+    @State private var notes = ""
+    @FocusState private var focus: Field?
+
+    enum Field: Hashable { case temperature, tyres, setup, notes }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Conditions").font(.subheadline.weight(.semibold))
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+                GridRow {
+                    Text("Weather").foregroundStyle(.secondary)
+                    Picker("Weather", selection: binding(\.weather)) {
+                        Text("Not noted").tag(SessionConditions.Weather?.none)
+                        ForEach(SessionConditions.Weather.allCases, id: \.self) {
+                            Text($0.displayName).tag(Optional($0))
+                        }
+                    }
+                    .labelsHidden()
+                    .accessibilityIdentifier("logbook.weather")
+                }
+                GridRow {
+                    Text("Track").foregroundStyle(.secondary)
+                    Picker("Track", selection: binding(\.track)) {
+                        Text("Not noted").tag(SessionConditions.Track?.none)
+                        ForEach(SessionConditions.Track.allCases, id: \.self) {
+                            Text($0.displayName).tag(Optional($0))
+                        }
+                    }
+                    .labelsHidden()
+                    .accessibilityIdentifier("logbook.track")
+                }
+                GridRow {
+                    Text("Air").foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        TextField("°C", text: $temperature).frame(width: 56)
+                            .focused($focus, equals: .temperature)
+                            .onSubmit(commit)
+                            .accessibilityIdentifier("logbook.temperature")
+                        Text("°C").foregroundStyle(.secondary)
+                    }
+                }
+                GridRow {
+                    Text("Tyres").foregroundStyle(.secondary)
+                    TextField("Compound, age, pressures", text: $tyres)
+                        .focused($focus, equals: .tyres)
+                        .onSubmit(commit)
+                        .accessibilityIdentifier("logbook.tyres")
+                }
+                GridRow {
+                    Text("Setup").foregroundStyle(.secondary)
+                    TextField("What was changed", text: $setup, axis: .vertical).lineLimit(1...3)
+                        .focused($focus, equals: .setup)
+                        .onSubmit(commit)
+                        .accessibilityIdentifier("logbook.setup")
+                }
+            }
+            .font(.callout)
+            Text("Notes").font(.subheadline.weight(.semibold)).padding(.top, 4)
+            TextField("Anything worth remembering about the day", text: $notes, axis: .vertical).lineLimit(2...6)
+                .focused($focus, equals: .notes)
+                .onSubmit(commit)
+                .accessibilityIdentifier("logbook.notes")
+        }
+        .onAppear(perform: load)
+        .onChange(of: entry.id) { load() }
+        .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
+    }
+
+    private func binding<Value>(_ keyPath: WritableKeyPath<SessionConditions, Value>) -> Binding<Value> {
+        Binding(
+            get: { entry.conditions[keyPath: keyPath] },
+            set: { value in
+                var changed = entry
+                changed.conditions[keyPath: keyPath] = value
+                save(changed)
+            })
+    }
+
+    private func load() {
+        temperature = entry.conditions.ambientCelsius.map { Self.format($0) } ?? ""
+        tyres = entry.conditions.tyres
+        setup = entry.conditions.setup
+        notes = entry.notes
+    }
+
+    /// The text fields into the entry, when any of them changed.
+    private func commit() {
+        var changed = entry
+        let trimmed = temperature.trimmingCharacters(in: .whitespaces)
+        let number = Double(trimmed.replacingOccurrences(of: ",", with: "."))
+        changed.conditions.ambientCelsius = trimmed.isEmpty ? nil : number
+        changed.conditions.tyres = tyres.trimmingCharacters(in: .whitespaces)
+        changed.conditions.setup = setup.trimmingCharacters(in: .whitespacesAndNewlines)
+        changed.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        if changed != entry { save(changed) }
+    }
+
+    static func format(_ celsius: Double) -> String {
+        celsius == celsius.rounded() ? String(Int(celsius)) : String(format: "%.1f", celsius)
     }
 }

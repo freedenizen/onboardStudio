@@ -273,6 +273,7 @@ One JSON file per session in `~/Library/Application Support/OnboardStudio/Logboo
 by `Logbook.write` with ISO 8601 dates and sorted keys: `id`, `file` (`path`, `bookmark` as
 base64, `contentHash` SHA-256 hex, `byteCount`, `importerID`), `circuitID`, `trackName`, `date`,
 `car`, `driver`, `laps` (`[{ number, seconds, isComplete }]`), `bestLap`, `bestLapNumber`,
-`optimalLap`, `fastestRollingLap`, `topSpeed` (m/s), `notes`, `tags`, `projects`
-(`[{ path, name }]`), `added`, `modified`. Only `file` is required to read one. `garage.json` in the
+`optimalLap`, `fastestRollingLap`, `topSpeed` (m/s), `notes`, `tags`, `conditions`
+(`{ weather: sunny|cloudy|overcast|rain|mixed, track: dry|damp|wet|drying|greasy, ambientCelsius, tyres, setup }`,
+every key optional, #348), `projects` (`[{ path, name }]`), `added`, `modified`. Only `file` is required to read one. `garage.json` in the
 same folder is `[{ id, name, notes }]`. Design in [logbook.md](logbook.md).
