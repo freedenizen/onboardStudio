@@ -319,8 +319,16 @@ and every camera clip with GPS in it becomes an entry; the circuit is recognised
 from the file, the car taken from your last session at that circuit; a file already in the logbook
 is skipped, whatever it is called now. The sheet says what happened to each file in plain words.
 From the command line, `onboard logbook add <files or folders>` (`--car`, `--driver`) and
-`onboard logbook list`. The window that shows it all, and the way from a session into a project,
-come next.
+`onboard logbook list`.
+
+**Window ▸ Logbook** (⌃⌘L) shows it all: a sidebar of circuits, cars and years with how many
+sessions each, a table of sessions (date, circuit, car, laps, best, optimal and fastest rolling
+lap) sortable by any column and narrowed by the search field, and, for the selected session, its
+numbers, every lap with the best marked, the notes, the projects made from it and where the file
+is. **Open as Project** starts a new project with that session's data file; **Add to Current
+Project** adds it to the project in front; **Add Track Day…** in the toolbar, or files and folders
+dropped on the window, enter more. **Remove from Logbook…** takes a session out; the file is not
+touched.
 
 ## 5. Objects
 

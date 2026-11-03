@@ -24,7 +24,9 @@ extension EditorModel {
 
 /// Enters a track day in the logbook and says what happened to each file (#346).
 struct TrackDayImportSheet: View {
-    let editor: EditorModel
+    /// The front project, for its track library and status line; `nil` from the Logbook window
+    /// with no project open.
+    let editor: EditorModel?
     let request: TrackDayRequest
     @Environment(\.dismiss) private var dismiss
     @State private var reports: [TrackDayImport.Report] = []
@@ -70,7 +72,7 @@ struct TrackDayImportSheet: View {
     private func run() async {
         let urls = request.urls
         let logbook = AppLogbook.shared
-        let tracks = editor.trackLibrary
+        let tracks = editor?.trackLibrary ?? TrackLibrary()
         let result = await Task.detached(priority: .userInitiated) {
             await TrackDayImport.run(urls, into: logbook, tracks: tracks) { _, _, url in
                 Task { @MainActor in current = url.lastPathComponent }
@@ -79,6 +81,7 @@ struct TrackDayImportSheet: View {
         reports = result
         done = true
         let added = result.filter(\.isAdded).count
-        editor.statusMessage = "Added \(added) session\(added == 1 ? "" : "s") to the logbook."
+        editor?.statusMessage = "Added \(added) session\(added == 1 ? "" : "s") to the logbook."
+        LogbookModel.shared.reload()
     }
 }

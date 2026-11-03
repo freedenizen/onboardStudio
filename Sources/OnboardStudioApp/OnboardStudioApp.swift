@@ -67,6 +67,13 @@ struct OnboardStudioApp: App {
             CoachingWindow()
         }
         .defaultSize(width: 1000, height: 640)
+        // A Window scene lists itself in the Window menu; ⌃⌘L opens it (#347), the pattern Show
+        // Project Details (⌃⌘I) and Coaching (⌃⌘C) set for "show me a view".
+        Window("Logbook", id: LogbookWindow.windowID) {
+            LogbookWindow()
+        }
+        .defaultSize(width: 1000, height: 620)
+        .keyboardShortcut("l", modifiers: [.command, .control])
         Window("Keyboard Shortcuts", id: "shortcuts") {
             ShortcutsView()
         }
