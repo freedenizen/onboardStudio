@@ -143,6 +143,11 @@ extension EditorModel {
             : String(format: "%d:%02d", whole / 60, whole % 60)
     }
 
+    func addData() {
+        guard let url = OpenPanels.chooseData() else { return }
+        addData(at: url)
+    }
+
     func addData(at url: URL) {
         let input = Input(
             label: url.deletingPathExtension().lastPathComponent,

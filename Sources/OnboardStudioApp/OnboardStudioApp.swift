@@ -123,6 +123,12 @@ struct EditorCommands: Commands {
             // Everything a bug report needs, in one file the user sends themselves (#152).
             Button("Export Diagnostics…") { DiagnosticsExport.run(editor: editor) }
         }
+        CommandGroup(after: .importExport) {
+            // A whole day's files into the logbook, not the project, so it lives in File with the
+            // other things that bring files in (#346). The Project menu is at the height of a
+            // 768-pixel screen already; one more row there made its lower items scroll.
+            Button("Add Track Day to Logbook…") { editor?.requestTrackDay() }
+        }
         CommandGroup(after: .pasteboard) {
             // ⇧⌘A, as in Keynote, Pages and Freeform (#280).
             Button("Deselect All") { editor?.deselectAll() }

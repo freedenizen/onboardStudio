@@ -23,6 +23,17 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.urls.sorted { $0.lastPathComponent < $1.lastPathComponent } : []
     }
 
+    /// Files and folders of a track day for the logbook (#346).
+    static func chooseTrackDay() -> [URL] {
+        let panel = NSOpenPanel()
+        panel.title = "Add Track Day to Logbook"
+        panel.message = "Choose the day's telemetry files and camera clips, or the folders holding them."
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = true
+        return panel.runModal() == .OK ? panel.urls : []
+    }
+
     static func chooseImage() -> URL? {
         let panel = NSOpenPanel()
         panel.title = "Add Image"
