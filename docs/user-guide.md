@@ -673,6 +673,14 @@ track definition — so the next project at the same circuit opens the Coaching 
 time at Sonoma you planned to try…** and **Use It Again**. Every step is one undo (*Undo Make
 Plan*, *Undo Edit Plan*, *Undo Remove Experiment*).
 
+**On paper.** While the Coaching window is in front with a lap read, **File ▸ Export Coaching
+Sheet as PDF…** writes the debrief on one page — the track and the day, the headline, the circuit
+with every corner numbered, the top opportunities with their evidence and what to try, every
+corner's numbers, and the next-session plan — black on white, for printing or handing to an
+instructor; **File ▸ Export Coaching Sheet as Markdown…** writes the same as text for a message or
+a notes app. Files are named for the track and the lap (`Sonoma – Lap 2 coaching sheet.pdf`).
+`onboard coach … --markdown` prints the Markdown from the command line.
+
 When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
 points are read from the speed trace and the window says so. Notes are in km/h and metres, or in
 mph and feet when the app's speed unit is mph. The lap and reference you chose are saved with the

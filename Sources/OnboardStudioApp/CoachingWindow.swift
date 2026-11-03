@@ -245,6 +245,7 @@ struct CoachingContent: View {
                 opportunities(analysis, input: input)
                 NextSessionPlanView(editor: editor, input: input, analysis: analysis, lapNumber: selection.lapNumber)
                     .padding(.horizontal)
+                    .focusedSceneValue(\.coachingSheet, sheet(analysis, selection: selection, session: session))
                 CornerTable(
                     rows: analysis.rows(units: units), selection: $selectedCorner, sortOrder: $sortOrder, units: units)
                 if !analysis.warnings.isEmpty {
@@ -382,6 +383,21 @@ extension CoachingContent {
         let end = input.sync.projectTime(forInputTime: analysis.lap.time(atDistance: endDistance))
         let editor = editor
         return { editor.compareLaps(settings, range: end > start ? max(0, start)...end : nil) }
+    }
+
+    /// The page for File ▸ Export Coaching Sheet (#331): this reading, the project's details and plan.
+    func sheet(_ analysis: CoachingAnalysis, selection: CoachingSelection, session: TelemetrySession) -> CoachingSheet {
+        let details = editor.project.details
+        func text(_ value: String) -> String? {
+            let trimmed = value.trimmingCharacters(in: .whitespaces)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        let title = text(details.track) ?? session.info.trackName ?? ""
+        let subtitle = [text(details.date), text(details.driver), text(details.car), text(details.event)]
+            .compactMap { $0 }.joined(separator: " · ")
+        return CoachingSheet(
+            analysis: analysis, lapNumber: selection.lapNumber, units: units, title: title, subtitle: subtitle,
+            plan: editor.project.plan, warnings: analysis.warnings.map(describe))
     }
 
     /// Moves the playhead to `distance` metres into the lap being read.
