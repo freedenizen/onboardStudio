@@ -104,6 +104,22 @@ struct TrackMapCoachingTests {
         #expect(Self.count(in: frame) { $0.g > 200 && $0.b > 200 && $0.r < 80 } > 8)
     }
 
+    @Test func everyOtherLapsLineIsDrawnFaintWithTheQuickestBrighter() throws {
+        var params = TrackMapParams()
+        params.lineColor = .white
+        params.showLineSpread = true
+        params.spreadColor = RGBAColor(red: 1, green: 0, blue: 1, alpha: 0.4)
+        let time = try Self.brakingTime()
+        let frame = try Self.frame(try Self.renderer(params), at: time)
+        // Magenta where the other laps run: the quickest at full strength. The fixture's laps all
+        // take the same line, so the faint ones lie under it and under the white outline.
+        let strong = Self.count(in: frame) { $0.r > 200 && $0.b > 200 && $0.g < 60 }
+        #expect(strong > 20, "the quickest other lap at full strength")
+        params.showLineSpread = false
+        let plain = try Self.frame(try Self.renderer(params), at: time)
+        #expect(Self.count(in: plain) { $0.r > 60 && $0.b > 60 && $0.g < 60 } == 0)
+    }
+
     @Test func followingFramesTheCornerAndLetsGoOnTheStraight() throws {
         var params = TrackMapParams()
         params.followCorner = true

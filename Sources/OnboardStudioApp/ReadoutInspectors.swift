@@ -328,6 +328,10 @@ struct TrackMapInspector: View {
             Toggle("Colour the lap by time gained and lost", isOn: field(\.colorByDelta, "Delta Colouring"))
             Toggle("Brake points and slowest points", isOn: field(\.showBrakeMarks, "Brake Marks"))
             Toggle("Follow the corner in play", isOn: field(\.followCorner, "Follow Corner"))
+            Toggle("Every lap's line, the quickest brighter", isOn: field(\.showLineSpread, "Line Spread"))
+            if params.showLineSpread {
+                ColorPicker("Other laps", selection: color(\.spreadColor, "Line Spread Colour"))
+            }
             if params.showReferenceLine || params.showBrakeMarks {
                 ColorPicker("Reference", selection: color(\.referenceLineColor, "Reference Line Colour"))
             }

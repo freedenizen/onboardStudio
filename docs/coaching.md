@@ -389,6 +389,14 @@ matcher Milestone A built for another session's lap, now a choice for one sessio
 and absent in older settings, so nothing already read reads differently. Disabled for another
 file's lap, which is always matched by position.
 
+**Line spread** (#334): the track map's `showLineSpread` draws every other complete lap of the
+coaching track (`CoachingTrack.analyses`, each lap's profile) under the outline in `spreadColor`,
+the quickest of them at full alpha and a little wider (`TrackMapRenderer.drawSpread`); the Coaching
+window's corner detail draws the same laps through the corner, read once with the analysis. Whole
+laps, not just the corner: with *Follow the corner in play* the framing does the cropping, and on
+the straights the whole-circuit spread is itself the picture. Same-session laps are placed by
+distance, which is the premise of the whole comparison.
+
 **Coaching sheet** (#331, `ProjectModel/CoachingSheet.swift`, app `CoachingSheetExport.swift`): the
 reading as a page — `CoachingSheet` holds the headline, the top opportunities, the corner rows,
 the plan and the reference lap's outline scaled into a unit square with each corner's apex marked,

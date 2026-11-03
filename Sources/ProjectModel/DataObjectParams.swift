@@ -83,6 +83,10 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
     /// Frames the corner in play rather than the whole circuit, from the brake point to the exit,
     /// and the whole circuit on the straights.
     public var followCorner: Bool
+    /// Every other lap's line, faint, with the quickest of them brighter (#334): the spread of
+    /// lines through each corner across the session, so where to be is seen rather than inferred.
+    public var showLineSpread: Bool
+    public var spreadColor: RGBAColor
 
     public init(
         lineColor: RGBAColor = .white,
@@ -107,7 +111,9 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         gainColor: RGBAColor = RGBAColor(red: 0.13, green: 0.75, blue: 0.25),
         lossColor: RGBAColor = RGBAColor(red: 0.88, green: 0.19, blue: 0.19),
         showBrakeMarks: Bool = false,
-        followCorner: Bool = false
+        followCorner: Bool = false,
+        showLineSpread: Bool = false,
+        spreadColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.35)
     ) {
         self.lineColor = lineColor
         self.lineWidth = lineWidth
@@ -132,10 +138,14 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         self.lossColor = lossColor
         self.showBrakeMarks = showBrakeMarks
         self.followCorner = followCorner
+        self.showLineSpread = showLineSpread
+        self.spreadColor = spreadColor
     }
 
     /// Whether any option reads the coaching analysis.
-    public var usesCoaching: Bool { showReferenceLine || colorByDelta || showBrakeMarks || followCorner }
+    public var usesCoaching: Bool {
+        showReferenceLine || colorByDelta || showBrakeMarks || followCorner || showLineSpread
+    }
 
     /// Three colours that stay apart on a dark video and for the common colour blindness, so a
     /// sector can be told from its neighbour without reading the numbers.
@@ -150,6 +160,7 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         case background, secondInputID, secondDotColor
         case trace, colorBySector, sectorColors, showSectorTicks, showCornerNumbers, labelColor, labelScale
         case showReferenceLine, referenceLineColor, colorByDelta, gainColor, lossColor, showBrakeMarks, followCorner
+        case showLineSpread, spreadColor
     }
 
     public init(from decoder: any Decoder) throws {
@@ -187,6 +198,8 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         lossColor = try c.decodeIfPresent(RGBAColor.self, forKey: .lossColor) ?? d.lossColor
         showBrakeMarks = try c.decodeIfPresent(Bool.self, forKey: .showBrakeMarks) ?? d.showBrakeMarks
         followCorner = try c.decodeIfPresent(Bool.self, forKey: .followCorner) ?? d.followCorner
+        showLineSpread = try c.decodeIfPresent(Bool.self, forKey: .showLineSpread) ?? d.showLineSpread
+        spreadColor = try c.decodeIfPresent(RGBAColor.self, forKey: .spreadColor) ?? d.spreadColor
     }
 }
 
