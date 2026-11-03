@@ -313,8 +313,8 @@ since.
 
 The app keeps a **logbook** of the sessions it has read — which file, where and when it was driven,
 the car, every lap's time, the best, optimal and fastest rolling lap — separately from any project,
-in one small file per session beside the saved tracks, and never uploaded. **Project ▸ Add Track Day
-to Logbook…** takes a day's files or the folders holding them: every telemetry file the app reads
+in one small file per session beside the saved tracks, and never uploaded. **File ▸ Add Track Day to
+Logbook…** takes a day's files or the folders holding them: every telemetry file the app reads
 and every camera clip with GPS in it becomes an entry; the circuit is recognised, the date read
 from the file, the car taken from your last session at that circuit; a file already in the logbook
 is skipped, whatever it is called now. The sheet says what happened to each file in plain words.

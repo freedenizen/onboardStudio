@@ -61,7 +61,7 @@ names the importer; the session is built with default options and the circuit id
 with no laps at a circuit whose start/finish the track library knows is read again with that line,
 as adding it to a project would; the car is the batch's, else the last session's at that circuit;
 the driver is the batch's, else the file's, else the last session's. Every file gets a `Report`
-whose `line` is the sentence the sheet and the CLI print. Project ▸ Add Track Day to Logbook… runs
+whose `line` is the sentence the sheet and the CLI print. File ▸ Add Track Day to Logbook… runs
 it off the main thread behind a sheet (`TrackDayImportSheet`); `onboard logbook add` and `list`
 do it on the command line. Under UI tests the app's logbook is a scratch folder
 (`ONBOARD_TEST_LOGBOOK_DIR`), as the templates are.

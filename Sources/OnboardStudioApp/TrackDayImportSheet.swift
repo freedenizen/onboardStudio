@@ -14,7 +14,7 @@ struct TrackDayRequest: Identifiable {
 }
 
 extension EditorModel {
-    /// Project ▸ Add Track Day to Logbook…
+    /// File ▸ Add Track Day to Logbook…
     func requestTrackDay() {
         let urls = OpenPanels.chooseTrackDay()
         guard !urls.isEmpty else { return }
