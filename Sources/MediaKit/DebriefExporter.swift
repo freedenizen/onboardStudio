@@ -7,14 +7,16 @@ import RenderKit
 /// project's export settings into a temporary folder, then the pieces are joined without
 /// re-encoding. Progress is weighted by how long each piece plays.
 public enum DebriefExporter {
+    /// `narrated` reads the cards and the notes aloud over the video (#335): the cards grow to
+    /// fit their words and the clips' own sound is turned down while a note plays.
     public static func export(
         _ compiled: CompiledComposition, project: Project, plan: DebriefPlan, settings: ExportSettings,
-        to outputURL: URL
+        narrated: Bool = false, to outputURL: URL
     ) -> AsyncThrowingStream<ExportProgress, Error> {
         AsyncThrowingStream { continuation in
             let job = DebriefJob(
-                compiled: compiled, project: project, plan: plan, settings: settings, outputURL: outputURL,
-                onProgress: { continuation.yield($0) })
+                compiled: compiled, project: project, plan: plan, settings: settings, narrated: narrated,
+                outputURL: outputURL, onProgress: { continuation.yield($0) })
             let task = Task.detached(priority: .userInitiated) {
                 do {
                     try await job.run()
@@ -36,17 +38,19 @@ final class DebriefJob: @unchecked Sendable {
     let project: Project
     let plan: DebriefPlan
     let settings: ExportSettings
+    let narrated: Bool
     let outputURL: URL
     let onProgress: @Sendable (ExportProgress) -> Void
 
     init(
-        compiled: CompiledComposition, project: Project, plan: DebriefPlan, settings: ExportSettings, outputURL: URL,
-        onProgress: @escaping @Sendable (ExportProgress) -> Void
+        compiled: CompiledComposition, project: Project, plan: DebriefPlan, settings: ExportSettings, narrated: Bool,
+        outputURL: URL, onProgress: @escaping @Sendable (ExportProgress) -> Void
     ) {
         self.compiled = compiled
         self.project = project
         self.plan = plan
         self.settings = settings
+        self.narrated = narrated
         self.outputURL = outputURL
         self.onProgress = onProgress
     }
@@ -55,6 +59,14 @@ final class DebriefJob: @unchecked Sendable {
         let folder = FileManager.default.temporaryDirectory.appending(path: "Debrief-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
+        var plan = plan
+        var narration: DebriefNarration?
+        if narrated {
+            let spoken = try await DebriefNarrator.narrate(plan, into: folder)
+            plan = spoken.fitting(plan)
+            narration = spoken
+        }
+        var voices: [MovieStitcher.Voice] = []
         let ext = settings.fileExtension
         let total = max(plan.duration, 0.001)
         var done = 0.0
@@ -69,6 +81,7 @@ final class DebriefJob: @unchecked Sendable {
         let title = piece("00-title")
         try await CardWriter.write(plan.title, project: project, settings: settings, to: title)
         pieces.append(title)
+        if let voice = narration?.title { voices.append(MovieStitcher.Voice(url: voice.url, at: 0)) }
         done += plan.title.seconds
         frames += Int(plan.title.seconds * settings.frameRate)
         report(done / total, done)
@@ -84,6 +97,9 @@ final class DebriefJob: @unchecked Sendable {
             }
             frames += written
             pieces.append(url)
+            if let voice = narration?.corners[index] {
+                voices.append(MovieStitcher.Voice(url: voice.url, at: done))
+            }
             done += length
             try Task.checkCancellation()
         }
@@ -91,12 +107,14 @@ final class DebriefJob: @unchecked Sendable {
         let closing = piece("99-closing")
         try await CardWriter.write(plan.closing, project: project, settings: settings, to: closing)
         pieces.append(closing)
+        if let voice = narration?.closing { voices.append(MovieStitcher.Voice(url: voice.url, at: done)) }
         done += plan.closing.seconds
         frames += Int(plan.closing.seconds * settings.frameRate)
         report(0.99, done)
         try Task.checkCancellation()
 
-        try await MovieStitcher.concatenate(pieces, fileType: Exporter.fileType(for: settings), to: outputURL)
+        try await MovieStitcher.concatenate(
+            pieces, voices: voices, fileType: Exporter.fileType(for: settings), codec: settings.codec, to: outputURL)
         report(1, done)
     }
 }
@@ -212,9 +230,22 @@ enum CardWriter {
     }
 }
 
-/// Joins movies written with the same settings into one file without re-encoding.
+/// Joins movies written with the same settings into one file without re-encoding — unless a
+/// voice is laid over them, which needs the sound mixed and so the whole encoded once more.
 enum MovieStitcher {
-    static func concatenate(_ urls: [URL], fileType: AVFileType, to outputURL: URL) async throws {
+    /// A spoken piece and where it starts in the joined movie, in seconds.
+    struct Voice {
+        var url: URL
+        var at: Double
+    }
+
+    /// How far the clips' own sound comes down while a voice speaks.
+    static let duckedVolume: Float = 0.3
+
+    static func concatenate(
+        _ urls: [URL], voices: [Voice] = [], fileType: AVFileType, codec: ExportSettings.VideoCodec = .h264,
+        to outputURL: URL
+    ) async throws {
         let composition = AVMutableComposition()
         guard
             let video = composition.addMutableTrack(
@@ -238,9 +269,49 @@ enum MovieStitcher {
             cursor = CMTimeAdd(cursor, duration)
         }
         try? FileManager.default.removeItem(at: outputURL)
-        guard let session = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough)
-        else { throw ExportError.cannotCreateWriter("no passthrough export session") }
+        guard !voices.isEmpty else {
+            guard let session = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough)
+            else { throw ExportError.cannotCreateWriter("no passthrough export session") }
+            session.shouldOptimizeForNetworkUse = true
+            try await session.export(to: outputURL, as: fileType)
+            return
+        }
+        let mix = try await lay(voices, over: audio, in: composition, end: cursor)
+        let preset = codec == .hevc ? AVAssetExportPresetHEVCHighestQuality : AVAssetExportPresetHighestQuality
+        guard let session = AVAssetExportSession(asset: composition, presetName: preset) else {
+            throw ExportError.cannotCreateWriter("no export session for the narrated debrief")
+        }
+        session.audioMix = mix
         session.shouldOptimizeForNetworkUse = true
         try await session.export(to: outputURL, as: fileType)
+    }
+
+    /// The voices on a track of their own, each cut at the movie's end, with the clips' sound
+    /// turned down for as long as each speaks.
+    static func lay(
+        _ voices: [Voice], over sound: AVMutableCompositionTrack?, in composition: AVMutableComposition, end: CMTime
+    ) async throws -> AVMutableAudioMix {
+        guard
+            let voiceTrack = composition.addMutableTrack(
+                withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+        else { throw ExportError.cannotCreateWriter("no voice track") }
+        let ducked = sound.map { AVMutableAudioMixInputParameters(track: $0) }
+        for voice in voices {
+            let asset = AVURLAsset(url: voice.url)
+            guard let source = try await asset.loadTracks(withMediaType: .audio).first else { continue }
+            let start = CMTime(seconds: voice.at, preferredTimescale: 600)
+            let available = CMTimeSubtract(end, start)
+            let duration = CMTimeMinimum(try await asset.load(.duration), available)
+            guard duration.seconds > 0 else { continue }
+            try voiceTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration), of: source, at: start)
+            if let ducked {
+                let range = CMTimeRange(start: start, duration: duration)
+                ducked.setVolume(duckedVolume, at: range.start)
+                ducked.setVolume(1, at: range.end)
+            }
+        }
+        let mix = AVMutableAudioMix()
+        mix.inputParameters = ducked.map { [$0] } ?? []
+        return mix
     }
 }

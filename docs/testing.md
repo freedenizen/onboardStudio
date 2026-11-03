@@ -80,6 +80,7 @@ swift run onboard coach session.csv --lap 5 --markdown                   # the d
 swift run onboard coach session.csv --lap 5 --align position              # two laps of one session matched by place
 swift run onboard render --project my.onboardproj --out clips --corners opportunities   # one clip per corner that lost time
 swift run onboard render --project my.onboardproj --out debrief.mp4 --debrief            # cards + the top corners as one video
+swift run onboard render --project my.onboardproj --out debrief.mp4 --debrief --narrate  # the same, read aloud
 
 swift run onboard render --video clip.mp4 --out out.mp4 --range 0:10      # M2 pipeline check
 swift run onboard render --video clip.mp4 --out out.mp4 --preset 720p --codec hevc --speed 2

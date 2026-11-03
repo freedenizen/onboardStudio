@@ -754,8 +754,11 @@ sheet lists the pieces and the running time before you start; one progress bar c
 and the pieces are joined into `<project> – Coaching Debrief.mp4` in the project's size and codec.
 **Project ▸ Apply Template ▸ Coaching Debrief** gives the clips a Corner Callout, a track map that
 follows the corner with the reference line and both brake points, the lap timer, the delta and the
-speed; a Compare Laps layout gives them both laps' pictures. The project itself is not changed.
-From the command line: `onboard render --project X --out debrief.mp4 --debrief`.
+speed; a Compare Laps layout gives them both laps' pictures. **Read the notes aloud** has the
+system voice read the title card, each corner's headline and what to try over its clip, and the
+plan on the closing card; the cards stay up as long as the words take and the clips' own sound
+comes down while the voice speaks. The project itself is not changed. From the command line:
+`onboard render --project X --out debrief.mp4 --debrief` (`--narrate` for the voice).
 
 **Upload to YouTube** signs in with a short code and uploads with automatic resume; it needs a
 one-time Google API setup described in [youtube.md](youtube.md).
