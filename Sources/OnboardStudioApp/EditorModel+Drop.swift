@@ -161,6 +161,7 @@ extension EditorModel {
         pendingAutoSync = input.id
         pendingTrackLookup = input.id
         pendingDetails = input.id
+        pendingLogbook = input.id
     }
 
     func addImage(at url: URL) {

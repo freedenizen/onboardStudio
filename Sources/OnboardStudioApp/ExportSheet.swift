@@ -344,6 +344,7 @@ extension ExportSheet {
                     progress = update
                 }
                 finishedURL = destination
+                editor.recordExportInLogbook(destination)
             } catch is CancellationError {
                 failure = "Export cancelled."
                 progress = nil

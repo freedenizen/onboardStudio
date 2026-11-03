@@ -164,6 +164,7 @@ struct DebriefSheet: View {
                     progress = update
                 }
                 finishedURL = url
+                editor.recordExportInLogbook(url)
                 editor.statusMessage = "Exported the coaching debrief."
             } catch is CancellationError {
                 failure = "Export cancelled."

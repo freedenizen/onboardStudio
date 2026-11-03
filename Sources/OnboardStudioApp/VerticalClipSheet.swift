@@ -125,6 +125,7 @@ struct VerticalClipSheet: View {
                     progress = update
                 }
                 finishedURL = url
+                editor.recordExportInLogbook(url)
                 editor.statusMessage = "Exported \(request.title) as a vertical clip."
             } catch is CancellationError {
                 failure = "Export cancelled."

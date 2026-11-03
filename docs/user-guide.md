@@ -334,6 +334,12 @@ and the temperature are kept as soon as set, text on Return or when you leave th
 table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and
 the search finds it. Nothing is required.
 
+A data file added to a project goes into the logbook as well (Settings ▸ Logbook turns this off):
+the status bar says so, the same file is never entered twice, and the project's blank car and
+driver are filled from what the logbook knows. A saved project is listed on its sessions under
+**Projects**, every video exported from it under **Exports**, both as links. A data file you have
+moved is found again through whichever side still knows where it is, once, when the project opens.
+
 ## 5. Objects
 
 ![A tachometer selected on the preview with handles around it, its label, position, size and scale in the inspector](images/inspector-gauge.jpg)
