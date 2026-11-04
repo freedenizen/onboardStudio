@@ -5,25 +5,50 @@ import SwiftUI
 import TelemetryKit
 import UniformTypeIdentifiers
 
+/// The Coaching window's sheet and the way to write it, whichever source the window reads (#396).
+struct CoachingSheetAction {
+    let sheet: CoachingSheet
+    let export: (CoachingSheetFormat) -> Void
+}
+
 extension FocusedValues {
     /// The Coaching window's sheet while it is the key window and has a reading: for
     /// File ▸ Export Coaching Sheet (#331).
-    @Entry var coachingSheet: CoachingSheet?
+    @Entry var coachingSheet: CoachingSheetAction?
 }
 
 /// File ▸ Export Coaching Sheet as PDF… / as Markdown…, there while the Coaching window has a
 /// lap read.
 struct CoachingSheetCommands: Commands {
     @FocusedValue(\.coachingSheet) private var sheet
-    @FocusedValue(\.editor) private var editor
 
     var body: some Commands {
         CommandGroup(after: .importExport) {
             if let sheet {
-                Button("Export Coaching Sheet as PDF…") { editor?.exportCoachingSheet(sheet, as: .pdf) }
-                Button("Export Coaching Sheet as Markdown…") { editor?.exportCoachingSheet(sheet, as: .markdown) }
+                Button("Export Coaching Sheet as PDF…") { sheet.export(.pdf) }
+                Button("Export Coaching Sheet as Markdown…") { sheet.export(.markdown) }
                 Divider()
             }
+        }
+    }
+}
+
+/// Writes a coaching sheet where the user says, as PDF or Markdown; `nil` when they cancel.
+@MainActor enum CoachingSheetExporter {
+    static func export(_ sheet: CoachingSheet, as format: CoachingSheetFormat) -> Result<URL, any Error>? {
+        guard
+            let url = OpenPanels.chooseDocumentDestination(
+                title: "Export Coaching Sheet", suggestedName: sheet.fileStem, type: format.type,
+                fileExtension: format.fileExtension)
+        else { return nil }
+        do {
+            switch format {
+            case .pdf: try CoachingSheetPDF.write(sheet, to: url)
+            case .markdown: try sheet.markdown.write(to: url, atomically: true, encoding: .utf8)
+            }
+            return .success(url)
+        } catch {
+            return .failure(error)
         }
     }
 }
@@ -38,19 +63,10 @@ enum CoachingSheetFormat {
 
 extension EditorModel {
     func exportCoachingSheet(_ sheet: CoachingSheet, as format: CoachingSheetFormat) {
-        guard
-            let url = OpenPanels.chooseDocumentDestination(
-                title: "Export Coaching Sheet", suggestedName: sheet.fileStem, type: format.type,
-                fileExtension: format.fileExtension)
-        else { return }
-        do {
-            switch format {
-            case .pdf: try CoachingSheetPDF.write(sheet, to: url)
-            case .markdown: try sheet.markdown.write(to: url, atomically: true, encoding: .utf8)
-            }
-            statusMessage = "Exported the coaching sheet as \(url.lastPathComponent)."
-        } catch {
-            statusMessage = "Could not write the coaching sheet: \(error.localizedDescription)"
+        switch CoachingSheetExporter.export(sheet, as: format) {
+        case .success(let url): statusMessage = "Exported the coaching sheet as \(url.lastPathComponent)."
+        case .failure(let error): statusMessage = "Could not write the coaching sheet: \(error.localizedDescription)"
+        case nil: break
         }
     }
 }
@@ -185,8 +201,17 @@ struct CoachingSheetView: View {
 
 extension CoachingContent {
     /// The page for File ▸ Export Coaching Sheet (#331): this reading, the project's details and plan.
+    /// The sheet and its export, for File ▸ Export Coaching Sheet.
+    func sheetAction(_ analysis: CoachingAnalysis, selection: CoachingSelection, session: TelemetrySession)
+        -> CoachingSheetAction
+    {
+        let sheet = sheet(analysis, selection: selection, session: session)
+        let source = source
+        return CoachingSheetAction(sheet: sheet) { source.exportSheet(sheet, as: $0) }
+    }
+
     func sheet(_ analysis: CoachingAnalysis, selection: CoachingSelection, session: TelemetrySession) -> CoachingSheet {
-        let details = editor.project.details
+        let details = source.details
         func text(_ value: String) -> String? {
             let trimmed = value.trimmingCharacters(in: .whitespaces)
             return trimmed.isEmpty ? nil : trimmed
@@ -196,7 +221,7 @@ extension CoachingContent {
             .compactMap { $0 }.joined(separator: " · ")
         return CoachingSheet(
             analysis: analysis, lapNumber: selection.lapNumber, units: units, title: title, subtitle: subtitle,
-            plan: editor.project.plan, warnings: analysis.warnings.map(describe))
+            plan: source.editor?.project.plan, warnings: analysis.warnings.map(describe))
     }
 
     func referenceName(_ reference: CoachingSettings.Reference) -> String {
@@ -205,7 +230,7 @@ extension CoachingContent {
         case .lap(let number): CoachingReference.lap(number).phrase
         case .fastestRolling: CoachingReference.fastestRolling.phrase
         case .compositeOptimal: CoachingReference.compositeOptimal.phrase
-        case .otherInput(let id, let lap): "\(editor.project.input(id)?.label ?? "the other file") lap \(lap)"
+        case .otherInput(let id, let lap): "\(source.editor?.project.input(id)?.label ?? "the other file") lap \(lap)"
         case .logbook(let entryID, let lap):
             LogbookModel.shared.entries.first { $0.id == entryID }.map { LogbookReferences.phrase(for: $0, lap: lap) }
                 ?? "a logbook session"

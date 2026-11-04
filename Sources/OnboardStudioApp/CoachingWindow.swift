@@ -15,13 +15,28 @@ struct CoachingWindow: View {
     static let windowID = "coaching"
 
     private var active = ActiveEditor.shared
+    private var target = CoachingTarget.shared
 
-    static func open(_ openWindow: OpenWindowAction) { openWindow(id: windowID) }
+    /// The front project's coaching.
+    static func open(_ openWindow: OpenWindowAction) {
+        CoachingTarget.shared.showFrontProject()
+        openWindow(id: windowID)
+    }
+
+    /// A logbook session's coaching, with no project needed (#396).
+    static func open(_ openWindow: OpenWindowAction, entry: LogbookEntry) {
+        CoachingTarget.shared.show(entry)
+        openWindow(id: windowID)
+    }
 
     var body: some View {
         Group {
-            if let editor = active.editor {
-                CoachingContent(editor: editor)
+            if case .logbook = target.kind, let source = target.logbookSource {
+                CoachingContent(source: source)
+                    .id(source.id)
+            } else if let editor = active.editor {
+                CoachingContent(source: ProjectCoachingSource(editor: editor))
+                    .id(ObjectIdentifier(editor))
                     // The menu bar reaches this document from here too: Edit ▸ Undo names and takes
                     // back the last edit, and the Project menu's items apply to it.
                     .focusedSceneValue(\.editor, editor)
@@ -30,8 +45,8 @@ struct CoachingWindow: View {
                 ContentUnavailableView(
                     "No Project Open", systemImage: "flag.checkered",
                     description: Text(
-                        "Open a project with a data file, then choose Project ▸ Coaching… to see where its laps "
-                            + "lost time."))
+                        "Open a project with a data file and choose Project ▸ Coaching…, or select a session in "
+                            + "the Logbook and choose Coach…, to see where its laps lost time."))
             }
         }
         .frame(minWidth: 880, minHeight: 480)
@@ -62,7 +77,7 @@ struct CoachingSelection: Hashable, Sendable {
 }
 
 struct CoachingContent: View {
-    let editor: EditorModel
+    let source: any CoachingSource
 
     @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
     @State private var analysis: CoachingAnalysis?
@@ -80,36 +95,33 @@ struct CoachingContent: View {
     var units: CoachingUnits { appSpeedUnit == SpeedUnitSetting.mph.rawValue ? .imperial : .metric }
 
     var body: some View {
-        if let input = currentInput {
-            if let session = editor.sessions[input.id] {
-                content(input: input, session: session)
-            } else if let problem = editor.problems[input.id] {
-                ContentUnavailableView(
-                    "The Data File Did Not Load", systemImage: "exclamationmark.triangle", description: Text(problem))
+        Group {
+            if let input = source.input {
+                if let session = source.session {
+                    content(input: input, session: session)
+                } else if let problem = source.problem {
+                    ContentUnavailableView(
+                        "The Data File Did Not Load", systemImage: "exclamationmark.triangle",
+                        description: Text(problem))
+                } else {
+                    ProgressView("Reading the data…").frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             } else {
-                ProgressView("Reading the data…").frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        } else {
-            ContentUnavailableView {
-                Label("No Data File", systemImage: "waveform.path.ecg")
-            } description: {
-                Text("Coaching reads the laps of a data file: add one from your logger or phone app.")
-            } actions: {
-                Button("Add Data File…") { editor.addData() }.accessibilityIdentifier("coaching.addData")
+                ContentUnavailableView {
+                    Label("No Data File", systemImage: "waveform.path.ecg")
+                } description: {
+                    Text("Coaching reads the laps of a data file: add one from your logger or phone app.")
+                } actions: {
+                    if let editor = source.editor {
+                        Button("Add Data File…") { editor.addData() }.accessibilityIdentifier("coaching.addData")
+                    }
+                }
             }
         }
+        .task(id: source.id) { await source.load() }
     }
 
     // MARK: - What is being read
-
-    private var currentInput: Input? {
-        if let id = editor.project.coaching?.dataInputID,
-            let input = editor.project.dataInputs.first(where: { $0.id == id })
-        {
-            return input
-        }
-        return editor.lapInput
-    }
 
     private func completeLaps(of session: TelemetrySession) -> [Lap] {
         LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
@@ -125,8 +137,12 @@ struct CoachingContent: View {
         case .lap(let number): excluded = number
         case .fastestRolling, .compositeOptimal, .otherInput, .logbook: excluded = nil
         }
-        let dataTime = input.sync.inputTime(forProjectTime: editor.currentTime)
-        if let atPlayhead = laps.first(where: { $0.contains(dataTime) }), atPlayhead.number != excluded {
+        // The lap at the playhead, when there is one: a logbook session has none.
+        if let editor = source.editor,
+            let atPlayhead = laps.first(where: {
+                $0.contains(input.sync.inputTime(forProjectTime: editor.currentTime))
+            }), atPlayhead.number != excluded
+        {
             return atPlayhead
         }
         return laps.sorted { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }.first { $0.number != excluded }
@@ -134,7 +150,7 @@ struct CoachingContent: View {
 
     private func selection(input: Input, session: TelemetrySession) -> CoachingSelection? {
         let laps = completeLaps(of: session)
-        let saved = editor.project.coaching
+        let saved = source.settings
         let reference = saved?.reference ?? .sessionBest
         let lap =
             saved?.lap.flatMap { number in laps.first { $0.number == number } }
@@ -216,12 +232,16 @@ struct CoachingContent: View {
                         Text(Self.lapTitle(lap)).tag(CoachingSettings.Reference.lap(lap.number))
                     }
                 }
-                ForEach(editor.project.dataInputs.filter { $0.id != selection.input.id }) { other in
-                    if let session = editor.sessions[other.id] {
-                        Section(other.label) {
-                            ForEach(completeLaps(of: session), id: \.number) { lap in
-                                Text(Self.lapTitle(lap))
-                                    .tag(CoachingSettings.Reference.otherInput(dataInputID: other.id, lap: lap.number))
+                if let editor = source.editor {
+                    ForEach(editor.project.dataInputs.filter { $0.id != selection.input.id }) { other in
+                        if let session = editor.sessions[other.id] {
+                            Section(other.label) {
+                                ForEach(completeLaps(of: session), id: \.number) { lap in
+                                    Text(Self.lapTitle(lap))
+                                        .tag(
+                                            CoachingSettings.Reference.otherInput(
+                                                dataInputID: other.id, lap: lap.number))
+                                }
                             }
                         }
                     }
@@ -261,9 +281,16 @@ struct CoachingContent: View {
                 .padding(.horizontal)
                 .padding(.top, 12)
                 opportunities(analysis, input: input)
-                NextSessionPlanView(editor: editor, input: input, analysis: analysis, lapNumber: selection.lapNumber)
-                    .padding(.horizontal)
-                    .focusedSceneValue(\.coachingSheet, sheet(analysis, selection: selection, session: session))
+                Group {
+                    if let editor = source.editor {
+                        NextSessionPlanView(
+                            editor: editor, input: input, analysis: analysis, lapNumber: selection.lapNumber)
+                    } else {
+                        makeProject
+                    }
+                }
+                .padding(.horizontal)
+                .focusedSceneValue(\.coachingSheet, sheetAction(analysis, selection: selection, session: session))
                 CornerTable(
                     rows: analysis.rows(units: units), selection: $selectedCorner, sortOrder: $sortOrder, units: units)
                 if !analysis.warnings.isEmpty {
@@ -273,6 +300,10 @@ struct CoachingContent: View {
                         }
                     }
                     .padding([.horizontal, .bottom])
+                }
+                if source.editor == nil, let message = source.message {
+                    Text(message).font(.callout).foregroundStyle(.secondary).padding([.horizontal, .bottom])
+                        .accessibilityIdentifier("coaching.message")
                 }
             }
         } else if isAnalysing {
@@ -337,8 +368,8 @@ extension CoachingContent {
         }
         let units = units
         var other: OtherReference?
-        if case .otherInput(let id, let number) = selection.reference, let session = editor.sessions[id],
-            let input = editor.project.input(id)
+        if case .otherInput(let id, let number) = selection.reference, let editor = source.editor,
+            let session = editor.sessions[id], let input = editor.project.input(id)
         {
             other = OtherReference(session: session, label: input.label, lap: number)
         } else if case .logbook(let entryID, let number) = selection.reference,
@@ -391,6 +422,8 @@ extension CoachingContent {
         for comparison: CornerComparison, analysis: CoachingAnalysis, selection: CoachingSelection,
         session: TelemetrySession
     ) -> (() -> Void)? {
+        // A logbook session has no picture in any project: nothing to compare (#396).
+        guard let editor = source.editor else { return nil }
         let referenceSide: (input: InputID, lap: Int)?
         var splice: LapComparisonSettings.ComparedSplice?
         switch selection.reference {
@@ -418,14 +451,32 @@ extension CoachingContent {
         let start = input.sync.projectTime(forInputTime: analysis.lap.time(atDistance: comparison.lap.phaseStart))
         let endDistance = min(analysis.lap.lengthMeters, comparison.lap.corner.endDistance + 100)
         let end = input.sync.projectTime(forInputTime: analysis.lap.time(atDistance: endDistance))
-        let editor = editor
         return { editor.compareLaps(settings, range: end > start ? max(0, start)...end : nil) }
     }
 
     /// Moves the playhead to `distance` metres into the lap being read.
     func seek(to distance: Double, in analysis: CoachingAnalysis, input: Input) {
+        guard let editor = source.editor else { return }
         let dataTime = analysis.lap.time(atDistance: distance)
         editor.seek(to: max(0, input.sync.projectTime(forInputTime: dataTime)))
+    }
+
+    /// In place of the plan and the picture for a logbook session: a project from it, which the
+    /// window then follows (#396).
+    var makeProject: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Next Session").font(.subheadline.weight(.semibold))
+            Text(
+                "A plan, Show Me on the picture and Compare in Video need a project. Make one from this session — "
+                    + "its data file, its clips and the last layout used — and the window follows it."
+            )
+            .font(.callout).foregroundStyle(.secondary)
+            Button("Make a Project") {
+                guard let source = source as? LogbookCoachingSource else { return }
+                LogbookModel.shared.openAsProject(source.entry, template: LogbookModel.lastTemplate(), then: .coaching)
+            }
+            .accessibilityIdentifier("coaching.makeProject")
+        }
     }
 
 }

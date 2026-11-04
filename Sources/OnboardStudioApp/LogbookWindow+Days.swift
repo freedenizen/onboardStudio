@@ -79,7 +79,7 @@ extension LogbookWindow {
         Menu {
             Button("Blank Project") { NSDocumentController.shared.newDocument(nil) }
             Section("From a Template") {
-                ForEach(Self.templates(), id: \.name) { template in
+                ForEach(LogbookModel.templates(), id: \.name) { template in
                     Button(template.name) { newProject(from: template) }
                 }
             }

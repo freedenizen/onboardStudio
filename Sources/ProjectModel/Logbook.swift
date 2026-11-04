@@ -79,6 +79,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// How long the file runs, from its first sample to its last (#392), so a clip can be matched
     /// to it by clock without reading the file again.
     public var durationSeconds: Double?
+    /// What the Coaching window last read of this session with no project (#396): the lap, the
+    /// reference, the alignment. Its `dataInputID` is the entry's own id.
+    public var coaching: CoachingSettings?
     public var added: Date
     public var modified: Date
 
@@ -88,8 +91,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         bestLapNumber: Int? = nil, optimalLap: Double? = nil, fastestRollingLap: Double? = nil,
         topSpeed: Double? = nil, distanceMeters: Double? = nil, notes: String = "", tags: [String] = [],
         conditions: SessionConditions = SessionConditions(), projects: [ProjectLink] = [], exports: [ProjectLink] = [],
-        corners: [CornerRecord] = [], trackDayID: UUID? = nil, durationSeconds: Double? = nil, added: Date = Date(),
-        modified: Date = Date()
+        corners: [CornerRecord] = [], trackDayID: UUID? = nil, durationSeconds: Double? = nil,
+        coaching: CoachingSettings? = nil, added: Date = Date(), modified: Date = Date()
     ) {
         self.id = id
         self.file = file
@@ -113,6 +116,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.corners = corners
         self.trackDayID = trackDayID
         self.durationSeconds = durationSeconds
+        self.coaching = coaching
         self.added = added
         self.modified = modified
     }
@@ -146,7 +150,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
-        case trackDayID, durationSeconds, added, modified
+        case trackDayID, durationSeconds, coaching, added, modified
     }
 
     public init(from decoder: any Decoder) throws {
@@ -173,6 +177,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         corners = try c.decodeIfPresent([CornerRecord].self, forKey: .corners) ?? []
         trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
         durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
+        coaching = try? c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }

@@ -84,4 +84,25 @@ struct LogbookTests {
         #expect(older.title == "s")
         #expect(older.resolveFile() == nil)
     }
+
+    @Test func coachingChoicesAreKeptOnAnEntry() throws {
+        let logbook = try temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        var entry = try entry()
+        #expect(entry.coaching == nil, "nothing read yet")
+        // The window's choices (#396): the lap, the reference and the alignment, under the entry's own id.
+        entry.coaching = CoachingSettings(
+            dataInputID: InputID(entry.id), lap: 3, reference: .fastestRolling, alignByPosition: true)
+        try logbook.save(entry)
+        let back = try #require(logbook.entry(id: entry.id))
+        #expect(back.coaching == entry.coaching)
+        #expect(back.coaching?.dataInputID.rawValue == entry.id)
+        // A reference a later build adds reads as no choice, not a lost entry.
+        let strange = """
+            { "file": { "path": "/tmp/s.csv", "contentHash": "abc", "byteCount": 1, "importerID": "x" },
+              "coaching": { "dataInputID": "\(entry.id.uuidString)", "reference": { "telepathy": {} } } }
+            """
+        let decoded = try Logbook.decoder.decode(LogbookEntry.self, from: Data(strange.utf8))
+        #expect(decoded.coaching == nil)
+    }
 }
