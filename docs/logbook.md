@@ -268,6 +268,15 @@ with the Coaching Debrief template and `then: .debrief`, so the new editor puts 
 up once it appears. It is disabled until the session has a clip on its day, with the help text
 saying why.
 
+## On the command line (#398)
+
+`onboard logbook new-day` (`--date`, `--circuit` as a catalogue search or id, else kept as typed,
+`--car`, `--driver`, `--notes`) saves a `TrackDay` and prints its label and id; `days` lists them
+newest first with their car, session and clip counts (`--json` for the records); `add … --day
+<id | 2026-08-23> [--circuit]` runs the import onto that day (a date with more than one day asks
+for the circuit or the id); `list` prefixes each session with its day's label. `ensureDays` runs
+before `days`, so a logbook written by an older build lists correctly.
+
 ## What comes next
 v0.34.0 (#392–#398) turns the workflow round so it begins here: a day created first (#393 New
 Track Day…), its clips matched to its sessions by clock (#394), the logbook as the window at

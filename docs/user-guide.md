@@ -331,8 +331,11 @@ conditions to begin with; the sheet says what happened to each file in plain wor
 recognised, the date read from the file, and a file already in the logbook is skipped, whatever
 it is called now. **Add Files…** with no day chosen (or **File ▸ Add Track Day to Logbook…**)
 takes a whole day's folders at once: each file goes on the day its date and circuit say, made if
-need be, and the sheet's line says which. From the command line, `onboard logbook add <files or
-folders>` (`--car`, `--driver`) and `onboard logbook list`.
+need be, and the sheet's line says which. From the command line, `onboard logbook new-day --date
+2026-08-23 --circuit Sonoma --car Miata` begins a day, `onboard logbook add <files or folders>
+--day <id or date>` puts files on it (`--car`, `--driver`; without `--day`, each file goes on the
+day its date and circuit say), `onboard logbook days` lists the days and `onboard logbook list`
+the sessions with their day.
 
 The window shows it all: a sidebar of track days (under their year when there is more than one),
 circuits, cars and years with how many sessions each, a table of sessions (date, circuit, car,
