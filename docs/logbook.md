@@ -172,7 +172,35 @@ circuit, latest visit against the one before) and the open plans on the visited 
 definitions. `SeasonPage` is the view in the window and, with `forPrint`, the PDF through the same
 `ImageRenderer` path as the coaching sheet; `SeasonCard` is the 9:16 picture, rendered to PNG.
 
+## A day first (#392, v0.34.0)
+
+Every tool a season is kept in groups sessions under a day or an event before anything else, and
+the workflow the app is built around from v0.34.0 begins there: a driver *creates a track day*,
+adds its sessions and clips, and gets coaching and projects from them. `TrackDay`
+(`Sources/ProjectModel/TrackDay.swift`) is that record: the day (midnight, local calendar), the
+circuit (catalogue id, else the name typed), the car and driver, the day's conditions (the default
+for a session added to it), notes and tags, and the camera's clips (`ClipRecord`: the file by path,
+bookmark and a fingerprint of its first mebibyte, the chapters that follow it, when the camera's
+clock says it started and for how long, and the session it was matched to and how — #394 does the
+matching). One `<uuid>.onboardday` file per day beside the entries, read and written through the
+same `Logbook` (`days()`, `saveDay`, `removeDay(id:andSessions:)`, `sessions(of:)`).
+
+An entry carries `trackDayID`. Entries from before days existed, or arriving from a build without
+them, are put on one by `Logbook.ensureDays()`: the day with the same calendar day
+(`date ?? added`) and circuit key, made from the entry (its car and driver copied) when there is
+none. It runs whenever the window reloads and after a logbook import, and is idempotent, so a
+logbook never has a session off a day. `Logbook.day(for:)` is the same find-or-make, which #393's
+import uses to place a file that was not added to a chosen day. `LogbookScope.day` narrows the
+window to one day and `LogbookFilter.days(in:days:)` lists them newest first with their counts,
+an empty day included, since a day is begun before its files exist.
+
+`LogbookTransfer` writes the days the exported sessions belong to and reads days back by id
+(newer `modified` wins); the sessions CSV gains a `day` column with the day's label
+("23 Aug 2026 · Sonoma Raceway"). An entry also records `durationSeconds` now, so a clip can be
+matched to it by clock without reading the file again.
+
 ## What comes next
- #348 conditions; #349 the two-way link with projects; #350 export, import,
-CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as
-coaching references, trends per corner, car against car, a season summary.
+v0.34.0 (#392–#398) turns the workflow round so it begins here: a day created first (#393 New
+Track Day…), its clips matched to its sessions by clock (#394), the logbook as the window at
+launch (#395), coaching straight from a session (#396), the debrief and comparisons from a
+session (#397) and the same on the command line (#398).

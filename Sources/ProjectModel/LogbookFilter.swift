@@ -8,11 +8,14 @@ public enum LogbookScope: Hashable, Sendable {
     case circuit(id: String, title: String)
     case car(String)
     case year(Int)
+    /// One track day (#392); `title` is the day's label, "23 Aug 2026 · Sonoma".
+    case day(id: UUID, title: String)
 
     public var title: String {
         switch self {
         case .all: "All Sessions"
         case .circuit(_, let title): title
+        case .day(_, let title): title
         case .car(let car): car.isEmpty ? "No car" : car
         case .year(let year): String(year)
         }
@@ -63,9 +66,21 @@ public enum LogbookFilter {
         }
     }
 
+    /// The sidebar's days, newest first, each with how many sessions it holds — a day with none
+    /// is listed too, since a day is begun before its files exist.
+    public static func days(in entries: [LogbookEntry], days: [TrackDay]) -> [Group] {
+        var counts: [UUID: Int] = [:]
+        for entry in entries { if let id = entry.trackDayID { counts[id, default: 0] += 1 } }
+        return
+            days
+            .sorted { ($0.date, $0.added) > ($1.date, $1.added) }
+            .map { Group(scope: .day(id: $0.id, title: $0.label), count: counts[$0.id] ?? 0) }
+    }
+
     public static func matches(_ entry: LogbookEntry, scope: LogbookScope) -> Bool {
         switch scope {
         case .all: true
+        case .day(let id, _): entry.trackDayID == id
         case .circuit(let id, _): circuitKey(of: entry) == id
         case .car(let car): entry.car.trimmingCharacters(in: .whitespaces) == car
         case .year(let year): entry.year == year
