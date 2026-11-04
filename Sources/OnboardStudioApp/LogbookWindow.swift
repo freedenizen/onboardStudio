@@ -15,6 +15,21 @@ import UniformTypeIdentifiers
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
     private var sessions: [UUID: TelemetrySession] = [:]
 
+    private var carComparisons: [String: CarVersusCar] = [:]
+
+    /// Two cars' best laps compared (#354), read once per pair of sessions.
+    func carComparison(first: LogbookEntry, firstCar: String, second: LogbookEntry, secondCar: String) async
+        -> CarVersusCar?
+    {
+        let key = "\(first.id)|\(second.id)"
+        if let cached = carComparisons[key] { return cached }
+        let made = await Task.detached(priority: .userInitiated) {
+            CarVersusCar.make(first: first, firstCar: firstCar, second: second, secondCar: secondCar)
+        }.value
+        if let made { carComparisons[key] = made }
+        return made
+    }
+
     /// The entry's session, read once off the main thread.
     func session(for entry: LogbookEntry) async -> TelemetrySession? {
         if let cached = sessions[entry.id] { return cached }

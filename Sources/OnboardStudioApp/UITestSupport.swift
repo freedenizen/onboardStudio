@@ -1,4 +1,5 @@
 import AppKit
+import MediaKit
 import ProjectModel
 import SwiftUI
 
@@ -39,6 +40,24 @@ enum UITestSupport {
     }
 
     static func fixture(_ name: String) -> URL? { fixtures?.appending(path: name) }
+
+    /// The coaching fixture one row shorter under its own name, entered straight into the logbook
+    /// as `car` — a second visit to the same place in another car (#354).
+    @MainActor
+    static func addSecondVisit(to editor: EditorModel?, car: String) {
+        guard let fixture = fixture("coaching-laps.csv"), let text = try? String(contentsOf: fixture, encoding: .utf8)
+        else { return }
+        let folder = FileManager.default.temporaryDirectory.appending(path: "second-visit-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let copy = folder.appending(path: "coaching-laps.csv")
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        try? lines.dropLast(2).joined(separator: "\n").write(to: copy, atomically: true, encoding: .utf8)
+        Task {
+            _ = await TrackDayImport.run([copy], into: AppLogbook.shared, car: car)
+            LogbookModel.shared.reload()
+            editor?.statusMessage = "Entered the second visit in the \(car)."
+        }
+    }
 
     /// The editor that appeared last. Headless CI runners do not always give the document window
     /// key status, which leaves `@FocusedValue(\.editor)` empty; the Testing menu falls back to this.
@@ -107,6 +126,8 @@ struct UITestCommands: Commands {
             }
             // A second visit to the coaching fixture's "circuit": the same file name, one row
             // shorter, so it is another session at the same place (#352).
+            Button("Set Project Car Miata") { editor?.setDetail("Change Car") { $0.car = "Miata" } }
+            Button("Add Fixture Second Visit in a GR86") { UITestSupport.addSecondVisit(to: editor, car: "GR86") }
             Button("Add Fixture Second Visit") {
                 guard let fixture = UITestSupport.fixture("coaching-laps.csv"),
                     let text = try? String(contentsOf: fixture, encoding: .utf8)

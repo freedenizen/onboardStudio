@@ -149,6 +149,18 @@ before and the personal best's session, matched by the corner's label. The windo
 session) is the second of its two views. This is where #332's "did the plan work?" lives: the
 plan on the circuit's definition says what was meant, the corner table says what moved.
 
+## Car against car (#354)
+
+`CarVersusCar` (`MediaKit/CarVersusCar.swift`) takes the two cars' best entries at a circuit
+(`PersonalBests.best(…, car:)`), reads both files in, and runs the two-session coaching analysis
+with the first car's best lap against the second's — the same by-position reading as two drivers'
+laps, the reference phrased as "the GR86's best lap" so the existing notes already name the car.
+`sentences` turns each `CornerComparison` into one line (who is quicker, by how much, and where
+the difference is: brake point, apex speed, exit speed, thresholds as the notes use);
+`speedTraces` thins both profiles' speed channels for a chart. `CarVersusCarSection` sits at the
+foot of the Trends view when the circuit has two cars; `LogbookModel.carComparison` keeps the
+result per pair of sessions for the app's life.
+
 ## What comes next
  #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as
