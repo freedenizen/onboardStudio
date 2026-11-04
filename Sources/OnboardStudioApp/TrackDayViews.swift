@@ -1,4 +1,5 @@
 import AppKit
+import MediaKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -8,7 +9,8 @@ import TelemetryKit
 /// conditions do — library files, not a document, so they are not undoable.
 struct TrackDayHeader: View {
     let day: TrackDay
-    let sessionCount: Int
+    /// The day's sessions, newest first, for the clips to be assigned to (#394).
+    let sessions: [LogbookEntry]
     let save: (TrackDay) -> Void
     let addSessions: () -> Void
     let remove: () -> Void
@@ -29,7 +31,7 @@ struct TrackDayHeader: View {
                         .accessibilityIdentifier("trackday.header.subtitle")
                 }
                 Spacer()
-                Button("Add Sessions…", systemImage: "doc.badge.plus", action: addSessions)
+                Button("Add Files…", systemImage: "doc.badge.plus", action: addSessions)
                     .help("Enter the day's telemetry files and camera clips, or the folders holding them")
                     .accessibilityIdentifier("trackday.header.addSessions")
                 Button("Remove Track Day…", systemImage: "trash", role: .destructive, action: remove)
@@ -67,8 +69,9 @@ struct TrackDayHeader: View {
                 }
             }
             .accessibilityIdentifier("trackday.header.conditions")
+            if !day.clips.isEmpty { clipList }
             if sessionCount == 0 {
-                Text("No sessions yet. Add Sessions… or drop the day's files here.")
+                Text("No sessions yet. Add Files… or drop the day's files here.")
                     .font(.callout).foregroundStyle(.secondary)
                     .accessibilityIdentifier("trackday.header.empty")
             }
@@ -77,6 +80,59 @@ struct TrackDayHeader: View {
         .onAppear(perform: load)
         .onChange(of: day.id) { load() }
         .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
+    }
+
+    private var sessionCount: Int { sessions.count }
+
+    /// The camera's clips, each with the session it is the picture of — matched by the clocks,
+    /// or chosen here.
+    private var clipList: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Clips").font(.subheadline.weight(.semibold))
+            ForEach(day.clips) { clip in
+                HStack(spacing: 8) {
+                    Image(systemName: "video").foregroundStyle(.secondary).accessibilityHidden(true)
+                    Text(clip.name)
+                    Text(ClipMatcher.describe(clip)).foregroundStyle(.secondary)
+                    Spacer()
+                    Picker("Session", selection: sessionBinding(for: clip)) {
+                        Text("Not assigned").tag(UUID?.none)
+                        ForEach(Array(sessions.enumerated()), id: \.element.id) { index, session in
+                            Text(Self.sessionLabel(session, index: sessions.count - index)).tag(Optional(session.id))
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: 240)
+                    .help(
+                        clip.matchedBy == .clock
+                            ? "Matched by the camera's clock and the log's" : "The session this clip is the picture of"
+                    )
+                    .accessibilityLabel("Session of \(clip.name)")
+                    .accessibilityIdentifier("trackday.clip.\(clip.name)")
+                }
+                .font(.callout)
+            }
+        }
+    }
+
+    /// "Session 2 · 12:04 · 12 laps".
+    static func sessionLabel(_ session: LogbookEntry, index: Int) -> String {
+        var parts = ["Session \(index)"]
+        if let date = session.date { parts.append(date.formatted(date: .omitted, time: .shortened)) }
+        parts.append("\(session.completeLapCount) laps")
+        return parts.joined(separator: " · ")
+    }
+
+    private func sessionBinding(for clip: ClipRecord) -> Binding<UUID?> {
+        Binding(
+            get: { clip.sessionID },
+            set: { chosen in
+                guard let index = day.clips.firstIndex(where: { $0.id == clip.id }) else { return }
+                var changed = day
+                changed.clips[index].sessionID = chosen
+                changed.clips[index].matchedBy = chosen == nil ? nil : .byHand
+                save(changed)
+            })
     }
 
     /// "Saturday, 23 August 2026 · 3 sessions".

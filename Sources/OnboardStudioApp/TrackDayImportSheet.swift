@@ -44,8 +44,11 @@ struct TrackDayImportSheet: View {
                 ProgressView(current.map { "Reading \($0)…" } ?? "Looking for files…")
             }
             List(Array(reports.enumerated()), id: \.offset) { _, report in
-                Label(report.line, systemImage: report.isAdded ? "checkmark.circle" : "minus.circle")
-                    .foregroundStyle(report.isAdded ? .primary : .secondary)
+                Label(
+                    report.line,
+                    systemImage: report.isAdded ? "checkmark.circle" : report.isClip ? "video" : "minus.circle"
+                )
+                .foregroundStyle(report.isAdded || report.isClip ? .primary : .secondary)
             }
             .frame(minHeight: 180)
             .accessibilityIdentifier("trackday.report")
@@ -64,9 +67,11 @@ struct TrackDayImportSheet: View {
     private var summary: String {
         let added = reports.filter(\.isAdded).count
         let skipped = reports.filter { if case .alreadyThere = $0.outcome { return true } else { return false } }.count
+        let clips = reports.filter(\.isClip).count
         var parts = ["\(added) session\(added == 1 ? "" : "s") added"]
+        if clips > 0 { parts.append("\(clips) clip\(clips == 1 ? "" : "s")") }
         if skipped > 0 { parts.append("\(skipped) already in the logbook") }
-        let rest = reports.count - added - skipped
+        let rest = reports.count - added - skipped - clips
         if rest > 0 { parts.append("\(rest) not read") }
         return reports.isEmpty ? "Nothing in those files that this app reads." : parts.joined(separator: ", ") + "."
     }

@@ -211,7 +211,7 @@ the Logbook window with `LogbookModel.newDayRequested`). The sidebar's **Track D
 year when there is more than one; choosing one narrows the table and puts `TrackDayHeader` above
 it — title, date and count, car and driver as fields committed on Return or losing focus, the
 `ConditionsEditor` (now over either an entry or a day) folded under *Conditions and Notes*, the
-empty-day line, **Add Sessions…** and **Remove Track Day…** (a confirmation; the sessions go
+empty-day line, **Add Files…** and **Remove Track Day…** (a confirmation; the sessions go
 with it, the files stay).
 
 The toolbar's **Add Files…** (and a drop on the window) runs `TrackDayImport.run(…, day:)` with
@@ -220,6 +220,28 @@ file goes on the day `Logbook.day(for:)` finds or makes, and the report line end
 2026 · Sonoma". `ProjectLogbook.enter` places a file added to a project the same way. The
 request and the sheet live on `LogbookModel` (`trackDayRequest`), so the Testing menu's *Add
 Fixture Sessions to Selected Day* can drive them.
+
+## The day's clips (#394)
+
+`ClipMatcher` (`Sources/MediaKit/ClipMatcher.swift`) is the clocks and nothing else:
+`record(_:chapters:)` probes a recording (`MediaProbe`, every chapter's length summed), takes
+its start from `TimestampSync.recordingStart` — a GoPro's GPS clock, a DJI or Sony sidecar, the
+container's creation date — else the file's own date, and fingerprints the first mebibyte and
+the length (a 20 GB clip is not read through); `match(_:to:)` gives the clip to the session its
+span overlaps most, and when neither side has a clock to the only session of the day; a dated
+session the clock rules out is never a match. `TrackDayImport.run` groups clips with
+`CameraChapters.group`, imports the telemetry first so a clip and its log in one batch pair up,
+then records each clip on its day (`Logbook.day(on:)` by the clock when no day was chosen),
+matches it, and — for a clip with GPS and no session of its own — reads it as a session first,
+as it was before days existed. New outcomes `.clip(_, session:)` and `.clipAlreadyThere`, with
+lines in the user's words.
+
+In the window the day's header lists the clips with a pop-up of the day's sessions (a choice is
+`matchedBy: .byHand`), the session detail lists its clips under *Video*, and **New Project**
+(`LogbookOpenRequest`: the entry, its clips' files with their chapters, a template, and what to
+show next) applies the template, adds the videos (`addVideos(at:)`, chapters joined) and then the
+data file, so the editor's own clock sync lines them up. The template is the one the last New
+Project used (`logbook.projectTemplate`), Classic Dash to begin with; a pop-up offers them all.
 
 ## What comes next
 v0.34.0 (#392–#398) turns the workflow round so it begins here: a day created first (#393 New

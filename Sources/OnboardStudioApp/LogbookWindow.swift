@@ -73,11 +73,21 @@ import UniformTypeIdentifiers
     }
 }
 
-/// Hands a session to the next editor that appears (Open as Project).
+/// What a new project is made of from the logbook (#394): the session's data file, the clips
+/// that are its picture, a template to lay it out, and what to show once it is open.
+struct LogbookOpenRequest {
+    enum Then { case coaching, debrief }
+    let entry: LogbookEntry
+    var clips: [URL] = []
+    var template: ProjectTemplate?
+    var then: Then?
+}
+
+/// Hands a session to the next editor that appears (New Project).
 @MainActor
 final class PendingLogbookOpen {
     static let shared = PendingLogbookOpen()
-    var entry: LogbookEntry?
+    var request: LogbookOpenRequest?
 }
 
 /// Every track day in one place (#347): a sidebar of circuits, cars and years, a sortable,
@@ -255,7 +265,7 @@ struct LogbookWindow: View {
                 VStack(spacing: 0) {
                     if let day = selectedDay {
                         TrackDayHeader(
-                            day: day, sessionCount: model.entries.filter { $0.trackDayID == day.id }.count,
+                            day: day, sessions: model.entries.filter { $0.trackDayID == day.id },
                             save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day })
                         Divider()
                     }
@@ -273,8 +283,8 @@ struct LogbookWindow: View {
                 .layoutPriority(1)
                 if let entry = model.entries.first(where: { $0.id == selection }) {
                     LogbookDetail(
-                        entry: entry, hasProject: active.editor != nil,
-                        openAsProject: { openAsProject(entry) },
+                        entry: entry, clips: clips(of: entry), hasProject: active.editor != nil,
+                        templates: Self.templates, newProject: { openAsProject(entry, template: $0) },
                         addToProject: { addToCurrentProject(entry) },
                         remove: { confirmRemoval = entry },
                         save: { model.save($0) },
@@ -300,10 +310,34 @@ struct LogbookWindow: View {
 
     // MARK: - Into a project
 
-    func openAsProject(_ entry: LogbookEntry) {
+    /// A new project with the session's data file, its clips and `template` (#394).
+    func openAsProject(_ entry: LogbookEntry, template: ProjectTemplate?) {
         guard entry.resolveFile() != nil else { return }
-        PendingLogbookOpen.shared.entry = entry
+        PendingLogbookOpen.shared.request = LogbookOpenRequest(
+            entry: entry, clips: clipURLs(of: entry), template: template)
         NSDocumentController.shared.newDocument(nil)
+    }
+
+    /// The clips of the session's day that are its picture, in the order they were recorded.
+    func clips(of entry: LogbookEntry) -> [ClipRecord] {
+        let clips = model.days.first { $0.id == entry.trackDayID }?.clips.filter { $0.sessionID == entry.id } ?? []
+        return clips.sorted { ($0.recordedAt ?? .distantPast, $0.path) < ($1.recordedAt ?? .distantPast, $1.path) }
+    }
+
+    /// Each clip's files that still exist, chapters after their first.
+    func clipURLs(of entry: LogbookEntry) -> [URL] {
+        clips(of: entry).flatMap { clip -> [URL] in
+            guard let first = clip.resolveFile() else { return [] }
+            return [first]
+                + clip.chapterPaths.map { URL(fileURLWithPath: $0) }.filter {
+                    FileManager.default.fileExists(atPath: $0.path)
+                }
+        }
+    }
+
+    /// The built-in templates and the user's own, as New Project from Template offers them.
+    static func templates() -> [ProjectTemplate] {
+        ProjectTemplate.builtIn + TemplateLibrary.app.entries().compactMap { try? TemplateLibrary.app.load($0) }
     }
 
     func addToCurrentProject(_ entry: LogbookEntry) {

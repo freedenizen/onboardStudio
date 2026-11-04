@@ -220,12 +220,26 @@ extension Logbook {
     /// are, else made now from the entry (its car and driver copied) and saved.
     public func day(for entry: LogbookEntry) throws -> TrackDay {
         if let id = entry.trackDayID, let day = day(id: id) { return day }
-        let when = TrackDay.startOfDay(entry.date ?? entry.added)
-        let key = entry.circuitID ?? entry.trackName ?? ""
-        if let found = days().first(where: { $0.date == when && $0.circuitKey == key }) { return found }
-        let made = TrackDay(
-            date: when, circuitID: entry.circuitID, trackName: entry.circuitID == nil ? entry.trackName : nil,
-            car: entry.car, driver: entry.driver)
+        return try day(
+            on: entry.date ?? entry.added, circuitID: entry.circuitID,
+            trackName: entry.circuitID == nil ? entry.trackName : nil, car: entry.car, driver: entry.driver)
+    }
+
+    /// The day on `date` at the circuit, found or made (#394): a clip with no session of its own
+    /// still goes on a day. With no circuit, the day on that date with the most sessions, else a
+    /// day with no circuit.
+    public func day(
+        on date: Date, circuitID: String? = nil, trackName: String? = nil, car: String = "", driver: String = ""
+    ) throws -> TrackDay {
+        let when = TrackDay.startOfDay(date)
+        let key = circuitID ?? trackName ?? ""
+        let that = days().filter { $0.date == when }
+        if let found = that.first(where: { $0.circuitKey == key }) { return found }
+        if key.isEmpty, !that.isEmpty {
+            let counts = Dictionary(grouping: entries().compactMap(\.trackDayID), by: { $0 }).mapValues(\.count)
+            if let busiest = that.max(by: { (counts[$0.id] ?? 0) < (counts[$1.id] ?? 0) }) { return busiest }
+        }
+        let made = TrackDay(date: when, circuitID: circuitID, trackName: trackName, car: car, driver: driver)
         try saveDay(made)
         return made
     }

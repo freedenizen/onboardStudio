@@ -98,10 +98,13 @@ struct EditorView: View {
                 PendingTemplate.shared.template = nil
                 editor.apply(template)
             }
-            // A session opened from the logbook (#347): its file into the fresh project.
-            if let entry = PendingLogbookOpen.shared.entry, editor.project.inputs.isEmpty {
-                PendingLogbookOpen.shared.entry = nil
-                if let url = entry.resolveFile() { editor.addData(at: url) }
+            // A session opened from the logbook (#347, #394): the template, its clips, then its
+            // data file into the fresh project, so the clock sync lines them up as it would.
+            if let request = PendingLogbookOpen.shared.request, editor.project.inputs.isEmpty {
+                PendingLogbookOpen.shared.request = nil
+                if let template = request.template, editor.project.displayObjects.isEmpty { editor.apply(template) }
+                if !request.clips.isEmpty { editor.addVideos(at: request.clips) }
+                if let url = request.entry.resolveFile() { editor.addData(at: url) }
             }
             editor.scheduleCompile()
         }

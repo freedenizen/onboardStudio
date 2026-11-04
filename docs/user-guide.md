@@ -320,7 +320,7 @@ A day begins before its files do. **Window ▸ Logbook**, then **New Track Day�
 (or **File ▸ New Track Day…**, ⌥⌘N): the date, the circuit (search the catalogue, or keep a name
 as typed), the car, the driver, the weather and track, and notes. **Create** puts the day under
 **Track Days** in the sidebar and shows it above an empty table, with the car and driver as fields
-in its header and **Conditions and Notes** folded under it. **Add Sessions…**, or drop the logger's
+in its header and **Conditions and Notes** folded under it. **Add Files…**, or drop the logger's
 files and camera clips on the window, and each goes on that day with its car, driver and
 conditions to begin with; the sheet says what happened to each file in plain words. The circuit is
 recognised, the date read from the file, and a file already in the logbook is skipped, whatever
@@ -333,10 +333,18 @@ The window shows it all: a sidebar of track days (under their year when there is
 circuits, cars and years with how many sessions each, a table of sessions (date, circuit, car,
 laps, best, optimal and fastest rolling lap) sortable by any column and narrowed by the search
 field, and, for the selected session, its numbers, every lap with the best marked, the notes, the
-projects made from it and where the file is. **Open as Project** starts a new project with that
-session's data file; **Add to Current Project** adds it to the project in front. **Remove from
-Logbook…** takes a session out, and the trash button in a day's header takes the day and its
-sessions out; no file is touched. Under **Conditions** in the detail, note the weather, the track (dry, damp, wet, drying,
+projects made from it and where the file is. **New Project** starts a project with that session's
+data file and its clips, laid out with the template the last New Project used (Classic Dash to
+begin with); the pop-up beside it offers every template, or a blank project. **Add to Current
+Project** adds the session to the project in front. **Remove from Logbook…** takes a session out,
+and the trash button in a day's header takes the day and its sessions out; no file is touched.
+
+The camera's clips live on the day too. Each recording added — GoPro chapters joined — is listed
+under **Clips** in the day's header with when it started and how long it ran, and is matched to
+the session it is the picture of by the camera's clock (a GoPro's GPS clock, else the file's
+date) against the log's; a clip that overlaps no session says so, and the pop-up beside it lets
+you say whose it is. A clip with GPS in it and no session of its own is entered as a session as
+well. A session's detail lists its clips under **Video**, and they go into a New Project with it. Under **Conditions** in the detail, note the weather, the track (dry, damp, wet, drying,
 greasy), the air temperature, the tyres and the setup, and anything else under **Notes**: pickers
 and the temperature are kept as soon as set, text on Return or when you leave the field; the
 table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and
