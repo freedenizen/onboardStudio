@@ -105,6 +105,22 @@ vertical clip, the debrief) on `exports`. Relinking runs once per load: an input
 missing takes the entry's bookmark's place as an undoable *Relink Data File*; an entry whose path
 is stale while the project's is good learns the new one.
 
+## Taking it with you (#350)
+
+`LogbookTransfer` (`ProjectModel/LogbookTransfer.swift`). **Export** writes the entries as the
+same `.onboardsession` files the library keeps, plus `garage.json`, into a folder; with data files,
+each session's file is copied under `Files/` as `<hash prefix>-<name>` and the written entry's
+path points there, relative, with no bookmark. **Import** reads any folder of entry files: merge
+by content hash — unknown bytes are added, known bytes skipped unless the arriving copy's
+`modified` is newer, in which case it replaces the entry under the id the logbook already uses
+(so projects keep their link); an entry whose path no longer resolves takes the copy under
+`Files/` when there is one, or keeps the known entry's file; imported entries keep their own
+`modified` (`Logbook.save(_:keepingModified:)`). **CSV**: one line per session with the numbers,
+conditions and notes, and one per lap, RFC 4180 quoting, seconds and km/h and ISO 8601 dates, so
+a spreadsheet needs no parsing; **Markdown**: a table of the sessions and each session's laps and
+notes. The window exports what the table shows, so a scope or a search is the selection; the CLI
+exports the whole book. Zip is left to the Finder.
+
 ## What comes next
  #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as

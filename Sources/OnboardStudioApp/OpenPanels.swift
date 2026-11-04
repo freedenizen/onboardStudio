@@ -23,6 +23,18 @@ enum OpenPanels {
         return panel.runModal() == .OK ? panel.urls.sorted { $0.lastPathComponent < $1.lastPathComponent } : []
     }
 
+    /// A folder of logbook entries to read in (#350).
+    static func chooseLogbookFolder() -> URL? {
+        if let directory = UITestSupport.exportDirectory { return directory }
+        let panel = NSOpenPanel()
+        panel.title = "Import Logbook"
+        panel.message = "Choose a folder of sessions exported from a logbook."
+        panel.prompt = "Import"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
     /// Files and folders of a track day for the logbook (#346).
     static func chooseTrackDay() -> [URL] {
         let panel = NSOpenPanel()
@@ -134,11 +146,13 @@ enum OpenPanels {
     }
 
     /// The folder an every-lap export writes its files into (#150).
-    static func chooseExportFolder() -> URL? {
+    static func chooseExportFolder(
+        title: String = "Export Every Lap", message: String = "Each lap is written here as its own file."
+    ) -> URL? {
         if let directory = UITestSupport.exportDirectory { return directory }
         let panel = NSOpenPanel()
-        panel.title = "Export Every Lap"
-        panel.message = "Each lap is written here as its own file."
+        panel.title = title
+        panel.message = message
         panel.prompt = "Export Here"
         panel.canChooseDirectories = true
         panel.canChooseFiles = false

@@ -340,6 +340,13 @@ driver are filled from what the logbook knows. A saved project is listed on its 
 **Projects**, every video exported from it under **Exports**, both as links. A data file you have
 moved is found again through whichever side still knows where it is, once, when the project opens.
 
+The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
+folder of one file per session (narrow the table first to export only a circuit, a car or a year),
+**…with Data Files** copies the data files in beside them, **Export Sessions as CSV…** and
+**Export Laps as CSV…** for a spreadsheet, **Export as Markdown…** for a coach; **Import
+Logbook…** reads such a folder back, skipping what is already here and updating what is newer.
+From the command line: `onboard logbook export <folder|.csv|.md>` and `onboard logbook import`.
+
 ## 5. Objects
 
 ![A tachometer selected on the preview with handles around it, its label, position, size and scale in the inspector](images/inspector-gauge.jpg)

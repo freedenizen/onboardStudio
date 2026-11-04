@@ -8,7 +8,7 @@ import TelemetryKit
 struct LogbookCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "logbook", abstract: "Add track days to the logbook and list what it holds.",
-        subcommands: [Add.self, List.self])
+        subcommands: [Add.self, List.self, Export.self, Import.self])
 
     struct Add: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
@@ -57,6 +57,61 @@ struct LogbookCommand: AsyncParsableCommand {
             }
             for entry in entries { print(TrackDayImport.Report.describe(entry) + "  (\(entry.file.path))") }
             if entries.isEmpty { print("The logbook is empty. Add a track day with: onboard logbook add <files>") }
+        }
+    }
+
+    struct Export: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Write the logbook as a folder of entries, or as CSV or Markdown.")
+
+        @Argument(help: "The folder to write entries into, or the .csv / .md file to write.")
+        var destination: String
+
+        @Flag(name: .long, help: "Copy each session's data file into the folder too.")
+        var withFiles = false
+
+        @Flag(name: .long, help: "With a .csv destination: one line per lap instead of per session.")
+        var laps = false
+
+        @Option(name: .long, help: "The logbook folder (default: the app's).")
+        var logbook: String?
+
+        func run() async throws {
+            let book = Logbook(directory: logbook.map { URL(fileURLWithPath: $0, isDirectory: true) })
+            let url = URL(fileURLWithPath: destination)
+            let entries = book.entries()
+            switch url.pathExtension.lowercased() {
+            case "csv":
+                let text = laps ? LogbookTransfer.lapsCSV(entries) : LogbookTransfer.sessionsCSV(entries)
+                try text.write(to: url, atomically: true, encoding: .utf8)
+                print("Wrote \(laps ? "the laps" : "\(entries.count) sessions") to \(url.path)")
+            case "md", "markdown":
+                try LogbookTransfer.markdown(entries).write(to: url, atomically: true, encoding: .utf8)
+                print("Wrote \(entries.count) sessions to \(url.path)")
+            default:
+                let summary = try LogbookTransfer.export(entries, cars: book.cars(), to: url, includingFiles: withFiles)
+                let files = withFiles ? ", \(summary.filesCopied) data files copied" : ""
+                print("Wrote \(summary.written) sessions to \(url.path)\(files)")
+            }
+        }
+    }
+
+    struct Import: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Read a folder of entries into the logbook, merging by each file's bytes.")
+
+        @Argument(help: "A folder written by export, or any folder of .onboardsession files.")
+        var folder: String
+
+        @Option(name: .long, help: "The logbook folder (default: the app's).")
+        var logbook: String?
+
+        func run() async throws {
+            let book = Logbook(directory: logbook.map { URL(fileURLWithPath: $0, isDirectory: true) })
+            let summary = try LogbookTransfer.import(from: URL(fileURLWithPath: folder, isDirectory: true), into: book)
+            print(
+                "\(summary.added) added, \(summary.updated) updated, \(summary.skipped) already there; "
+                    + "the logbook now holds \(book.entries().count) sessions.")
         }
     }
 }
