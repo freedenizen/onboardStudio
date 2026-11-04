@@ -199,6 +199,28 @@ an empty day included, since a day is begun before its files exist.
 ("23 Aug 2026 · Sonoma Raceway"). An entry also records `durationSeconds` now, so a clip can be
 matched to it by clock without reading the file again.
 
+## New Track Day… (#393)
+
+`NewTrackDaySheet` (`Sources/OnboardStudioApp/TrackDayViews.swift`): a `Form` of the date, the
+circuit (a search of `CircuitCatalog` with the match chosen, or the name kept as typed), the car
+(a text field with the logbook's cars in a menu beside it), the driver, the weather and track
+pickers and notes; Create saves the day, adds a new car to the garage, and chooses the day in the
+sidebar. It opens from the toolbar, the empty state and File ▸ New Track Day… (⌥⌘N, which opens
+the Logbook window with `LogbookModel.newDayRequested`). The sidebar's **Track Days** section
+(`TrackDaySidebarSection`) lists `LogbookFilter.days` newest first, under a `DisclosureGroup` per
+year when there is more than one; choosing one narrows the table and puts `TrackDayHeader` above
+it — title, date and count, car and driver as fields committed on Return or losing focus, the
+`ConditionsEditor` (now over either an entry or a day) folded under *Conditions and Notes*, the
+empty-day line, **Add Sessions…** and **Remove Track Day…** (a confirmation; the sessions go
+with it, the files stay).
+
+The toolbar's **Add Files…** (and a drop on the window) runs `TrackDayImport.run(…, day:)` with
+the chosen day, so the sessions take its id, car, driver and conditions; with no day chosen each
+file goes on the day `Logbook.day(for:)` finds or makes, and the report line ends ", in 23 Aug
+2026 · Sonoma". `ProjectLogbook.enter` places a file added to a project the same way. The
+request and the sheet live on `LogbookModel` (`trackDayRequest`), so the Testing menu's *Add
+Fixture Sessions to Selected Day* can drive them.
+
 ## What comes next
 v0.34.0 (#392–#398) turns the workflow round so it begins here: a day created first (#393 New
 Track Day…), its clips matched to its sessions by clock (#394), the logbook as the window at

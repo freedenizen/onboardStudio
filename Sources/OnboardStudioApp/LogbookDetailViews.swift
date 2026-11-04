@@ -210,15 +210,44 @@ struct LogbookDetail: View {
 /// Weather, track, temperature, tyres, setup and notes, written to the entry as they are set:
 /// pickers and the temperature at once, text when Return is pressed or the field is left (#348).
 struct ConditionsEditor: View {
-    let entry: LogbookEntry
-    let save: (LogbookEntry) -> Void
+    /// Whose conditions these are, so a change of session or day reloads the fields.
+    let identity: UUID
+    let conditions: SessionConditions
+    let notes: String
+    let save: (SessionConditions, String) -> Void
     @State private var temperature = ""
     @State private var tyres = ""
     @State private var setup = ""
-    @State private var notes = ""
+    @State private var notesText = ""
     @FocusState private var focus: Field?
 
     enum Field: Hashable { case temperature, tyres, setup, notes }
+
+    /// A session's conditions and notes (#348).
+    init(entry: LogbookEntry, save: @escaping (LogbookEntry) -> Void) {
+        identity = entry.id
+        conditions = entry.conditions
+        notes = entry.notes
+        self.save = { conditions, notes in
+            var changed = entry
+            changed.conditions = conditions
+            changed.notes = notes
+            save(changed)
+        }
+    }
+
+    /// A track day's conditions and notes (#393): the default for the sessions added to it.
+    init(day: TrackDay, save: @escaping (TrackDay) -> Void) {
+        identity = day.id
+        conditions = day.conditions
+        notes = day.notes
+        self.save = { conditions, notes in
+            var changed = day
+            changed.conditions = conditions
+            changed.notes = notes
+            save(changed)
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -273,43 +302,43 @@ struct ConditionsEditor: View {
             }
             .font(.callout)
             Text("Notes").font(.subheadline.weight(.semibold)).padding(.top, 4)
-            TextField("Anything worth remembering about the day", text: $notes, axis: .vertical).lineLimit(2...6)
+            TextField("Anything worth remembering about the day", text: $notesText, axis: .vertical).lineLimit(2...6)
                 .focused($focus, equals: .notes)
                 .onSubmit(commit)
                 .accessibilityIdentifier("logbook.notes")
         }
         .onAppear(perform: load)
-        .onChange(of: entry.id) { load() }
+        .onChange(of: identity) { load() }
         .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
     }
 
     private func binding<Value>(_ keyPath: WritableKeyPath<SessionConditions, Value>) -> Binding<Value> {
         Binding(
-            get: { entry.conditions[keyPath: keyPath] },
+            get: { conditions[keyPath: keyPath] },
             set: { value in
-                var changed = entry
-                changed.conditions[keyPath: keyPath] = value
-                save(changed)
+                var changed = conditions
+                changed[keyPath: keyPath] = value
+                save(changed, notes)
             })
     }
 
     private func load() {
-        temperature = entry.conditions.ambientCelsius.map { Self.format($0) } ?? ""
-        tyres = entry.conditions.tyres
-        setup = entry.conditions.setup
-        notes = entry.notes
+        temperature = conditions.ambientCelsius.map { Self.format($0) } ?? ""
+        tyres = conditions.tyres
+        setup = conditions.setup
+        notesText = notes
     }
 
     /// The text fields into the entry, when any of them changed.
     private func commit() {
-        var changed = entry
+        var changed = conditions
         let trimmed = temperature.trimmingCharacters(in: .whitespaces)
         let number = Double(trimmed.replacingOccurrences(of: ",", with: "."))
-        changed.conditions.ambientCelsius = trimmed.isEmpty ? nil : number
-        changed.conditions.tyres = tyres.trimmingCharacters(in: .whitespaces)
-        changed.conditions.setup = setup.trimmingCharacters(in: .whitespacesAndNewlines)
-        changed.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        if changed != entry { save(changed) }
+        changed.ambientCelsius = trimmed.isEmpty ? nil : number
+        changed.tyres = tyres.trimmingCharacters(in: .whitespaces)
+        changed.setup = setup.trimmingCharacters(in: .whitespacesAndNewlines)
+        let changedNotes = notesText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if changed != conditions || changedNotes != notes { save(changed, changedNotes) }
     }
 
     static func format(_ celsius: Double) -> String {

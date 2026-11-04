@@ -124,6 +124,12 @@ struct UITestCommands: Commands {
             Button("Add Fixture Track Day") {
                 if let folder = UITestSupport.fixtures { editor?.trackDayRequest = TrackDayRequest(urls: [folder]) }
             }
+            // Into the day chosen in the Logbook window's sidebar (#393).
+            Button("Add Fixture Sessions to Selected Day") {
+                guard let folder = UITestSupport.fixtures else { return }
+                let model = LogbookModel.shared
+                model.trackDayRequest = TrackDayRequest(urls: [folder], day: model.selectedDay)
+            }
             // A second visit to the coaching fixture's "circuit": the same file name, one row
             // shorter, so it is another session at the same place (#352).
             Button("Set Project Car Miata") { editor?.setDetail("Change Car") { $0.car = "Miata" } }

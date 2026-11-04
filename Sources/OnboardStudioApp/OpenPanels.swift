@@ -36,9 +36,10 @@ enum OpenPanels {
     }
 
     /// Files and folders of a track day for the logbook (#346).
-    static func chooseTrackDay() -> [URL] {
+    /// The day's files and folders; with `day`, into that day (#393).
+    static func chooseTrackDay(for day: TrackDay? = nil) -> [URL] {
         let panel = NSOpenPanel()
-        panel.title = "Add Track Day to Logbook"
+        panel.title = day.map { "Add Sessions to \($0.label)" } ?? "Add Track Day to Logbook"
         panel.message = "Choose the day's telemetry files and camera clips, or the folders holding them."
         panel.canChooseDirectories = true
         panel.canChooseFiles = true

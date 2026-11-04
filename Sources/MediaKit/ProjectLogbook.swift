@@ -43,10 +43,12 @@ public enum ProjectLogbook {
         if let existing = logbook.entry(forContentHash: hash) { return Enrolment(entry: existing, isNew: false) }
         let importer = request.importerID ?? (try? FormatDetector.detect(url))?.id ?? "unknown"
         let previous = request.circuitID.flatMap { id in logbook.entries().first { $0.circuitID == id } }
-        let entry = try LogbookEntry.make(
+        var entry = try LogbookEntry.make(
             session: request.session, file: url, importerID: importer, circuitID: request.circuitID,
             car: request.car.isEmpty ? previous?.car ?? "" : request.car,
             driver: request.driver.isEmpty ? request.session.info.driverName ?? previous?.driver : request.driver)
+        // Onto the day its date and circuit say, as a file added to the logbook itself is (#393).
+        entry.trackDayID = try logbook.day(for: entry).id
         try logbook.save(entry)
         return Enrolment(entry: entry, isNew: true)
     }

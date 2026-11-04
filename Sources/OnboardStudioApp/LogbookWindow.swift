@@ -16,6 +16,12 @@ import UniformTypeIdentifiers
     private(set) var cars: [Car] = []
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
     private var sessions: [UUID: TelemetrySession] = [:]
+    /// Files on their way into the logbook, shown by the window's sheet (#393).
+    var trackDayRequest: TrackDayRequest?
+    /// File ▸ New Track Day… asked for the sheet (#393).
+    var newDayRequested = false
+    /// The day chosen in the sidebar, for the Testing menu and the ways in.
+    var selectedDay: TrackDay?
 
     private var carComparisons: [String: CarVersusCar] = [:]
 
@@ -81,7 +87,7 @@ struct LogbookWindow: View {
 
     @SceneStorage("logbook.scope") private var storedScope = "all"
     /// Sessions, or the trends across visits (#353).
-    @SceneStorage("logbook.view") private var view: LogbookView = .sessions
+    @SceneStorage("logbook.view") var view: LogbookView = .sessions
 
     enum LogbookView: String, CaseIterable, Identifiable {
         case sessions, trends, season
@@ -98,12 +104,12 @@ struct LogbookWindow: View {
     @State private var search = ""
     @State private var selection: UUID?
     @State private var sortOrder = [KeyPathComparator(\LogbookEntry.date, order: .reverse)]
-    @State private var trackDay: TrackDayRequest?
     @State private var confirmRemoval: LogbookEntry?
+    @State private var confirmDayRemoval: TrackDay?
     /// What the last export or import did, under the table (#350).
     @State var message: String?
     @Environment(\.openWindow) private var openWindow
-    var model = LogbookModel.shared
+    @Bindable var model = LogbookModel.shared
     private var active = ActiveEditor.shared
 
     static func open(_ openWindow: OpenWindowAction) { openWindow(id: windowID) }
@@ -128,12 +134,19 @@ struct LogbookWindow: View {
                         .accessibilityIdentifier("logbook.view")
                     }
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Add Track Day…", systemImage: "plus") {
-                            let urls = OpenPanels.chooseTrackDay()
-                            if !urls.isEmpty { trackDay = TrackDayRequest(urls: urls) }
+                        Button("New Track Day…", systemImage: "calendar.badge.plus") {
+                            model.newDayRequested = true
                         }
-                        .help("Enter a day's telemetry files and camera clips in the logbook")
-                        .accessibilityIdentifier("logbook.addTrackDay")
+                        .help("Begin a day: the date, the circuit, the car — before any file exists (⌥⌘N)")
+                        .accessibilityIdentifier("logbook.newTrackDay")
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Add Files…", systemImage: "doc.badge.plus", action: addFiles)
+                            .help(
+                                "Enter a day's telemetry files and camera clips: on the day chosen in the sidebar, "
+                                    + "else each on the day its date and circuit say"
+                            )
+                            .accessibilityIdentifier("logbook.addTrackDay")
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
@@ -155,16 +168,40 @@ struct LogbookWindow: View {
                 }
                 .searchable(text: $search, placement: .toolbar, prompt: "Circuit, car, driver, notes")
         }
-        .sheet(item: $trackDay) { request in
+        .sheet(item: $model.trackDayRequest) { request in
             TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
         }
+        .sheet(isPresented: $model.newDayRequested) {
+            NewTrackDaySheet(
+                knownCars: LogbookFilter.cars(in: model.entries).map(\.scope.title).filter { $0 != "No car" },
+                lastDay: model.days.first, create: create)
+        }
         .onAppear { model.reload() }
+        .onChange(of: scope, initial: true) { model.selectedDay = selectedDay }
+        .onChange(of: model.days) { model.selectedDay = selectedDay }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            let day = selectedDay
             Task { @MainActor in
                 let urls = await Self.urls(from: providers)
-                if !urls.isEmpty { trackDay = TrackDayRequest(urls: urls) }
+                if !urls.isEmpty { model.trackDayRequest = TrackDayRequest(urls: urls, day: day) }
             }
             return true
+        }
+        .confirmationDialog(
+            "Remove this track day from the logbook?",
+            isPresented: Binding(get: { confirmDayRemoval != nil }, set: { if !$0 { confirmDayRemoval = nil } }),
+            presenting: confirmDayRemoval
+        ) { day in
+            Button("Remove Track Day", role: .destructive) {
+                try? AppLogbook.shared.removeDay(id: day.id, andSessions: true)
+                model.reload()
+                if case .day(let id, _) = scope, id == day.id { scope = .all }
+            }
+        } message: { day in
+            let count = model.entries.filter { $0.trackDayID == day.id }.count
+            Text(
+                "\(day.label) and its \(count) session\(count == 1 ? "" : "s") are taken out of the logbook. "
+                    + "The files are not touched.")
         }
         .confirmationDialog(
             "Remove this session from the logbook?",
@@ -180,40 +217,6 @@ struct LogbookWindow: View {
         }
     }
 
-    // MARK: - Sidebar
-
-    private var sidebar: some View {
-        List(selection: Binding(get: { scope }, set: { if let new = $0 { scope = new } })) {
-            Label("All Sessions", systemImage: "book.closed").tag(LogbookScope.all)
-                .accessibilityIdentifier("logbook.scope.all")
-            let circuits = LogbookFilter.circuits(in: model.entries)
-            if !circuits.isEmpty {
-                Section("Circuits") {
-                    ForEach(circuits, id: \.scope) { group in
-                        Label(group.scope.title, systemImage: "flag.checkered").badge(group.count).tag(group.scope)
-                    }
-                }
-            }
-            let cars = LogbookFilter.cars(in: model.entries)
-            if !cars.isEmpty {
-                Section("Cars") {
-                    ForEach(cars, id: \.scope) { group in
-                        Label(group.scope.title, systemImage: "car").badge(group.count).tag(group.scope)
-                    }
-                }
-            }
-            let years = LogbookFilter.years(in: model.entries)
-            if !years.isEmpty {
-                Section("Years") {
-                    ForEach(years, id: \.scope) { group in
-                        Label(group.scope.title, systemImage: "calendar").badge(group.count).tag(group.scope)
-                    }
-                }
-            }
-        }
-        .accessibilityIdentifier("logbook.sidebar")
-    }
-
     // MARK: - Table and detail
 
     var shown: [LogbookEntry] {
@@ -221,18 +224,17 @@ struct LogbookWindow: View {
     }
 
     @ViewBuilder private var content: some View {
-        if model.entries.isEmpty {
+        if model.entries.isEmpty, model.days.isEmpty {
             ContentUnavailableView {
                 Label("No Track Days Yet", systemImage: "book.closed")
             } description: {
                 Text(
-                    "The logbook keeps every session the app reads: where and when, the car, every lap. "
-                        + "Add a day's files or folders to begin, or add a data file to a project.")
+                    "The logbook keeps every track day: where and when, the car, every session and its laps. "
+                        + "Begin a day, or add a day's files or folders.")
             } actions: {
-                Button("Add Track Day…") {
-                    let urls = OpenPanels.chooseTrackDay()
-                    if !urls.isEmpty { trackDay = TrackDayRequest(urls: urls) }
-                }
+                Button("New Track Day…") { model.newDayRequested = true }
+                    .accessibilityIdentifier("logbook.empty.newTrackDay")
+                Button("Add Files…", action: addFiles)
             }
         } else if view == .season {
             SeasonView(
@@ -251,6 +253,12 @@ struct LogbookWindow: View {
         } else {
             HSplitView {
                 VStack(spacing: 0) {
+                    if let day = selectedDay {
+                        TrackDayHeader(
+                            day: day, sessionCount: model.entries.filter { $0.trackDayID == day.id }.count,
+                            save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day })
+                        Divider()
+                    }
                     LogbookTable(
                         entries: shown, bests: PersonalBests.entriesSettingBests(in: model.entries),
                         selection: $selection, sortOrder: $sortOrder)
@@ -284,6 +292,7 @@ struct LogbookWindow: View {
     /// The circuit the trends are of: the one chosen in the sidebar, else the only one there is.
     private var trendsCircuit: (id: String, title: String)? {
         if case .circuit(let id, let title) = scope { return (id, title) }
+        if let day = selectedDay, let id = day.circuitID { return (id, day.title) }
         let circuits = LogbookFilter.circuits(in: model.entries)
         if circuits.count == 1, case .circuit(let id, let title) = circuits[0].scope { return (id, title) }
         return nil

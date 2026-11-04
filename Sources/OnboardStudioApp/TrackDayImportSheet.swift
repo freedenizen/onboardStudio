@@ -7,10 +7,12 @@ enum AppLogbook {
     static var shared: Logbook { Logbook(directory: UITestSupport.logbookDirectory) }
 }
 
-/// The files and folders of one Add Track Day… (#346).
+/// The files and folders of one Add Track Day… (#346), and the day they go on when one was
+/// chosen (#393) — else each file goes on the day its date and circuit say.
 struct TrackDayRequest: Identifiable {
     let id = UUID()
     let urls: [URL]
+    var day: TrackDay?
 }
 
 extension EditorModel {
@@ -35,7 +37,7 @@ struct TrackDayImportSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Add Track Day to Logbook").font(.title2)
+            Text(request.day.map { "Add Sessions to \($0.label)" } ?? "Add Track Day to Logbook").font(.title2)
             if done {
                 Text(summary).accessibilityIdentifier("trackday.summary")
             } else {
@@ -71,10 +73,11 @@ struct TrackDayImportSheet: View {
 
     private func run() async {
         let urls = request.urls
+        let day = request.day
         let logbook = AppLogbook.shared
         let tracks = editor?.trackLibrary ?? TrackLibrary()
         let result = await Task.detached(priority: .userInitiated) {
-            await TrackDayImport.run(urls, into: logbook, tracks: tracks) { _, _, url in
+            await TrackDayImport.run(urls, into: logbook, tracks: tracks, day: day) { _, _, url in
                 Task { @MainActor in current = url.lastPathComponent }
             }
         }.value
