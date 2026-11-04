@@ -311,24 +311,32 @@ since.
 
 ### The logbook: every track day in one place
 
-The app keeps a **logbook** of the sessions it has read — which file, where and when it was driven,
-the car, every lap's time, the best, optimal and fastest rolling lap — separately from any project,
-in one small file per session beside the saved tracks, and never uploaded. **File ▸ Add Track Day to
-Logbook…** takes a day's files or the folders holding them: every telemetry file the app reads
-and every camera clip with GPS in it becomes an entry; the circuit is recognised, the date read
-from the file, the car taken from your last session at that circuit; a file already in the logbook
-is skipped, whatever it is called now. The sheet says what happened to each file in plain words.
-From the command line, `onboard logbook add <files or folders>` (`--car`, `--driver`) and
-`onboard logbook list`.
+The app keeps a **logbook** of your track days and the sessions driven on them — which file,
+where and when it was driven, the car, every lap's time, the best, optimal and fastest rolling
+lap — separately from any project, in one small file per day and per session beside the saved
+tracks, and never uploaded.
 
-**Window ▸ Logbook** (⌃⌘L) shows it all: a sidebar of circuits, cars and years with how many
-sessions each, a table of sessions (date, circuit, car, laps, best, optimal and fastest rolling
-lap) sortable by any column and narrowed by the search field, and, for the selected session, its
-numbers, every lap with the best marked, the notes, the projects made from it and where the file
-is. **Open as Project** starts a new project with that session's data file; **Add to Current
-Project** adds it to the project in front; **Add Track Day…** in the toolbar, or files and folders
-dropped on the window, enter more. **Remove from Logbook…** takes a session out; the file is not
-touched. Under **Conditions** in the detail, note the weather, the track (dry, damp, wet, drying,
+A day begins before its files do. **Window ▸ Logbook**, then **New Track Day…** in the toolbar
+(or **File ▸ New Track Day…**, ⌥⌘N): the date, the circuit (search the catalogue, or keep a name
+as typed), the car, the driver, the weather and track, and notes. **Create** puts the day under
+**Track Days** in the sidebar and shows it above an empty table, with the car and driver as fields
+in its header and **Conditions and Notes** folded under it. **Add Sessions…**, or drop the logger's
+files and camera clips on the window, and each goes on that day with its car, driver and
+conditions to begin with; the sheet says what happened to each file in plain words. The circuit is
+recognised, the date read from the file, and a file already in the logbook is skipped, whatever
+it is called now. **Add Files…** with no day chosen (or **File ▸ Add Track Day to Logbook…**)
+takes a whole day's folders at once: each file goes on the day its date and circuit say, made if
+need be, and the sheet's line says which. From the command line, `onboard logbook add <files or
+folders>` (`--car`, `--driver`) and `onboard logbook list`.
+
+The window shows it all: a sidebar of track days (under their year when there is more than one),
+circuits, cars and years with how many sessions each, a table of sessions (date, circuit, car,
+laps, best, optimal and fastest rolling lap) sortable by any column and narrowed by the search
+field, and, for the selected session, its numbers, every lap with the best marked, the notes, the
+projects made from it and where the file is. **Open as Project** starts a new project with that
+session's data file; **Add to Current Project** adds it to the project in front. **Remove from
+Logbook…** takes a session out, and the trash button in a day's header takes the day and its
+sessions out; no file is touched. Under **Conditions** in the detail, note the weather, the track (dry, damp, wet, drying,
 greasy), the air temperature, the tyres and the setup, and anything else under **Notes**: pickers
 and the temperature are kept as soon as set, text on Return or when you leave the field; the
 table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and

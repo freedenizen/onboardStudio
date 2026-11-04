@@ -71,4 +71,32 @@ struct TrackDayImportTests {
         #expect(logbook.entries().count == added.count)
         #expect(again.first { $0.url.lastPathComponent == "racechrono-v3.csv" }?.line.contains("already in") == true)
     }
+
+    @Test func filesGoOnTheChosenDayOrOnTheDayTheySay() async throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        // Onto a day begun first: its car and driver, its conditions, its id (#393).
+        var day = TrackDay(date: Date(timeIntervalSince1970: 1_700_000_000), trackName: "Fixtures", car: "GR86")
+        day.driver = "Sam"
+        day.conditions = SessionConditions(weather: .rain, track: .wet)
+        try logbook.saveDay(day)
+        let chosen = await TrackDayImport.run(
+            [Self.fixtures.appending(path: "racechrono-v3.csv")], into: logbook, day: day)
+        let onDay = try #require(chosen.first { $0.isAdded })
+        guard case .added(let entry) = onDay.outcome else { return }
+        #expect(entry.trackDayID == day.id)
+        #expect(entry.car == "GR86" && entry.driver == "Sam")
+        #expect(entry.conditions.weather == .rain, "the day's conditions, to begin with")
+        #expect(onDay.dayLabel == nil && !onDay.line.contains(", in "), "a chosen day is not announced")
+        #expect(logbook.sessions(of: day).count == 1)
+        // Without a day: onto the one its date and circuit say, made if need be, and the line says which.
+        let free = await TrackDayImport.run([Self.fixtures.appending(path: "coaching-laps.csv")], into: logbook)
+        let placed = try #require(free.first { $0.isAdded })
+        guard case .added(let other) = placed.outcome else { return }
+        let madeDay = try #require(other.trackDayID.flatMap { logbook.day(id: $0) })
+        #expect(madeDay.id != day.id, "a different circuit and date: its own day")
+        #expect(placed.dayLabel == madeDay.label)
+        #expect(placed.line.hasSuffix(", in \(madeDay.label)"))
+        #expect(logbook.days().count == 2)
+    }
 }

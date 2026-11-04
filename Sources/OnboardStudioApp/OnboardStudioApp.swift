@@ -133,6 +133,14 @@ struct EditorCommands: Commands {
             // Everything a bug report needs, in one file the user sends themselves (#152).
             Button("Export Diagnostics…") { DiagnosticsExport.run(editor: editor) }
         }
+        CommandGroup(after: .newItem) {
+            // Where a track day begins (#393): the Logbook window, with the sheet up.
+            Button("New Track Day…") {
+                LogbookModel.shared.newDayRequested = true
+                LogbookWindow.open(openWindow)
+            }
+            .keyboardShortcut("n", modifiers: [.command, .option])
+        }
         CommandGroup(after: .importExport) {
             // A whole day's files into the logbook, not the project, so it lives in File with the
             // other things that bring files in (#346). The Project menu is at the height of a
