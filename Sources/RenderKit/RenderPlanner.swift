@@ -148,9 +148,12 @@ public enum RenderPlanner {
         appSpeedUnit: SpeedUnitSetting = .automatic,
         globalAttributeMappings: AttributeMappingTable = AttributeMappingTable(),
         lapComparison: LapTimeWarp? = nil,
-        coaching: [InputID: CoachingTrack] = [:]
+        coaching: [InputID: CoachingTrack] = [:],
+        personalBests: [InputID: LapProfile] = [:],
+        extraDetails: [String: String] = [:]
     ) -> [any OverlayDrawing] {
-        (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
+        let details = extraDetails.isEmpty ? project.details : project.details.adding(extraDetails)
+        return (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
             guard object.isVisible, object.kind.isOverlay else { return nil }
             let input = object.inputID.flatMap(project.input)
             let dataInputID = dataInputID(for: object, in: project)
@@ -167,7 +170,8 @@ public enum RenderPlanner {
                     globalAttributeMappings: globalAttributeMappings),
                 typeface: typeface(for: object, in: project), textScale: object.textScale ?? 1,
                 lapComparison: lapComparison, followsComparedLap: object.followsComparedLap,
-                coaching: dataInputID.flatMap { coaching[$0] })
+                coaching: dataInputID.flatMap { coaching[$0] },
+                personalBest: dataInputID.flatMap { personalBests[$0] })
             let image =
                 object.inputID.flatMap { images[$0] }
                 ?? object.kind.gaugeParams?.faceImageInputID.flatMap { images[$0] }
@@ -183,7 +187,7 @@ public enum RenderPlanner {
                     context: context, params: params, second: second, background: request.flatMap { mapBackgrounds[$0] }
                 )
             }
-            return renderer(for: object.kind.filling(project.details), context: context, image: image)
+            return renderer(for: object.kind.filling(details), context: context, image: image)
         }
     }
 

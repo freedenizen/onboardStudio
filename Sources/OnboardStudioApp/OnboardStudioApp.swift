@@ -1,3 +1,4 @@
+import MediaKit
 import ProjectModel
 import SwiftUI
 import UniformTypeIdentifiers
@@ -11,6 +12,8 @@ struct OnboardStudioApp: App {
     init() {
         LegacyMigration.run()
         LaunchOptions.registerDefaults()
+        // Under UI tests the compile reads the scratch logbook the tests fill, never the user's.
+        ProjectCompiler.logbookDirectory = UITestSupport.logbookDirectory
     }
 
     var body: some Scene {

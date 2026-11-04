@@ -41,6 +41,10 @@ public enum ProjectCompiler {
         /// Every lap of each data input against the project's coaching reference (#323), read
         /// once here and handed to the renderers; empty when nothing in the project draws from it.
         public var coaching: [InputID: CoachingTrack] = [:]
+        /// The personal-best lap at the data's circuit, per data input, for a timer measuring
+        /// against it (#351); and the logbook's text keys for the project's details.
+        public var personalBests: [InputID: LapProfile] = [:]
+        public var derivedDetails: [String: String] = [:]
 
         public init(
             project: Project,
@@ -62,6 +66,10 @@ public enum ProjectCompiler {
             self.mapBackgrounds = mapBackgrounds
         }
     }
+
+    /// Where the logbook is read from for `{pb}` and the personal-best timer (#351): the user's
+    /// unless the app points elsewhere, as it does under UI tests.
+    nonisolated(unsafe) public static var logbookDirectory: URL?
 
     /// Reads the project file and imports every data input.
     public static func load(_ url: URL) async throws -> LoadedProject {
@@ -122,6 +130,13 @@ public enum ProjectCompiler {
         }
         if project.needsCoaching {
             loaded.coaching = CoachingTracks.make(for: project, sessions: loaded.sessions, previous: previous)
+        }
+        if project.usesLogbookKeys || project.needsPersonalBest {
+            let derived = LogbookDerived.make(
+                for: project, sessions: loaded.sessions, location: location,
+                logbook: Logbook(directory: logbookDirectory), previous: previous)
+            loaded.derivedDetails = derived.details
+            loaded.personalBests = derived.personalBests
         }
         return loaded
     }
@@ -249,7 +264,8 @@ public enum ProjectCompiler {
                 // function of what it is given.
                 globalAttributeMappings: AttributeMappingTable(
                     json: UserDefaults.standard.value(for: Preferences.attributeMappings)),
-                lapComparison: lapComparison, coaching: loaded.coaching)
+                lapComparison: lapComparison, coaching: loaded.coaching, personalBests: loaded.personalBests,
+                extraDetails: loaded.derivedDetails)
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms,
                 comparedTrackID: comparedTrackID, stabilisationPaths: stabilisationPaths, lapComparison: lapComparison)

@@ -293,6 +293,9 @@ public enum LapReference: String, Codable, Sendable, CaseIterable {
     /// The compared lap of the project's lap comparison, at the same point round the lap (#154).
     /// Where there is no comparison it falls back to the session best lap.
     case comparedLap
+    /// The personal best at this circuit from the logbook (#351), in the project's car when the
+    /// logbook has one; the session best when the logbook has nothing to offer.
+    case personalBest
 
     public var displayName: String {
         switch self {
@@ -300,6 +303,7 @@ public enum LapReference: String, Codable, Sendable, CaseIterable {
         case .bestLap: "Best lap so far"
         case .previousLap: "Previous lap"
         case .comparedLap: "Compared lap"
+        case .personalBest: "Personal best (logbook)"
         }
     }
 }

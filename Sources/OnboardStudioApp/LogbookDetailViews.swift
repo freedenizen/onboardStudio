@@ -6,6 +6,8 @@ import TelemetryKit
 /// The sessions, sortable by any column.
 struct LogbookTable: View {
     let entries: [LogbookEntry]
+    /// The sessions that set a personal best when they were driven (#351).
+    var bests: Set<UUID> = []
     @Binding var selection: UUID?
     @Binding var sortOrder: [KeyPathComparator<LogbookEntry>]
 
@@ -32,6 +34,14 @@ struct LogbookTable: View {
             }
             .width(min: 70, ideal: 80)
             TableColumn("Conditions", value: \.conditions.summary).width(min: 90, ideal: 140)
+            TableColumn("PB") { entry in
+                if bests.contains(entry.id) {
+                    Image(systemName: "star.fill").foregroundStyle(.yellow)
+                        .accessibilityLabel("Personal best")
+                        .help("This session set a personal best at its circuit, overall or in its car")
+                }
+            }
+            .width(min: 28, ideal: 32)
         }
         .accessibilityIdentifier("logbook.table")
     }
@@ -76,6 +86,9 @@ struct LogbookDetail: View {
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
+    /// The personal best at this session's circuit and how many visits the logbook has (#351).
+    var personalBest: PersonalBest?
+    var visits = 0
 
     var body: some View {
         ScrollView {
@@ -92,6 +105,7 @@ struct LogbookDetail: View {
                     row("Fastest rolling lap", entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) })
                     row("Top speed", entry.topSpeed.map { "\(Int(($0 * 3.6).rounded())) km/h" })
                     row("Laps", "\(entry.completeLapCount) complete of \(entry.laps.count)")
+                    row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                 }
                 .font(.callout)
                 if !entry.laps.isEmpty {
@@ -155,6 +169,20 @@ struct LogbookDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("logbook.detail")
+    }
+
+    /// "1:56.88 · lap 4 · 23 Aug 2026 · Miata", or "this session" when it is the one.
+    private var personalBestText: String? {
+        guard let personalBest else { return nil }
+        var parts = [TimeParsing.lapTimeString(personalBest.seconds)]
+        if personalBest.entryID == entry.id {
+            parts.append("this session")
+        } else {
+            if let lap = personalBest.lapNumber { parts.append("lap \(lap)") }
+            if let date = personalBest.date { parts.append(date.formatted(date: .abbreviated, time: .omitted)) }
+            if !personalBest.car.isEmpty { parts.append(personalBest.car) }
+        }
+        return parts.joined(separator: " · ")
     }
 
     private var subtitle: String {

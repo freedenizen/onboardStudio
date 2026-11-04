@@ -175,7 +175,9 @@ struct LogbookWindow: View {
         } else {
             HSplitView {
                 VStack(spacing: 0) {
-                    LogbookTable(entries: shown, selection: $selection, sortOrder: $sortOrder)
+                    LogbookTable(
+                        entries: shown, bests: PersonalBests.entriesSettingBests(in: model.entries),
+                        selection: $selection, sortOrder: $sortOrder)
                     if let message {
                         Divider()
                         Text(message).font(.callout).foregroundStyle(.secondary)
@@ -191,13 +193,17 @@ struct LogbookWindow: View {
                         openAsProject: { openAsProject(entry) },
                         addToProject: { addToCurrentProject(entry) },
                         remove: { confirmRemoval = entry },
-                        save: { model.save($0) }
+                        save: { model.save($0) },
+                        personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
+                        visits: PersonalBests.visits(in: model.entries, circuitKey: circuitKey(of: entry))
                     )
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: 420)
                 }
             }
         }
     }
+
+    private func circuitKey(of entry: LogbookEntry) -> String { LogbookFilter.circuitKey(of: entry) }
 
     // MARK: - Into a project
 
