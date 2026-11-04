@@ -134,7 +134,8 @@ spliced lap of `comparedLap`'s data input — its picture cut from the laps it c
 each join — and `comparedLap.lap` a placeholder; absent means the lap itself.
 
 `coaching` (optional, #321) is what the Coaching window reads:
-`{ "dataInputID", "lap": 5, "reference": { "sessionBest": {} } | { "lap": { "_0": 3 } } | { "fastestRolling": {} } | { "compositeOptimal": {} } | { "otherInput": { "dataInputID", "lap": 2 } } }`.
+`{ "dataInputID", "lap": 5, "reference": { "sessionBest": {} } | { "lap": { "_0": 3 } } | { "fastestRolling": {} } | { "compositeOptimal": {} } | { "otherInput": { "dataInputID", "lap": 2 } } | { "logbook": { "entryID": <uuid>, "lap": 4 } } }`
+(`logbook`, #352: a logbook entry at the same circuit, its `lap` or, absent, its best lap; read on demand).
 `alignByPosition` (optional, #333, default false) lines two laps of one session up by place rather than
 metre for metre, for laps driven on different lines; absent means off, how every earlier reading was made.
 `lap` absent follows the playhead. It is window state kept with the project so the same analysis

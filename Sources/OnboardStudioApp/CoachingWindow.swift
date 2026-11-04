@@ -1,3 +1,4 @@
+import MediaKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -122,7 +123,7 @@ struct CoachingContent: View {
         switch reference {
         case .sessionBest: excluded = laps.min { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }?.number
         case .lap(let number): excluded = number
-        case .fastestRolling, .compositeOptimal, .otherInput: excluded = nil
+        case .fastestRolling, .compositeOptimal, .otherInput, .logbook: excluded = nil
         }
         let dataTime = input.sync.inputTime(forProjectTime: editor.currentTime)
         if let atPlayhead = laps.first(where: { $0.contains(dataTime) }), atPlayhead.number != excluded {
@@ -143,24 +144,6 @@ struct CoachingContent: View {
         return CoachingSelection(
             input: input, lapNumber: lap.number, reference: reference, alignByPosition: saved?.alignByPosition ?? false,
             sessionStamp: stamp)
-    }
-
-    private func setLap(_ number: Int, selection: CoachingSelection) {
-        var settings = selection.settings
-        settings.lap = number
-        editor.edit("Change Coaching Lap") { $0.coaching = settings }
-    }
-
-    private func setReference(_ reference: CoachingSettings.Reference, selection: CoachingSelection) {
-        var settings = selection.settings
-        settings.reference = reference
-        editor.edit("Change Coaching Reference") { $0.coaching = settings }
-    }
-
-    private func setAlignByPosition(_ byPosition: Bool, selection: CoachingSelection) {
-        var settings = selection.settings
-        settings.alignByPosition = byPosition
-        editor.edit("Change Coaching Alignment") { $0.coaching = settings }
     }
 
     // MARK: - Layout
@@ -243,6 +226,7 @@ struct CoachingContent: View {
                         }
                     }
                 }
+                logbookChoices(selection: selection)
             }
             .accessibilityIdentifier("coaching.reference")
             Toggle(
@@ -254,7 +238,7 @@ struct CoachingContent: View {
                 "Match the two laps by where the car was rather than metre for metre: for two laps of one session "
                     + "driven on different lines. A lap from another file is always matched by position."
             )
-            .disabled({ if case .otherInput = selection.reference { true } else { false } }())
+            .disabled(Self.isAlwaysByPosition(selection.reference))
             .accessibilityIdentifier("coaching.alignByPosition")
             Spacer()
             if isAnalysing { ProgressView().controlSize(.small) }
@@ -352,13 +336,21 @@ extension CoachingContent {
             return
         }
         let units = units
-        let other: OtherReference?
+        var other: OtherReference?
         if case .otherInput(let id, let number) = selection.reference, let session = editor.sessions[id],
             let input = editor.project.input(id)
         {
             other = OtherReference(session: session, label: input.label, lap: number)
-        } else {
-            other = nil
+        } else if case .logbook(let entryID, let number) = selection.reference,
+            let entry = LogbookModel.shared.entries.first(where: { $0.id == entryID })
+        {
+            // Read in on demand, once; a session the logbook has lost reads as nothing to compare.
+            if let loaded = await LogbookModel.shared.session(for: entry) {
+                let lap = number ?? entry.bestLapNumber ?? LapDeltas.sessionBest(in: loaded)?.number ?? 0
+                let label = LogbookReferences.phrase(for: entry, lap: nil).replacingOccurrences(
+                    of: ", lap \(lap)", with: "")
+                other = OtherReference(session: loaded, label: label, lap: lap)
+            }
         }
         let reference = selection.reference
         let options = selection.options
@@ -379,7 +371,7 @@ extension CoachingContent {
             case .lap(let number): same = .lap(number)
             case .fastestRolling: same = .fastestRolling
             case .compositeOptimal: same = .compositeOptimal
-            case .otherInput: return nil
+            case .otherInput, .logbook: return nil
             }
             return CoachingAnalysis.analyse(lap: lap, reference: same, in: session, units: units, options: options)
         }.value
@@ -405,6 +397,7 @@ extension CoachingContent {
         case .sessionBest: referenceSide = LapDeltas.sessionBest(in: session).map { (selection.input.id, $0.number) }
         case .lap(let number): referenceSide = (selection.input.id, number)
         case .otherInput(let id, let number): referenceSide = (id, number)
+        case .logbook: return nil  // its video is not in the project; add the session as an input to compare pictures
         case .fastestRolling:
             // A spliced lap's picture is cut from the laps it came from (#328).
             referenceSide = (selection.input.id, selection.lapNumber)

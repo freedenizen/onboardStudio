@@ -12,6 +12,16 @@ import UniformTypeIdentifiers
 
     private(set) var entries: [LogbookEntry] = []
     private(set) var cars: [Car] = []
+    /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
+    private var sessions: [UUID: TelemetrySession] = [:]
+
+    /// The entry's session, read once off the main thread.
+    func session(for entry: LogbookEntry) async -> TelemetrySession? {
+        if let cached = sessions[entry.id] { return cached }
+        let loaded = await Task.detached(priority: .userInitiated) { LogbookReferences.load(entry) }.value
+        if let loaded { sessions[entry.id] = loaded }
+        return loaded
+    }
 
     func reload() {
         let logbook = AppLogbook.shared

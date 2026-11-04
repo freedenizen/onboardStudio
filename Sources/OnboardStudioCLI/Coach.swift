@@ -70,7 +70,8 @@ struct Coach: AsyncParsableCommand {
         guard !complete.isEmpty else {
             throw ValidationError("No complete laps. Set a start/finish line (--lap-line) or check the file.")
         }
-        let reference = try parseReference()
+        let logbookReference = try parseLogbookReference(session: session)
+        let reference = logbookReference == nil ? try parseReference() : .sessionBest
         let chosen: Lap
         if let lap {
             guard let found = complete.first(where: { $0.number == lap }) else {
@@ -93,10 +94,18 @@ struct Coach: AsyncParsableCommand {
         case "position": options.alignment = .byPosition
         default: throw ValidationError("--align must be distance or position.")
         }
-        guard
-            let analysis = CoachingAnalysis.analyse(
+        let analysis: CoachingAnalysis?
+        if let logbookReference {
+            analysis = LapProfile(lap: chosen, in: session).flatMap { lapProfile in
+                CoachingAnalysis.analyse(
+                    lap: lapProfile, in: session, reference: logbookReference.profile,
+                    referencePhrase: logbookReference.phrase, sameSession: false, units: units, options: options)
+            }
+        } else {
+            analysis = CoachingAnalysis.analyse(
                 lap: chosen, reference: reference, in: session, units: units, options: options)
-        else {
+        }
+        guard let analysis else {
             throw ValidationError(
                 "Lap \(chosen.number) cannot be read against \(reference.displayName.lowercased()): "
                     + "the file needs a distance channel, position and, for the optimal lap, every sector timed.")
@@ -181,6 +190,35 @@ struct Coach: AsyncParsableCommand {
         return lap
     }
 
+    /// `--reference logbook:pb`, `logbook:last` or `logbook:<yyyy-mm-dd>`: a session from the
+    /// logbook at the same circuit as `session` (#352); `nil` for any other reference.
+    private func parseLogbookReference(session: TelemetrySession) throws -> (profile: LapProfile, phrase: String)? {
+        let text = reference.lowercased()
+        guard text.hasPrefix("logbook:") else { return nil }
+        let which = String(text.dropFirst("logbook:".count))
+        let entries = Logbook().entries()
+        let url = URL(fileURLWithPath: path)
+        let input = Input(label: "", source: MediaReference(path: path), kind: .data(DataInputSettings()))
+        let key = LogbookReferences.circuitKey(for: input, session: session, url: url)
+        let own = try? LogbookEntry.hash(of: url).hex
+        let candidates = LogbookReferences.sessions(at: key, in: entries, excluding: own)
+        let entry: LogbookEntry?
+        switch which {
+        case "pb": entry = LogbookReferences.personalBest(in: candidates)
+        case "last": entry = LogbookReferences.lastVisit(in: candidates)
+        default: entry = candidates.first { $0.date.map(ProjectDetails.iso) == which }
+        }
+        guard let entry else {
+            throw ValidationError(
+                "No logbook session matches '\(which)' at this circuit (\(candidates.count) others there). "
+                    + "Use logbook:pb, logbook:last or logbook:<yyyy-mm-dd>.")
+        }
+        guard let other = LogbookReferences.load(entry),
+            let profile = LogbookReferences.profile(of: entry, lap: nil, session: other)
+        else { throw ValidationError("The logbook session's file could not be read: \(entry.file.path)") }
+        return (profile, LogbookReferences.phrase(for: entry, lap: nil))
+    }
+
     private func parseReference() throws -> CoachingReference {
         let text = reference.lowercased()
         switch text {
@@ -189,7 +227,7 @@ struct Coach: AsyncParsableCommand {
         case "optimal": return .compositeOptimal
         default:
             if text.hasPrefix("lap:"), let number = Int(text.dropFirst(4)) { return .lap(number) }
-            throw ValidationError("--reference must be best, rolling, optimal, or lap:N.")
+            throw ValidationError("--reference must be best, rolling, optimal, lap:N, or logbook:pb|last|<date>.")
         }
     }
 

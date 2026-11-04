@@ -1,4 +1,5 @@
 import AppKit
+import MediaKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -205,6 +206,9 @@ extension CoachingContent {
         case .fastestRolling: CoachingReference.fastestRolling.phrase
         case .compositeOptimal: CoachingReference.compositeOptimal.phrase
         case .otherInput(let id, let lap): "\(editor.project.input(id)?.label ?? "the other file") lap \(lap)"
+        case .logbook(let entryID, let lap):
+            LogbookModel.shared.entries.first { $0.id == entryID }.map { LogbookReferences.phrase(for: $0, lap: lap) }
+                ?? "a logbook session"
         }
     }
 

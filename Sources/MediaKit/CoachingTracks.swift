@@ -52,6 +52,18 @@ enum CoachingTracks {
                 track = CoachingTrack.make(
                     session: session, reference: profile, referencePhrase: "\(otherInput.label) lap \(number)",
                     sameSession: false, units: units, options: options)
+            case .logbook(let entryID, let number):
+                let logbook = Logbook(directory: ProjectCompiler.logbookDirectory)
+                guard let entry = logbook.entry(id: entryID), let other = LogbookReferences.load(entry),
+                    let profile = LogbookReferences.profile(of: entry, lap: number, session: other)
+                else {
+                    track = CoachingTrack.make(session: session, reference: .sessionBest, units: units)
+                    break
+                }
+                track = CoachingTrack.make(
+                    session: session, reference: profile,
+                    referencePhrase: LogbookReferences.phrase(for: entry, lap: number), sameSession: false,
+                    units: units, options: options)
             }
             if let track { tracks[input.id] = track }
         }

@@ -686,7 +686,9 @@ which is frequently quicker than any timed lap; the **optimal lap (spliced)** �
 each lap joined into one, the lap you have already shown you can do; **another lap**; or a lap of
 **another data file** in the project, which is how you compare with a friend's or an instructor's
 session (the two lines are matched by position, so a different line through a corner still meets
-the same corner). Two laps of one session are matched metre for metre, which is right when they
+the same corner); or, when the logbook has other sessions at this circuit, a **Logbook** session —
+**Personal best here**, **Last visit**, or any by date and car — read in on demand without adding
+its file to the project. Two laps of one session are matched metre for metre, which is right when they
 follow the same line; when you drove a corner two different ways on purpose, turn on **Line up by
 position** and they are matched by where the car was instead (undoable, saved with the project).
 

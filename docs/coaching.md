@@ -371,6 +371,18 @@ motion through the braking zone and the held frame of the reference's brake poin
 the issue are not in this version; they need a per-piece playback rate the composition does not
 have yet and are filed separately.
 
+## Across the logbook (v0.33.0)
+
+**Logbook sessions as references** (#352, `MediaKit/LogbookReferences.swift`):
+`CoachingSettings.Reference.logbook(entryID:lap:)` names a logbook entry; the window lists the
+sessions at the same circuit key as the lap being read (`LogbookDerived.circuitKey`, the one the
+logbook files under), less the session itself by content hash — the personal best among them and
+the last visit first — and reads the chosen one in once (`LogbookModel.session(for:)`), then runs
+the two-session analysis by position exactly as for another input's lap. The compile
+(`CoachingTracks`) and `onboard coach --reference logbook:pb|last|<date>` read the same entry
+from `ProjectCompiler.logbookDirectory`. A session the logbook has lost falls back to the session
+best rather than failing the render.
+
 ## Between sessions (v0.31.0)
 
 **Next-session plan** (#330, `ProjectModel/NextSessionPlan.swift`): `NextSessionPlan.suggested(from:)`

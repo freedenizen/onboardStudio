@@ -16,6 +16,7 @@ struct CoachingSettingsTests {
         #expect(reopened.coaching == project.coaching)
         for reference in [
             CoachingSettings.Reference.sessionBest, .lap(3), .fastestRolling, .compositeOptimal,
+            .logbook(entryID: UUID(), lap: 4), .logbook(entryID: UUID(), lap: nil),
         ] {
             project.coaching = CoachingSettings(dataInputID: data.id, reference: reference)
             #expect(try Project.decode(try project.encoded()).coaching?.reference == reference)
