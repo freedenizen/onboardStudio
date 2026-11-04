@@ -161,6 +161,17 @@ the difference is: brake point, apex speed, exit speed, thresholds as the notes 
 foot of the Trends view when the circuit has two cars; `LogbookModel.carComparison` keeps the
 result per pair of sessions for the app's life.
 
+## The season (#355)
+
+`SeasonSummary` (`ProjectModel/SeasonSummary.swift`) composes a year — by the day driven, or
+entered when the file carried no date — out of what the entries already hold: distinct days,
+sessions, complete laps, the sum of `distanceMeters` (new on the entry, from the distance channel),
+the personal bests set that year (`PersonalBests.entriesSettingBests`), the best at each circuit
+(`PersonalBests.best`), the corner that moved most either way (`LogbookTrends.cornerTrends` per
+circuit, latest visit against the one before) and the open plans on the visited circuits'
+definitions. `SeasonPage` is the view in the window and, with `forPrint`, the PDF through the same
+`ImageRenderer` path as the coaching sheet; `SeasonCard` is the 9:16 picture, rendered to PNG.
+
 ## What comes next
  #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as

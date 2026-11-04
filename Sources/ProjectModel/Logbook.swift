@@ -63,6 +63,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     public var fastestRollingLap: Double?
     /// m/s.
     public var topSpeed: Double?
+    /// Metres driven in the session, when the file recorded a distance (#355).
+    public var distanceMeters: Double?
     public var notes: String
     public var tags: [String]
     /// Weather, track, temperature, tyres and setup (#348); empty until the driver fills it in.
@@ -79,7 +81,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         id: UUID = UUID(), file: SourceFile, circuitID: String? = nil, trackName: String? = nil, date: Date? = nil,
         car: String = "", driver: String = "", laps: [LapRecord] = [], bestLap: Double? = nil,
         bestLapNumber: Int? = nil, optimalLap: Double? = nil, fastestRollingLap: Double? = nil,
-        topSpeed: Double? = nil, notes: String = "", tags: [String] = [],
+        topSpeed: Double? = nil, distanceMeters: Double? = nil, notes: String = "", tags: [String] = [],
         conditions: SessionConditions = SessionConditions(), projects: [ProjectLink] = [], exports: [ProjectLink] = [],
         corners: [CornerRecord] = [], added: Date = Date(), modified: Date = Date()
     ) {
@@ -96,6 +98,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.optimalLap = optimalLap
         self.fastestRollingLap = fastestRollingLap
         self.topSpeed = topSpeed
+        self.distanceMeters = distanceMeters
         self.notes = notes
         self.tags = tags
         self.conditions = conditions
@@ -134,7 +137,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
-        case fastestRollingLap, topSpeed, notes, tags, conditions, projects, exports, corners, added, modified
+        case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
+        case added, modified
     }
 
     public init(from decoder: any Decoder) throws {
@@ -152,6 +156,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         optimalLap = try c.decodeIfPresent(Double.self, forKey: .optimalLap)
         fastestRollingLap = try c.decodeIfPresent(Double.self, forKey: .fastestRollingLap)
         topSpeed = try c.decodeIfPresent(Double.self, forKey: .topSpeed)
+        distanceMeters = try c.decodeIfPresent(Double.self, forKey: .distanceMeters)
         notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
         tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         conditions = try c.decodeIfPresent(SessionConditions.self, forKey: .conditions) ?? SessionConditions()
@@ -185,7 +190,14 @@ extension LogbookEntry {
             file: source, circuitID: circuitID, trackName: session.info.trackName, date: session.info.createdAt,
             car: car, driver: driver ?? session.info.driverName ?? "", laps: laps, bestLap: stats.bestLap?.seconds,
             bestLapNumber: stats.bestLap?.number, optimalLap: stats.optimalLap, fastestRollingLap: rolling,
-            topSpeed: stats.topSpeed, corners: cornerRecords(of: session))
+            topSpeed: stats.topSpeed, distanceMeters: distance(of: session), corners: cornerRecords(of: session))
+    }
+
+    /// How far the session drove, from its distance channel; `nil` without one.
+    public static func distance(of session: TelemetrySession) -> Double? {
+        guard let channel = session[.distance], let low = channel.minValue, let high = channel.maxValue, high > low
+        else { return nil }
+        return high - low
     }
 
     /// SHA-256 of the file, streamed, and its length.
