@@ -49,43 +49,6 @@ final class FirstLaunchUITests: OnboardStudioUITestCase {
     }
 }
 
-// ci-shard: 2
-/// J1: the welcome window offers a blank project, a template, or an existing project.
-final class LauncherUITests: OnboardStudioUITestCase {
-    @MainActor
-    func testWelcomeWindowStartsABlankProjectAndCanBeReopened() throws {
-        launch(launcher: true)
-        let welcome = app.windows["Welcome to Onboard Studio"]
-        XCTAssertTrue(welcome.waitForExistence(timeout: Self.timeout), "No welcome window at launch")
-        XCTAssertFalse(app.windows["Untitled"].exists, "No project until the user asks for one")
-        XCTAssertFalse(app.sheets.firstMatch.exists || app.dialogs.firstMatch.exists, "No Open panel at launch")
-        for identifier in ["launcher.newBlank", "launcher.open", "launcher.template.Classic Dash", "launcher.sample"] {
-            // The sample project is a link-style button, which accessibility reports as a link.
-            let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-            XCTAssertTrue(element.exists, "Welcome window offers \(identifier)")
-        }
-        app.buttons["launcher.newBlank"].click()
-        XCTAssertTrue(app.windows["Untitled"].waitForExistence(timeout: Self.timeout), "Blank project")
-        XCTAssertTrue(app.staticTexts["welcome.title"].waitForExistence(timeout: Self.timeout))
-        XCTAssertTrue(welcome.waitForNonExistence(timeout: Self.timeout), "The welcome window steps aside")
-        menu("Help", "Welcome to Onboard Studio")
-        XCTAssertTrue(welcome.waitForExistence(timeout: Self.timeout), "Help ▸ Welcome brings it back")
-    }
-
-    @MainActor
-    func testWelcomeWindowStartsFromATemplate() throws {
-        launch(launcher: true)
-        let card = app.buttons["launcher.template.Glass Cockpit"]
-        XCTAssertTrue(card.waitForExistence(timeout: Self.timeout))
-        card.click()
-        XCTAssertTrue(app.windows["Untitled"].waitForExistence(timeout: Self.timeout))
-        for label in ["Wheel", "Speed", "RPM", "Fade"] {
-            XCTAssertTrue(sidebarObject(label).waitForExistence(timeout: Self.timeout), "Template object “\(label)”")
-        }
-        XCTAssertTrue(app.windows["Welcome to Onboard Studio"].waitForNonExistence(timeout: Self.timeout))
-    }
-}
-
 // ci-shard: 1
 /// J8: timeline zoom, snapping and the transport.
 /// #54: markers on the timeline, and walking between them.

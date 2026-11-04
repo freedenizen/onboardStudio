@@ -99,7 +99,8 @@ public enum Preferences {
 
     // MARK: - First run and the welcome window
 
-    public static let showLauncherAtLaunch = Preference(key: "showLauncherAtLaunch", unset: true)
+    /// The Logbook is the window at launch (#395); off, a blank project opens instead.
+    public static let openLogbookAtLaunch = Preference(key: "openLogbookAtLaunch", unset: true)
     /// A data file added to a project is entered in the logbook too (#349).
     public static let logbookAutoAdd = Preference(key: "logbookAutoAdd", unset: true)
     public static let tourSeen = Preference(key: "tourSeen", unset: false)
@@ -109,7 +110,7 @@ public enum Preferences {
     public static let allKeys: [String] = [
         defaultExportPreset.key, speedUnit.key, attributeMappings.key, nudgeStepPixels.key, ffmpegPath.key,
         youTubeClientID.key,
-        youTubeClientSecret.key, showLauncherAtLaunch.key, tourSeen.key, showGettingStarted.key,
+        youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
     ]
 }
 

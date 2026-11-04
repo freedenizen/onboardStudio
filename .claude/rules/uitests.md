@@ -26,7 +26,7 @@ Local run ≈ 5 min for 13 tests.
   `app.launchEnvironment`. The fixtures path is derived from `#filePath` → `Tests/Fixtures`.
 - Launch arguments: `-ApplePersistenceIgnoreState YES`
   `-NSShowAppCentricOpenPanelInsteadOfUntitledFile NO -tourSeen YES -uiTesting YES`
-  `-skipLauncher YES -SUEnableAutomaticChecks NO -SUHasLaunchedBefore YES`.
+  `-skipLogbook YES -SUEnableAutomaticChecks NO -SUHasLaunchedBefore YES`.
   Launch-argument booleans arrive as **strings** — read them with `bool(forKey:)`, never `as? Bool`.
 - `-uiTesting YES` adds the **Testing** menu (`UITestSupport.swift`) that installs fixture files,
   because open panels cannot be scripted; `ONBOARD_TEST_EXPORT_DIR` makes the export sheet skip

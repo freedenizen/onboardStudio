@@ -70,11 +70,18 @@ final class DocumentationScreenshots: OnboardStudioUITestCase {
         settle()
         shoot(window, "compare-laps")
 
-        menu("Help", "Welcome to Onboard Studio")
-        let welcome = app.windows["Welcome to Onboard Studio"]
-        XCTAssertTrue(welcome.waitForExistence(timeout: Self.timeout), "No welcome window")
+        // The Logbook holds the project's session, entered when its data file loaded (#349).
+        menu("Window", "Logbook")
+        let logbook = app.windows["Logbook"]
+        XCTAssertTrue(logbook.waitForExistence(timeout: Self.timeout), "No Logbook window")
         settle()
-        shoot(welcome, "welcome")
+        shoot(logbook, "logbook")
+        app.typeKey("w", modifierFlags: .command)
+        menu("Window", "Templates")
+        let templates = app.windows["Templates"]
+        XCTAssertTrue(templates.waitForExistence(timeout: Self.timeout), "No Templates window")
+        settle()
+        shoot(templates, "templates")
     }
 
     /// Long enough for the preview to draw the frame at the playhead.

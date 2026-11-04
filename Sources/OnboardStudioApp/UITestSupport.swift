@@ -122,7 +122,13 @@ struct UITestCommands: Commands {
             Button("Add Fixture Data (GPX)") { add(data: "track.gpx") }
             Button("Add Fixture Data (Coaching Laps)") { add(data: "coaching-laps.csv") }
             Button("Add Fixture Track Day") {
-                if let folder = UITestSupport.fixtures { editor?.trackDayRequest = TrackDayRequest(urls: [folder]) }
+                guard let folder = UITestSupport.fixtures else { return }
+                // Through the project in front, else the Logbook window (#395: there may be none).
+                if let editor {
+                    editor.trackDayRequest = TrackDayRequest(urls: [folder])
+                } else {
+                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [folder])
+                }
             }
             // Into the day chosen in the Logbook window's sidebar (#393).
             Button("Add Fixture Sessions to Selected Day") {

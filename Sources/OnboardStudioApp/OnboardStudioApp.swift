@@ -55,13 +55,11 @@ struct OnboardStudioApp: App {
             CoachingSheetCommands()
             if UITestSupport.isActive { UITestCommands() }
         }
-        Window("Welcome to Onboard Studio", id: "launcher") {
-            LauncherView()
+        // The template cards with their right-click management (#44), once the welcome window.
+        Window("Templates", id: TemplatesWindow.windowID) {
+            TemplatesWindow()
         }
-        .windowResizability(.contentSize)
-        .windowStyle(.hiddenTitleBar)
-        .defaultLaunchBehavior(LaunchOptions.showLauncher ? .presented : .suppressed)
-        .restorationBehavior(.disabled)
+        .defaultSize(width: 760, height: 440)
         Window("Attributes", id: AttributeMappingWindow.windowID) {
             AttributeMappingWindow()
         }
@@ -72,11 +70,13 @@ struct OnboardStudioApp: App {
         .defaultSize(width: 1000, height: 640)
         // A Window scene lists itself in the Window menu; ⌃⌘L opens it (#347), the pattern Show
         // Project Details (⌃⌘I) and Coaching (⌃⌘C) set for "show me a view".
+        // And the window at launch (#395): where a track day begins, and every project after it.
         Window("Logbook", id: LogbookWindow.windowID) {
             LogbookWindow()
         }
         .defaultSize(width: 1000, height: 620)
         .keyboardShortcut("l", modifiers: [.command, .control])
+        .defaultLaunchBehavior(LaunchOptions.openLogbook ? .presented : .suppressed)
         Window("Keyboard Shortcuts", id: "shortcuts") {
             ShortcutsView()
         }
@@ -123,7 +123,6 @@ struct EditorCommands: Commands {
             Button("YouTube Upload Setup") { HelpLinks.open(.youtube) }
             Button("Project File Format") { HelpLinks.open(.projectFormat) }
             Divider()
-            Button("Welcome to Onboard Studio") { openWindow(id: "launcher") }
             Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
             Button("Take the Tour") { editor?.tourStep = 0 }.disabled(editor == nil)
             Button("Show Getting Started") { UserDefaults.standard.set(true, for: Preferences.showGettingStarted) }

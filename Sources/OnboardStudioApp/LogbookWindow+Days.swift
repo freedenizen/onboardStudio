@@ -66,4 +66,30 @@ extension LogbookWindow {
         .accessibilityIdentifier("logbook.sidebar")
     }
 
+    /// A new project laid out with `template` (#395), as File ▸ New from Template does.
+    func newProject(from template: ProjectTemplate) {
+        PendingTemplate.shared.template = template
+        NSDocumentController.shared.newDocument(nil)
+    }
+
+    /// The toolbar's New Project (#395): a blank project at a click; the templates, an existing
+    /// project, the Templates window and the sample beneath.
+    var newProjectMenu: some View {
+        // Where a project starts, now that the Logbook is the window at launch (#395).
+        Menu {
+            Button("Blank Project") { NSDocumentController.shared.newDocument(nil) }
+            Section("From a Template") {
+                ForEach(Self.templates(), id: \.name) { template in
+                    Button(template.name) { newProject(from: template) }
+                }
+            }
+            Divider()
+            Button("Open Project…") { NSDocumentController.shared.openDocument(nil) }
+            Button("Templates…") { openWindow(id: TemplatesWindow.windowID) }
+            Button("Open the Sample Project") { SampleProject.open() }.disabled(
+                !SampleProject.isAvailable)
+        } label: {
+            Label("New Project", systemImage: "doc.badge.plus")
+        }
+    }
 }

@@ -118,7 +118,7 @@ struct LogbookWindow: View {
     @State private var confirmDayRemoval: TrackDay?
     /// What the last export or import did, under the table (#350).
     @State var message: String?
-    @Environment(\.openWindow) private var openWindow
+    @Environment(\.openWindow) var openWindow
     @Bindable var model = LogbookModel.shared
     private var active = ActiveEditor.shared
 
@@ -142,6 +142,12 @@ struct LogbookWindow: View {
                                 + "or a year on one page"
                         )
                         .accessibilityIdentifier("logbook.view")
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        newProjectMenu
+                            .help("A blank project; the menu offers the templates, an existing project and the sample")
+                            .accessibilityLabel("New Project")
+                            .accessibilityIdentifier("logbook.newProject")
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button("New Track Day…", systemImage: "calendar.badge.plus") {
@@ -245,6 +251,7 @@ struct LogbookWindow: View {
                 Button("New Track Day…") { model.newDayRequested = true }
                     .accessibilityIdentifier("logbook.empty.newTrackDay")
                 Button("Add Files…", action: addFiles)
+                Button("New Project") { NSDocumentController.shared.newDocument(nil) }
             }
         } else if view == .season {
             SeasonView(
