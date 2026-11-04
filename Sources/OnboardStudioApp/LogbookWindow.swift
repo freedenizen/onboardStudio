@@ -11,6 +11,8 @@ import UniformTypeIdentifiers
     static let shared = LogbookModel()
 
     private(set) var entries: [LogbookEntry] = []
+    /// The track days (#392), newest first; every entry is on one once `reload` has run.
+    private(set) var days: [TrackDay] = []
     private(set) var cars: [Car] = []
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
     private var sessions: [UUID: TelemetrySession] = [:]
@@ -40,8 +42,17 @@ import UniformTypeIdentifiers
 
     func reload() {
         let logbook = AppLogbook.shared
+        // Entries from before days existed are put on one, by their date and circuit.
+        try? logbook.ensureDays()
         entries = logbook.entries()
+        days = logbook.days()
         cars = logbook.cars()
+    }
+
+    /// Writes an edited day — its car, driver, conditions, notes, clips — and shows it.
+    func saveDay(_ day: TrackDay) {
+        try? AppLogbook.shared.saveDay(day)
+        reload()
     }
 
     func remove(_ entry: LogbookEntry) {

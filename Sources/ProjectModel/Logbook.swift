@@ -74,6 +74,11 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     public var exports: [ProjectLink]
     /// The corners of the best lap as read when the session was entered (#353).
     public var corners: [CornerRecord]
+    /// The track day the session belongs to (#392); `nil` only until `Logbook.ensureDays` runs.
+    public var trackDayID: UUID?
+    /// How long the file runs, from its first sample to its last (#392), so a clip can be matched
+    /// to it by clock without reading the file again.
+    public var durationSeconds: Double?
     public var added: Date
     public var modified: Date
 
@@ -83,7 +88,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         bestLapNumber: Int? = nil, optimalLap: Double? = nil, fastestRollingLap: Double? = nil,
         topSpeed: Double? = nil, distanceMeters: Double? = nil, notes: String = "", tags: [String] = [],
         conditions: SessionConditions = SessionConditions(), projects: [ProjectLink] = [], exports: [ProjectLink] = [],
-        corners: [CornerRecord] = [], added: Date = Date(), modified: Date = Date()
+        corners: [CornerRecord] = [], trackDayID: UUID? = nil, durationSeconds: Double? = nil, added: Date = Date(),
+        modified: Date = Date()
     ) {
         self.id = id
         self.file = file
@@ -105,6 +111,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.projects = projects
         self.exports = exports
         self.corners = corners
+        self.trackDayID = trackDayID
+        self.durationSeconds = durationSeconds
         self.added = added
         self.modified = modified
     }
@@ -138,7 +146,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
-        case added, modified
+        case trackDayID, durationSeconds, added, modified
     }
 
     public init(from decoder: any Decoder) throws {
@@ -163,6 +171,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         projects = try c.decodeIfPresent([ProjectLink].self, forKey: .projects) ?? []
         exports = try c.decodeIfPresent([ProjectLink].self, forKey: .exports) ?? []
         corners = try c.decodeIfPresent([CornerRecord].self, forKey: .corners) ?? []
+        trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
+        durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }
@@ -190,7 +200,8 @@ extension LogbookEntry {
             file: source, circuitID: circuitID, trackName: session.info.trackName, date: session.info.createdAt,
             car: car, driver: driver ?? session.info.driverName ?? "", laps: laps, bestLap: stats.bestLap?.seconds,
             bestLapNumber: stats.bestLap?.number, optimalLap: stats.optimalLap, fastestRollingLap: rolling,
-            topSpeed: stats.topSpeed, distanceMeters: distance(of: session), corners: cornerRecords(of: session))
+            topSpeed: stats.topSpeed, distanceMeters: distance(of: session), corners: cornerRecords(of: session),
+            durationSeconds: session.duration > 0 ? session.duration : nil)
     }
 
     /// How far the session drove, from its distance channel; `nil` without one.

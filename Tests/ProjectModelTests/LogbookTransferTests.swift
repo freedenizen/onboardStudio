@@ -68,8 +68,10 @@ struct LogbookTransferTests {
         let sessions = LogbookTransfer.sessionsCSV(entries)
         let lines = sessions.split(separator: "\n")
         #expect(lines.count == 2)
-        #expect(lines[0].hasPrefix("date,circuit,car,driver,laps,best,best_lap,optimal,rolling,top_speed_kmh,weather"))
-        #expect(lines[1].contains(",Stadium,Miata,Me,1,44.600,1,,,,sunny,,,\"RE, 2 days\",,\"Cold, \"\"grippy\"\"\",,"))
+        #expect(
+            lines[0].hasPrefix("date,day,circuit,car,driver,laps,best,best_lap,optimal,rolling,top_speed_kmh,weather"))
+        #expect(
+            lines[1].contains(",,Stadium,Miata,Me,1,44.600,1,,,,sunny,,,\"RE, 2 days\",,\"Cold, \"\"grippy\"\"\",,"))
         let laps = LogbookTransfer.lapsCSV(entries).split(separator: "\n")
         #expect(laps.count == 3)
         #expect(laps[1].hasSuffix(",Stadium,Miata,1,44.600,yes"))

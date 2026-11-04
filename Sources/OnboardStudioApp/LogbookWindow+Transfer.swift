@@ -18,7 +18,7 @@ extension LogbookWindow {
         do {
             let destination = folder.appending(path: "Logbook")
             let summary = try LogbookTransfer.export(
-                exported, cars: model.cars, to: destination, includingFiles: includingFiles)
+                exported, days: model.days, cars: model.cars, to: destination, includingFiles: includingFiles)
             let files = includingFiles ? ", \(summary.filesCopied) data files copied" : ""
             message = "Wrote \(summary.written) sessions to \(destination.lastPathComponent)\(files)."
         } catch {
@@ -32,7 +32,7 @@ extension LogbookWindow {
             let url = OpenPanels.chooseDocumentDestination(
                 title: "Export as CSV", suggestedName: name, type: .commaSeparatedText, fileExtension: "csv")
         else { return }
-        let text = laps ? LogbookTransfer.lapsCSV(exported) : LogbookTransfer.sessionsCSV(exported)
+        let text = laps ? LogbookTransfer.lapsCSV(exported) : LogbookTransfer.sessionsCSV(exported, days: model.days)
         write(text, to: url, what: laps ? "the laps" : "\(exported.count) sessions")
     }
 

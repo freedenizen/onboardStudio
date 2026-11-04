@@ -32,7 +32,7 @@ final class LogbookTransferUITests: OnboardStudioUITestCase {
             predicate: NSPredicate { _, _ in FileManager.default.fileExists(atPath: csv.path) }, object: nil)
         XCTAssertEqual(XCTWaiter().wait(for: [wroteCSV], timeout: Self.timeout), .completed, "No CSV")
         let text = try String(contentsOf: csv, encoding: .utf8)
-        XCTAssertTrue(text.hasPrefix("date,circuit,car,driver,laps,best"), text)
+        XCTAssertTrue(text.hasPrefix("date,day,circuit,car,driver,laps,best"), text)
         XCTAssertGreaterThan(text.split(separator: "\n").count, 2, "a line per session")
         XCTAssertTrue(app.staticTexts["logbook.message"].waitForExistence(timeout: Self.timeout))
 

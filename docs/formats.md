@@ -281,3 +281,20 @@ An exported logbook (#350) is a folder of these files plus `garage.json` and, wh
 with each session's data file as `<hash prefix>-<original name>`; the written entries' `file.path`
 is then relative to the folder. Only `file` is required to read one. `garage.json` in the
 same folder is `[{ id, name, notes }]`. Design in [logbook.md](logbook.md).
+
+An entry written since v0.34.0 also carries `trackDayID` (the day it belongs to, below) and
+`durationSeconds` (first sample to last), both optional on the way in.
+
+## Track day (`.onboardday`)
+
+One JSON file per track day in the same folder (#392), the same encoder: `id`, `date` (the day,
+as midnight local time in ISO 8601), `circuitID` (Wikidata id, when the circuit is in the
+catalogue or was chosen from it), `trackName` (typed when it is not), `car`, `driver`, `notes`,
+`tags`, `conditions` (as an entry's), `clips` and `added`, `modified`. Only `date` is required.
+Each clip is `{ id, path, bookmark, byteCount, fingerprint, chapterPaths, durationSeconds,
+recordedAt, clock, hasGPS, sessionID, matchedBy }`: `fingerprint` is the SHA-256 of the file's
+first mebibyte and its length (a 20 GB clip is not read through), `chapterPaths` the GoPro
+chapters that follow the first, `recordedAt` when the camera's clock says it started and `clock`
+where that came from, `sessionID` the entry it belongs to and `matchedBy` one of `clock`,
+`onlySessionThatDay`, `byHand` (a word a later build adds reads as not matched). An exported
+logbook includes the days its sessions belong to; clips are written by path alone, never copied.

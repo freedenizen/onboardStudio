@@ -82,14 +82,16 @@ struct LogbookCommand: AsyncParsableCommand {
             let entries = book.entries()
             switch url.pathExtension.lowercased() {
             case "csv":
-                let text = laps ? LogbookTransfer.lapsCSV(entries) : LogbookTransfer.sessionsCSV(entries)
+                let text =
+                    laps ? LogbookTransfer.lapsCSV(entries) : LogbookTransfer.sessionsCSV(entries, days: book.days())
                 try text.write(to: url, atomically: true, encoding: .utf8)
                 print("Wrote \(laps ? "the laps" : "\(entries.count) sessions") to \(url.path)")
             case "md", "markdown":
                 try LogbookTransfer.markdown(entries).write(to: url, atomically: true, encoding: .utf8)
                 print("Wrote \(entries.count) sessions to \(url.path)")
             default:
-                let summary = try LogbookTransfer.export(entries, cars: book.cars(), to: url, includingFiles: withFiles)
+                let summary = try LogbookTransfer.export(
+                    entries, days: book.days(), cars: book.cars(), to: url, includingFiles: withFiles)
                 let files = withFiles ? ", \(summary.filesCopied) data files copied" : ""
                 print("Wrote \(summary.written) sessions to \(url.path)\(files)")
             }
