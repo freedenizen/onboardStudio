@@ -1,4 +1,5 @@
 import AppKit
+import MediaKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -81,14 +82,21 @@ nonisolated extension ComparisonResult {
 /// One session: the numbers, the laps, the projects, and the ways in.
 struct LogbookDetail: View {
     let entry: LogbookEntry
+    /// The clips of its day that are its picture (#394).
+    var clips: [ClipRecord] = []
     let hasProject: Bool
-    let openAsProject: () -> Void
+    /// What New Project from Template offers, read when the menu opens.
+    var templates: () -> [ProjectTemplate] = { ProjectTemplate.builtIn }
+    /// A new project from the session, laid out with the template (`nil`: blank).
+    let newProject: (ProjectTemplate?) -> Void
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
     /// The personal best at this session's circuit and how many visits the logbook has (#351).
     var personalBest: PersonalBest?
     var visits = 0
+    /// The template the last New Project used; the next one uses it too.
+    @AppStorage("logbook.projectTemplate") private var templateName = "Classic Dash"
 
     var body: some View {
         ScrollView {
@@ -123,6 +131,21 @@ struct LogbookDetail: View {
                         }
                     }
                 }
+                if !clips.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Video").font(.subheadline.weight(.semibold))
+                        ForEach(clips) { clip in
+                            HStack(spacing: 6) {
+                                Image(systemName: "video").foregroundStyle(.secondary).accessibilityHidden(true)
+                                Text(clip.name)
+                                Text(ClipMatcher.describe(clip)).foregroundStyle(.secondary)
+                            }
+                            .font(.callout)
+                            .accessibilityElement(children: .combine)
+                            .accessibilityIdentifier("logbook.clip.\(clip.name)")
+                        }
+                    }
+                }
                 ConditionsEditor(entry: entry, save: save)
                 if !entry.projects.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
@@ -150,9 +173,30 @@ struct LogbookDetail: View {
                     }
                 }
                 Text(entry.file.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                HStack {
-                    Button("Open as Project", action: openAsProject)
+                HStack(spacing: 4) {
+                    Button("New Project") { newProject(templates().first { $0.name == templateName }) }
+                        .help(newProjectHelp)
                         .accessibilityIdentifier("logbook.open")
+                    Menu {
+                        Button("Blank Project") {
+                            templateName = ""
+                            newProject(nil)
+                        }
+                        Divider()
+                        ForEach(templates(), id: \.name) { template in
+                            Button(template.name) {
+                                templateName = template.name
+                                newProject(template)
+                            }
+                        }
+                    } label: {
+                        Label("New Project from Template", systemImage: "chevron.down")
+                    }
+                    .labelStyle(.iconOnly).fixedSize()
+                    .accessibilityLabel("New Project from Template")
+                    .help("A new project from this session, laid out with the template you choose")
+                    .accessibilityIdentifier("logbook.openFrom")
+                    Spacer().frame(width: 8)
                     Button("Add to Current Project", action: addToProject)
                         .disabled(!hasProject)
                         .accessibilityIdentifier("logbook.addToProject")
@@ -169,6 +213,14 @@ struct LogbookDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("logbook.detail")
+    }
+
+    /// "A new project with this session's data file, 2 clips and the Classic Dash layout".
+    private var newProjectHelp: String {
+        var parts = ["this session's data file"]
+        if !clips.isEmpty { parts.append("\(clips.count) clip\(clips.count == 1 ? "" : "s")") }
+        let layout = templateName.isEmpty ? "no layout" : "the \(templateName) layout"
+        return "A new project with \(parts.joined(separator: ", ")) and \(layout)"
     }
 
     /// "1:56.88 · lap 4 · 23 Aug 2026 · Miata", or "this session" when it is the one.

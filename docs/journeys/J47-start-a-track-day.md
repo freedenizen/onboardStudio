@@ -9,10 +9,10 @@ is kept in groups sessions under a day or an event first.*
    the track, and notes.
 2. **Create**. The day appears under **Track Days** in the sidebar — "23 Aug 2026 · Sonoma
    Raceway", under its year when the logbook spans more than one — chosen, with its header above
-   an empty table: *No sessions yet. Add Sessions… or drop the day's files here.* The car and
+   an empty table: *No sessions yet. Add Files… or drop the day's files here.* The car and
    driver are fields in the header; **Conditions and Notes** fold out under it. Edits are kept as
    they are made, as a session's conditions are.
-3. **Add Sessions…**, or drop the logger's files on the window: each goes on this day, with the
+3. **Add Files…**, or drop the logger's files on the window: each goes on this day, with the
    day's car, driver and conditions to begin with. The sheet says what happened to each file.
 4. **Add Files…** with no day chosen still works as before: each file goes on the day its date and
    circuit say, made if need be, and the sheet's line says which (*…, in 23 Aug 2026 · Sonoma*).

@@ -99,4 +99,43 @@ struct TrackDayImportTests {
         #expect(placed.line.hasSuffix(", in \(madeDay.label)"))
         #expect(logbook.days().count == 2)
     }
+
+    @Test func aClipGoesOnTheDayAndIsMatchedOrLeftToAssign() async throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        let day = TrackDay(date: Date(timeIntervalSince1970: 1_700_000_000), trackName: "Fixtures")
+        try logbook.saveDay(day)
+        // A dated session the clip's file date is nowhere near: the clip is kept, unassigned.
+        _ = await TrackDayImport.run([Self.fixtures.appending(path: "racechrono-v3.csv")], into: logbook, day: day)
+        let reports = await TrackDayImport.run([Self.fixtures.appending(path: "test-3s.mp4")], into: logbook, day: day)
+        let report = try #require(reports.first)
+        #expect(report.isClip && !report.isAdded)
+        guard case .clip(let clip, let session) = report.outcome else {
+            Issue.record("not a clip: \(report.line)")
+            return
+        }
+        #expect(session == nil && clip.sessionID == nil)
+        #expect(
+            report.line.contains("video") && report.line.contains("assign it in the logbook"),
+            Comment(rawValue: report.line))
+        let kept = try #require(logbook.day(id: day.id))
+        #expect(kept.clips.count == 1 && kept.clips[0].name == "test-3s.mp4")
+        #expect(logbook.entries().count == 1, "a clip without GPS is not a session")
+        // Again: already on the day.
+        let again = await TrackDayImport.run([Self.fixtures.appending(path: "test-3s.mp4")], into: logbook, day: day)
+        #expect(again.first?.line.hasSuffix("video already on the day") == true)
+        #expect(logbook.day(id: day.id)?.clips.count == 1)
+        // On a day whose one session is undated, the clip is that session's.
+        let other = TrackDay(date: Date(timeIntervalSince1970: 1_600_000_000), trackName: "Elsewhere")
+        try logbook.saveDay(other)
+        var undated = LogbookEntry(
+            file: .init(path: "/s/u.csv", contentHash: "u", byteCount: 1, importerID: "x"), car: "Miata")
+        undated.trackDayID = other.id
+        try logbook.save(undated)
+        let matched = await TrackDayImport.run(
+            [Self.fixtures.appending(path: "test-rot180.mp4")], into: logbook, day: other)
+        guard case .clip(let second, let owner) = try #require(matched.first).outcome else { return }
+        #expect(owner?.id == undated.id && second.matchedBy == .onlySessionThatDay)
+        #expect(matched.first?.line.contains("the picture of") == true)
+    }
 }
