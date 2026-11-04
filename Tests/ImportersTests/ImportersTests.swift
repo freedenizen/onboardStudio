@@ -126,10 +126,17 @@ struct RaceChronoCSVImporterTests {
         #expect(table.info.driverName == "OnboardStudio")
         #expect(table.info.notes == "synthetic fixture, two laps")
         let created = try #require(table.info.createdAt)
+        // The line is UTC, as the unix-time column is (#409): 02:54 there, nineteen minutes before
+        // the first sample, which is when RaceChrono starts a session before the car moves.
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .current
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
         let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: created)
         #expect(parts.year == 2025 && parts.month == 12 && parts.day == 31 && parts.hour == 2 && parts.minute == 54)
+        let session = try RaceChronoCSVImporter().importSession(at: try Fixtures.url("racechrono-v3.csv"))
+        let firstSample = try #require(session.timeRange?.lowerBound)
+        #expect(session.timesAreEpoch)
+        let lead = firstSample - created.timeIntervalSince1970
+        #expect(lead > 0 && lead < 3_600, "created \(lead) s before the first sample, whatever the Mac's zone")
     }
 
     @Test func dropsDuplicateTimestampsAndKeepsUnixTime() throws {

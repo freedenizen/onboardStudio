@@ -216,11 +216,15 @@ public struct RaceChronoCSVImporter: TelemetryImporter {
     }
 
     /// `Created,31/12/2025,02:54` → date (RaceChrono uses day/month/year and 24-hour time).
+    /// The line is UTC, like the `unix time` column that follows it (#409): a session exported
+    /// as `session_20260823_163604…`, 16:36 Pacific, says `Created,23/08/2026,23:35`, and the
+    /// fixture's line sits nineteen minutes before its first sample in UTC — read as local
+    /// time it would be hours after.
     static func parseCreated(_ fields: ArraySlice<String>) -> Date? {
         let joined = fields.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: " ")
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
+        formatter.timeZone = TimeZone(identifier: "UTC") ?? .current
         for pattern in ["dd/MM/yyyy HH:mm", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm", "MM/dd/yyyy HH:mm"] {
             formatter.dateFormat = pattern
             if let date = formatter.date(from: joined) { return date }
