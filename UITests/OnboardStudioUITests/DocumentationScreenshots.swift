@@ -70,10 +70,34 @@ final class DocumentationScreenshots: OnboardStudioUITestCase {
         settle()
         shoot(window, "compare-laps")
 
-        // The Logbook holds the project's session, entered when its data file loaded (#349).
+        shootLogbookAndTemplates()
+    }
+
+    /// The Logbook with the project's files as a track day — the session and its clip, matched by
+    /// the camera's GPS clock (#394, #408) — and the Templates window.
+    @MainActor
+    private func shootLogbookAndTemplates() {
+        // The Logbook with the project's files as a track day: the session and its clip, matched
+        // by the camera's GPS clock (#394, #408).
         menu("Window", "Logbook")
         let logbook = app.windows["Logbook"]
         XCTAssertTrue(logbook.waitForExistence(timeout: Self.timeout), "No Logbook window")
+        testing("Enter Screenshot Project in Logbook")
+        let done = app.buttons["trackday.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: Self.timeout), "No Add Track Day sheet")
+        XCTAssertTrue(app.staticTexts["trackday.summary"].waitForExistence(timeout: Self.timeout * 6))
+        done.click()
+        let day = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'logbook.day.'")).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: Self.timeout), "No track day in the sidebar")
+        day.click()
+        let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch
+        let rowTypes = NSPredicate(
+            format: "elementType == %d OR elementType == %d", XCUIElement.ElementType.tableRow.rawValue,
+            XCUIElement.ElementType.outlineRow.rawValue)
+        let row = table.descendants(matching: .any).matching(rowTypes).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: Self.timeout), "No session under the day")
+        row.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
+        XCTAssertTrue(app.buttons["logbook.open"].waitForExistence(timeout: Self.timeout))
         settle()
         shoot(logbook, "logbook")
         app.typeKey("w", modifierFlags: .command)
