@@ -135,6 +135,20 @@ under any detail the user typed; the personal-best lap's session is read on dema
 this very session (same bytes), where the session best already measures it. The timer's delta is
 by distance into the lap, the one alignment a live readout can have across sessions.
 
+## Trends (#353, with #332)
+
+`CornerRecord`s — brake point, minimum speed, exit speed and time in corner of each corner of the
+session's best lap — are read when an entry is made (`LogbookEntry.cornerRecords(of:)`, the
+coaching detector and metrics on that lap) and kept with it, so corner trends across visits are a
+read of the logbook, not of every file; entries from before get them on demand (*Read Their
+Corners*). `LogbookTrends` (`ProjectModel/LogbookTrends.swift`) turns the entries at a circuit key
+into dated points (best, optimal, rolling, and the spread of flying laps as consistency), a
+sentence for the summary and VoiceOver, and per-corner trends: the latest visit against the one
+before and the personal best's session, matched by the corner's label. The window's Trends view
+(`LogbookTrendsView`, SwiftUI Charts, semantic colours, a tap on the chart opening the nearest
+session) is the second of its two views. This is where #332's "did the plan work?" lives: the
+plan on the circuit's definition says what was meant, the corner table says what moved.
+
 ## What comes next
  #348 conditions; #349 the two-way link with projects; #350 export, import,
 CSV and Markdown. Milestone E (#351–#355) reads across the entries: personal bests, logbook laps as

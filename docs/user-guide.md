@@ -348,6 +348,14 @@ project's car when the logbook has one there), and a Timer's *Delta* or *Project
 **Compare with ▸ Personal best (logbook)** — the gap to your personal best lap at the same
 distance, that session read on demand, the session best when the logbook has nothing to offer.
 
+**Trends** (the toolbar's view switch, with a circuit chosen in the sidebar) answers whether you
+are getting quicker: a chart of the best, optimal and fastest rolling lap of every visit with a
+sentence on how far the best moved, narrowed to one car when you have more than one there; each
+visit's spread of flying laps as consistency; and corner by corner, the latest visit against the
+one before and against the personal best's session — brake point, minimum speed and time in the
+corner. Click a point to open that session. Sessions entered before corners were kept offer
+**Read Their Corners**.
+
 The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
 folder of one file per session (narrow the table first to export only a circuit, a car or a year),
 **…with Data Files** copies the data files in beside them, **Export Sessions as CSV…** and
