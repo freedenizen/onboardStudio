@@ -1,4 +1,5 @@
 import AppKit
+import MediaKit
 import ProjectModel
 import SwiftUI
 
@@ -91,5 +92,36 @@ extension LogbookWindow {
         } label: {
             Label("New Project", systemImage: "doc.badge.plus")
         }
+    }
+
+    // MARK: - Against another session (#397)
+
+    /// The logbook's other sessions at the entry's circuit: the personal best here and the last
+    /// visit first, then the rest by date.
+    func comparisons(for entry: LogbookEntry) -> [(title: String, entry: LogbookEntry)] {
+        let candidates = LogbookReferences.sessions(
+            at: LogbookFilter.circuitKey(of: entry), in: model.entries, excluding: entry.file.contentHash)
+        var choices: [(title: String, entry: LogbookEntry)] = []
+        if let best = LogbookReferences.personalBest(in: candidates) {
+            choices.append(("Personal Best Here — \(LogbookReferences.phrase(for: best, lap: nil))", best))
+        }
+        if let last = LogbookReferences.lastVisit(in: candidates), last.id != choices.first?.entry.id {
+            choices.append(("Last Visit — \(LogbookReferences.phrase(for: last, lap: nil))", last))
+        }
+        for candidate in candidates where !choices.contains(where: { $0.entry.id == candidate.id }) {
+            choices.append((CoachingContent.candidateTitle(candidate), candidate))
+        }
+        return choices
+    }
+
+    /// Coach the session with `other` as the reference: the choice goes on the entry, as the
+    /// window would keep it, and the window opens on it.
+    func compare(_ entry: LogbookEntry, with other: LogbookEntry) {
+        var changed = entry
+        var settings = entry.coaching ?? CoachingSettings(dataInputID: InputID(entry.id))
+        settings.reference = .logbook(entryID: other.id, lap: nil)
+        changed.coaching = settings
+        model.save(changed)
+        CoachingWindow.open(openWindow, entry: changed)
     }
 }

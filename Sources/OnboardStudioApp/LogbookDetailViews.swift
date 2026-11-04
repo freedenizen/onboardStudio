@@ -91,6 +91,12 @@ struct LogbookDetail: View {
     let newProject: (ProjectTemplate?) -> Void
     /// The Coaching window on this session, with no project (#396).
     var coach: () -> Void = {}
+    /// The Coaching window on this session against another of the logbook's (#397).
+    var compare: (LogbookEntry) -> Void = { _ in }
+    /// The logbook's other sessions at this circuit: the personal best and the last visit, first.
+    var comparisons: [(title: String, entry: LogbookEntry)] = []
+    /// A project from the session laid out for a debrief, with the sheet up (#397).
+    var debrief: () -> Void = {}
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
@@ -199,12 +205,31 @@ struct LogbookDetail: View {
                     .help("A new project from this session, laid out with the template you choose")
                     .accessibilityIdentifier("logbook.openFrom")
                     Spacer().frame(width: 8)
-                    Button("Coach…", action: coach)
-                        .help("Where this session's laps lost time, with no project needed")
-                        .accessibilityIdentifier("logbook.coach")
                     Button("Add to Current Project", action: addToProject)
                         .disabled(!hasProject)
                         .accessibilityIdentifier("logbook.addToProject")
+                }
+                HStack(spacing: 4) {
+                    Button("Coach…", action: coach)
+                        .help("Where this session's laps lost time, with no project needed")
+                        .accessibilityIdentifier("logbook.coach")
+                    Menu("Compare With") {
+                        ForEach(comparisons, id: \.entry.id) { choice in
+                            Button(choice.title) { compare(choice.entry) }
+                        }
+                    }
+                    .fixedSize()
+                    .disabled(comparisons.isEmpty)
+                    .help("Coach this session against another of the logbook's at this circuit")
+                    .accessibilityIdentifier("logbook.compareWith")
+                    Button("Export Coaching Debrief…", action: debrief)
+                        .disabled(clips.isEmpty)
+                        .help(
+                            clips.isEmpty
+                                ? "A debrief video needs the session's clip: assign one on its day first"
+                                : "A project laid out for a debrief from this session, with the export sheet up"
+                        )
+                        .accessibilityIdentifier("logbook.debrief")
                 }
                 HStack {
                     Button("Show in Finder") {

@@ -257,6 +257,17 @@ launch window: the Logbook stays behind the project, since the next session come
 UI tests launch with `-skipLogbook YES` (was `-skipLauncher`), so every journey that starts on a
 blank project is unchanged; `LogbookLaunchUITests` starts with the Logbook.
 
+## The ways out of a session (#397)
+
+Beside **Coach…** in a session's detail: **Compare With ▸** (`LogbookWindow.comparisons(for:)` —
+`LogbookReferences.sessions` at the entry's circuit key, the personal best and the last visit
+named first) writes the chosen session onto the entry's `coaching.reference` as
+`.logbook(entryID:lap:)` and opens the Coaching window on it, exactly the state the window would
+have reached by hand; **Export Coaching Debrief…** is `LogbookModel.openAsProject(_:template:then:)`
+with the Coaching Debrief template and `then: .debrief`, so the new editor puts the debrief sheet
+up once it appears. It is disabled until the session has a clip on its day, with the help text
+saying why.
+
 ## What comes next
 v0.34.0 (#392–#398) turns the workflow round so it begins here: a day created first (#393 New
 Track Day…), its clips matched to its sessions by clock (#394), the logbook as the window at

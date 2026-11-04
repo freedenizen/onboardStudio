@@ -723,7 +723,10 @@ A session in the **Logbook** is coached without a project: select it and **Coach
 reads its file and offers the same lap and reference choices (the logbook's other sessions at the
 circuit among them), keeps the choices with the session, and writes the coaching sheet from
 **File ▸ Export Coaching Sheet**; what needs a picture or a plan is replaced by **Make a
-Project**, which opens a project from the session and brings the window to it.
+Project**, which opens a project from the session and brings the window to it. Beside **Coach…**,
+**Compare With ▸** lists the logbook's other sessions at the circuit — the personal best here and
+the last visit first — and opens the window with that one as the reference; **Export Coaching
+Debrief…** (once the session has a clip) opens a project laid out for a debrief with the sheet up.
 
 **Project ▸ Coaching…** (⌃⌘C) opens a window beside the project that reads one lap against a
 reference and says where the time went. Choose the **Lap** (it starts on the lap at the playhead)
