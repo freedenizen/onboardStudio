@@ -60,7 +60,43 @@ second line driven 4 m to the north widens the road, a noisy 10 m hill comes out
 closed, `nearest` tells right from left, and two laps at 30 and 25 m/s stand 50 m apart after ten
 seconds with the gap the leader's speed says.
 
+## The scene (#414)
+
+`Sources/RenderKit/Replay/` has two layers. **Mesh builders with no SceneKit in them**
+(`MeshArrays.swift`): `RoadMesh` walks the centreline and emits each sample's left and right
+edge (a pair per sample and a seam pair, so the loop closes), normals tilted by the climb,
+texture coordinates along the strip; `KerbMesh` the same strip just outside whichever edge the
+model flags, lifted 2 cm, its v coordinate in stripes so a two-pixel red-and-white texture
+repeats every 2 m; `LapRibbon` a lap's points as a 25 cm quad strip 5 cm above the road, since
+SceneKit on Metal ignores line width. Quads are wound counter-clockwise seen from above —
+SceneKit's front face — which `ReplayMeshTests` checks with a cross product, along with vertex
+counts, widths, lifts and the coordinate mapping: east is x, up is y, north is −z, so the world
+stays right-handed, and a heading clockwise from north becomes a yaw of −θ for a node whose own
+forward is −z. **The SceneKit side** (`SceneGeometry.swift`, `TrackScene.swift`) turns the
+arrays into `SCNGeometry` through the raw-data sources (no `SCNVector3` copies), and builds the
+scene: a 20 km ground plane just under the lowest sample in the sky's fog, the road in lambert
+grey, the kerbs, a post and a billboard label at each corner's apex on the outside of the bend,
+each lap's ribbon in its palette colour with depth writes off and a higher rendering order (a
+5 cm lift alone z-fights at distance), and a car per lap — a wedge of boxes on four cylinders,
+flattened into one draw — with its name on a billboard that scales with distance so it reads the
+same size near and far. Labels are Core Text drawn into a `CGImage` on a plane; `SCNText` is
+slow to make and awkward to centre.
+
+Everything runs on the main actor: `apply(time:dt:)` puts every car where its lap says and then
+the camera. The cameras are per-frame updates, not constraints, so the easing is in seconds:
+**Chase** sits 14 m behind and 5 m above the watched car, easing with a 0.25 s time constant;
+**Trackside** is the nearest of fixed posts every 150 m, 25 m to the left of the road, with a
+narrower lens; **Above** is orthographic straight down (a hair to the south of vertical, since
+exactly vertical has no up) over the followed car, or over the whole circuit when nobody is
+followed; **In Car** sits in the driver's seat looking along the heading; **Free** is an orbit
+about the followed car or the circuit's centre at the view's yaw, pitch and distance. A change
+of mode blends from the old pose over 0.6 s. The watched car is the followed lap, else the
+leader. `TrackSceneTests` build the scene without a GPU (node names and counts, the road's
+sources and primitive count) and drive it: cars move with time and sit on the road's elevation,
+each camera ends up where it should. There are no golden images of the 3D view: GPU snapshots
+differ across machines, and GitHub's macOS runners may have no Metal device at all.
+
 ## What comes next
 
-#414 the scene (RenderKit, SceneKit), #415 the Replay window, #416 the release; then, as a
+#415 the Replay window, #416 the release; then, as a
 milestone of its own, the same scene rendered into the exported video as a display object.

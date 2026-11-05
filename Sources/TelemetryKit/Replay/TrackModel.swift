@@ -124,7 +124,9 @@ public struct TrackModel: Sendable {
             hasElevation: reference.has(.altitude))
     }
 
-    init(
+    /// A road from samples already worked out: what `make` ends with, and what a test or a
+    /// mesh builder that lifts the road a little starts from.
+    public init(
         plane: Plane, stepMeters: Double, lengthMeters: Double, samples: [Sample], corners: [Corner],
         hasElevation: Bool
     ) {
