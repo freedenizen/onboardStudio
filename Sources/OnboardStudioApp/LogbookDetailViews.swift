@@ -97,6 +97,8 @@ struct LogbookDetail: View {
     var comparisons: [(title: String, entry: LogbookEntry)] = []
     /// A project from the session laid out for a debrief, with the sheet up (#397).
     var debrief: () -> Void = {}
+    /// The session's laps raced round the circuit in 3D (#415).
+    var replay: () -> Void = {}
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
@@ -213,6 +215,9 @@ struct LogbookDetail: View {
                     Button("Coach…", action: coach)
                         .help("Where this session's laps lost time, with no project needed")
                         .accessibilityIdentifier("logbook.coach")
+                    Button("Replay…", action: replay)
+                        .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
+                        .accessibilityIdentifier("logbook.replay")
                     Menu("Compare With") {
                         ForEach(comparisons, id: \.entry.id) { choice in
                             Button(choice.title) { compare(choice.entry) }

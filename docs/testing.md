@@ -52,6 +52,11 @@ macOS from the installed one (#293). Sharing the installed app's identifier, tes
 its preferences. Each launch also gets its own folder for the user's templates
 (`ONBOARD_TEST_TEMPLATES_DIR`) and for picture-motion measurements (`ONBOARD_TEST_MOTION_DIR`, #288).
 
+**The 3D replay** (#414) has no golden images: GPU snapshots differ across machines and GitHub's
+macOS runners may have no Metal device. Its tests build the meshes and the SceneKit scene without
+a GPU and drive the cameras (`ReplayMeshTests`, `TrackSceneTests`); the window's journey is
+`ReplayUITests`.
+
 **Documentation screenshots** (#304) come from the same machinery: `DocumentationScreenshots` opens
 a real project, applies Cockpit with Graph, shows mph and takes the editor, an inspector, the export
 sheet, Frame Picture, the Attributes window, Compare Laps, the Logbook and the Templates window.
