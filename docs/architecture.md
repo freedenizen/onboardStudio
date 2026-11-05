@@ -9,7 +9,7 @@ two thin executables.
 | Target | Purpose |
 |---|---|
 | `ProjectModel` | The project document schema: inputs, display objects, timeline segments, export settings. Pure `Codable`/`Sendable` value types; depends on `TelemetryKit` only to build a plan from an analysed lap. |
-| `TelemetryKit` | Time-indexed channels, interpolation policies, resampling, smoothing, calculated fields, lap detection, laps as profiles by distance and the delta between any two (`docs/coaching.md`). |
+| `TelemetryKit` | Time-indexed channels, interpolation policies, resampling, smoothing, calculated fields, lap detection, laps as profiles by distance and the delta between any two (`docs/coaching.md`), a circuit as a road built from a lap's GPS (`docs/replay.md`). |
 | `Importers` | File-format importers (RaceRender CSV, GPX, TCX, NMEA, VBO, FIT, generic CSV profiles) producing `TelemetrySession`s. |
 | `GPMFKit` | GoPro GPMF metadata-track extraction from MP4/MOV via AVFoundation. |
 | `RenderKit` | Overlay rendering with Core Graphics: one renderer per display-object kind, gauge engine, render cache, `FrameCompositor`. |
