@@ -10,19 +10,19 @@ extension CoachingContent {
     func setLap(_ number: Int, selection: CoachingSelection) {
         var settings = selection.settings
         settings.lap = number
-        editor.edit("Change Coaching Lap") { $0.coaching = settings }
+        source.setSettings(settings, undoName: "Change Coaching Lap")
     }
 
     func setReference(_ reference: CoachingSettings.Reference, selection: CoachingSelection) {
         var settings = selection.settings
         settings.reference = reference
-        editor.edit("Change Coaching Reference") { $0.coaching = settings }
+        source.setSettings(settings, undoName: "Change Coaching Reference")
     }
 
     func setAlignByPosition(_ byPosition: Bool, selection: CoachingSelection) {
         var settings = selection.settings
         settings.alignByPosition = byPosition
-        editor.edit("Change Coaching Alignment") { $0.coaching = settings }
+        source.setSettings(settings, undoName: "Change Coaching Alignment")
     }
 
     /// The logbook's sessions at this circuit (#352): the personal best and the last visit first,
@@ -64,12 +64,8 @@ extension CoachingContent {
     }
 
     func logbookCandidates(for selection: CoachingSelection) -> [LogbookEntry] {
-        guard let session = editor.sessions[selection.input.id] else { return [] }
-        let key = LogbookReferences.circuitKey(
-            for: selection.input, session: session, url: editor.dataFileURL(of: selection.input))
-        let own = selection.input.dataSettings?.logbookEntryID.flatMap { id in
-            LogbookModel.shared.entries.first { $0.id == id }?.file.contentHash
-        }
-        return LogbookReferences.sessions(at: key, in: LogbookModel.shared.entries, excluding: own)
+        guard let session = source.session else { return [] }
+        let key = source.circuitKey(for: session)
+        return LogbookReferences.sessions(at: key, in: LogbookModel.shared.entries, excluding: source.ownContentHash)
     }
 }

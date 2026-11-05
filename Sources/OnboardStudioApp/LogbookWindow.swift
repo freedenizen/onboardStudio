@@ -71,6 +71,45 @@ import UniformTypeIdentifiers
         try? AppLogbook.shared.save(entry)
         reload()
     }
+
+    // MARK: - Into a project
+
+    /// A new project with the session's data file, its clips and `template` (#394), showing
+    /// `then` once it is open (#396).
+    func openAsProject(_ entry: LogbookEntry, template: ProjectTemplate?, then: LogbookOpenRequest.Then? = nil) {
+        guard entry.resolveFile() != nil else { return }
+        PendingLogbookOpen.shared.request = LogbookOpenRequest(
+            entry: entry, clips: clipURLs(of: entry), template: template, then: then)
+        NSDocumentController.shared.newDocument(nil)
+    }
+
+    /// The clips of the session's day that are its picture, in the order they were recorded.
+    func clips(of entry: LogbookEntry) -> [ClipRecord] {
+        let clips = days.first { $0.id == entry.trackDayID }?.clips.filter { $0.sessionID == entry.id } ?? []
+        return clips.sorted { ($0.recordedAt ?? .distantPast, $0.path) < ($1.recordedAt ?? .distantPast, $1.path) }
+    }
+
+    /// Each clip's files that still exist, chapters after their first.
+    func clipURLs(of entry: LogbookEntry) -> [URL] {
+        clips(of: entry).flatMap { clip -> [URL] in
+            guard let first = clip.resolveFile() else { return [] }
+            return [first]
+                + clip.chapterPaths.map { URL(fileURLWithPath: $0) }.filter {
+                    FileManager.default.fileExists(atPath: $0.path)
+                }
+        }
+    }
+
+    /// The built-in templates and the user's own, as New Project from Template offers them.
+    static func templates() -> [ProjectTemplate] {
+        ProjectTemplate.builtIn + TemplateLibrary.app.entries().compactMap { try? TemplateLibrary.app.load($0) }
+    }
+
+    /// The template the last New Project used (Classic Dash to begin with), `nil` for blank.
+    static func lastTemplate() -> ProjectTemplate? {
+        let name = UserDefaults.standard.string(forKey: "logbook.projectTemplate") ?? "Classic Dash"
+        return templates().first { $0.name == name }
+    }
 }
 
 /// What a new project is made of from the logbook (#394): the session's data file, the clips
@@ -290,8 +329,9 @@ struct LogbookWindow: View {
                 .layoutPriority(1)
                 if let entry = model.entries.first(where: { $0.id == selection }) {
                     LogbookDetail(
-                        entry: entry, clips: clips(of: entry), hasProject: active.editor != nil,
-                        templates: Self.templates, newProject: { openAsProject(entry, template: $0) },
+                        entry: entry, clips: model.clips(of: entry), hasProject: active.editor != nil,
+                        templates: LogbookModel.templates, newProject: { openAsProject(entry, template: $0) },
+                        coach: { CoachingWindow.open(openWindow, entry: entry) },
                         addToProject: { addToCurrentProject(entry) },
                         remove: { confirmRemoval = entry },
                         save: { model.save($0) },
@@ -319,32 +359,7 @@ struct LogbookWindow: View {
 
     /// A new project with the session's data file, its clips and `template` (#394).
     func openAsProject(_ entry: LogbookEntry, template: ProjectTemplate?) {
-        guard entry.resolveFile() != nil else { return }
-        PendingLogbookOpen.shared.request = LogbookOpenRequest(
-            entry: entry, clips: clipURLs(of: entry), template: template)
-        NSDocumentController.shared.newDocument(nil)
-    }
-
-    /// The clips of the session's day that are its picture, in the order they were recorded.
-    func clips(of entry: LogbookEntry) -> [ClipRecord] {
-        let clips = model.days.first { $0.id == entry.trackDayID }?.clips.filter { $0.sessionID == entry.id } ?? []
-        return clips.sorted { ($0.recordedAt ?? .distantPast, $0.path) < ($1.recordedAt ?? .distantPast, $1.path) }
-    }
-
-    /// Each clip's files that still exist, chapters after their first.
-    func clipURLs(of entry: LogbookEntry) -> [URL] {
-        clips(of: entry).flatMap { clip -> [URL] in
-            guard let first = clip.resolveFile() else { return [] }
-            return [first]
-                + clip.chapterPaths.map { URL(fileURLWithPath: $0) }.filter {
-                    FileManager.default.fileExists(atPath: $0.path)
-                }
-        }
-    }
-
-    /// The built-in templates and the user's own, as New Project from Template offers them.
-    static func templates() -> [ProjectTemplate] {
-        ProjectTemplate.builtIn + TemplateLibrary.app.entries().compactMap { try? TemplateLibrary.app.load($0) }
+        model.openAsProject(entry, template: template)
     }
 
     func addToCurrentProject(_ entry: LogbookEntry) {

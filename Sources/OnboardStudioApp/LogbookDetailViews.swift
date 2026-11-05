@@ -89,6 +89,8 @@ struct LogbookDetail: View {
     var templates: () -> [ProjectTemplate] = { ProjectTemplate.builtIn }
     /// A new project from the session, laid out with the template (`nil`: blank).
     let newProject: (ProjectTemplate?) -> Void
+    /// The Coaching window on this session, with no project (#396).
+    var coach: () -> Void = {}
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
@@ -197,6 +199,9 @@ struct LogbookDetail: View {
                     .help("A new project from this session, laid out with the template you choose")
                     .accessibilityIdentifier("logbook.openFrom")
                     Spacer().frame(width: 8)
+                    Button("Coach…", action: coach)
+                        .help("Where this session's laps lost time, with no project needed")
+                        .accessibilityIdentifier("logbook.coach")
                     Button("Add to Current Project", action: addToProject)
                         .disabled(!hasProject)
                         .accessibilityIdentifier("logbook.addToProject")

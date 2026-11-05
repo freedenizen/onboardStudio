@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 struct EditorView: View {
     @State private var editor: EditorModel
     @Environment(\.undoManager) private var undoManager
-    @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(\.openWindow) private var openWindow
     @AppStorage(Preferences.tourSeen.key) private var tourSeen = false
     @AppStorage(Preferences.attributeMappings.key) private var globalMappings = Preferences.attributeMappings.unset
 
@@ -97,14 +97,7 @@ struct EditorView: View {
                 PendingTemplate.shared.template = nil
                 editor.apply(template)
             }
-            // A session opened from the logbook (#347, #394): the template, its clips, then its
-            // data file into the fresh project, so the clock sync lines them up as it would.
-            if let request = PendingLogbookOpen.shared.request, editor.project.inputs.isEmpty {
-                PendingLogbookOpen.shared.request = nil
-                if let template = request.template, editor.project.displayObjects.isEmpty { editor.apply(template) }
-                if !request.clips.isEmpty { editor.addVideos(at: request.clips) }
-                if let url = request.entry.resolveFile() { editor.addData(at: url) }
-            }
+            Self.openFromLogbook(into: editor, openWindow: openWindow)
             editor.scheduleCompile()
         }
         .onChange(of: undoManager) { _, newValue in editor.undoManager = newValue }
@@ -112,6 +105,27 @@ struct EditorView: View {
         // the project notices it change; without this an open project kept its old channels (#214).
         .onChange(of: globalMappings) { editor.scheduleCompile() }
     }
+
+    /// A session opened from the logbook (#347, #394, #396): the template, its clips, then its
+    /// data file into the fresh project, so the clock sync lines them up as it would; then what
+    /// the request asked to see.
+    @MainActor
+    static func openFromLogbook(into editor: EditorModel, openWindow: OpenWindowAction) {
+        guard let request = PendingLogbookOpen.shared.request, editor.project.inputs.isEmpty else { return }
+        PendingLogbookOpen.shared.request = nil
+        if let template = request.template, editor.project.displayObjects.isEmpty { editor.apply(template) }
+        if !request.clips.isEmpty { editor.addVideos(at: request.clips) }
+        if let url = request.entry.resolveFile() { editor.addData(at: url) }
+        switch request.then {
+        case .coaching:
+            // The Coaching window was reading the session; now it reads this project.
+            CoachingTarget.shared.showFrontProject()
+            openWindow(id: CoachingWindow.windowID)
+        case .debrief: editor.showDebrief = true
+        case nil: break
+        }
+    }
+
 }
 
 struct EditorToolbar: ToolbarContent {
