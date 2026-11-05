@@ -44,6 +44,9 @@ unix time,,,s,m,m,deg,…,m/s,…,rpm,…
 ```
 
 - Preamble `Key,Value` lines become session metadata (title, track, driver, created date, note).
+  The `Created` line is UTC, like the `unix time` column (#409): a session exported at 16:36
+  Pacific says `Created,23/08/2026,23:35`. Earlier builds read it in the Mac's time zone, which
+  dated a session hours late; the session's own time axis was always right.
 - The header row starts with `timestamp`; a units row and a data-source row follow.
 - Times are unix seconds and are kept as-is. Duplicate rows (RaceChrono emits them) are dropped.
 - Column names repeat across sources (`speed` from GPS, calc and the vehicle). The first
