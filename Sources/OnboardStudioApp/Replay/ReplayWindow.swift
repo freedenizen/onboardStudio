@@ -47,6 +47,11 @@ struct ReplayWindow: View {
         }
         .frame(minWidth: 900, minHeight: 480)
         .toolbar { toolbar }
+        // Window ▸ Replay (⌃⌘R) opens the scene with nothing asked for: the front project's laps,
+        // when there is one, are what the user means.
+        .onAppear {
+            if !model.hasSource, let editor = active.editor { model.showFrontProject(editor: editor) }
+        }
     }
 
     // MARK: - Laps

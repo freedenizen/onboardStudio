@@ -77,4 +77,19 @@ final class ReplayUITests: OnboardStudioUITestCase {
         let two = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == 2"), object: standings)
         XCTAssertEqual(XCTWaiter().wait(for: [two], timeout: Self.timeout * 2), .completed, "The lap was not dropped")
     }
+
+    /// Window ▸ Replay with a project in front reads that project's laps, with nothing else asked.
+    @MainActor
+    func testWindowReplayReadsTheFrontProject() throws {
+        launch()
+        testing("Add Fixture Data (Coaching Laps)")
+        XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout), "Data not listed")
+        menu("Window", "Replay")
+        XCTAssertTrue(app.windows["Replay"].waitForExistence(timeout: Self.timeout), "No Replay window")
+        let standings = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH 'replay.standing.'"))
+        let raced = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count > 0"), object: standings)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [raced], timeout: Self.timeout * 3), .completed, "No laps from the project")
+    }
 }
