@@ -68,6 +68,12 @@ struct OnboardStudioApp: App {
             CoachingWindow()
         }
         .defaultSize(width: 1000, height: 640)
+        // Laps raced round the circuit in 3D (#415); ⌃⌘R, as Coaching is ⌃⌘C.
+        Window("Replay", id: ReplayWindow.windowID) {
+            ReplayWindow()
+        }
+        .defaultSize(width: 1100, height: 700)
+        .keyboardShortcut("r", modifiers: [.command, .control])
         // A Window scene lists itself in the Window menu; ⌃⌘L opens it (#347), the pattern Show
         // Project Details (⌃⌘I) and Coaching (⌃⌘C) set for "show me a view".
         // And the window at launch (#395): where a track day begins, and every project after it.

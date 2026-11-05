@@ -92,6 +92,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | 360° spherical metadata | ✅ | |
 | YouTube upload | ✅ | Device-code sign-in, resumable upload (needs the user's own OAuth client) |
 | Templates, object style import/export | ✅ | `.onboardtemplate`, `.onboardstyle`; your own templates in the Templates window with pictures, renamed, duplicated, shared and deleted from a right-click |
+| 3D lap replay with several laps as cars | ➕ | The Replay window (v0.35.0): a road from the session's GPS and altitude, laps from any logbook session, five cameras; RaceRender has no 3D view |
 | RaceRender `.rrt` / `.rrp` files | ❌ | Undocumented binary format; not reverse-engineered |
 
 ## Data formats

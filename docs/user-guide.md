@@ -820,6 +820,26 @@ window with that reference. The picture is cut from the laps it came from, kept 
 playing, so it jumps at each join; its readouts show the lap it is in at that moment. This is the
 lap you have already driven in pieces, watched as one.
 
+### Replay: your laps in 3D
+
+![The Replay window: the circuit as a road over its elevation, three laps as coloured lines with a car each, the standings and the scrubber below, the lap list on the left](images/replay.jpg)
+
+Select a session in the **Logbook** and **Replay…** (or **Window ▸ Replay**, ⌃⌘R, for the
+project in front; or **Replay** in the Coaching window's toolbar). The circuit is drawn as a road
+with kerbs over the elevation your logger recorded, from the session's own GPS — nothing comes
+from a map, and a logger without altitude gets a flat road. The session's three quickest laps
+start together, each painted on the tarmac in its own colour with a car and its name; the list
+on the left offers every complete lap and, under their own headings, the logbook's other
+sessions at the circuit — tick one and its lap joins the race.
+
+**Play** (Space) and the cars go. The standings at the bottom left give each car's place and gap
+to the leader; click a car to follow it. The HUD reads the followed car's speed, lap time and
+gap; the map at the top right shows where everyone is. The cameras in the toolbar: **Chase**
+behind the car, **Trackside** from a post beside the track, **Above** straight down, **In Car**,
+and **Free** (drag to orbit, scroll or pinch to zoom; keys 1–5). **Go to Turn ▸** jumps to just
+before a corner, the scrubber and ← → step through the lap, **Speed** slows or quickens the
+replay.
+
 ## 7. Export and share
 
 ![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)

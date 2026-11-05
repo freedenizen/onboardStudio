@@ -16,6 +16,7 @@ struct CoachingWindow: View {
 
     private var active = ActiveEditor.shared
     private var target = CoachingTarget.shared
+    @Environment(\.openWindow) private var openWindow
 
     /// The front project's coaching.
     static func open(_ openWindow: OpenWindowAction) {
@@ -50,6 +51,20 @@ struct CoachingWindow: View {
             }
         }
         .frame(minWidth: 880, minHeight: 480)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                // The same laps, raced round the circuit (#415).
+                Button("Replay", systemImage: "car.side") {
+                    if case .logbook = target.kind, let source = target.logbookSource {
+                        ReplayWindow.open(openWindow, entry: source.entry)
+                    } else {
+                        ReplayWindow.open(openWindow)
+                    }
+                }
+                .help("Race this session's laps round the circuit in 3D")
+                .accessibilityIdentifier("coaching.replay")
+            }
+        }
     }
 }
 

@@ -8,6 +8,17 @@ Surveyed 2026-09-19. Claims carry sources; anything that could not be confirmed 
 "Onboard Studio" column and the candidate list were brought up to date on 2026-09-23, at v0.24.0
 (#242); the survey itself was not repeated.
 
+## 3D replay sites
+
+**race.ngoansx.com** (surveyed 2026-11-04) — a browser replay (three.js) of uploaded laps
+(Garmin Catalyst, AiM, Exotherm, Porsche Track Precision): the circuit as a road with kerbs
+over its elevation, every lap's line on the tarmac, cars with name labels racing in one clock,
+chase / trackside / above / in-car cameras, a scrubber, "go to turn N", a mini-map and share
+links. Its per-track file is one reference lap's GPS resampled every 4 m with elevation, a
+half-width and kerb flags — no map tiles. Onboard Studio's Replay window (v0.35.0,
+`docs/replay.md`) does the same offline from any logger the app reads, with the logbook's
+sessions across days and cars as the field.
+
 ## Where Onboard Studio is already ahead
 
 The most useful result of the survey. Each row is a need that users of other tools are **still

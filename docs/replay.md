@@ -96,7 +96,31 @@ sources and primitive count) and drive it: cars move with time and sit on the ro
 each camera ends up where it should. There are no golden images of the 3D view: GPU snapshots
 differ across machines, and GitHub's macOS runners may have no Metal device at all.
 
+## The window (#415)
+
+`ReplayWindow` (`Sources/OnboardStudioApp/Replay/`), a `Window` scene (⌃⌘R) beside the
+document or the logbook, the pattern the Coaching window set. `ReplayModel.shared` holds what
+it shows: the source (`showFrontProject(editor:)` — the project's lap input and its other data
+files; or `show(entry:)` — a logbook session read in on demand), the groups of laps on offer
+(the home session's complete laps, then the logbook's other sessions at the circuit through
+`LogbookReferences.sessions`, their laps from the entries until a lap of theirs is chosen and
+the file read), the laps chosen (the home session's three quickest to begin with, each in the
+next palette colour), and the replay built from them: `rebuild` reads any session a chosen lap
+needs, builds the `TrackModel` (cached per home session) and the `ReplayField` off the main
+actor, then the `TrackScene` on it; a later choice supersedes an earlier build.
+
+`ReplaySceneHost` wraps an `SCNView` subclass with the keys and gestures a replay wants (Space,
+← →, 1–5, drag to orbit, scroll or pinch to zoom) and a display link on the main actor that
+advances the clock and tells the scene the time each frame — no render-thread delegate, so no
+isolation plumbing, and the exporter can call the same `apply`. The view is labelled for
+VoiceOver and everything it shows is also a control: the lap list of toggles, the standings
+(a click follows a car), the HUD (speed in the app's unit, lap time, gap), the mini-map (a
+`Canvas` of the track's samples with the turns numbered and a dot per car), the transport
+(play, the scrubber with its value read as a lap time, the clock), and the toolbar's camera
+control, Go to Turn menu and speed menu. The window opens from the Logbook's **Replay…**, the
+Coaching window's **Replay** and Window ▸ Replay.
+
 ## What comes next
 
-#415 the Replay window, #416 the release; then, as a
+#416 the release; then, as a
 milestone of its own, the same scene rendered into the exported video as a display object.

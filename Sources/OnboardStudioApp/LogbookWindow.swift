@@ -336,6 +336,7 @@ struct LogbookWindow: View {
                         debrief: {
                             model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)
                         },
+                        replay: { ReplayWindow.open(openWindow, entry: entry) },
                         addToProject: { addToCurrentProject(entry) },
                         remove: { confirmRemoval = entry },
                         save: { model.save($0) },

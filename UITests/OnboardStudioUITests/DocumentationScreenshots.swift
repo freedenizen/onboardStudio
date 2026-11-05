@@ -100,6 +100,18 @@ final class DocumentationScreenshots: OnboardStudioUITestCase {
         XCTAssertTrue(app.buttons["logbook.open"].waitForExistence(timeout: Self.timeout))
         settle()
         shoot(logbook, "logbook")
+        // The same session raced in 3D (#415): the standings up and the cars a few seconds in.
+        app.buttons["logbook.replay"].click()
+        let replay = app.windows["Replay"]
+        XCTAssertTrue(replay.waitForExistence(timeout: Self.timeout), "No Replay window")
+        let standings = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH 'replay.standing.'"))
+        let raced = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count > 0"), object: standings)
+        XCTAssertEqual(XCTWaiter().wait(for: [raced], timeout: Self.timeout * 3), .completed, "No laps in the replay")
+        app.sliders["replay.scrubber"].adjust(toNormalizedSliderPosition: 0.3)
+        settle()
+        shoot(replay, "replay")
+        app.typeKey("w", modifierFlags: .command)
         app.typeKey("w", modifierFlags: .command)
         menu("Window", "Templates")
         let templates = app.windows["Templates"]
