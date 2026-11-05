@@ -149,7 +149,11 @@ struct UITestCommands: Commands {
                 let copy = folder.appending(path: "coaching-laps.csv")
                 let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
                 try? lines.dropLast(2).joined(separator: "\n").write(to: copy, atomically: true, encoding: .utf8)
-                editor?.trackDayRequest = TrackDayRequest(urls: [copy])
+                if let editor {
+                    editor.trackDayRequest = TrackDayRequest(urls: [copy])
+                } else {
+                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [copy])
+                }
             }
             Button("Add Fixture Image") {
                 if let url = UITestSupport.fixture("arrow.png") { editor?.addImage(at: url) }
