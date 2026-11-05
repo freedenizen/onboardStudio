@@ -171,6 +171,13 @@ struct UITestCommands: Commands {
                     withContentsOf: URL(fileURLWithPath: path), display: true
                 ) { _, _, _ in }
             }
+            // The project's own files as a track day (#408): a saved project never enters its
+            // sessions on opening, and the Logbook's picture should show a day, not an empty state.
+            Button("Enter Screenshot Project in Logbook") {
+                guard let editor else { return }
+                let urls = editor.project.inputs.map { editor.location.resolve($0.source) }
+                LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: urls)
+            }
             Button("Seek to Screenshot Time") {
                 guard let text = ProcessInfo.processInfo.environment["ONBOARD_TEST_SCREENSHOT_TIME"],
                     let seconds = Double(text)
