@@ -1,7 +1,7 @@
 import XCTest
 
 // ci-shard: 1
-/// J17: save a layout as a template, find it in the welcome window with a picture, manage it
+/// J17: save a layout as a template, find it in the Templates window with a picture, manage it
 /// there, and start a project from it (#44).
 final class TemplateLibraryUITests: OnboardStudioUITestCase {
     @MainActor
@@ -19,10 +19,10 @@ final class TemplateLibraryUITests: OnboardStudioUITestCase {
         name.typeText("Club Day\n")
         expectStatus(containing: "Saved the template “Club Day”")
 
-        // It waits in the welcome window beside the built-in ones.
-        menu("Help", "Welcome to Onboard Studio")
+        // It waits in the Templates window beside the built-in ones.
+        menu("Window", "Templates")
         let card = app.buttons["launcher.template.Club Day"]
-        XCTAssertTrue(card.waitForExistence(timeout: Self.timeout), "Your template is not in the welcome window")
+        XCTAssertTrue(card.waitForExistence(timeout: Self.timeout), "Your template is not in the Templates window")
 
         // Rename and duplicate it from a right-click, as in the Finder.
         contextMenu(on: card, "Rename…")

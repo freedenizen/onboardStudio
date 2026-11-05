@@ -9,6 +9,8 @@ struct SettingsView: View {
         .defaultExportPreset.unset
     @AppStorage(Preferences.ffmpegPath.key) private var ffmpegPath = Preferences.ffmpegPath.unset
     @AppStorage(Preferences.logbookAutoAdd.key) private var logbookAutoAdd = Preferences.logbookAutoAdd.unset
+    @AppStorage(Preferences.openLogbookAtLaunch.key) private var openLogbookAtLaunch = Preferences.openLogbookAtLaunch
+        .unset
     @AppStorage(Preferences.speedUnit.key) private var speedUnit = Preferences.speedUnit.unset
     @AppStorage(Preferences.nudgeStepPixels.key) private var nudgeStep = Preferences.nudgeStepPixels.unset
     @AppStorage(Preferences.youTubeClientID.key) private var youtubeClientID = Preferences.youTubeClientID.unset
@@ -83,6 +85,7 @@ struct SettingsView: View {
                 .font(.caption).foregroundStyle(.secondary)
             }
             Section("Logbook") {
+                Toggle("Open the Logbook at launch", isOn: $openLogbookAtLaunch)
                 Toggle("Enter data files in the logbook when they are added to a project", isOn: $logbookAutoAdd)
                 Text(
                     "The logbook keeps every session the app reads: where and when, the car, every lap. "

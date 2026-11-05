@@ -243,6 +243,20 @@ show next) applies the template, adds the videos (`addVideos(at:)`, chapters joi
 data file, so the editor's own clock sync lines them up. The template is the one the last New
 Project used (`logbook.projectTemplate`), Classic Dash to begin with; a pop-up offers them all.
 
+## The window at launch (#395)
+
+From v0.34.0 the Logbook is what opens when the app does (`.defaultLaunchBehavior` on its
+`Window` scene, `Preferences.openLogbookAtLaunch`, Settings ▸ Logbook; `AppDelegate` opens no
+untitled document while it is on). The welcome window's reasons to exist moved: starting a
+project is the toolbar's **New Project** menu (`Menu` with a primary action — a blank project —
+and the built-in and user templates, Open Project…, Templates… and the sample project beneath),
+recents are File ▸ Open Recent, and the template cards with their right-click management (#44,
+J17) are the **Templates** window (`TemplatesWindow.swift`, Window ▸ Templates), which is the old
+launcher view without its identity pane and project buttons. An editor no longer dismisses the
+launch window: the Logbook stays behind the project, since the next session comes from it. The
+UI tests launch with `-skipLogbook YES` (was `-skipLauncher`), so every journey that starts on a
+blank project is unchanged; `LogbookLaunchUITests` starts with the Logbook.
+
 ## What comes next
 v0.34.0 (#392–#398) turns the workflow round so it begins here: a day created first (#393 New
 Track Day…), its clips matched to its sessions by clock (#394), the logbook as the window at

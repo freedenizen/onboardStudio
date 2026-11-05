@@ -40,7 +40,7 @@ for test in json.loads((folder / "manifest.json").read_text()):
         if name.startswith(("App UI hierarchy", "UI Snapshot", "Debug description")):
             continue
         # Windows without footage stay PNG; the ones showing video are a quarter the size as JPEG.
-        flat = name in {"welcome", "attributes"}
+        flat = name in {"logbook", "templates", "attributes"}
         target = pathlib.Path("docs/images") / f"{name}.{'png' if flat else 'jpg'}"
         options = [] if flat else ["-s", "format", "jpeg", "-s", "formatOptions", "85"]
         subprocess.run(

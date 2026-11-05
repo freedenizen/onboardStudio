@@ -7,16 +7,21 @@ and, ideally, a data log.
 
 ## 1. Your first overlay in five minutes
 
-![The welcome window: New Blank Project, Open Project, the built-in templates with a picture of each, recent projects and Open the Sample Project](images/welcome.png)
+![The Logbook at launch: track days in the sidebar, a day's sessions in the table with its header above, and the New Project menu in the toolbar](images/logbook.png)
 
-1. **Launch Onboard Studio.** The welcome window offers a **New Blank Project**, a project **from a
-   template** (gauges already laid out), **Open Project…**, your recent projects and the sample
-   project. Untick *Show this window at launch* to start on a blank project instead;
-   **Help ▸ Welcome to Onboard Studio** brings the window back. A new project opens with a welcome
-   panel and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be dropped anywhere in the window. (**File ▸ New from
-   Template** starts with gauges already laid out, which attach themselves to the video and data
-   files you add next; **Help ▸ Open the Sample Project** opens a
-   short clip with a synthetic log if you just want to poke around.)
+1. **Launch Onboard Studio.** The **Logbook** opens: every track day you have driven, with its
+   sessions and clips, and the way into the work. **New Track Day…** begins a day (the date, the
+   circuit, the car); **Add Files…** or a drop puts the day's logger files and camera clips on it;
+   select a session and **New Project** opens a project with its data, its clips and gauges
+   already laid out — the rest of this guide from step 5 applies. To start from files instead,
+   the toolbar's **New Project** menu offers a **Blank Project**, a project **from a template**
+   (gauges already laid out, which attach themselves to the video and data files you add next),
+   **Open Project…** and the sample project; **File ▸ Open Recent** has your recent projects.
+   Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a blank project
+   instead; **Window ▸ Logbook** (⌃⌘L) brings it back. A new project opens with a welcome panel
+   and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be
+   dropped anywhere in the window. (**Help ▸ Open the Sample Project** opens a short clip with a
+   synthetic log if you just want to poke around.)
 2. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
    a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) Onboard Studio joins the following chapters
    so they play as one continuous video. Add a second recording the same way and it gets its own
@@ -488,8 +493,10 @@ Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save i
 export settings, but not the videos, data files or the project's details — under a name, with a
 picture of what is being saved. Saving under a name you already use says so and offers **Replace**.
 
-Your templates sit beside the built-in ones in the welcome window (**Help ▸ Welcome to Onboard
-Studio**) and in **File ▸ New from Template**, each card with a picture of its layout. Right-click
+Your templates sit beside the built-in ones in the **Templates** window (**Window ▸ Templates**,
+or **Templates…** in the Logbook's New Project menu), in **File ▸ New from Template** and in the
+Logbook's New Project menus, each card with a picture of its layout; click a card to start a
+project with that layout. Right-click
 one of yours to **Rename…**, **Duplicate**, **Show in Finder**, **Export…** it to share, or
 **Delete…** it (it goes to the Trash). **File ▸ Import Template…** adds a template someone sent
 you, and so does double-clicking an `.onboardtemplate` file in the Finder; it keeps the file's
@@ -711,6 +718,12 @@ Timer's *Compare with* ▸ **Compared lap** measures against it. **Undo** restor
 had; **Project ▸ Stop Comparing Laps** removes the compared lap and keeps the rest.
 
 ### Coaching: where the time went
+
+A session in the **Logbook** is coached without a project: select it and **Coach…**. The window
+reads its file and offers the same lap and reference choices (the logbook's other sessions at the
+circuit among them), keeps the choices with the session, and writes the coaching sheet from
+**File ▸ Export Coaching Sheet**; what needs a picture or a plan is replaced by **Make a
+Project**, which opens a project from the session and brings the window to it.
 
 **Project ▸ Coaching…** (⌃⌘C) opens a window beside the project that reads one lap against a
 reference and says where the time went. Choose the **Lap** (it starts on the lap at the playhead)

@@ -23,7 +23,7 @@ struct PreferencesTests {
         #expect(defaults.value(for: Preferences.youTubeClientID).isEmpty)
         #expect(defaults.value(for: Preferences.youTubeClientSecret).isEmpty)
         #expect(defaults.value(for: Preferences.nudgeStepPixels) == 1.0)
-        #expect(defaults.value(for: Preferences.showLauncherAtLaunch) == true)
+        #expect(defaults.value(for: Preferences.openLogbookAtLaunch) == true)
         #expect(defaults.value(for: Preferences.tourSeen) == false)
         #expect(defaults.value(for: Preferences.showGettingStarted) == true)
     }
@@ -52,12 +52,12 @@ struct PreferencesTests {
         #expect(defaults.isSet(Preferences.nudgeStepPixels))
         #expect(defaults.value(for: Preferences.nudgeStepPixels) == 0.0)
 
-        // And false is a choice, not an absence — which is what the launcher key always needed.
-        #expect(defaults.value(for: Preferences.showLauncherAtLaunch) == true)
-        defaults.set(false, for: Preferences.showLauncherAtLaunch)
-        #expect(defaults.value(for: Preferences.showLauncherAtLaunch) == false)
-        defaults.reset(Preferences.showLauncherAtLaunch)
-        #expect(defaults.value(for: Preferences.showLauncherAtLaunch) == true)
+        // And false is a choice, not an absence — which is what the launch key always needed.
+        #expect(defaults.value(for: Preferences.openLogbookAtLaunch) == true)
+        defaults.set(false, for: Preferences.openLogbookAtLaunch)
+        #expect(defaults.value(for: Preferences.openLogbookAtLaunch) == false)
+        defaults.reset(Preferences.openLogbookAtLaunch)
+        #expect(defaults.value(for: Preferences.openLogbookAtLaunch) == true)
     }
 
     @Test("A launch argument's NO still reads as false")
@@ -66,8 +66,8 @@ struct PreferencesTests {
         // strings. `bool(forKey:)` understands them; `object(forKey:) as? Bool` does not, which is
         // recorded in `.claude/rules/uitests.md` as a trap.
         let defaults = scratch()
-        defaults.set("NO", forKey: Preferences.showLauncherAtLaunch.key)
-        #expect(defaults.value(for: Preferences.showLauncherAtLaunch) == false)
+        defaults.set("NO", forKey: Preferences.openLogbookAtLaunch.key)
+        #expect(defaults.value(for: Preferences.openLogbookAtLaunch) == false)
         defaults.set("YES", forKey: Preferences.tourSeen.key)
         #expect(defaults.value(for: Preferences.tourSeen) == true)
     }
@@ -88,7 +88,8 @@ struct PreferencesTests {
         #expect(Preferences.nudgeStepPixels.key == "nudgeStepPixels")
         #expect(Preferences.youTubeClientID.key == "youtubeClientID")
         #expect(Preferences.youTubeClientSecret.key == "youtubeClientSecret")
-        #expect(Preferences.showLauncherAtLaunch.key == "showLauncherAtLaunch")
+        // A new key on purpose (#395): someone who hid the welcome window still gets the Logbook.
+        #expect(Preferences.openLogbookAtLaunch.key == "openLogbookAtLaunch")
         #expect(Preferences.tourSeen.key == "tourSeen")
         #expect(Preferences.showGettingStarted.key == "showGettingStarted")
     }

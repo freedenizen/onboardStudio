@@ -32,7 +32,7 @@ class OnboardStudioUITestCase: XCTestCase {
     /// `restoresState` brings back the windows of the last run, as a relaunch after a crash does.
     @discardableResult
     func launch(
-        tourSeen: Bool = true, launcher: Bool = false, restoresState: Bool = false, extraArguments: [String] = [],
+        tourSeen: Bool = true, logbook: Bool = false, restoresState: Bool = false, extraArguments: [String] = [],
         environment: [String: String] = [:]
     ) -> XCUIApplication {
         let app = XCUIApplication()
@@ -42,8 +42,8 @@ class OnboardStudioUITestCase: XCTestCase {
             "-tourSeen", tourSeen ? "YES" : "NO", "-uiTesting", "YES", "-showGettingStarted", "YES",
             // Sparkle's first-launch "Check for updates automatically?" prompt would take key status.
             "-SUEnableAutomaticChecks", "NO", "-SUHasLaunchedBefore", "YES",
-            // Most journeys start on a blank project; the launcher tests ask for the welcome window.
-            "-skipLauncher", launcher ? "NO" : "YES", "-showLauncherAtLaunch", "YES",
+            // Most journeys start on a blank project; the launch tests ask for the Logbook (#395).
+            "-skipLogbook", logbook ? "NO" : "YES", "-openLogbookAtLaunch", "YES",
             // A test that hid the inspector (#280) must not leave it hidden for the next one.
             "-showInspector", "YES",
         ]

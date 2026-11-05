@@ -449,6 +449,27 @@ printable one-page debrief with the map (#331); per-corner trends across visits 
 alignment for two laps of one session that took different lines (#333); a line heat map (#334); a
 spoken debrief (#335).
 
+## From the logbook, with no project (#396, v0.34.0)
+
+The window reads a `CoachingSource` (`Sources/OnboardStudioApp/CoachingSource.swift`) rather than
+the front editor: `ProjectCoachingSource` is the front project as it always was — the input the
+settings name or the laps' input, its session and problem from the editor, settings on the
+project through an undoable edit, a playhead to follow and seek, a camera to compare in, a plan —
+and `LogbookCoachingSource` is one logbook entry: its file read once through
+`LogbookModel.session(for:)`, a stand-in `Input` whose id is the entry's, the choices kept on the
+entry as `LogbookEntry.coaching` (a `CoachingSettings`; a library file, so not undoable), no
+editor at all. `CoachingTarget.shared` says which the single Coaching window shows — Project ▸
+Coaching… asks for the front project, the Logbook's **Coach…** for the session — the pattern
+`ActiveEditor` set, rather than a value-keyed window group that would change restoration and the
+follow-the-front-document behaviour. What needs a project — Show Me moving the playhead, Compare
+in Video, the next-session plan, "Add Data File…" — is simply not there for a logbook session,
+and **Make a Project** stands in the plan's place: it opens a project from the session (data
+file, clips, the last template used; `LogbookOpenRequest.then = .coaching`) and the window turns
+to it. The sheet export is `CoachingSheetExporter` now, called by the editor (status line) and
+the logbook source (a line in the window's footer) alike, through a `CoachingSheetAction` focused
+value so File ▸ Export Coaching Sheet needs no editor. The CLI did this from the start:
+`onboard coach session.csv`.
+
 ## Measurements
 
 Filled in as each piece lands and is run against the reference Sonoma session (local only, never
