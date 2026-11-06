@@ -11,6 +11,7 @@ public struct SeasonSummary: Sendable, Equatable {
         public var best: Double
         public var date: Date?
         public var car: String
+        /// Track days at the circuit that year, not sessions (#426).
         public var visits: Int
         /// Whether that best was a new personal best when it was set.
         public var isNewPersonalBest: Bool
@@ -71,11 +72,14 @@ public struct SeasonSummary: Sendable, Equatable {
             bests.append(
                 CircuitBest(
                     circuitKey: key, title: title, best: best.seconds, date: best.date, car: best.car,
-                    visits: group.count, isNewPersonalBest: setters.contains(best.entryID)))
+                    visits: PersonalBests.trackDays(in: entries, circuitKey: key, calendar: calendar),
+                    isNewPersonalBest: setters.contains(best.entryID)))
         }
         var movements: [CornerMovement] = []
         for best in bests {
-            for trend in LogbookTrends.cornerTrends(for: entries, circuitKey: best.circuitKey, car: car) {
+            for trend in LogbookTrends.cornerTrends(
+                for: entries, circuitKey: best.circuitKey, car: car, calendar: calendar)
+            {
                 if let change = trend.timeChange {
                     movements.append(CornerMovement(circuitTitle: best.title, label: trend.label, change: change))
                 }

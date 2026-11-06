@@ -47,6 +47,98 @@ struct LogbookTrendsTests {
         #expect(LogbookTrends.summary(of: []) == "No complete laps to compare yet.")
     }
 
+    /// Six sessions on one day, four on a day four months later (#424).
+    func twoTrackDays() -> (points: [LogbookTrends.Point], calendar: Calendar) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Los_Angeles") ?? .gmt
+        func at(_ month: Int, _ day: Int, _ hour: Int) -> Date {
+            calendar.date(from: DateComponents(year: 2026, month: month, day: day, hour: hour)) ?? Date()
+        }
+        let june = [131.6, 125.1, 126.1, 126.9, 123.5, 120.0].enumerated().map {
+            ($0.element, at(6, 12, 9 + $0.offset))
+        }
+        let october = [116.8, 117.6, 119.3, 117.9].enumerated().map { ($0.element, at(10, 18, 11 + $0.offset)) }
+        let points = (october + june).map { best, date in
+            LogbookTrends.Point(
+                entryID: UUID(), date: date, car: "M3", best: best, optimal: nil, rolling: nil, spread: nil, corners: []
+            )
+        }
+        .sorted { $0.date < $1.date }
+        return (points, calendar)
+    }
+
+    @Test func sessionsAreEvenlySpacedAndGroupedByDayNotByTime() throws {
+        let (points, calendar) = twoTrackDays()
+        let layout = LogbookTrends.chartLayout(of: points, calendar: calendar)
+        #expect(layout.positions == [0, 1, 2, 3, 4, 5, 7, 8, 9, 10], "one slot each, a one-slot gap between days")
+        #expect(layout.days.count == 2)
+        #expect(layout.days.map(\.center) == [2.5, 8.5])
+        #expect(layout.boundaries == [6])
+        #expect(layout.domain == -0.5...10.5)
+        #expect(layout.nearestIndex(to: 6.9) == 6 && layout.nearestIndex(to: 2.2) == 2)
+        #expect(LogbookTrends.chartLayout(of: []).positions.isEmpty)
+        // One session a day spaces the days one gap apart: the months between them take no room.
+        let oneEach = [points[0], points[6]]
+        #expect(LogbookTrends.chartLayout(of: oneEach, calendar: calendar).positions == [0, 2])
+    }
+
+    @Test func theSummaryComparesTheBestOfTheFirstDayWithTheBestOfTheLast() {
+        let (points, calendar) = twoTrackDays()
+        let summary = LogbookTrends.summary(of: points, calendar: calendar)
+        #expect(summary.hasPrefix("Best lap 2:00.00 in"), "the first day's best, not its warm-up session: \(summary)")
+        #expect(summary.contains("to 1:56.80 in"))
+        #expect(summary.hasSuffix("quicker by 3.20 s over 2 days, 10 sessions."))
+        let oneDay = Array(points.prefix(6))
+        let oneDaySummary = LogbookTrends.summary(of: oneDay, calendar: calendar)
+        #expect(oneDaySummary.hasPrefix("Best lap 2:11.60 in the first session to 2:00.00 in the last"))
+        #expect(oneDaySummary.contains("quicker by 11.60 s over 6 sessions on"), "\(oneDaySummary)")
+    }
+
+    @Test func aVisitIsATrackDayStoodForByItsBestSession() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Los_Angeles") ?? .gmt
+        func session(_ hash: String, _ when: DateComponents, best: Double, brake: Double) -> LogbookEntry {
+            LogbookEntry(
+                file: .init(path: "/d/\(hash).csv", contentHash: hash, byteCount: 1, importerID: "x"),
+                trackName: "Stadium",
+                date: calendar.date(
+                    from: DateComponents(year: 2026, month: when.month, day: when.day, hour: when.hour)),
+                bestLap: best, bestLapNumber: 1, corners: [corner("1", brake: brake, minimum: 20, time: 8)])
+        }
+        // Two June sessions, then October: its best in the morning, a slower one last.
+        let entries = [
+            session("jun-early", DateComponents(year: 2026, month: 6, day: 12, hour: 9), best: 131.6, brake: 150),
+            session("jun-best", DateComponents(year: 2026, month: 6, day: 12, hour: 16), best: 120.0, brake: 140),
+            session("oct-best", DateComponents(year: 2026, month: 10, day: 18, hour: 11), best: 116.8, brake: 128),
+            session("oct-late", DateComponents(year: 2026, month: 10, day: 18, hour: 16), best: 117.9, brake: 83),
+        ]
+        func hash(_ point: LogbookTrends.Point?) -> String? {
+            point.flatMap { p in entries.first { $0.id == p.entryID }?.file.contentHash }
+        }
+        let comparison = try #require(
+            LogbookTrends.cornerComparison(for: entries, circuitKey: "Stadium", calendar: calendar))
+        #expect(hash(comparison.latest) == "oct-best", "the day's best, not its last session")
+        #expect(hash(comparison.previous) == "jun-best", "the day before, not the session before")
+        #expect(comparison.best == nil, "the latest day's best is the personal best")
+        #expect(comparison.trends.first?.brakePointChange == -12)
+        // The season's corner movements read the same visits.
+        #expect(LogbookTrends.cornerTrends(for: entries, circuitKey: "Stadium", calendar: calendar).count == 1)
+        // One track day: nothing before it to compare with.
+        let june = LogbookTrends.cornerComparison(
+            for: Array(entries.prefix(2)), circuitKey: "Stadium", calendar: calendar)
+        #expect(hash(june?.latest) == "jun-best" && june?.previous == nil && june?.best == nil)
+        // The personal best on an earlier day is the third reference.
+        let slower =
+            entries.prefix(2) + [
+                session("oct", DateComponents(year: 2026, month: 10, day: 18, hour: 11), best: 121.0, brake: 128)
+            ]
+        let withBest = LogbookTrends.cornerComparison(for: Array(slower), circuitKey: "Stadium", calendar: calendar)
+        #expect(hash(withBest?.previous) == "jun-best" && hash(withBest?.best) == "jun-best")
+        // Counted as visits: two track days, four sessions.
+        #expect(PersonalBests.trackDays(in: entries, circuitKey: "Stadium", calendar: calendar) == 2)
+        #expect(PersonalBests.visits(in: entries, circuitKey: "Stadium") == 4, "{visits} keeps counting sessions")
+    }
+
     @Test func cornersAreComparedWithTheLastVisitAndThePersonalBest() {
         let entries = [
             visit(

@@ -82,43 +82,49 @@ struct LogbookTrendsView: View {
 
     // MARK: - Lap times across visits
 
+    /// Both charts' y labels take this width, so their plots, and a session's point and bar, line up.
+    private static let yAxisWidth: CGFloat = 52
+
     private struct Row: Identifiable {
         var id: String { "\(kind)-\(entryID)" }
         var kind: String
         var entryID: UUID
-        var date: Date
+        var position: Double
         var seconds: Double
-    }
-
-    private var rows: [Row] {
-        points.flatMap { point -> [Row] in
-            [("Best", point.best), ("Optimal", point.optimal), ("Rolling", point.rolling)].compactMap { kind, value in
-                value.map { Row(kind: kind, entryID: point.entryID, date: point.date, seconds: $0) }
-            }
-        }
     }
 
     private var lapTimes: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Lap times by visit").font(.subheadline.weight(.semibold))
-            Chart(rows) { row in
-                LineMark(x: .value("Visit", row.date), y: .value("Seconds", row.seconds))
-                    .foregroundStyle(by: .value("Lap", row.kind))
-                PointMark(x: .value("Visit", row.date), y: .value("Seconds", row.seconds))
-                    .foregroundStyle(by: .value("Lap", row.kind))
+            Text("Lap times by session").font(.subheadline.weight(.semibold))
+            let layout = layout
+            Chart {
+                dayRules(layout)
+                ForEach(rows(in: layout)) { row in
+                    LineMark(x: .value("Session", row.position), y: .value("Seconds", row.seconds))
+                        .foregroundStyle(by: .value("Lap", row.kind))
+                    PointMark(x: .value("Session", row.position), y: .value("Seconds", row.seconds))
+                        .foregroundStyle(by: .value("Lap", row.kind))
+                }
             }
+            .chartXScale(domain: layout.domain)
+            .chartXAxis { dayAxis(layout) }
             .chartYScale(domain: .automatic(includesZero: false))
             .chartYAxis {
                 AxisMarks { value in
                     AxisGridLine()
-                    AxisValueLabel { Text(TimeParsing.lapTimeString(value.as(Double.self) ?? 0)).monospacedDigit() }
+                    AxisValueLabel {
+                        Text(TimeParsing.lapTimeString(value.as(Double.self) ?? 0)).monospacedDigit()
+                            .frame(width: Self.yAxisWidth, alignment: .leading)
+                    }
                 }
             }
             .chartForegroundStyleScale(["Best": Color.accentColor, "Optimal": Color.green, "Rolling": Color.orange])
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle().fill(.clear).contentShape(Rectangle())
-                        .onTapGesture { location in open(nearest: location, proxy: proxy, geometry: geometry) }
+                        .onTapGesture { location in
+                            open(nearest: location, proxy: proxy, geometry: geometry, layout: layout)
+                        }
                 }
             }
             .frame(height: 220)
@@ -129,47 +135,30 @@ struct LogbookTrendsView: View {
         }
     }
 
-    private func open(nearest location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+    private func open(
+        nearest location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy, layout: TrendsChartLayout
+    ) {
         guard let plot = proxy.plotFrame else { return }
         let x = location.x - geometry[plot].origin.x
-        guard let date: Date = proxy.value(atX: x) else { return }
-        let nearest = points.min { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) }
-        guard let point = nearest else { return }
-        onOpen(point.entryID)
-    }
-
-    // MARK: - Consistency
-
-    private var consistency: some View {
-        let spreads = points.filter { $0.spread != nil }
-        return VStack(alignment: .leading, spacing: 6) {
-            Text("Consistency: spread of the flying laps").font(.subheadline.weight(.semibold))
-            if spreads.isEmpty {
-                Text("Needs three flying laps in a session.").font(.callout).foregroundStyle(.secondary)
-            } else {
-                Chart(spreads) { point in
-                    BarMark(x: .value("Visit", point.date, unit: .day), y: .value("Spread", point.spread ?? 0))
-                        .foregroundStyle(Color.accentColor.opacity(0.7))
-                }
-                .chartYAxisLabel("s")
-                .frame(height: 120)
-                .accessibilityLabel("Consistency by visit")
-                .accessibilityValue(
-                    spreads.map { "\(LogbookTrends.month($0.date)) \(String(format: "%.2f", $0.spread ?? 0)) seconds" }
-                        .joined(separator: ", "))
-                Text("Lower is steadier: the standard deviation of the laps within ten percent of the best.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-        }
+        guard let position: Double = proxy.value(atX: x), let index = layout.nearestIndex(to: position),
+            points.indices.contains(index)
+        else { return }
+        onOpen(points[index].entryID)
     }
 
     // MARK: - Corners
 
     @ViewBuilder private func corners(circuitKey: String) -> some View {
-        let trends = LogbookTrends.cornerTrends(for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
+        let comparison = LogbookTrends.cornerComparison(
+            for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
+        let trends = comparison?.trends ?? []
         let unread = points.filter { $0.corners.isEmpty }
         VStack(alignment: .leading, spacing: 6) {
-            Text("Corner by corner: the latest visit").font(.subheadline.weight(.semibold))
+            Text("Corner by corner: the latest track day").font(.subheadline.weight(.semibold))
+            if let comparison {
+                Text(Self.caption(of: comparison)).font(.callout).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("logbook.trends.corners.caption")
+            }
             if !unread.isEmpty {
                 HStack {
                     Text("\(unread.count) session\(unread.count == 1 ? "" : "s") here predate corner records.")
@@ -180,43 +169,50 @@ struct LogbookTrendsView: View {
                 }
             }
             if trends.isEmpty {
-                Text("No corners read for the latest visit yet.").font(.callout).foregroundStyle(.secondary)
+                Text("No corners read for the latest track day yet.").font(.callout).foregroundStyle(.secondary)
             } else {
-                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
-                    GridRow {
-                        Text("Turn").bold()
-                        Text("Brake point").bold()
-                        Text("vs last visit").bold()
-                        Text("vs PB").bold()
-                        Text("Min speed").bold()
-                        Text("vs last").bold()
-                        Text("vs PB").bold()
-                        Text("Time").bold()
-                        Text("vs last").bold()
-                    }
-                    .font(.caption)
-                    ForEach(trends) { trend in
-                        GridRow {
-                            Text(trend.label)
-                            Text(trend.latest?.brakePointMeters.map { "\(Int($0.rounded())) m" } ?? "—")
-                            Text(Self.metres(trend.brakePointChange))
-                            Text(Self.metres(trend.brakePointToBest))
-                            Text(trend.latest.map { Self.speed($0.minimumSpeed) } ?? "—")
-                            Text(Self.speedDelta(trend.minimumSpeedChange))
-                            Text(Self.speedDelta(trend.minimumSpeedToBest))
-                            Text(trend.latest.map { String(format: "%.2f s", $0.timeInCorner) } ?? "—")
-                            Text(Self.seconds(trend.timeChange))
-                        }
-                        .font(.callout.monospacedDigit())
-                        .accessibilityElement(children: .combine)
-                        .accessibilityIdentifier("logbook.trends.corner.\(trend.label)")
-                    }
-                }
+                cornerGrid(trends, last: comparison?.previous != nil, best: comparison?.best != nil)
                 Text(
                     "Brake point: positive means later than the other visit. Minimum speed in km/h. Time: negative "
                         + "means quicker through the corner."
                 )
                 .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// The corners against the last track day and the personal best; a comparison's columns only
+    /// when there is one to make (#426) — no earlier track day, or the latest day holding the
+    /// personal best, would leave them dashes.
+    private func cornerGrid(_ trends: [LogbookTrends.CornerTrend], last: Bool, best: Bool) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
+            GridRow {
+                Text("Turn").bold()
+                Text("Brake point").bold()
+                if last { Text("vs last visit").bold() }
+                if best { Text("vs PB").bold() }
+                Text("Min speed").bold()
+                if last { Text("vs last").bold() }
+                if best { Text("vs PB").bold() }
+                Text("Time").bold()
+                if last { Text("vs last").bold() }
+            }
+            .font(.caption)
+            ForEach(trends) { trend in
+                GridRow {
+                    Text(trend.label)
+                    Text(trend.latest?.brakePointMeters.map { "\(Int($0.rounded())) m" } ?? "—")
+                    if last { Text(Self.metres(trend.brakePointChange)) }
+                    if best { Text(Self.metres(trend.brakePointToBest)) }
+                    Text(trend.latest.map { Self.speed($0.minimumSpeed) } ?? "—")
+                    if last { Text(Self.speedDelta(trend.minimumSpeedChange)) }
+                    if best { Text(Self.speedDelta(trend.minimumSpeedToBest)) }
+                    Text(trend.latest.map { String(format: "%.2f s", $0.timeInCorner) } ?? "—")
+                    if last { Text(Self.seconds(trend.timeChange)) }
+                }
+                .font(.callout.monospacedDigit())
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("logbook.trends.corner.\(trend.label)")
             }
         }
     }
@@ -257,5 +253,123 @@ struct LogbookTrendsView: View {
     static func seconds(_ value: Double?) -> String {
         guard let value else { return "—" }
         return value.magnitude < 0.005 ? "same" : String(format: "%+.2f s", value)
+    }
+}
+
+/// The two charts' shared x layout (#424), and the consistency chart.
+extension LogbookTrendsView {
+    /// Sessions evenly spaced in date order, grouped by track day (#424): a time axis squeezed a
+    /// day's sessions into a sliver and spent the width on the months between visits.
+    private var layout: TrendsChartLayout { LogbookTrends.chartLayout(of: points) }
+
+    private func rows(in layout: TrendsChartLayout) -> [Row] {
+        zip(points, layout.positions).flatMap { point, position -> [Row] in
+            [("Best", point.best), ("Optimal", point.optimal), ("Rolling", point.rolling)].compactMap { kind, value in
+                value.map { Row(kind: kind, entryID: point.entryID, position: position, seconds: $0) }
+            }
+        }
+    }
+
+    /// "12 Jun", with the year when the visits span more than one.
+    private func dayLabel(_ date: Date, in layout: TrendsChartLayout) -> String {
+        let calendar = Calendar.current
+        let years = Set(layout.days.map { calendar.component(.year, from: $0.date) })
+        return years.count > 1
+            ? date.formatted(.dateTime.day().month(.abbreviated).year(.twoDigits))
+            : date.formatted(.dateTime.day().month(.abbreviated))
+    }
+
+    /// One label per track day under the middle of its sessions; every few days when there are
+    /// more than fit.
+    private func dayAxis(_ layout: TrendsChartLayout) -> some AxisContent {
+        let step = max(1, Int((Double(layout.days.count) / 8).rounded(.up)))
+        let shown = stride(from: 0, to: layout.days.count, by: step).map { layout.days[$0] }
+        return AxisMarks(values: shown.map(\.center)) { value in
+            AxisTick()
+            AxisValueLabel(anchor: .top) {
+                if let center = value.as(Double.self), let day = shown.first(where: { abs($0.center - center) < 0.01 })
+                {
+                    Text(dayLabel(day.date, in: layout))
+                }
+            }
+        }
+    }
+
+    @ChartContentBuilder private func dayRules(_ layout: TrendsChartLayout) -> some ChartContent {
+        ForEach(layout.boundaries, id: \.self) { boundary in
+            RuleMark(x: .value("Between days", boundary))
+                .foregroundStyle(Color.secondary.opacity(0.4))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+        }
+    }
+
+    // MARK: - Consistency
+
+    var consistency: some View {
+        let layout = layout
+        let spreads = zip(points, layout.positions).filter { $0.0.spread != nil }
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("Consistency: spread of the flying laps").font(.subheadline.weight(.semibold))
+            if spreads.isEmpty {
+                Text("Needs three flying laps in a session.").font(.callout).foregroundStyle(.secondary)
+            } else {
+                // One bar per session at the lap chart's positions; by day, a day's bars stacked (#424).
+                Chart {
+                    dayRules(layout)
+                    ForEach(spreads, id: \.0.entryID) { point, position in
+                        BarMark(
+                            x: .value("Session", position), y: .value("Spread", point.spread ?? 0), width: .fixed(10)
+                        )
+                        .foregroundStyle(Color.accentColor.opacity(0.7))
+                    }
+                }
+                .chartXScale(domain: layout.domain)
+                .chartXAxis { dayAxis(layout) }
+                .chartYAxis {
+                    AxisMarks { value in
+                        AxisGridLine()
+                        AxisValueLabel {
+                            Text("\(value.as(Double.self) ?? 0, format: .number) s").monospacedDigit()
+                                .frame(width: Self.yAxisWidth, alignment: .leading)
+                        }
+                    }
+                }
+                .frame(height: 120)
+                .accessibilityLabel("Consistency by visit")
+                .accessibilityValue(
+                    spreads.map { point, _ in
+                        "\(dayLabel(point.date, in: layout)) \(String(format: "%.2f", point.spread ?? 0)) seconds"
+                    }
+                    .joined(separator: ", "))
+                Text("Lower is steadier: the standard deviation of the laps within ten percent of the best.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// Which laps the corner table reads (#426): the best of the latest track day, against the best
+    /// of the day before and the personal best.
+    static func caption(of comparison: LogbookTrends.CornerComparison) -> String {
+        let dates = [comparison.latest, comparison.previous, comparison.best].compactMap { $0?.date }
+        let calendar = Calendar.current
+        let spansYears = Set(dates.map { calendar.component(.year, from: $0) }).count > 1
+        func day(_ point: LogbookTrends.Point) -> String {
+            spansYears
+                ? point.date.formatted(.dateTime.day().month(.abbreviated).year())
+                : point.date.formatted(.dateTime.day().month(.abbreviated))
+        }
+        func lap(_ point: LogbookTrends.Point) -> String { point.best.map { TimeParsing.lapTimeString($0) } ?? "—" }
+        var text = "The best lap of \(day(comparison.latest)), \(lap(comparison.latest))"
+        if let previous = comparison.previous {
+            text += ", against the best of \(day(previous)), \(lap(previous))"
+        }
+        if let best = comparison.best {
+            text += comparison.previous == nil ? ", against" : ", and"
+            text += " your personal best, \(lap(best)) on \(day(best))."
+        } else {
+            text += comparison.previous == nil ? ": your personal best here." : ". It is your personal best here."
+        }
+        if comparison.previous == nil { text += " The next track day here is compared with this one." }
+        return text
     }
 }

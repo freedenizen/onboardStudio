@@ -62,7 +62,8 @@ struct SeasonSummaryTests {
         #expect(season.distanceMeters == 75_000)
         #expect(season.personalBestsSet == 4, "every 2026 session bettered what came before it or was a first")
         #expect(season.circuitBests.map(\.title) == ["Sonoma Raceway", "Thunderhill"])
-        #expect(season.circuitBests[0].best == 116.9 && season.circuitBests[0].visits == 3)
+        // Three Sonoma sessions on two track days: two visits (#426).
+        #expect(season.circuitBests[0].best == 116.9 && season.circuitBests[0].visits == 2)
         #expect(season.circuitBests[0].isNewPersonalBest)
         #expect(season.mostImproved?.label == "4" && abs((season.mostImproved?.change ?? 0) + 0.4) < 0.001)
         #expect(season.mostCostly?.label == "7")

@@ -368,18 +368,23 @@ The **PB** column marks every session that set a personal best at its circuit wh
 overall or in its car: a filled yellow star on the session that holds it now, a hollow star on one
 that has since been beaten, so a run of improving sessions reads as progress and one star still
 says which is the best. A selected session's **Personal best here** says the best at that
-circuit, when, in what, and how many visits you have had. In a project, a Text object or Title
-Card can show `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` for the circuit its data is at (in the
-project's car when the logbook has one there), and a Timer's *Delta* or *Projected lap* can
+circuit, when, in what, and how many visits you have had — track days, however many sessions
+each. In a project, a Text object or Title
+Card can show `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` (the number of sessions) for the
+circuit its data is at (in the project's car when the logbook has one there), and a Timer's *Delta* or *Projected lap* can
 **Compare with ▸ Personal best (logbook)** — the gap to your personal best lap at the same
 distance, that session read on demand, the session best when the logbook has nothing to offer.
 
 **Trends** (the toolbar's view switch, with a circuit chosen in the sidebar) answers whether you
-are getting quicker: a chart of the best, optimal and fastest rolling lap of every visit with a
-sentence on how far the best moved, narrowed to one car when you have more than one there; each
-visit's spread of flying laps as consistency; and corner by corner, the latest visit against the
-one before and against the personal best's session — brake point, minimum speed and time in the
-corner. Click a point to open that session. Sessions entered before corners were kept offer
+are getting quicker: a chart of the best, optimal and fastest rolling lap of every session with a
+sentence on how far the best moved from your first day there to your last, narrowed to one car
+when you have more than one there; each session's spread of flying laps as consistency. Both
+charts space the sessions evenly in the order you drove them, grouped by track day with the date
+under each day and a dashed line between days, so six sessions in one day read as clearly as
+visits months apart; and corner by corner, the best lap of your latest track day against the
+best of the track day before and against your personal best — brake point, minimum speed and time
+in the corner. A line above the table names the laps it reads, and a comparison's columns appear
+only when there is one to make: none against the personal best when the latest day set it. Click a point to open that session. Sessions entered before corners were kept offer
 **Read Their Corners**. With two cars at the circuit, **Car against car** at the foot of Trends
 reads each car's best lap against the other's: which is quicker and by how much, both speed traces
 over distance, and a sentence per corner naming the car — where one brakes later, carries more
@@ -387,8 +392,8 @@ speed through the apex or leaves faster.
 
 **Season** (the third view) sums a year up — pick the year and, with more than one car, the car:
 track days, sessions, laps and kilometres; personal bests set; the best at each circuit with its
-date, car and visits, starred when it was new; a chart of every circuit's best by visit; the most
-improved and the most costly corner against the visit before; and the plans still open at the
+date, car and visits (track days), starred when it was new; a chart of every circuit's best of
+each track day; the most improved and the most costly corner against the track day before; and the plans still open at the
 circuits you visited. **Export as PDF…** for paper, **Export Card…** for a 1080 × 1920 picture to
 post.
 
