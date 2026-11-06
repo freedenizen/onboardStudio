@@ -28,7 +28,8 @@ final class LogbookTrendsUITests: OnboardStudioUITestCase {
         XCTAssertTrue(chart.waitForExistence(timeout: Self.timeout), "No lap-time chart")
         let summary = app.staticTexts["logbook.trends.summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: Self.timeout))
-        XCTAssertTrue((summary.value as? String ?? "").contains("2 visits"), summary.value as? String ?? "")
+        // Both fixture sessions carry no date, so both are the day they were entered (#424).
+        XCTAssertTrue((summary.value as? String ?? "").contains("2 sessions"), summary.value as? String ?? "")
         let corner = app.descendants(matching: .any).matching(identifier: "logbook.trends.corner.1").firstMatch
         XCTAssertTrue(corner.waitForExistence(timeout: Self.timeout), "No corner row")
         let sessions = app.radioButtons["Sessions"].exists ? app.radioButtons["Sessions"] : app.buttons["Sessions"]
