@@ -375,9 +375,12 @@ project's car when the logbook has one there), and a Timer's *Delta* or *Project
 distance, that session read on demand, the session best when the logbook has nothing to offer.
 
 **Trends** (the toolbar's view switch, with a circuit chosen in the sidebar) answers whether you
-are getting quicker: a chart of the best, optimal and fastest rolling lap of every visit with a
-sentence on how far the best moved, narrowed to one car when you have more than one there; each
-visit's spread of flying laps as consistency; and corner by corner, the latest visit against the
+are getting quicker: a chart of the best, optimal and fastest rolling lap of every session with a
+sentence on how far the best moved from your first day there to your last, narrowed to one car
+when you have more than one there; each session's spread of flying laps as consistency. Both
+charts space the sessions evenly in the order you drove them, grouped by track day with the date
+under each day and a dashed line between days, so six sessions in one day read as clearly as
+visits months apart; and corner by corner, the latest visit against the
 one before and against the personal best's session — brake point, minimum speed and time in the
 corner. Click a point to open that session. Sessions entered before corners were kept offer
 **Read Their Corners**. With two cars at the circuit, **Car against car** at the foot of Trends

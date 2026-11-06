@@ -136,18 +136,89 @@ public enum LogbookTrends {
     }
 
     /// A sentence for VoiceOver and the summary line: where the best lap went across the visits.
-    public static func summary(of points: [Point]) -> String {
+    /// With several sessions a day it compares the best of the first track day with the best of
+    /// the last (#424), so a warm-up session does not set the starting time.
+    public static func summary(of points: [Point], calendar: Calendar = .current) -> String {
         let dated = points.filter { $0.best != nil }
         guard let first = dated.first, let last = dated.last, let a = first.best, let b = last.best else {
             return "No complete laps to compare yet."
         }
         guard dated.count > 1 else { return "One visit so far: best \(lapTime(a))." }
+        let days = Dictionary(grouping: dated) { calendar.startOfDay(for: $0.date) }.sorted { $0.key < $1.key }
+        if days.count == 1 {
+            let day = first.date.formatted(.dateTime.day().month(.abbreviated).year())
+            return "Best lap \(lapTime(a)) in the first session to \(lapTime(b)) in the last: "
+                + "\(change(from: a, to: b)) over \(dated.count) sessions on \(day)."
+        }
+        if days.count == dated.count {
+            return "Best lap \(lapTime(a)) in \(month(first.date)) to \(lapTime(b)) in \(month(last.date)): "
+                + "\(change(from: a, to: b)) over \(dated.count) visits."
+        }
+        let from = days.first?.value.compactMap(\.best).min() ?? a
+        let to = days.last?.value.compactMap(\.best).min() ?? b
+        return "Best lap \(lapTime(from)) in \(month(first.date)) to \(lapTime(to)) in \(month(last.date)): "
+            + "\(change(from: from, to: to)) over \(days.count) days, \(dated.count) sessions."
+    }
+
+    static func change(from a: Double, to b: Double) -> String {
         let direction = b < a ? "quicker" : (b > a ? "slower" : "level")
-        let by = abs(a - b)
-        return "Best lap \(lapTime(a)) in \(month(first.date)) to \(lapTime(b)) in \(month(last.date)): "
-            + "\(direction) by \(String(format: "%.2f", by)) s over \(dated.count) visits."
+        return "\(direction) by \(String(format: "%.2f", abs(a - b))) s"
+    }
+
+    /// Where the trends charts put each session (#424); see `TrendsChartLayout`.
+    public static func chartLayout(of points: [Point], calendar: Calendar = .current, dayGap: Double = 1)
+        -> TrendsChartLayout
+    {
+        var positions: [Double] = []
+        var days: [TrendsChartLayout.Day] = []
+        var next = 0.0
+        for point in points {
+            let day = calendar.startOfDay(for: point.date)
+            if let current = days.last, current.date == day {
+                days[days.count - 1].last = next
+            } else {
+                if !days.isEmpty { next += dayGap }
+                days.append(TrendsChartLayout.Day(date: day, first: next, last: next))
+            }
+            positions.append(next)
+            next += 1
+        }
+        return TrendsChartLayout(positions: positions, days: days)
     }
 
     public static func lapTime(_ seconds: Double) -> String { TimeParsing.lapTimeString(seconds) }
     public static func month(_ date: Date) -> String { date.formatted(.dateTime.month(.abbreviated).year()) }
+}
+
+/// Where the trends charts put each session (#424): one evenly spaced slot per session in date
+/// order, a gap of `dayGap` slots between track days, so a day's sessions read as a group and
+/// the months between visits take no room.
+public struct TrendsChartLayout: Hashable, Sendable {
+    public struct Day: Hashable, Sendable {
+        /// The start of the day the sessions were driven.
+        public var date: Date
+        /// The positions of its first and last session.
+        public var first: Double
+        public var last: Double
+        public var center: Double { (first + last) / 2 }
+    }
+
+    /// One position per point, in the points' order.
+    public var positions: [Double]
+    public var days: [Day]
+
+    /// The x domain, half a slot either side of the sessions.
+    public var domain: ClosedRange<Double> {
+        (positions.first ?? 0) - 0.5...(positions.last ?? 0) + 0.5
+    }
+
+    /// Midway between one day's last session and the next day's first: where a rule goes.
+    public var boundaries: [Double] {
+        zip(days, days.dropFirst()).map { ($0.last + $1.first) / 2 }
+    }
+
+    /// The index of the session nearest `x`, for a click on the chart.
+    public func nearestIndex(to x: Double) -> Int? {
+        positions.indices.min { abs(positions[$0] - x) < abs(positions[$1] - x) }
+    }
 }

@@ -82,43 +82,49 @@ struct LogbookTrendsView: View {
 
     // MARK: - Lap times across visits
 
+    /// Both charts' y labels take this width, so their plots, and a session's point and bar, line up.
+    private static let yAxisWidth: CGFloat = 52
+
     private struct Row: Identifiable {
         var id: String { "\(kind)-\(entryID)" }
         var kind: String
         var entryID: UUID
-        var date: Date
+        var position: Double
         var seconds: Double
-    }
-
-    private var rows: [Row] {
-        points.flatMap { point -> [Row] in
-            [("Best", point.best), ("Optimal", point.optimal), ("Rolling", point.rolling)].compactMap { kind, value in
-                value.map { Row(kind: kind, entryID: point.entryID, date: point.date, seconds: $0) }
-            }
-        }
     }
 
     private var lapTimes: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Lap times by visit").font(.subheadline.weight(.semibold))
-            Chart(rows) { row in
-                LineMark(x: .value("Visit", row.date), y: .value("Seconds", row.seconds))
-                    .foregroundStyle(by: .value("Lap", row.kind))
-                PointMark(x: .value("Visit", row.date), y: .value("Seconds", row.seconds))
-                    .foregroundStyle(by: .value("Lap", row.kind))
+            Text("Lap times by session").font(.subheadline.weight(.semibold))
+            let layout = layout
+            Chart {
+                dayRules(layout)
+                ForEach(rows(in: layout)) { row in
+                    LineMark(x: .value("Session", row.position), y: .value("Seconds", row.seconds))
+                        .foregroundStyle(by: .value("Lap", row.kind))
+                    PointMark(x: .value("Session", row.position), y: .value("Seconds", row.seconds))
+                        .foregroundStyle(by: .value("Lap", row.kind))
+                }
             }
+            .chartXScale(domain: layout.domain)
+            .chartXAxis { dayAxis(layout) }
             .chartYScale(domain: .automatic(includesZero: false))
             .chartYAxis {
                 AxisMarks { value in
                     AxisGridLine()
-                    AxisValueLabel { Text(TimeParsing.lapTimeString(value.as(Double.self) ?? 0)).monospacedDigit() }
+                    AxisValueLabel {
+                        Text(TimeParsing.lapTimeString(value.as(Double.self) ?? 0)).monospacedDigit()
+                            .frame(width: Self.yAxisWidth, alignment: .leading)
+                    }
                 }
             }
             .chartForegroundStyleScale(["Best": Color.accentColor, "Optimal": Color.green, "Rolling": Color.orange])
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle().fill(.clear).contentShape(Rectangle())
-                        .onTapGesture { location in open(nearest: location, proxy: proxy, geometry: geometry) }
+                        .onTapGesture { location in
+                            open(nearest: location, proxy: proxy, geometry: geometry, layout: layout)
+                        }
                 }
             }
             .frame(height: 220)
@@ -129,38 +135,15 @@ struct LogbookTrendsView: View {
         }
     }
 
-    private func open(nearest location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+    private func open(
+        nearest location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy, layout: TrendsChartLayout
+    ) {
         guard let plot = proxy.plotFrame else { return }
         let x = location.x - geometry[plot].origin.x
-        guard let date: Date = proxy.value(atX: x) else { return }
-        let nearest = points.min { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) }
-        guard let point = nearest else { return }
-        onOpen(point.entryID)
-    }
-
-    // MARK: - Consistency
-
-    private var consistency: some View {
-        let spreads = points.filter { $0.spread != nil }
-        return VStack(alignment: .leading, spacing: 6) {
-            Text("Consistency: spread of the flying laps").font(.subheadline.weight(.semibold))
-            if spreads.isEmpty {
-                Text("Needs three flying laps in a session.").font(.callout).foregroundStyle(.secondary)
-            } else {
-                Chart(spreads) { point in
-                    BarMark(x: .value("Visit", point.date, unit: .day), y: .value("Spread", point.spread ?? 0))
-                        .foregroundStyle(Color.accentColor.opacity(0.7))
-                }
-                .chartYAxisLabel("s")
-                .frame(height: 120)
-                .accessibilityLabel("Consistency by visit")
-                .accessibilityValue(
-                    spreads.map { "\(LogbookTrends.month($0.date)) \(String(format: "%.2f", $0.spread ?? 0)) seconds" }
-                        .joined(separator: ", "))
-                Text("Lower is steadier: the standard deviation of the laps within ten percent of the best.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-        }
+        guard let position: Double = proxy.value(atX: x), let index = layout.nearestIndex(to: position),
+            points.indices.contains(index)
+        else { return }
+        onOpen(points[index].entryID)
     }
 
     // MARK: - Corners
@@ -258,4 +241,97 @@ struct LogbookTrendsView: View {
         guard let value else { return "—" }
         return value.magnitude < 0.005 ? "same" : String(format: "%+.2f s", value)
     }
+}
+
+/// The two charts' shared x layout (#424), and the consistency chart.
+extension LogbookTrendsView {
+    /// Sessions evenly spaced in date order, grouped by track day (#424): a time axis squeezed a
+    /// day's sessions into a sliver and spent the width on the months between visits.
+    private var layout: TrendsChartLayout { LogbookTrends.chartLayout(of: points) }
+
+    private func rows(in layout: TrendsChartLayout) -> [Row] {
+        zip(points, layout.positions).flatMap { point, position -> [Row] in
+            [("Best", point.best), ("Optimal", point.optimal), ("Rolling", point.rolling)].compactMap { kind, value in
+                value.map { Row(kind: kind, entryID: point.entryID, position: position, seconds: $0) }
+            }
+        }
+    }
+
+    /// "12 Jun", with the year when the visits span more than one.
+    private func dayLabel(_ date: Date, in layout: TrendsChartLayout) -> String {
+        let calendar = Calendar.current
+        let years = Set(layout.days.map { calendar.component(.year, from: $0.date) })
+        return years.count > 1
+            ? date.formatted(.dateTime.day().month(.abbreviated).year(.twoDigits))
+            : date.formatted(.dateTime.day().month(.abbreviated))
+    }
+
+    /// One label per track day under the middle of its sessions; every few days when there are
+    /// more than fit.
+    private func dayAxis(_ layout: TrendsChartLayout) -> some AxisContent {
+        let step = max(1, Int((Double(layout.days.count) / 8).rounded(.up)))
+        let shown = stride(from: 0, to: layout.days.count, by: step).map { layout.days[$0] }
+        return AxisMarks(values: shown.map(\.center)) { value in
+            AxisTick()
+            AxisValueLabel(anchor: .top) {
+                if let center = value.as(Double.self), let day = shown.first(where: { abs($0.center - center) < 0.01 })
+                {
+                    Text(dayLabel(day.date, in: layout))
+                }
+            }
+        }
+    }
+
+    @ChartContentBuilder private func dayRules(_ layout: TrendsChartLayout) -> some ChartContent {
+        ForEach(layout.boundaries, id: \.self) { boundary in
+            RuleMark(x: .value("Between days", boundary))
+                .foregroundStyle(Color.secondary.opacity(0.4))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+        }
+    }
+
+    // MARK: - Consistency
+
+    var consistency: some View {
+        let layout = layout
+        let spreads = zip(points, layout.positions).filter { $0.0.spread != nil }
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("Consistency: spread of the flying laps").font(.subheadline.weight(.semibold))
+            if spreads.isEmpty {
+                Text("Needs three flying laps in a session.").font(.callout).foregroundStyle(.secondary)
+            } else {
+                // One bar per session at the lap chart's positions; by day, a day's bars stacked (#424).
+                Chart {
+                    dayRules(layout)
+                    ForEach(spreads, id: \.0.entryID) { point, position in
+                        BarMark(
+                            x: .value("Session", position), y: .value("Spread", point.spread ?? 0), width: .fixed(10)
+                        )
+                        .foregroundStyle(Color.accentColor.opacity(0.7))
+                    }
+                }
+                .chartXScale(domain: layout.domain)
+                .chartXAxis { dayAxis(layout) }
+                .chartYAxis {
+                    AxisMarks { value in
+                        AxisGridLine()
+                        AxisValueLabel {
+                            Text("\(value.as(Double.self) ?? 0, format: .number) s").monospacedDigit()
+                                .frame(width: Self.yAxisWidth, alignment: .leading)
+                        }
+                    }
+                }
+                .frame(height: 120)
+                .accessibilityLabel("Consistency by visit")
+                .accessibilityValue(
+                    spreads.map { point, _ in
+                        "\(dayLabel(point.date, in: layout)) \(String(format: "%.2f", point.spread ?? 0)) seconds"
+                    }
+                    .joined(separator: ", "))
+                Text("Lower is steadier: the standard deviation of the laps within ten percent of the best.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
 }

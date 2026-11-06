@@ -47,6 +47,53 @@ struct LogbookTrendsTests {
         #expect(LogbookTrends.summary(of: []) == "No complete laps to compare yet.")
     }
 
+    /// Six sessions on one day, four on a day four months later (#424).
+    func twoTrackDays() -> (points: [LogbookTrends.Point], calendar: Calendar) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Los_Angeles") ?? .gmt
+        func at(_ month: Int, _ day: Int, _ hour: Int) -> Date {
+            calendar.date(from: DateComponents(year: 2026, month: month, day: day, hour: hour)) ?? Date()
+        }
+        let june = [131.6, 125.1, 126.1, 126.9, 123.5, 120.0].enumerated().map {
+            ($0.element, at(6, 12, 9 + $0.offset))
+        }
+        let october = [116.8, 117.6, 119.3, 117.9].enumerated().map { ($0.element, at(10, 18, 11 + $0.offset)) }
+        let points = (october + june).map { best, date in
+            LogbookTrends.Point(
+                entryID: UUID(), date: date, car: "M3", best: best, optimal: nil, rolling: nil, spread: nil, corners: []
+            )
+        }
+        .sorted { $0.date < $1.date }
+        return (points, calendar)
+    }
+
+    @Test func sessionsAreEvenlySpacedAndGroupedByDayNotByTime() throws {
+        let (points, calendar) = twoTrackDays()
+        let layout = LogbookTrends.chartLayout(of: points, calendar: calendar)
+        #expect(layout.positions == [0, 1, 2, 3, 4, 5, 7, 8, 9, 10], "one slot each, a one-slot gap between days")
+        #expect(layout.days.count == 2)
+        #expect(layout.days.map(\.center) == [2.5, 8.5])
+        #expect(layout.boundaries == [6])
+        #expect(layout.domain == -0.5...10.5)
+        #expect(layout.nearestIndex(to: 6.9) == 6 && layout.nearestIndex(to: 2.2) == 2)
+        #expect(LogbookTrends.chartLayout(of: []).positions.isEmpty)
+        // One session a day spaces the days one gap apart: the months between them take no room.
+        let oneEach = [points[0], points[6]]
+        #expect(LogbookTrends.chartLayout(of: oneEach, calendar: calendar).positions == [0, 2])
+    }
+
+    @Test func theSummaryComparesTheBestOfTheFirstDayWithTheBestOfTheLast() {
+        let (points, calendar) = twoTrackDays()
+        let summary = LogbookTrends.summary(of: points, calendar: calendar)
+        #expect(summary.hasPrefix("Best lap 2:00.00 in"), "the first day's best, not its warm-up session: \(summary)")
+        #expect(summary.contains("to 1:56.80 in"))
+        #expect(summary.hasSuffix("quicker by 3.20 s over 2 days, 10 sessions."))
+        let oneDay = Array(points.prefix(6))
+        let oneDaySummary = LogbookTrends.summary(of: oneDay, calendar: calendar)
+        #expect(oneDaySummary.hasPrefix("Best lap 2:11.60 in the first session to 2:00.00 in the last"))
+        #expect(oneDaySummary.contains("quicker by 11.60 s over 6 sessions on"), "\(oneDaySummary)")
+    }
+
     @Test func cornersAreComparedWithTheLastVisitAndThePersonalBest() {
         let entries = [
             visit(
