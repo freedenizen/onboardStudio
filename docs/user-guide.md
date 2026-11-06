@@ -364,8 +364,10 @@ driver are filled from what the logbook knows. A saved project is listed on its 
 **Projects**, every video exported from it under **Exports**, both as links. A data file you have
 moved is found again through whichever side still knows where it is, once, when the project opens.
 
-The **PB** column stars every session that set a personal best at its circuit when it was driven,
-overall or in its car, and a selected session's **Personal best here** says the best at that
+The **PB** column marks every session that set a personal best at its circuit when it was driven,
+overall or in its car: a filled yellow star on the session that holds it now, a hollow star on one
+that has since been beaten, so a run of improving sessions reads as progress and one star still
+says which is the best. A selected session's **Personal best here** says the best at that
 circuit, when, in what, and how many visits you have had. In a project, a Text object or Title
 Card can show `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` for the circuit its data is at (in the
 project's car when the logbook has one there), and a Timer's *Delta* or *Projected lap* can

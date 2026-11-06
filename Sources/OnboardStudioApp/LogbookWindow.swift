@@ -316,7 +316,7 @@ struct LogbookWindow: View {
                         Divider()
                     }
                     LogbookTable(
-                        entries: shown, bests: PersonalBests.entriesSettingBests(in: model.entries),
+                        entries: shown, bests: PersonalBests.badges(in: model.entries),
                         selection: $selection, sortOrder: $sortOrder)
                     if let message {
                         Divider()
