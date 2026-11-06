@@ -47,6 +47,35 @@ struct PersonalBestsTests {
         #expect(notSetters.subtracting([thunderhill].compactMap { $0 }).isDisjoint(with: setters))
     }
 
+    @Test func theBadgeTellsTheBestNowFromOnesSinceBeaten() {
+        func dated(_ hash: String, circuit: String = "Q112563", car: String, day: Int, best: Double) -> LogbookEntry {
+            let date = Calendar(identifier: .gregorian).date(from: DateComponents(year: 2026, month: 6, day: day))
+            return LogbookEntry(
+                file: .init(path: "/d/\(hash).csv", contentHash: hash, byteCount: 1, importerID: "x"),
+                circuitID: circuit, date: date, car: car, bestLap: best, bestLapNumber: 3)
+        }
+        // Given out of date order, as an import of a whole folder can be.
+        let all = [
+            dated("d", car: "Miata", day: 4, best: 117.5),
+            dated("a", car: "Miata", day: 1, best: 118.0),
+            dated("c", car: "GR86", day: 3, best: 112.4),
+            dated("tie", car: "Miata", day: 5, best: 116.9),
+            dated("b", car: "Miata", day: 2, best: 116.9),
+            dated("e", circuit: "Thunderhill", car: "Miata", day: 6, best: 125.0),
+        ]
+        let badges = PersonalBests.badges(in: all)
+        func badge(_ hash: String) -> PersonalBestBadge? {
+            all.first { $0.file.contentHash == hash }.flatMap { badges[$0.id] }
+        }
+        #expect(badge("a") == .former, "the first ever, beaten in the same car")
+        #expect(badge("b") == .current, "beaten overall by the GR86, but still the best in the Miata")
+        #expect(badge("c") == .current, "the best at the circuit")
+        #expect(badge("d") == nil, "never a best")
+        #expect(badge("tie") == nil, "equalling the best does not take it")
+        #expect(badge("e") == .current, "the only session at its circuit")
+        #expect(PersonalBests.entriesSettingBests(in: all) == Set(badges.keys))
+    }
+
     @Test func theTextKeysNameTheBestInTheCarWhenThereIsOne() {
         let all = entries
         let miata = PersonalBests.detailKeys(in: all, circuitKey: "Q112563", car: "Miata")

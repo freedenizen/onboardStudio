@@ -18,6 +18,14 @@ public struct PersonalBest: Hashable, Sendable {
     }
 }
 
+/// How the Logbook's PB column marks a session that set a personal best (#422).
+public enum PersonalBestBadge: Hashable, Sendable {
+    /// It holds the personal best at its circuit now, overall or in its car.
+    case current
+    /// It set one when it was driven, and a later session has beaten it.
+    case former
+}
+
 public enum PersonalBests {
     /// The best at `circuitKey` (`LogbookFilter.circuitKey`), narrowed to a car and a year when
     /// given; `nil` when no session there has a complete lap.
@@ -43,26 +51,30 @@ public enum PersonalBests {
     }
 
     /// The sessions that set a personal best at their circuit when they were driven — overall or
-    /// in their car — in date order, undated sessions last. The badge the window shows.
+    /// in their car — in date order, undated sessions last. The season summary counts these.
     public static func entriesSettingBests(in entries: [LogbookEntry]) -> Set<UUID> {
+        Set(badges(in: entries).keys)
+    }
+
+    /// The Logbook's PB badge for each session that set a personal best when it was driven (#422):
+    /// `.current` for the session that still holds the best at its circuit, overall or in its car,
+    /// `.former` for one since beaten. Sessions are taken in date order, undated ones last; a lap
+    /// that only equals the best does not take it.
+    public static func badges(in entries: [LogbookEntry]) -> [UUID: PersonalBestBadge] {
         let ordered = entries.sorted { ($0.date ?? .distantFuture, $0.added) < ($1.date ?? .distantFuture, $1.added) }
-        var bestSoFar: [String: Double] = [:]
-        var bestSoFarByCar: [String: Double] = [:]
+        var bestSoFar: [String: (seconds: Double, holder: UUID)] = [:]
         var setters = Set<UUID>()
         for entry in ordered {
             guard let best = entry.bestLap else { continue }
             let key = LogbookFilter.circuitKey(of: entry)
-            let carKey = key + "|" + entry.car.lowercased()
-            if best < bestSoFar[key, default: .infinity] {
-                bestSoFar[key] = best
-                setters.insert(entry.id)
-            }
-            if best < bestSoFarByCar[carKey, default: .infinity] {
-                bestSoFarByCar[carKey] = best
+            for scope in [key, key + "|" + entry.car.lowercased()]
+            where best < bestSoFar[scope]?.seconds ?? .infinity {
+                bestSoFar[scope] = (best, entry.id)
                 setters.insert(entry.id)
             }
         }
-        return setters
+        let holders = Set(bestSoFar.values.map(\.holder))
+        return Dictionary(uniqueKeysWithValues: setters.map { ($0, holders.contains($0) ? .current : .former) })
     }
 
     /// `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` for a project whose data is at `circuitKey`,

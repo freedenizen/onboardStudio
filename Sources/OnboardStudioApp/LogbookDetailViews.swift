@@ -7,8 +7,9 @@ import TelemetryKit
 /// The sessions, sortable by any column.
 struct LogbookTable: View {
     let entries: [LogbookEntry]
-    /// The sessions that set a personal best when they were driven (#351).
-    var bests: Set<UUID> = []
+    /// The sessions that set a personal best when they were driven (#351), and whether each still
+    /// holds it (#422).
+    var bests: [UUID: PersonalBestBadge] = [:]
     @Binding var selection: UUID?
     @Binding var sortOrder: [KeyPathComparator<LogbookEntry>]
 
@@ -36,10 +37,17 @@ struct LogbookTable: View {
             .width(min: 70, ideal: 80)
             TableColumn("Conditions", value: \.conditions.summary).width(min: 90, ideal: 140)
             TableColumn("PB") { entry in
-                if bests.contains(entry.id) {
+                switch bests[entry.id] {
+                case .current:
                     Image(systemName: "star.fill").foregroundStyle(.yellow)
                         .accessibilityLabel("Personal best")
-                        .help("This session set a personal best at its circuit, overall or in its car")
+                        .help("Your personal best at this circuit, overall or in this car")
+                case .former:
+                    Image(systemName: "star").foregroundStyle(.secondary)
+                        .accessibilityLabel("Former personal best")
+                        .help("A personal best at this circuit when it was driven, since beaten")
+                case nil:
+                    EmptyView()
                 }
             }
             .width(min: 28, ideal: 32)
