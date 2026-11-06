@@ -152,13 +152,20 @@ struct SeasonPage: View {
         var entryID: UUID
     }
 
+    /// One point per visit — a track day's best session (#426) — so a day of several sessions is
+    /// not a vertical zigzag on a year-long axis.
     private var rows: [Row] {
-        summary.circuitBests.flatMap { best in
-            LogbookTrends.points(for: entries, circuitKey: best.circuitKey, car: summary.car).compactMap { point in
-                let entry = entries.first { $0.id == point.entryID } ?? LogbookEntry.placeholder
-                guard SeasonSummary.year(of: entry) == summary.year, let seconds = point.best else { return nil }
-                return Row(circuit: best.title, date: point.date, best: seconds, entryID: point.entryID)
-            }
+        let calendar = Calendar(identifier: .gregorian)
+        return summary.circuitBests.flatMap { best in
+            let sessions = LogbookTrends.points(for: entries, circuitKey: best.circuitKey, car: summary.car)
+                .compactMap { point -> Row? in
+                    let entry = entries.first { $0.id == point.entryID } ?? LogbookEntry.placeholder
+                    guard SeasonSummary.year(of: entry) == summary.year, let seconds = point.best else { return nil }
+                    return Row(circuit: best.title, date: point.date, best: seconds, entryID: point.entryID)
+                }
+            return Dictionary(grouping: sessions) { calendar.startOfDay(for: $0.date) }.values
+                .compactMap { day in day.min { $0.best < $1.best } }
+                .sorted { $0.date < $1.date }
         }
     }
 

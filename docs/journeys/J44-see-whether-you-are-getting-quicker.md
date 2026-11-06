@@ -13,8 +13,10 @@ where, and nothing in the app could answer it; every logbook draws the lap-time 
    view.
 3. **Consistency** shows each session's spread of flying laps, one bar under each point of the
    chart above; lower is steadier.
-4. **Corner by corner** reads the latest visit against the one before and the personal best's
-   session: brake point, minimum speed and time in corner, with the differences. Sessions entered
+4. **Corner by corner** reads the best lap of the latest track day against the best of the track
+   day before and the personal best, and says which laps those are (#426): brake point, minimum
+   speed and time in corner, with the differences. A comparison with nothing to compare — no
+   earlier day, or the latest day set the personal best — has no columns. Sessions entered
    before corners were kept get a **Read Their Corners** button that reads their files once.
 5. VoiceOver reads the charts as sentences.
 

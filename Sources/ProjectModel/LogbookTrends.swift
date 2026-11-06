@@ -119,20 +119,42 @@ public enum LogbookTrends {
         }
     }
 
-    /// The corners of the latest visit against the previous one and the personal best's session.
-    public static func cornerTrends(for entries: [LogbookEntry], circuitKey: String, car: String? = nil)
-        -> [CornerTrend]
-    {
-        let visits = points(for: entries, circuitKey: circuitKey, car: car).filter { !$0.corners.isEmpty }
-        guard let latest = visits.last else { return [] }
-        let previous = visits.dropLast().last
-        let best = visits.min { ($0.best ?? .infinity) < ($1.best ?? .infinity) }
+    /// The corner table's three sessions and its rows (#426). A visit is a track day — the sessions
+    /// at the circuit on one calendar day — and stands for the quickest of its sessions with corners
+    /// read, so a day of six sessions is compared with the day before, not session with session.
+    public struct CornerComparison: Hashable, Sendable {
+        /// The best session of the latest track day with corners.
+        public var latest: Point
+        /// The best session of the track day before it; `nil` with one track day.
+        public var previous: Point?
+        /// The personal best's session, `nil` when that is `latest`.
+        public var best: Point?
+        public var trends: [CornerTrend]
+    }
+
+    public static func cornerComparison(
+        for entries: [LogbookEntry], circuitKey: String, car: String? = nil, calendar: Calendar = .current
+    ) -> CornerComparison? {
+        let read = points(for: entries, circuitKey: circuitKey, car: car).filter { !$0.corners.isEmpty }
+        let days = Dictionary(grouping: read) { calendar.startOfDay(for: $0.date) }.sorted { $0.key < $1.key }
+        func quickest(_ points: [Point]) -> Point? { points.min { ($0.best ?? .infinity) < ($1.best ?? .infinity) } }
+        guard let latest = days.last.flatMap({ quickest($0.value) }) else { return nil }
+        let previous = days.dropLast().last.flatMap { quickest($0.value) }
+        let best = quickest(read).flatMap { $0.entryID == latest.entryID ? nil : $0 }
         func record(_ label: String, in point: Point?) -> CornerRecord? { point?.corners.first { $0.label == label } }
-        return latest.corners.map { corner in
+        let trends = latest.corners.map { corner in
             CornerTrend(
                 label: corner.label, latest: corner, previous: record(corner.label, in: previous),
-                best: best?.entryID == latest.entryID ? nil : record(corner.label, in: best))
+                best: record(corner.label, in: best))
         }
+        return CornerComparison(latest: latest, previous: previous, best: best, trends: trends)
+    }
+
+    /// The corners of the latest track day against the one before and the personal best's session.
+    public static func cornerTrends(
+        for entries: [LogbookEntry], circuitKey: String, car: String? = nil, calendar: Calendar = .current
+    ) -> [CornerTrend] {
+        cornerComparison(for: entries, circuitKey: circuitKey, car: car, calendar: calendar)?.trends ?? []
     }
 
     /// A sentence for VoiceOver and the summary line: where the best lap went across the visits.
