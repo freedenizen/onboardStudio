@@ -5,7 +5,8 @@ this circuit, in this car, this year, ever. With the logbook that is a question 
 1. **Window ▸ Logbook**: the **PB** column marks every session that set a personal best at its
    circuit when it was driven — overall, or in its car: a filled star on the session that holds it
    now, a hollow one on a session since beaten (#422). Select a session: the detail's **Personal
-   best here** says the best at that circuit, when, in what, and how many visits the logbook has.
+   best here** says the best at that circuit, when, in what, and how many visits — track days —
+   the logbook has.
 2. In a project, a **Text** object or a **Title Card** can show `{pb}`, `{pbDate}`, `{pbCar}` and
    `{visits}`: the personal best at the circuit the project's data is at — in the project's car
    when the logbook has one there, else overall — filled at render time from the logbook, so a

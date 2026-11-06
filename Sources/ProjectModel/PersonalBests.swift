@@ -45,9 +45,21 @@ public enum PersonalBests {
             car: quickest.car)
     }
 
-    /// How many sessions the logbook has at the circuit.
+    /// How many sessions the logbook has at the circuit: what `{visits}` has always filled with, so a
+    /// saved project renders as it did.
     public static func visits(in entries: [LogbookEntry], circuitKey: String) -> Int {
         entries.filter { LogbookFilter.circuitKey(of: $0) == circuitKey }.count
+    }
+
+    /// How many track days the logbook has at the circuit (#426): the days it was driven, however
+    /// many sessions each, by the day it was entered when a file carries no date.
+    public static func trackDays(
+        in entries: [LogbookEntry], circuitKey: String? = nil, calendar: Calendar = .current
+    ) -> Int {
+        Set(
+            entries.filter { entry in circuitKey.map { LogbookFilter.circuitKey(of: entry) == $0 } ?? true }
+                .map { calendar.startOfDay(for: $0.date ?? $0.added) }
+        ).count
     }
 
     /// The sessions that set a personal best at their circuit when they were driven — overall or

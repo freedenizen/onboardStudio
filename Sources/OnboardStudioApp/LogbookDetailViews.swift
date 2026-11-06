@@ -110,7 +110,8 @@ struct LogbookDetail: View {
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
-    /// The personal best at this session's circuit and how many visits the logbook has (#351).
+    /// The personal best at this session's circuit (#351) and how many track days the logbook has
+    /// there (#426).
     var personalBest: PersonalBest?
     var visits = 0
     /// The template the last New Project used; the next one uses it too.
