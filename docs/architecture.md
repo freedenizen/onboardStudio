@@ -30,6 +30,16 @@ two thin executables.
   No `.metal` files are compiled at build time; any custom kernel is compiled from source at runtime.
 - **Single time mapping.** `SyncSettings` (start position in input, offset within project, play
   speed) converts project time to input time identically for video tracks and telemetry sampling.
+- **Output time and project time (#442).** Everything placed on the timeline — segments, markers,
+  in/out, export ranges, laps through sync — is in project time. Retimes (`Project.retimes`) make
+  the finished video's clock differ: `TimeMap` maps output time to project time, piecewise linear
+  and flat where a frame holds. `CompiledComposition.retimed(by:)` scales every composition track
+  (the compared lap's too) and mutes the sound over retimed stretches; the instructions tile output
+  time and carry the map, and `OverlayCompositor` hands each overlay the project time it maps to,
+  so picture and data never part. `CompiledComposition.duration` stays project time
+  (`outputDuration` is the video's), `Exporter` takes project ranges, and `PreviewController`
+  translates at its edge, so the editor sees project time throughout; only frame steps are in
+  output frames. With no retimes the map is the identity and nothing differs.
 - **Frame-level video processing lives in the layer.** A `VideoLayer` carries everything done to its
   source frame, in order: stabilisation (`LayerStabilisation`, #262/#264 — a per-frame shift and roll
   from a `StabilisationPath`, applied to the recorded frame before its display rotation, because that

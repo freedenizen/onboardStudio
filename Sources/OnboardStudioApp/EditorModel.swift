@@ -307,7 +307,7 @@ final class EditorModel {
 
     func togglePlayback() { preview.togglePlayback() }
     func seek(to time: Double) { preview.seek(to: time) }
-    func step(by frames: Int) { preview.seek(to: currentTime + Double(frames) / project.settings.frameRate) }
+    func step(by frames: Int) { preview.step(by: frames, frameRate: project.settings.frameRate) }
 
     // MARK: - Compilation
 

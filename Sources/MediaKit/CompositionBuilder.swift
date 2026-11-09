@@ -83,11 +83,17 @@ public struct CompiledComposition {
     /// The compared lap's retimed picture, when the project compares laps (#154). Not one of
     /// `trackIDs`, which are one per video input in order.
     public let comparedTrackID: Int32?
+    /// Output time ↔ project time (#442). `duration`, plans, ranges and every overlay's clock are
+    /// project time; the composition's own timeline is output time. The identity unless retimed.
+    public let timeMap: TimeMap
+
+    /// How long the finished video runs: `duration` once retimes have slowed, sped or held it.
+    public var outputDuration: Double { timeMap.outputDuration }
 
     public init(
         composition: AVMutableComposition, videoComposition: AVMutableVideoComposition, audioMix: AVMutableAudioMix?,
         plans: [TimedPlan], duration: Double, trackIDs: [Int32], sourceTransforms: [Int32: CGAffineTransform]? = nil,
-        orientationSpans: [Int32: [OrientationSpan]] = [:], comparedTrackID: Int32? = nil
+        orientationSpans: [Int32: [OrientationSpan]] = [:], comparedTrackID: Int32? = nil, timeMap: TimeMap? = nil
     ) {
         precondition(!plans.isEmpty, "a composition needs at least one plan")
         self.composition = composition
@@ -104,6 +110,7 @@ public struct CompiledComposition {
                 uniquingKeysWith: { first, _ in first })
         self.orientationSpans = orientationSpans
         self.comparedTrackID = comparedTrackID
+        self.timeMap = timeMap ?? .identity(duration)
     }
 
     /// Every track an instruction must require: each input's, and the compared lap's.
@@ -116,7 +123,7 @@ public struct CompiledComposition {
         return CompiledComposition(
             composition: composition, videoComposition: videoComposition, audioMix: audioMix, plans: plans,
             duration: duration, trackIDs: trackIDs, sourceTransforms: transforms, orientationSpans: orientationSpans,
-            comparedTrackID: layer.trackID)
+            comparedTrackID: layer.trackID, timeMap: timeMap)
     }
 
     public init(
@@ -155,11 +162,11 @@ public struct CompiledComposition {
         newVideoComposition.renderSize = first.outputSize
         newVideoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(first.frameRate.rounded()))
         newVideoComposition.instructions = CompositionBuilder.instructions(
-            for: sorted, duration: duration, trackIDs: requiredTrackIDs)
+            for: sorted, timeMap: timeMap, trackIDs: requiredTrackIDs)
         return CompiledComposition(
             composition: composition, videoComposition: newVideoComposition, audioMix: audioMix, plans: sorted,
             duration: duration, trackIDs: trackIDs, sourceTransforms: sourceTransforms,
-            orientationSpans: orientationSpans, comparedTrackID: comparedTrackID)
+            orientationSpans: orientationSpans, comparedTrackID: comparedTrackID, timeMap: timeMap)
     }
 
     /// The source transform of each track at project `time`.
@@ -397,22 +404,29 @@ public enum CompositionBuilder {
         OverlayInstruction(
             timeRange: CMTimeRange(start: .zero, duration: CMTime(seconds: duration, preferredTimescale: timescale)),
             plan: plan,
-            sourceTrackIDs: plan.videoLayers.map(\.trackID))
+            sourceTrackIDs: plan.videoLayers.map(\.trackID), timeMap: .identity(duration))
     }
 
-    /// One instruction per plan, tiling `0..<duration` exactly (AVFoundation rejects gaps and overlaps).
-    static func instructions(for plans: [TimedPlan], duration: Double, trackIDs: [Int32]) -> [OverlayInstruction] {
+    /// One instruction per plan, tiling `0..<outputDuration` exactly (AVFoundation rejects gaps
+    /// and overlaps). Plans start in project time; instructions run in output time (#442).
+    static func instructions(for plans: [TimedPlan], timeMap: TimeMap, trackIDs: [Int32]) -> [OverlayInstruction] {
         let timescale: CMTimeScale = 600
+        let duration = timeMap.projectDuration
         var result: [OverlayInstruction] = []
         for (index, timed) in plans.enumerated() where timed.start < duration {
             let end = index + 1 < plans.count ? min(plans[index + 1].start, duration) : duration
             guard end > timed.start else { continue }
+            let outputEnd =
+                index + 1 < plans.count && end < duration
+                ? timeMap.outputTime(atProject: end) : timeMap.outputDuration
             let range = CMTimeRange(
-                start: CMTime(seconds: timed.start, preferredTimescale: timescale),
-                end: CMTime(seconds: end, preferredTimescale: timescale))
+                start: CMTime(seconds: timeMap.outputTime(atProject: timed.start), preferredTimescale: timescale),
+                end: CMTime(seconds: outputEnd, preferredTimescale: timescale))
+            guard range.duration > .zero else { continue }
             // Every composition track is required by every instruction so switching cameras never
             // stalls on a track that was not being decoded (and overlay-only plans still get frames).
-            result.append(OverlayInstruction(timeRange: range, plan: timed.plan, sourceTrackIDs: trackIDs))
+            result.append(
+                OverlayInstruction(timeRange: range, plan: timed.plan, sourceTrackIDs: trackIDs, timeMap: timeMap))
         }
         return result
     }
