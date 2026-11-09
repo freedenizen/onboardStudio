@@ -19,7 +19,11 @@ struct SessionDetailsTests {
         // The file's own name for the place wins over the recognised circuit's.
         #expect(details.track == "Test Circuit")
         #expect(details.driver == "OnboardStudio")
-        #expect(details.date == "2025-12-31")
+        // Recorded at 02:54 UTC on 31 Dec 2025; the day is the driver's, in the local calendar, so
+        // west of UTC−3 it is the 30th (#440).
+        let recorded = try #require(session.info.createdAt)
+        #expect(recorded == Date(timeIntervalSince1970: 1_767_149_640))
+        #expect(details.date == ProjectDetails.iso(recorded))
         #expect(details.car.isEmpty && details.event.isEmpty)
     }
 
