@@ -1,6 +1,7 @@
 import AVFoundation
 import CoreVideo
 import Foundation
+import ProjectModel
 import RenderKit
 
 /// The instruction handed to `OverlayCompositor` for a time range. Carries the render plan.
@@ -11,10 +12,13 @@ public final class OverlayInstruction: NSObject, AVVideoCompositionInstructionPr
     public let requiredSourceTrackIDs: [NSValue]?
     public let passthroughTrackID: CMPersistentTrackID = kCMPersistentTrackID_Invalid
     public let plan: RenderPlan
+    /// Output time → the project time every overlay is drawn at (#442).
+    public let timeMap: TimeMap
 
-    public init(timeRange: CMTimeRange, plan: RenderPlan, sourceTrackIDs: [Int32]) {
+    public init(timeRange: CMTimeRange, plan: RenderPlan, sourceTrackIDs: [Int32], timeMap: TimeMap) {
         self.timeRange = timeRange
         self.plan = plan
+        self.timeMap = timeMap
         self.requiredSourceTrackIDs = sourceTrackIDs.map { NSNumber(value: $0) }
         super.init()
     }
@@ -56,7 +60,10 @@ public final class OverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
             for layer in instruction.plan.videoLayers {
                 if let buffer = request.sourceFrame(byTrackID: layer.trackID) { sources[layer.trackID] = buffer }
             }
-            try compositor.render(sources: sources, time: request.compositionTime.seconds, into: output)
+            // The composition runs in output time; overlays read project time, so a slowed or held
+            // stretch shows the data the picture shows (#442).
+            let time = instruction.timeMap.projectTime(atOutput: request.compositionTime.seconds)
+            try compositor.render(sources: sources, time: time, into: output)
             request.finish(withComposedVideoFrame: output)
         } catch {
             request.finish(with: error)

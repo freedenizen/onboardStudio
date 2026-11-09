@@ -2,16 +2,25 @@ import AVFoundation
 import Foundation
 import MediaKit
 import Observation
+import ProjectModel
 
 /// Owns the `AVPlayer` that previews the compiled composition. The player plays exactly what the
 /// exporter encodes: same composition, same custom compositor.
+///
+/// The player runs in output time; everything this class says and is told is project time, the
+/// timeline's, which retimes slow, speed or hold (#442). It translates at its edge.
 @Observable
 final class PreviewController {
     let player = AVPlayer()
     private(set) var compiled: CompiledComposition?
     private(set) var isPlaying = false
+    /// Project seconds.
     private(set) var currentTime: Double = 0
+    /// Project seconds.
     private(set) var duration: Double = 0
+    /// Where the player is, output seconds: a held moment has many.
+    private var outputTime: Double = 0
+    private var timeMap: TimeMap { compiled?.timeMap ?? .identity(duration) }
     private var timeObserver: Any?
     private var isSeeking = false
     /// Told of every move of the playhead. The editor uses it to follow what changes at segment
@@ -35,7 +44,8 @@ final class PreviewController {
             [weak self] time in
             MainActor.assumeIsolated {
                 guard let self, !self.isSeeking else { return }
-                self.setTime(time.seconds)
+                self.outputTime = time.seconds
+                self.setTime(self.timeMap.projectTime(atOutput: time.seconds))
                 self.setPlaying(self.player.rate != 0)
             }
         }
@@ -100,11 +110,24 @@ final class PreviewController {
     /// The shuttle speed, signed: 2 is forward at double speed.
     var rate: Float { player.rate }
 
+    /// Moves to project time `seconds`; a held moment is entered at the start of its hold.
     func seek(to seconds: Double) {
         let clamped = min(max(seconds, 0), max(duration, 0))
-        setTime(clamped)
+        seek(output: timeMap.outputTime(atProject: clamped), showing: clamped)
+    }
+
+    /// Steps `frames` output frames, so a slowed stretch or a hold can be stepped through frame by
+    /// frame as it plays.
+    func step(by frames: Int, frameRate: Double) {
+        let output = min(max(outputTime + Double(frames) / frameRate, 0), timeMap.outputDuration)
+        seek(output: output, showing: timeMap.projectTime(atOutput: output))
+    }
+
+    private func seek(output: Double, showing project: Double) {
+        setTime(project)
+        outputTime = output
         isSeeking = true
-        let time = CMTime(seconds: clamped, preferredTimescale: 600)
+        let time = CMTime(seconds: output, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             MainActor.assumeIsolated { self?.isSeeking = false }
         }

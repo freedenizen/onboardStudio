@@ -350,6 +350,26 @@ segment shifts every later segment by the same amount. Projects without `timelin
 At render time each segment becomes its own video-composition instruction, so switches land on
 exact frames in both the preview and the export.
 
+## Retimes
+
+`retimes` (#442) are stretches that play slower or faster and moments that hold, placed in project
+time like everything else on the timeline:
+
+```json
+"retimes": [
+  { "id": "…", "start": 92.5, "kind": { "speed": { "end": 96.0, "rate": 0.5 } } },
+  { "id": "…", "start": 101.2, "kind": { "hold": { "seconds": 1.0 } } }
+]
+```
+
+`speed` plays `start..<end` at `rate` (0.1–8; 0.5 is half speed); `hold` shows the frame at `start`
+for `seconds` (at most 30, and holds at one moment add up to that) before playing on. The picture and
+every overlay are retimed together: an overlay is drawn at the project time the frame shows, so a
+slowed gauge moves slowly and a held one stands still. The sound is muted over every retimed
+stretch. A stretch that overlaps an earlier one begins where that one ends; anything outside the
+project is ignored. Absent in projects saved before retimes, and absent means none — output time is
+then project time, so a decode default is enough and no render changes.
+
 ## Object styles
 
 **Project ▸ Export Object Style…** writes the selected object's `kind`, `opacity`, `width`, `height` and, when set, `typeface` and `textScale` to a

@@ -100,6 +100,8 @@ public struct Project: Hashable, Codable, Sendable {
     public var coaching: CoachingSettings?
     /// What to try next session (#330); `nil` until a plan is made.
     public var plan: NextSessionPlan?
+    /// Stretches that play slower or faster, and moments that hold (#442), in project time.
+    public var retimes: [Retime]
 
     public init(
         schemaVersion: Int = Project.currentSchemaVersion,
@@ -112,7 +114,8 @@ public struct Project: Hashable, Codable, Sendable {
         details: ProjectDetails = ProjectDetails(),
         lapComparison: LapComparisonSettings? = nil,
         coaching: CoachingSettings? = nil,
-        plan: NextSessionPlan? = nil
+        plan: NextSessionPlan? = nil,
+        retimes: [Retime] = []
     ) {
         self.schemaVersion = schemaVersion
         self.settings = settings
@@ -125,11 +128,12 @@ public struct Project: Hashable, Codable, Sendable {
         self.lapComparison = lapComparison
         self.coaching = coaching
         self.plan = plan
+        self.retimes = retimes
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, settings, inputs, displayObjects, export, timeline, markers, details, lapComparison
-        case coaching, plan
+        case coaching, plan, retimes
     }
 
     public init(from decoder: any Decoder) throws {
@@ -151,6 +155,9 @@ public struct Project: Hashable, Codable, Sendable {
         coaching = try c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
         // Absent before plans existed; a plan changes no render.
         plan = try c.decodeIfPresent(NextSessionPlan.self, forKey: .plan)
+        // Absent before retimes existed, and absent means none: output time is project time, so
+        // no render changes.
+        retimes = try c.decodeIfPresent([Retime].self, forKey: .retimes) ?? []
     }
 
     /// The objects as they appear at project `time`, with timeline overrides applied.

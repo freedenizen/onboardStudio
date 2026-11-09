@@ -202,33 +202,6 @@ public enum ProjectCompiler {
         }
     }
 
-    /// Whether `compile` must rebuild the media composition (inputs or timing changed) rather than
-    /// just swapping overlays and layer frames.
-    public static func needsRecompile(from old: Project, to new: Project) -> Bool {
-        if old.settings.withoutFraming != new.settings.withoutFraming || old.inputs.count != new.inputs.count {
-            return true
-        }
-        // Gyroflow's copies replace the media the video track reads (#263).
-        if gyroflowPicturesChanged(from: old, to: new) { return true }
-        // The compared lap's picture is a track cut to the laps compared (#154).
-        if old.lapComparison != new.lapComparison { return true }
-        for (a, b) in zip(old.inputs, new.inputs) {
-            if a.id != b.id || a.source != b.source || a.sync != b.sync { return true }
-            switch (a.kind, b.kind) {
-            case (.video(let x), .video(let y)):
-                // Picture settings are applied by the compositor (replan); timing and audio are not.
-                if x.trim != y.trim || x.includeAudio != y.includeAudio || x.audio != y.audio || x.clips != y.clips {
-                    return true
-                }
-            case (.data, .data), (.image, .image), (.audio, .audio):
-                if a.kind != b.kind { return true }
-            default:
-                return true
-            }
-        }
-        return false
-    }
-
     /// Rebuilds only the plan (overlays + layer frames) on an existing compiled composition.
     public static func replan(_ compiled: CompiledComposition, for loaded: LoadedProject) -> CompiledComposition {
         let project = loaded.project
@@ -286,7 +259,10 @@ public enum ProjectCompiler {
     }
 
     /// Builds the composition: video inputs become tracks and layers; data objects become overlays.
-    public static func compile(_ loaded: LoadedProject) async throws -> CompiledComposition {
+    /// `adding` retimes play on top of the project's own (#442): a corner clip's slow braking zone.
+    public static func compile(_ loaded: LoadedProject, adding retimes: [Retime] = []) async throws
+        -> CompiledComposition
+    {
         let project = loaded.project
         var specs: [VideoInputSpec] = []
         var specInputIDs: [InputID] = []
@@ -326,6 +302,9 @@ public enum ProjectCompiler {
                 specs[index], warp: warp, duration: compiled.duration, into: compiled.composition)
             compiled = compiled.addingComparedTrack(layer)
         }
+        // Retimed last, so the compared lap's track is slowed and held with the rest (#442).
+        compiled = compiled.retimed(
+            by: TimeMap(retimes: project.retimes + retimes, projectDuration: compiled.duration))
         let result = compiled
         return result.replacingPlans(
             timedPlans(
@@ -358,5 +337,36 @@ extension ProjectCompiler.LoadedProject {
         let words = (channel.role.identifier + " " + channel.name).lowercased()
             .split { !$0.isLetter && !$0.isNumber }.map(String.init)
         return words.contains { $0.hasPrefix("steer") || $0 == "swa" }
+    }
+}
+
+extension ProjectCompiler {
+    /// Whether `compile` must rebuild the media composition (inputs or timing changed) rather than
+    /// just swapping overlays and layer frames.
+    public static func needsRecompile(from old: Project, to new: Project) -> Bool {
+        if old.settings.withoutFraming != new.settings.withoutFraming || old.inputs.count != new.inputs.count {
+            return true
+        }
+        // Gyroflow's copies replace the media the video track reads (#263).
+        if gyroflowPicturesChanged(from: old, to: new) { return true }
+        // The compared lap's picture is a track cut to the laps compared (#154).
+        if old.lapComparison != new.lapComparison { return true }
+        // Retimes scale the media composition itself (#442).
+        if old.retimes != new.retimes { return true }
+        for (a, b) in zip(old.inputs, new.inputs) {
+            if a.id != b.id || a.source != b.source || a.sync != b.sync { return true }
+            switch (a.kind, b.kind) {
+            case (.video(let x), .video(let y)):
+                // Picture settings are applied by the compositor (replan); timing and audio are not.
+                if x.trim != y.trim || x.includeAudio != y.includeAudio || x.audio != y.audio || x.clips != y.clips {
+                    return true
+                }
+            case (.data, .data), (.image, .image), (.audio, .audio):
+                if a.kind != b.kind { return true }
+            default:
+                return true
+            }
+        }
+        return false
     }
 }

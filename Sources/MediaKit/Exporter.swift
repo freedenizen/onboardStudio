@@ -7,6 +7,7 @@ public struct ExportProgress: Sendable, Equatable {
     /// 0…1
     public let fraction: Double
     public let framesWritten: Int
+    /// The project time of the frame just written.
     public let currentTime: Double
 
     public init(fraction: Double, framesWritten: Int, currentTime: Double) {
@@ -113,8 +114,10 @@ final class ExportJob: @unchecked Sendable {
     private let videoInput: AVAssetWriterInput
     private let audio: (output: AVAssetReaderAudioMixOutput, input: AVAssetWriterInput)?
     private let timeRange: CMTimeRange
+    /// Output seconds.
     private let start: Double
     private let end: Double
+    private let timeMap: TimeMap
     private let onProgress: @Sendable (ExportProgress) -> Void
     private let frames = Counter()
     private let outputURL: URL
@@ -128,8 +131,11 @@ final class ExportJob: @unchecked Sendable {
         onProgress: @escaping @Sendable (ExportProgress) -> Void
     ) throws {
         let timescale: CMTimeScale = 600
-        start = range?.lowerBound ?? 0
-        end = min(range?.upperBound ?? compiled.duration, compiled.duration)
+        // `range` is project time; the composition runs in output time, which retimes stretch (#442).
+        let map = compiled.timeMap
+        timeMap = map
+        start = map.outputTime(atProject: range?.lowerBound ?? 0)
+        end = min(map.outputTime(atProject: range?.upperBound ?? compiled.duration), compiled.outputDuration)
         timeRange = CMTimeRange(
             start: CMTime(seconds: start, preferredTimescale: timescale),
             end: CMTime(seconds: end, preferredTimescale: timescale))
@@ -201,7 +207,10 @@ final class ExportJob: @unchecked Sendable {
                 try await pump(from: videoOutput, to: videoInput, label: "video") { time in
                     let count = self.frames.increment()
                     let fraction = min(1, (time - self.start) / exportDuration)
-                    self.onProgress(ExportProgress(fraction: fraction, framesWritten: count, currentTime: time))
+                    self.onProgress(
+                        ExportProgress(
+                            fraction: fraction, framesWritten: count,
+                            currentTime: self.timeMap.projectTime(atOutput: time)))
                 }
             }
             if let audio {
@@ -224,7 +233,8 @@ final class ExportJob: @unchecked Sendable {
         if writer.status == .failed { throw ExportError.writerFailed(writer.error?.localizedDescription ?? "unknown") }
         Self.removeLeftovers(beside: outputURL)
         if spherical { try SphericalMetadata.inject(into: outputURL) }
-        onProgress(ExportProgress(fraction: 1, framesWritten: frames.value, currentTime: end))
+        onProgress(
+            ExportProgress(fraction: 1, framesWritten: frames.value, currentTime: timeMap.projectTime(atOutput: end)))
     }
 
     /// Removes the copy the network-optimising pass leaves beside the output (`<name>.sb-…`).
