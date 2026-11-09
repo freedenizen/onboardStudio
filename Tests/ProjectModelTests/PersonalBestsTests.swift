@@ -80,12 +80,14 @@ struct PersonalBestsTests {
         let all = entries
         let miata = PersonalBests.detailKeys(in: all, circuitKey: "Q112563", car: "Miata")
         #expect(miata["pb"] == "1:56.90" && miata["pbCar"] == "Miata" && miata["visits"] == "5")
+        #expect(miata["trackDays"] == "2", "five sessions on two days (#433)")
         #expect(miata["pbDate"]?.contains("2026") == true)
         let anyCar = PersonalBests.detailKeys(in: all, circuitKey: "Q112563", car: "")
         #expect(anyCar["pb"] == "1:52.40" && anyCar["pbCar"] == "GR86")
         let unknownCar = PersonalBests.detailKeys(in: all, circuitKey: "Q112563", car: "Elise")
         #expect(unknownCar["pb"] == "1:52.40", "a car the logbook has not seen falls back to the overall best")
-        #expect(PersonalBests.detailKeys(in: all, circuitKey: "Nowhere", car: nil) == ["visits": "0"])
+        #expect(
+            PersonalBests.detailKeys(in: all, circuitKey: "Nowhere", car: nil) == ["visits": "0", "trackDays": "0"])
         // Filling text: a typed detail of the same name still wins.
         var details = ProjectDetails()
         details.extras = [ProjectDetail(name: "pb", value: "typed")]
@@ -96,6 +98,10 @@ struct PersonalBestsTests {
             DisplayObject(label: "T", inputID: nil, frame: .full, kind: .text(TextParams(text: "PB {pb}")))
         ])
         #expect(project.usesLogbookKeys && !project.needsPersonalBest)
+        project.displayObjects = [
+            DisplayObject(label: "T", inputID: nil, frame: .full, kind: .text(TextParams(text: "Day {trackDays}")))
+        ]
+        #expect(project.usesLogbookKeys)
         project.displayObjects = [
             DisplayObject(
                 label: "D", inputID: nil, frame: .full,

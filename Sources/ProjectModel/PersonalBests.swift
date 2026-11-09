@@ -89,17 +89,28 @@ public enum PersonalBests {
         return Dictionary(uniqueKeysWithValues: setters.map { ($0, holders.contains($0) ? .current : .former) })
     }
 
-    /// `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` for a project whose data is at `circuitKey`,
+    /// The logbook's text keys and what Insert Detail calls them (#433), in menu order.
+    public static let textKeys: [(key: String, title: String)] = [
+        ("pb", "Personal Best"), ("pbDate", "Personal Best Date"), ("pbCar", "Personal Best Car"),
+        ("trackDays", "Track Days Here"), ("visits", "Sessions Here"),
+    ]
+
+    /// `{pb}`, `{pbDate}`, `{pbCar}`, `{visits}` (sessions) and `{trackDays}` (#433) for a project
+    /// whose data is at `circuitKey`,
     /// the personal best in `car` when one is given and the logbook has it, else overall.
     public static func detailKeys(in entries: [LogbookEntry], circuitKey: String, car: String?) -> [String: String] {
         let inCar = car.flatMap { $0.isEmpty ? nil : $0 }.flatMap { best(in: entries, circuitKey: circuitKey, car: $0) }
         guard let best = inCar ?? best(in: entries, circuitKey: circuitKey) else {
-            return ["visits": String(visits(in: entries, circuitKey: circuitKey))]
+            return [
+                "visits": String(visits(in: entries, circuitKey: circuitKey)),
+                "trackDays": String(trackDays(in: entries, circuitKey: circuitKey)),
+            ]
         }
         var keys: [String: String] = [
             "pb": TimeParsingBridge.lapTime(best.seconds),
             "pbCar": best.car,
             "visits": String(visits(in: entries, circuitKey: circuitKey)),
+            "trackDays": String(trackDays(in: entries, circuitKey: circuitKey)),
         ]
         if let date = best.date { keys["pbDate"] = date.formatted(date: .abbreviated, time: .omitted) }
         return keys
@@ -139,7 +150,7 @@ extension Project {
             default: return false
             }
             let lower = text.lowercased()
-            return lower.contains("{pb") || lower.contains("{visits")
+            return lower.contains("{pb") || lower.contains("{visits") || lower.contains("{trackdays")
         }
     }
 

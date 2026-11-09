@@ -46,5 +46,11 @@ final class DetailsUITests: OnboardStudioUITestCase {
         expect(text, toRead: "{track} · {date} {car}")
         app.typeKey("z", modifierFlags: .command)
         expect(text, toRead: "{track} · {date}")
+        // The logbook's keys are offered too, under their own heading (#433).
+        insert.click()
+        let trackDays = insert.menus.menuItems["Track Days Here"]
+        XCTAssertTrue(trackDays.waitForExistence(timeout: Self.timeout), "No logbook keys in Insert Detail")
+        trackDays.click()
+        expect(text, toRead: "{track} · {date} {trackDays}")
     }
 }
