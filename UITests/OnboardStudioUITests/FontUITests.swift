@@ -40,10 +40,14 @@ final class FontUITests: OnboardStudioUITestCase {
     func chooseFamily(_ name: String, in popUp: XCUIElement) {
         XCTAssertTrue(popUp.waitForExistence(timeout: Self.timeout), "No font pop-up")
         reveal(popUp)
-        popUp.click()
-        XCTAssertTrue(popUp.menus.firstMatch.waitForExistence(timeout: Self.timeout), "The font menu did not open")
-        app.typeText(name)
-        app.typeKey(.return, modifierFlags: [])
-        expect(popUp, toRead: name)
+        // Type-select: once on CI the first keystroke was lost and "elvetica Neue" chose Euphemia
+        // UCAS (#308), so a wrong family is chosen again rather than failing the test.
+        repeatUntil(popUp, matches: NSPredicate(format: "value == %@", name), attempts: 3, "Choose \(name)") {
+            popUp.click()
+            XCTAssertTrue(
+                popUp.menus.firstMatch.waitForExistence(timeout: Self.timeout), "The font menu did not open")
+            app.typeText(name)
+            app.typeKey(.return, modifierFlags: [])
+        }
     }
 }

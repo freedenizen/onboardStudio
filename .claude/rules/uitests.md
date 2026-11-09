@@ -33,7 +33,7 @@ Local run ≈ 5 min for 13 tests.
   the save panel. The fixture project is copied to a per-launch temp folder so ⌘S never touches
   the checkout.
 - Base class `OnboardStudioUITestCase` provides `launch()`, `menu(_:_:)`, `menu(_:_:_:)`,
-  `toolbarMenu`, `choose(_:inPopUpShowing:)`, `reveal`, `expectStatus`,
+  `toolbarMenu`, `choose(_:inPopUpShowing:)`, `reveal`, `expectStatus`, `repeatUntil` (redo a click or key that is safe to repeat until the element shows it — for input the runner drops, #308),
   `sidebarInput`/`sidebarObject`. Use these rather than raw queries.
 
 ## Query pitfalls

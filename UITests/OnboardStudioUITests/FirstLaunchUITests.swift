@@ -261,7 +261,12 @@ final class TimelineUITests: OnboardStudioUITestCase {
         // Played to the end, the button says Play again rather than staying on Pause. Not waiting
         // to see Pause first: on a slow runner the 3 s clip can finish before the check runs.
         menu("Playback", "Go to Start")
-        app.typeKey("l", modifierFlags: [])
+        expect(transportTime, toRead: "0:00.00")
+        // Once on CI this L was dropped and the playhead never left the start (#308). Another L
+        // only doubles the speed, so it is pressed again until the playhead moves.
+        repeatUntil(transportTime, matches: NSPredicate(format: "value != %@", "0:00.00"), "Play with L") {
+            app.typeKey("l", modifierFlags: [])
+        }
         expect(transportTime, toRead: "0:03.00")
         expect(play, toRead: "Play")
 
