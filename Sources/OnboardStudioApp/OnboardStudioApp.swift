@@ -361,6 +361,18 @@ struct EditorCommands: Commands {
             Button("Mark Out") { editor?.markOutAtPlayhead() }.keyboardShortcut("o", modifiers: [])
             Button("Clear In and Out") { editor?.clearInOut() }.keyboardShortcut("x", modifiers: [.option])
                 .disabled(editor?.markIn == nil && editor?.markOut == nil)
+            Divider()
+            // Retimes (#443): a speed for In to Out, and Final Cut's ⇧H Hold at the playhead.
+            Menu("Change Speed of In to Out") {
+                ForEach(Retime.editorRates, id: \.self) { rate in
+                    Button(Retime.percent(rate)) { editor?.setSpeedOfInOut(rate) }
+                }
+                Divider()
+                Button("Normal Speed") { editor?.setSpeedOfInOut(1) }
+            }
+            .disabled(editor?.canRetimeInOut != true)
+            Button("Hold Frame") { editor?.holdFrameAtPlayhead() }.keyboardShortcut("h", modifiers: [.shift])
+                .disabled(editor == nil || editor?.duration ?? 0 <= 0)
         }
     }
 }

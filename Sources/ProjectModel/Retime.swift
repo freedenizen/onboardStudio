@@ -142,3 +142,75 @@ public struct TimeMap: Hashable, Sendable {
         return ranges
     }
 }
+
+extension Retime {
+    /// The speeds the editor offers (#443), slowest first; 1 is normal speed.
+    public static let editorRates: [Double] = [0.25, 0.5, 0.75, 1.5, 2]
+    /// The hold lengths the editor offers, seconds.
+    public static let editorHolds: [Double] = [0.5, 1, 2, 3, 5]
+
+    /// "50%", "200%".
+    public static func percent(_ rate: Double) -> String { "\(Int((rate * 100).rounded()))%" }
+
+    /// "Hold 1 s", "Hold 0.5 s".
+    public static func holdLabel(_ seconds: Double) -> String {
+        "Hold \(seconds.formatted(.number.precision(.fractionLength(0...1)))) s"
+    }
+
+    /// Where it ends on the timeline: a hold takes no project time.
+    public var end: Double {
+        if case .speed(let end, _) = kind { return end }
+        return start
+    }
+}
+
+extension Project {
+    /// Plays `range` at `rate` (#443). A speed change that overlaps it is cut back to its edges,
+    /// so the range has exactly one speed afterwards; a rate of 1 leaves it at normal speed.
+    /// Holds are left as they are.
+    public mutating func setSpeed(_ rate: Double, over range: ClosedRange<Double>) {
+        var kept: [Retime] = []
+        for retime in retimes {
+            guard case .speed(let end, let existing) = retime.kind, retime.start < range.upperBound,
+                end > range.lowerBound
+            else {
+                kept.append(retime)
+                continue
+            }
+            // The parts outside the range keep their speed.
+            if retime.start < range.lowerBound {
+                kept.append(
+                    Retime(id: retime.id, start: retime.start, kind: .speed(end: range.lowerBound, rate: existing)))
+            }
+            if end > range.upperBound {
+                kept.append(Retime(start: range.upperBound, kind: .speed(end: end, rate: existing)))
+            }
+        }
+        if abs(rate - 1) > 1e-9, range.upperBound > range.lowerBound {
+            kept.append(Retime(start: range.lowerBound, kind: .speed(end: range.upperBound, rate: rate)))
+        }
+        retimes = kept.sorted { $0.start < $1.start }
+    }
+
+    /// Holds the frame at `time` for `seconds`; returns the new hold's id.
+    @discardableResult
+    public mutating func addHold(at time: Double, seconds: Double) -> UUID {
+        let hold = Retime(start: time, kind: .hold(seconds: min(max(seconds, 0.1), Retime.longestHold)))
+        retimes.append(hold)
+        retimes.sort { $0.start < $1.start }
+        return hold.id
+    }
+
+    /// A speed change's new rate, or a hold's new length; anything else is left alone.
+    public mutating func change(retime id: UUID, rate: Double? = nil, holdSeconds: Double? = nil) {
+        guard let index = retimes.firstIndex(where: { $0.id == id }) else { return }
+        switch retimes[index].kind {
+        case .speed(let end, _):
+            if let rate { retimes[index].kind = .speed(end: end, rate: rate) }
+        case .hold:
+            if let holdSeconds { retimes[index].kind = .hold(seconds: min(max(holdSeconds, 0.1), Retime.longestHold)) }
+        }
+    }
+
+    public mutating func removeRetime(_ id: UUID) { retimes.removeAll { $0.id == id } }
+}

@@ -87,3 +87,52 @@ struct TimeMapTests {
         #expect(reread.retimes == retimed.retimes)
     }
 }
+
+@Suite("Retimes edited (#443)")
+struct RetimeEditingTests {
+    func speeds(_ project: Project) -> [String] {
+        project.retimes.compactMap { retime in
+            if case .speed(let end, let rate) = retime.kind { return "\(retime.start)-\(end)@\(rate)" }
+            return nil
+        }
+    }
+
+    @Test func aSpeedOverARangeCutsBackWhatItOverlaps() {
+        var project = Project()
+        project.setSpeed(0.5, over: 2...6)
+        #expect(speeds(project) == ["2.0-6.0@0.5"])
+        // A new speed in the middle leaves the old one on either side.
+        project.setSpeed(2, over: 3...4)
+        #expect(speeds(project) == ["2.0-3.0@0.5", "3.0-4.0@2.0", "4.0-6.0@0.5"])
+        // Normal speed over part of it removes that part only.
+        project.setSpeed(1, over: 1...3.5)
+        #expect(speeds(project) == ["3.5-4.0@2.0", "4.0-6.0@0.5"])
+        // Over all of it: nothing left.
+        project.setSpeed(1, over: 0...10)
+        #expect(project.retimes.isEmpty)
+    }
+
+    @Test func holdsAreAddedChangedAndRemoved() throws {
+        var project = Project()
+        project.setSpeed(0.5, over: 2...6)
+        let hold = project.addHold(at: 4, seconds: 1)
+        // A speed change over the hold leaves it where it is.
+        project.setSpeed(0.25, over: 3...5)
+        #expect(project.retimes.contains { $0.id == hold })
+        project.change(retime: hold, holdSeconds: 2)
+        #expect(project.retimes.first { $0.id == hold }?.kind == .hold(seconds: 2))
+        // A rate means nothing to a hold, and a length nothing to a speed change.
+        project.change(retime: hold, rate: 3)
+        #expect(project.retimes.first { $0.id == hold }?.kind == .hold(seconds: 2))
+        let slow = try #require(project.retimes.first { $0.start == 2 })
+        project.change(retime: slow.id, rate: 0.75, holdSeconds: 9)
+        #expect(project.retimes.first { $0.id == slow.id }?.kind == .speed(end: 3, rate: 0.75))
+        project.removeRetime(hold)
+        #expect(!project.retimes.contains { $0.id == hold })
+        // A hold is kept within what a hold may be.
+        let long = project.addHold(at: 1, seconds: 500)
+        #expect(project.retimes.first { $0.id == long }?.kind == .hold(seconds: Retime.longestHold))
+        #expect(
+            Retime.percent(0.5) == "50%" && Retime.holdLabel(1) == "Hold 1 s" && Retime.holdLabel(0.5) == "Hold 0.5 s")
+    }
+}
