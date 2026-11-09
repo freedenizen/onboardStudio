@@ -370,8 +370,9 @@ that has since been beaten, so a run of improving sessions reads as progress and
 says which is the best. A selected session's **Personal best here** says the best at that
 circuit, when, in what, and how many visits you have had — track days, however many sessions
 each. In a project, a Text object or Title
-Card can show `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` (the number of sessions) for the
-circuit its data is at (in the project's car when the logbook has one there), and a Timer's *Delta* or *Projected lap* can
+Card can show `{pb}`, `{pbDate}`, `{pbCar}`, `{trackDays}` (how many track days) and `{visits}`
+(how many sessions) for the circuit its data is at — **Insert Detail ▸ From the Logbook** offers
+them — (in the project's car when the logbook has one there), and a Timer's *Delta* or *Projected lap* can
 **Compare with ▸ Personal best (logbook)** — the gap to your personal best lap at the same
 distance, that session read on demand, the session best when the logbook has nothing to offer.
 
@@ -582,7 +583,8 @@ Any **Text** object shows a detail by naming it in braces — `{track} · {date}
 {tyres}` — and **Insert Detail** in its inspector adds one without typing, each item saying what
 it stands for now. **Add Object ▸ Title Card** starts with `{track} · {date}`. A detail with
 nothing entered stays in its braces, so a title card asks for what is missing rather than
-quietly leaving a gap. `{pb}`, `{pbDate}`, `{pbCar}` and `{visits}` come from the logbook (§4). Details belong to the project, not to templates: a template with a title
+quietly leaving a gap. `{pb}`, `{pbDate}`, `{pbCar}`, `{trackDays}` and `{visits}` come from the logbook (§4), and
+Insert Detail lists them under **From the Logbook**. Details belong to the project, not to templates: a template with a title
 card picks up each project's own track and day.
 
 ### Fonts

@@ -152,6 +152,12 @@ struct InsertDetailMenu: View {
                 Divider()
                 ForEach(details.extras) { item($0.name, title: $0.name) }
             }
+            // Filled at render time from the logbook, for the circuit the project's data is at (#433).
+            Section("From the Logbook") {
+                ForEach(PersonalBests.textKeys, id: \.key) { key in
+                    Button(key.title) { insert("{\(key.key)}") }
+                }
+            }
         }
         .accessibilityIdentifier("text.insertDetail")
         .help("Add a project detail to the text; it shows whatever the project's Details say")

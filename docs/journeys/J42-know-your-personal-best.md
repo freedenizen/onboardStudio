@@ -7,8 +7,9 @@ this circuit, in this car, this year, ever. With the logbook that is a question 
    now, a hollow one on a session since beaten (#422). Select a session: the detail's **Personal
    best here** says the best at that circuit, when, in what, and how many visits — track days —
    the logbook has.
-2. In a project, a **Text** object or a **Title Card** can show `{pb}`, `{pbDate}`, `{pbCar}` and
-   `{visits}`: the personal best at the circuit the project's data is at — in the project's car
+2. In a project, a **Text** object or a **Title Card** can show `{pb}`, `{pbDate}`, `{pbCar}`,
+   `{trackDays}` (track days there, #433) and `{visits}` (sessions there), all in **Insert Detail ▸
+   From the Logbook**: the personal best at the circuit the project's data is at — in the project's car
    when the logbook has one there, else overall — filled at render time from the logbook, so a
    detail you typed under the same name still wins.
 3. A **Timer** in *Delta* or *Projected lap* mode can **Compare with ▸ Personal best (logbook)**:
@@ -16,5 +17,5 @@ this circuit, in this car, this year, ever. With the logbook that is a question 
    demand; when the personal best is this very session, or the logbook has none here, it measures
    the session best as before.
 
-Tests: `PersonalBestUITests.testTheLogbookBadgesAndNamesThePersonalBest`. Model:
+Tests: `PersonalBestUITests.testTheLogbookBadgesAndNamesThePersonalBest`, `DetailsUITests` (Insert Detail ▸ From the Logbook). Model:
 `PersonalBestsTests`, `PersonalBestTimerTests`, `LogbookDerivedTests`.

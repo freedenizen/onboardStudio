@@ -2,8 +2,8 @@ import Foundation
 import ProjectModel
 import TelemetryKit
 
-/// What a compile reads from the logbook (#351): the text keys `{pb}`, `{pbDate}`, `{pbCar}` and
-/// `{visits}` for the circuit the project's data is at, and the personal-best lap's profile for a
+/// What a compile reads from the logbook (#351): the text keys `{pb}`, `{pbDate}`, `{pbCar}`,
+/// `{visits}` and `{trackDays}` (#433) for the circuit the project's data is at, and the personal-best lap's profile for a
 /// timer measuring against it. Read only when the project asks (`usesLogbookKeys`,
 /// `needsPersonalBest`), so a project that does not pays nothing.
 public enum LogbookDerived {
