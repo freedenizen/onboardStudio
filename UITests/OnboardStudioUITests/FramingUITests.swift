@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 2
 /// Framing the picture on the preview (#275): the frame drawn over the whole shot, moved and
 /// zoomed there, Cancel putting it back and Done making the session one undo step.
 final class FramingUITests: OnboardStudioUITestCase {
