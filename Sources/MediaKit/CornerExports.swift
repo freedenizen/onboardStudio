@@ -10,12 +10,15 @@ public struct CornerExport: Sendable, Equatable {
     public let range: ClosedRange<Double>
     /// Seconds lost (+) or gained (−) against the reference in this corner.
     public let timeLost: Double
+    /// The clip's own retimes, in project time (#360): the braking zone slowed, a sight picture held.
+    public let retimes: [Retime]
 
-    public init(index: Int, label: String, range: ClosedRange<Double>, timeLost: Double) {
+    public init(index: Int, label: String, range: ClosedRange<Double>, timeLost: Double, retimes: [Retime] = []) {
         self.index = index
         self.label = label
         self.range = range
         self.timeLost = timeLost
+        self.retimes = retimes
     }
 
     public var title: String { "Turn \(label)" }
@@ -39,7 +42,7 @@ extension ProjectCompiler {
     public static func cornerExports(_ range: ExportRange, in loaded: LoadedProject, duration: Double)
         -> [CornerExport]
     {
-        guard case .eachCorner(let onlyOpportunities) = range else { return [] }
+        guard case .eachCorner(let onlyOpportunities, let retime) = range else { return [] }
         guard let read = coachingLap(in: loaded) else { return [] }
         let (input, lap, analysis) = (read.input, read.lap, read.analysis)
         let corners = onlyOpportunities ? analysis.opportunities.map(\.corner) : analysis.corners
@@ -51,10 +54,41 @@ extension ProjectCompiler {
             let start = min(max(input.sync.projectTime(forInputTime: from), 0), duration)
             let stop = min(max(input.sync.projectTime(forInputTime: to), start), duration)
             guard stop > start else { return nil }
+            // Distances into the lap → project seconds.
+            func projectTime(atDistance distance: Double) -> Double {
+                input.sync.projectTime(forInputTime: lap.start + analysis.lap.elapsed(atDistance: distance))
+            }
             return CornerExport(
                 index: comparison.index, label: comparison.label, range: start...stop,
-                timeLost: comparison.timeLost)
+                timeLost: comparison.timeLost,
+                retimes: retime.map {
+                    cornerRetimes($0, for: comparison, within: start...stop, projectTime: projectTime(atDistance:))
+                } ?? [])
         }
+    }
+
+    /// A corner clip's retimes (#360): from the lap's brake point to its slowest point at
+    /// `brakingRate`, and a hold of the whole frame when the lap reaches the distance at which the
+    /// reference braked, for a sight picture of where to brake. A corner the lap was not braked
+    /// for has no braking zone to slow; one the reference did not brake for has no sight picture.
+    static func cornerRetimes(
+        _ retime: CornerClipRetime, for comparison: CornerComparison, within clip: ClosedRange<Double>,
+        projectTime: (Double) -> Double
+    ) -> [Retime] {
+        var retimes: [Retime] = []
+        let lap = comparison.lap
+        if let rate = retime.brakingRate, lap.brakePointMeters != nil {
+            let from = projectTime(lap.phaseStart)
+            let slowest = projectTime(lap.corner.apexDistance + lap.minimumSpeedMeters)
+            if slowest > from, clip.contains(from) {
+                retimes.append(Retime(start: from, kind: .speed(end: min(slowest, clip.upperBound), rate: rate)))
+            }
+        }
+        if let seconds = retime.referenceHoldSeconds, seconds > 0, comparison.reference.brakePointMeters != nil {
+            let at = projectTime(comparison.reference.phaseStart)
+            if clip.contains(at) { retimes.append(Retime(start: at, kind: .hold(seconds: seconds))) }
+        }
+        return retimes
     }
 
     /// The lap a coaching export reads, and its reading.

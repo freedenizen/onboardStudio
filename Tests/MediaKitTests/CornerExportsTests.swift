@@ -62,4 +62,55 @@ struct CornerExportsTests {
         #expect(clips.count == 2)
         #expect(clips.allSatisfy { $0.range.upperBound <= (first.end ?? 0) + 2.5 })
     }
+
+    @Test func aRetimedCornerSlowsItsBrakingZoneAndHoldsWhereTheReferenceBraked() throws {
+        let loaded = try Self.loaded()
+        let range = ExportRange.eachCorner(onlyOpportunities: false, retime: .standard)
+        let clips = ProjectCompiler.cornerExports(range, in: loaded, duration: 170)
+        #expect(clips.count == 2)
+        let read = try #require(ProjectCompiler.coachingLap(in: loaded))
+        for (clip, comparison) in zip(clips, read.analysis.corners) {
+            struct Slowed {
+                let start: Double
+                let end: Double
+                let rate: Double
+            }
+            let speed = clip.retimes.compactMap { retime -> Slowed? in
+                if case .speed(let end, let rate) = retime.kind {
+                    return Slowed(start: retime.start, end: end, rate: rate)
+                }
+                return nil
+            }
+            let hold = clip.retimes.compactMap { retime -> (Double, Double)? in
+                if case .hold(let seconds) = retime.kind { return (retime.start, seconds) }
+                return nil
+            }
+            // Slowed from the brake point, two seconds into the clip, to the slowest point.
+            let slowed = try #require(speed.first)
+            #expect(abs(slowed.start - (clip.range.lowerBound + ProjectCompiler.cornerClipLeadSeconds)) < 0.05)
+            #expect(slowed.end > slowed.start && slowed.rate == 0.5)
+            let slowest =
+                read.lap.start
+                + read.analysis.lap.elapsed(
+                    atDistance: comparison.lap.corner.apexDistance + comparison.lap.minimumSpeedMeters)
+            #expect(abs(slowed.end - slowest) < 0.05)
+            // Held a second where the reference braked: the best lap brakes later than the slow
+            // one, so the lap reaches that spot after its own brake point.
+            let held = try #require(hold.first)
+            #expect(held.1 == 1)
+            let referenceBrake = read.lap.start + read.analysis.lap.elapsed(atDistance: comparison.reference.phaseStart)
+            #expect(abs(held.0 - referenceBrake) < 0.05)
+            #expect(held.0 > slowed.start && clip.range.contains(held.0))
+        }
+        // Without a retime, or with both switched off, the clips play at speed.
+        #expect(
+            ProjectCompiler.cornerExports(.eachCorner(onlyOpportunities: false), in: loaded, duration: 170)
+                .allSatisfy { $0.retimes.isEmpty })
+        let neither = CornerClipRetime(brakingRate: nil, referenceHoldSeconds: nil)
+        #expect(
+            ProjectCompiler.cornerExports(
+                .eachCorner(onlyOpportunities: false, retime: neither), in: loaded, duration: 170
+            )
+            .allSatisfy { $0.retimes.isEmpty })
+    }
 }

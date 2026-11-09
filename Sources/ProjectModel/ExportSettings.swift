@@ -28,8 +28,29 @@ public enum ExportRange: Hashable, Codable, Sendable {
     case eachLap(completeOnly: Bool, slowerThanBest: Double?)
     /// One file per corner of the coaching lap (#326): from two seconds before the brake point to
     /// two seconds after the corner. `onlyOpportunities` keeps the corners where time was lost
-    /// against the reference, biggest loss first.
-    case eachCorner(onlyOpportunities: Bool)
+    /// against the reference, biggest loss first. `retime` slows the braking zone and holds where
+    /// the reference braked (#360); `nil`, as in every export saved before it, plays at speed.
+    case eachCorner(onlyOpportunities: Bool, retime: CornerClipRetime? = nil)
+}
+
+/// How a corner clip is retimed (#360): the braking zone slowed, and a sight picture held.
+public struct CornerClipRetime: Hashable, Codable, Sendable {
+    /// The rate from the brake point to the slowest point (0.5 = half speed); `nil` plays it at speed.
+    public var brakingRate: Double?
+    /// Seconds the whole frame holds when the lap reaches the spot where the reference braked;
+    /// `nil` holds nothing.
+    public var referenceHoldSeconds: Double?
+
+    public init(brakingRate: Double? = 0.5, referenceHoldSeconds: Double? = 1) {
+        self.brakingRate = brakingRate
+        self.referenceHoldSeconds = referenceHoldSeconds
+    }
+
+    /// What a fresh Every Corner export does: half speed through the braking zone, a 1 s hold.
+    public static let standard = CornerClipRetime()
+    /// The rates and holds the export sheet offers.
+    public static let rates: [Double] = [0.25, 0.5, 0.75]
+    public static let holds: [Double] = [0.5, 1, 2, 3]
 }
 
 /// Output video encoding settings.

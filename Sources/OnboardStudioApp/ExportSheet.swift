@@ -27,6 +27,9 @@ struct ExportSheet: View {
     /// Every-corner export (#326): only the corners that lost time, and the files it would write.
     @State private var onlyOpportunityCorners = false
     @State private var cornerFiles: [CornerExport] = []
+    /// A fresh Every Corner export slows the braking zone and holds a sight picture (#360); one
+    /// saved without them keeps playing at speed.
+    @State private var cornerRetime = CornerRetimeChoice(.standard)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -207,9 +210,10 @@ extension ExportSheet {
             completeLapsOnly = completeOnly
             skipSlowLaps = slowerThanBest != nil
             if let slowerThanBest { slowLapPercent = Int((slowerThanBest * 100).rounded()) }
-        case .eachCorner(let onlyOpportunities):
+        case .eachCorner(let onlyOpportunities, let retime):
             rangeMode = "eachCorner"
             onlyOpportunityCorners = onlyOpportunities
+            cornerRetime = CornerRetimeChoice(retime)
         }
         if spanEnd == 0 { spanEnd = editor.duration }
         // A range marked with I and O is what the user means to export, as in any editor (#230).
@@ -285,7 +289,7 @@ extension ExportSheet {
         case "eachLap":
             s.range = .eachLap(
                 completeOnly: completeLapsOnly, slowerThanBest: skipSlowLaps ? Double(slowLapPercent) / 100 : nil)
-        case "eachCorner": s.range = .eachCorner(onlyOpportunities: onlyOpportunityCorners)
+        case "eachCorner": s.range = .eachCorner(onlyOpportunities: onlyOpportunityCorners, retime: cornerRetime.value)
         default: s.range = .whole
         }
         s.width -= s.width % 2
@@ -312,7 +316,8 @@ extension ExportSheet {
             return startBatch(lapExports.map { BatchFile(title: "Lap \($0.lap)", range: $0.range) }, noun: "lap")
         }
         if rangeMode == "eachCorner" {
-            return startBatch(cornerFiles.map { BatchFile(title: $0.title, range: $0.range) }, noun: "corner")
+            return startBatch(
+                cornerFiles.map { BatchFile(title: $0.title, range: $0.range, retimes: $0.retimes) }, noun: "corner")
         }
         let settings = finalSettings
         let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
@@ -395,18 +400,20 @@ extension ExportSheet {
         Toggle("Only corners that lost time", isOn: $onlyOpportunityCorners)
             .accessibilityIdentifier("export.onlyOpportunityCorners")
             .help("Leave out the corners where no time was lost against the coaching reference")
+        CornerRetimeOptions(choice: $cornerRetime)
         Text(
             cornerFiles.isEmpty
                 ? "No corners read yet; the lap needs position, distance and a reference lap."
                 : "Writes \(cornerFiles.count) \(cornerFiles.count == 1 ? "file" : "files"): "
                     + cornerFiles.map(\.title).joined(separator: ", ")
-                    + ", each from two seconds before the brake point to two seconds after the corner."
+                    + ", each from two seconds before the brake point to two seconds after the corner"
+                    + cornerRetime.summary + "."
         )
         .font(.caption).foregroundStyle(.secondary)
         .accessibilityIdentifier("export.cornerFiles")
-        .task(id: onlyOpportunityCorners) {
+        .task(id: CornerFilesKey(onlyOpportunities: onlyOpportunityCorners, retime: cornerRetime.value)) {
             guard let loaded = editor.loadedForExport else { return }
-            let range = ExportRange.eachCorner(onlyOpportunities: onlyOpportunityCorners)
+            let range = ExportRange.eachCorner(onlyOpportunities: onlyOpportunityCorners, retime: cornerRetime.value)
             let duration = editor.duration
             cornerFiles = await Task.detached(priority: .userInitiated) {
                 ProjectCompiler.cornerExports(range, in: loaded, duration: duration)
@@ -418,6 +425,8 @@ extension ExportSheet {
     struct BatchFile {
         let title: String
         let range: ClosedRange<Double>
+        /// The file's own retimes: a corner clip's slowed braking zone and held sight picture (#360).
+        var retimes: [Retime] = []
 
         func fileName(base: String, fileExtension: String) -> String { "\(base) – \(title).\(fileExtension)" }
     }
@@ -443,11 +452,17 @@ extension ExportSheet {
         editor.edit("Change Export Settings") { $0.export = settings }
         exportTask = Task {
             do {
-                let compiled = ProjectCompiler.prepareForExport(
+                let plain = ProjectCompiler.prepareForExport(
                     try await ProjectCompiler.compile(loaded), settings: settings)
                 var throttle = ProgressThrottle()
                 for (index, lap) in laps.enumerated() {
                     batchLabel = "Exporting \(lap.title) — \(index + 1) of \(laps.count)"
+                    // A retimed file is its own composition: the retimes scale the media (#360).
+                    let compiled =
+                        lap.retimes.isEmpty
+                        ? plain
+                        : ProjectCompiler.prepareForExport(
+                            try await ProjectCompiler.compile(loaded, adding: lap.retimes), settings: settings)
                     let url = folder.appending(path: lap.fileName(base: base, fileExtension: settings.fileExtension))
                     for try await update in Exporter.export(compiled, settings: settings, range: lap.range, to: url) {
                         let overall = (Double(index) + update.fraction) / Double(laps.count)
