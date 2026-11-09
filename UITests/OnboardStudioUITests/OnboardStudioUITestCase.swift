@@ -236,6 +236,23 @@ class OnboardStudioUITestCase: XCTestCase {
         XCTAssertEqual(result, .completed, "Expected “\(text)”, got \(element.value ?? "nil")", file: file, line: line)
     }
 
+    /// Does `action` — something that is safe to do twice — until `element` matches `predicate`,
+    /// at most `attempts` times, waiting `each` seconds after each. A click or key press the runner
+    /// drops (a key window lost, a menu that opened late) is done again instead of costing the
+    /// whole wait (#308); one that keeps failing still fails, with the element's last value.
+    func repeatUntil(
+        _ element: XCUIElement, matches predicate: NSPredicate, attempts: Int = 4, each: TimeInterval = 5,
+        _ what: String, file: StaticString = #filePath, line: UInt = #line, action: () -> Void
+    ) {
+        var done = false
+        for _ in 0..<attempts where !done {
+            action()
+            let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+            done = XCTWaiter().wait(for: [expectation], timeout: each) == .completed
+        }
+        XCTAssertTrue(done, "\(what): got \(element.value ?? "nil") after \(attempts) tries", file: file, line: line)
+    }
+
     /// Waits until the element's value or label contains `text`, for readouts that carry a number
     /// alongside their wording.
     func expect(_ element: XCUIElement, toContain text: String, file: StaticString = #filePath, line: UInt = #line) {

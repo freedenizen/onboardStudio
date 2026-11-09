@@ -57,8 +57,10 @@ final class JourneyUITests: OnboardStudioUITestCase {
             if XCTWaiter().wait(for: [moving], timeout: 1) == .completed { play.click() } else { stopped = true }
         }
         XCTAssertTrue(stopped, "Playback stopped")
-        app.buttons["transport.start"].click()
-        expect(transportTime, toRead: "0:00.00")
+        // Twice on CI the Start click was dropped and the playhead stayed at the end (#308).
+        repeatUntil(transportTime, matches: NSPredicate(format: "value == %@", "0:00.00"), "Go to start") {
+            app.buttons["transport.start"].click()
+        }
         app.buttons["transport.stepForward"].click()
         expect(transportTime, toRead: "0:00.03")
 
