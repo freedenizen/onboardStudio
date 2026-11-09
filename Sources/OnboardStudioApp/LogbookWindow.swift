@@ -341,7 +341,7 @@ struct LogbookWindow: View {
                         remove: { confirmRemoval = entry },
                         save: { model.save($0) },
                         personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
-                        visits: PersonalBests.visits(in: model.entries, circuitKey: circuitKey(of: entry))
+                        visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))
                     )
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: 420)
                 }

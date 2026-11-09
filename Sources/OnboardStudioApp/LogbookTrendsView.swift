@@ -149,10 +149,16 @@ struct LogbookTrendsView: View {
     // MARK: - Corners
 
     @ViewBuilder private func corners(circuitKey: String) -> some View {
-        let trends = LogbookTrends.cornerTrends(for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
+        let comparison = LogbookTrends.cornerComparison(
+            for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
+        let trends = comparison?.trends ?? []
         let unread = points.filter { $0.corners.isEmpty }
         VStack(alignment: .leading, spacing: 6) {
-            Text("Corner by corner: the latest visit").font(.subheadline.weight(.semibold))
+            Text("Corner by corner: the latest track day").font(.subheadline.weight(.semibold))
+            if let comparison {
+                Text(Self.caption(of: comparison)).font(.callout).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("logbook.trends.corners.caption")
+            }
             if !unread.isEmpty {
                 HStack {
                     Text("\(unread.count) session\(unread.count == 1 ? "" : "s") here predate corner records.")
@@ -163,43 +169,50 @@ struct LogbookTrendsView: View {
                 }
             }
             if trends.isEmpty {
-                Text("No corners read for the latest visit yet.").font(.callout).foregroundStyle(.secondary)
+                Text("No corners read for the latest track day yet.").font(.callout).foregroundStyle(.secondary)
             } else {
-                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
-                    GridRow {
-                        Text("Turn").bold()
-                        Text("Brake point").bold()
-                        Text("vs last visit").bold()
-                        Text("vs PB").bold()
-                        Text("Min speed").bold()
-                        Text("vs last").bold()
-                        Text("vs PB").bold()
-                        Text("Time").bold()
-                        Text("vs last").bold()
-                    }
-                    .font(.caption)
-                    ForEach(trends) { trend in
-                        GridRow {
-                            Text(trend.label)
-                            Text(trend.latest?.brakePointMeters.map { "\(Int($0.rounded())) m" } ?? "—")
-                            Text(Self.metres(trend.brakePointChange))
-                            Text(Self.metres(trend.brakePointToBest))
-                            Text(trend.latest.map { Self.speed($0.minimumSpeed) } ?? "—")
-                            Text(Self.speedDelta(trend.minimumSpeedChange))
-                            Text(Self.speedDelta(trend.minimumSpeedToBest))
-                            Text(trend.latest.map { String(format: "%.2f s", $0.timeInCorner) } ?? "—")
-                            Text(Self.seconds(trend.timeChange))
-                        }
-                        .font(.callout.monospacedDigit())
-                        .accessibilityElement(children: .combine)
-                        .accessibilityIdentifier("logbook.trends.corner.\(trend.label)")
-                    }
-                }
+                cornerGrid(trends, last: comparison?.previous != nil, best: comparison?.best != nil)
                 Text(
                     "Brake point: positive means later than the other visit. Minimum speed in km/h. Time: negative "
                         + "means quicker through the corner."
                 )
                 .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// The corners against the last track day and the personal best; a comparison's columns only
+    /// when there is one to make (#426) — no earlier track day, or the latest day holding the
+    /// personal best, would leave them dashes.
+    private func cornerGrid(_ trends: [LogbookTrends.CornerTrend], last: Bool, best: Bool) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
+            GridRow {
+                Text("Turn").bold()
+                Text("Brake point").bold()
+                if last { Text("vs last visit").bold() }
+                if best { Text("vs PB").bold() }
+                Text("Min speed").bold()
+                if last { Text("vs last").bold() }
+                if best { Text("vs PB").bold() }
+                Text("Time").bold()
+                if last { Text("vs last").bold() }
+            }
+            .font(.caption)
+            ForEach(trends) { trend in
+                GridRow {
+                    Text(trend.label)
+                    Text(trend.latest?.brakePointMeters.map { "\(Int($0.rounded())) m" } ?? "—")
+                    if last { Text(Self.metres(trend.brakePointChange)) }
+                    if best { Text(Self.metres(trend.brakePointToBest)) }
+                    Text(trend.latest.map { Self.speed($0.minimumSpeed) } ?? "—")
+                    if last { Text(Self.speedDelta(trend.minimumSpeedChange)) }
+                    if best { Text(Self.speedDelta(trend.minimumSpeedToBest)) }
+                    Text(trend.latest.map { String(format: "%.2f s", $0.timeInCorner) } ?? "—")
+                    if last { Text(Self.seconds(trend.timeChange)) }
+                }
+                .font(.callout.monospacedDigit())
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("logbook.trends.corner.\(trend.label)")
             }
         }
     }
@@ -334,4 +347,29 @@ extension LogbookTrendsView {
         }
     }
 
+    /// Which laps the corner table reads (#426): the best of the latest track day, against the best
+    /// of the day before and the personal best.
+    static func caption(of comparison: LogbookTrends.CornerComparison) -> String {
+        let dates = [comparison.latest, comparison.previous, comparison.best].compactMap { $0?.date }
+        let calendar = Calendar.current
+        let spansYears = Set(dates.map { calendar.component(.year, from: $0) }).count > 1
+        func day(_ point: LogbookTrends.Point) -> String {
+            spansYears
+                ? point.date.formatted(.dateTime.day().month(.abbreviated).year())
+                : point.date.formatted(.dateTime.day().month(.abbreviated))
+        }
+        func lap(_ point: LogbookTrends.Point) -> String { point.best.map { TimeParsing.lapTimeString($0) } ?? "—" }
+        var text = "The best lap of \(day(comparison.latest)), \(lap(comparison.latest))"
+        if let previous = comparison.previous {
+            text += ", against the best of \(day(previous)), \(lap(previous))"
+        }
+        if let best = comparison.best {
+            text += comparison.previous == nil ? ", against" : ", and"
+            text += " your personal best, \(lap(best)) on \(day(best))."
+        } else {
+            text += comparison.previous == nil ? ": your personal best here." : ". It is your personal best here."
+        }
+        if comparison.previous == nil { text += " The next track day here is compared with this one." }
+        return text
+    }
 }
