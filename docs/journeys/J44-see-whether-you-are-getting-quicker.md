@@ -17,7 +17,8 @@ where, and nothing in the app could answer it; every logbook draws the lap-time 
    day before and the personal best, and says which laps those are (#426): brake point, minimum
    speed and time in corner, with the differences. A comparison with nothing to compare — no
    earlier day, or the latest day set the personal best — has no columns. Sessions entered
-   before corners were kept get a **Read Their Corners** button that reads their files once.
+   before corners were kept, or measured before a correction to the measurement (#438), get a
+   **Read Their Corners** button that reads their files once.
 5. VoiceOver reads the charts as sentences.
 
 Tests: `LogbookTrendsUITests.testTrendsReadAcrossTwoVisits`. Model: `LogbookTrendsTests`.

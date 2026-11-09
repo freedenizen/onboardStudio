@@ -139,6 +139,24 @@ struct LogbookTrendsTests {
         #expect(PersonalBests.visits(in: entries, circuitKey: "Stadium") == 4, "{visits} keeps counting sessions")
     }
 
+    @Test func cornersReadByAnEarlierMeasurementAreOfferedAgain() throws {
+        // An entry written before #438 has corners but no record of which measurement read them.
+        var entry = visit("old", day: 0, best: 110, corners: [corner("1", brake: -60, minimum: 27, time: 3.9)])
+        var json = try #require(
+            try JSONSerialization.jsonObject(with: JSONEncoder().encode(entry)) as? [String: Any])
+        #expect(json["cornerMeasurement"] as? Int == LogbookEntry.cornerMeasurement)
+        json.removeValue(forKey: "cornerMeasurement")
+        entry = try JSONDecoder().decode(LogbookEntry.self, from: JSONSerialization.data(withJSONObject: json))
+        #expect(entry.cornerMeasurement == 1)
+        #expect(entry.needsCornerReading, "corners from the first measurement are offered a fresh reading")
+        // A new entry is read by this build's measurement; one with no corners always needs reading.
+        #expect(
+            !visit("new", day: 1, best: 110, corners: [corner("1", brake: 80, minimum: 27, time: 3.9)])
+                .needsCornerReading)
+        #expect(visit("none", day: 1, best: 110).needsCornerReading)
+        #expect(LogbookEntry.cornerMeasurement == 2)
+    }
+
     @Test func cornersAreComparedWithTheLastVisitAndThePersonalBest() {
         let entries = [
             visit(

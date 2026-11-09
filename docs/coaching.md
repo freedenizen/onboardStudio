@@ -206,6 +206,12 @@ Three decisions in the reading are worth not re-deriving:
   comparison hands over from one corner to the next at the earlier of the two laps' brake points.
   Nothing between the first brake point and the line is counted twice or left out; what is lost
   before the first brake point belongs to the previous lap's last corner.
+- **Braking that begins after a corner has ended is the next corner's.** The slowest point is
+  looked for up to 25 m past a corner's end, for a late apex; that window stops short of a brake
+  application that begins after the end (#438). Without the cut, Sonoma's flat-out turn 1 took the
+  braking for turn 2 as its own: a brake point 60 m *after* its apex and turn 2's braking speed as
+  its minimum. Braking that begins inside a corner — a tightening one, braked past the apex — is
+  still that corner's.
 
 The apex a corner's metrics are relative to is `Corner.apexDistance`, and #318 changed how the
 detector finds it: the middle of the stretch where curvature is within 2 % of its peak, rather than

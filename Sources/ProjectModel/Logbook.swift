@@ -74,6 +74,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     public var exports: [ProjectLink]
     /// The corners of the best lap as read when the session was entered (#353).
     public var corners: [CornerRecord]
+    /// Which measurement read `corners` (#438): below `LogbookEntry.cornerMeasurement`, they were
+    /// read by a build since corrected, and Trends offers to read them again.
+    public var cornerMeasurement: Int
     /// The track day the session belongs to (#392); `nil` only until `Logbook.ensureDays` runs.
     public var trackDayID: UUID?
     /// How long the file runs, from its first sample to its last (#392), so a clip can be matched
@@ -114,6 +117,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.projects = projects
         self.exports = exports
         self.corners = corners
+        self.cornerMeasurement = Self.cornerMeasurement
         self.trackDayID = trackDayID
         self.durationSeconds = durationSeconds
         self.coaching = coaching
@@ -150,7 +154,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
-        case trackDayID, durationSeconds, coaching, added, modified
+        case cornerMeasurement, trackDayID, durationSeconds, coaching, added, modified
     }
 
     public init(from decoder: any Decoder) throws {
@@ -175,6 +179,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         projects = try c.decodeIfPresent([ProjectLink].self, forKey: .projects) ?? []
         exports = try c.decodeIfPresent([ProjectLink].self, forKey: .exports) ?? []
         corners = try c.decodeIfPresent([CornerRecord].self, forKey: .corners) ?? []
+        // Absent in entries written before #438: their corners came from the first measurement.
+        cornerMeasurement = try c.decodeIfPresent(Int.self, forKey: .cornerMeasurement) ?? 1
         trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
         durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
         coaching = try? c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)

@@ -152,7 +152,9 @@ struct LogbookTrendsView: View {
         let comparison = LogbookTrends.cornerComparison(
             for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
         let trends = comparison?.trends ?? []
-        let unread = points.filter { $0.corners.isEmpty }
+        let unread = points.filter { point in
+            entries.first { $0.id == point.entryID }?.needsCornerReading ?? point.corners.isEmpty
+        }
         VStack(alignment: .leading, spacing: 6) {
             Text("Corner by corner: the latest track day").font(.subheadline.weight(.semibold))
             if let comparison {
@@ -161,7 +163,7 @@ struct LogbookTrendsView: View {
             }
             if !unread.isEmpty {
                 HStack {
-                    Text("\(unread.count) session\(unread.count == 1 ? "" : "s") here predate corner records.")
+                    Text(Self.unreadText(unread))
                         .font(.callout).foregroundStyle(.secondary)
                     Button(readingCorners ? "Reading…" : "Read Their Corners") { readCorners(of: unread) }
                         .disabled(readingCorners)
@@ -217,6 +219,20 @@ struct LogbookTrendsView: View {
         }
     }
 
+    /// Why the sessions in `unread` want reading (#438): entered before corners were kept, or
+    /// measured by a build whose corner measurement has since been corrected.
+    static func unreadText(_ unread: [LogbookTrends.Point]) -> String {
+        let missing = unread.filter { $0.corners.isEmpty }.count
+        let outdated = unread.count - missing
+        func sessions(_ count: Int) -> String { "\(count) session\(count == 1 ? "" : "s")" }
+        switch (missing, outdated) {
+        case (_, 0): return "\(sessions(missing)) here predate corner records."
+        case (0, _): return "\(sessions(outdated)) here were measured before a correction to corner measurement."
+        default:
+            return "\(sessions(unread.count)) here predate corner records or a correction to corner measurement."
+        }
+    }
+
     /// Reads the sessions entered before corners were kept and writes their corners in.
     private func readCorners(of points: [LogbookTrends.Point]) {
         readingCorners = true
@@ -228,7 +244,7 @@ struct LogbookTrendsView: View {
                     guard var entry = logbook.entry(id: id), let session = LogbookReferences.load(entry) else {
                         continue
                     }
-                    entry.corners = LogbookEntry.cornerRecords(of: session)
+                    entry.readCorners(of: session)
                     try? logbook.save(entry)
                 }
             }.value
