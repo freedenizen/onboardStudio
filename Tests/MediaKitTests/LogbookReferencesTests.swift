@@ -43,28 +43,29 @@ struct LogbookReferencesTests {
         let session = try RaceRenderCSVImporter().importSession(at: fixture, options: SessionBuilder.Options())
         let entry = try LogbookEntry.make(session: session, file: fixture, importerID: "racerender-csv", circuitID: nil)
         try logbook.save(entry)
-        let previous = ProjectCompiler.logbookDirectory
-        ProjectCompiler.logbookDirectory = folder
-        defer { ProjectCompiler.logbookDirectory = previous }
-        #expect(LogbookReferences.load(entry)?.laps.count == 4)
-        #expect(LogbookReferences.profile(of: entry, lap: nil, session: session)?.label == "Lap 4")
+        // Scoped to this test's task (#431): repointing the process-wide logbook raced the suites
+        // that run alongside.
+        try await ProjectCompiler.$scopedLogbookDirectory.withValue(folder) {
+            #expect(LogbookReferences.load(entry)?.laps.count == 4)
+            #expect(LogbookReferences.profile(of: entry, lap: nil, session: session)?.label == "Lap 4")
 
-        let data = Input(label: "d", source: MediaReference(path: fixture.path), kind: .data(DataInputSettings()))
-        var loaded = try CornerExportsTests.loaded(lap: 2)
-        loaded.project.inputs = [data]
-        loaded.sessions = [data.id: session]
-        loaded.project.coaching = CoachingSettings(
-            dataInputID: data.id, lap: 2, reference: .logbook(entryID: entry.id, lap: 4))
-        let tracks = CoachingTracks.make(for: loaded.project, sessions: loaded.sessions, previous: nil)
-        let track = try #require(tracks[data.id])
-        #expect(track.referencePhrase.hasPrefix("coaching-laps") && track.referencePhrase.hasSuffix("lap 4"))
-        #expect(track.reference.label == "Lap 4")
-        // Another session, so lined up by position, as another file's lap is.
-        #expect(track.analyses[2]?.delta.alignment == .byPosition)
-        // A session the logbook has lost falls back to the session best.
-        loaded.project.coaching = CoachingSettings(
-            dataInputID: data.id, lap: 2, reference: .logbook(entryID: UUID(), lap: nil))
-        let fallback = CoachingTracks.make(for: loaded.project, sessions: loaded.sessions, previous: nil)
-        #expect(fallback[data.id]?.referencePhrase == "your best lap")
+            let data = Input(label: "d", source: MediaReference(path: fixture.path), kind: .data(DataInputSettings()))
+            var loaded = try CornerExportsTests.loaded(lap: 2)
+            loaded.project.inputs = [data]
+            loaded.sessions = [data.id: session]
+            loaded.project.coaching = CoachingSettings(
+                dataInputID: data.id, lap: 2, reference: .logbook(entryID: entry.id, lap: 4))
+            let tracks = CoachingTracks.make(for: loaded.project, sessions: loaded.sessions, previous: nil)
+            let track = try #require(tracks[data.id])
+            #expect(track.referencePhrase.hasPrefix("coaching-laps") && track.referencePhrase.hasSuffix("lap 4"))
+            #expect(track.reference.label == "Lap 4")
+            // Another session, so lined up by position, as another file's lap is.
+            #expect(track.analyses[2]?.delta.alignment == .byPosition)
+            // A session the logbook has lost falls back to the session best.
+            loaded.project.coaching = CoachingSettings(
+                dataInputID: data.id, lap: 2, reference: .logbook(entryID: UUID(), lap: nil))
+            let fallback = CoachingTracks.make(for: loaded.project, sessions: loaded.sessions, previous: nil)
+            #expect(fallback[data.id]?.referencePhrase == "your best lap")
+        }
     }
 }

@@ -20,6 +20,12 @@ swift test --filter "RaceChrono"            # tests whose name matches
   composition, export, then decode a frame of the *output* and check the overlay is there. When
   `ffprobe` is installed the output is cross-checked with it; otherwise that test is skipped.
 
+swift-testing runs suites **in parallel in one process**, so a test never writes a process-wide
+setting. For the logbook a compile reads, scope it to the test's own task with
+`ProjectCompiler.$scopedLogbookDirectory.withValue(folder) { … }`. Never set
+`ProjectCompiler.logbookDirectory` in a test: two suites that set and restored it raced each other
+(#431).
+
 CI runs the same suite on every pull request together with the two lint jobs, the XCUITest
 journeys and the commit signature check; those are the required checks, and a PR cannot merge
 until they pass. What a PR does not wait for runs afterwards: the push to `main` repeats the

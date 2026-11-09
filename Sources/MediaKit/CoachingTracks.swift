@@ -53,7 +53,7 @@ enum CoachingTracks {
                     session: session, reference: profile, referencePhrase: "\(otherInput.label) lap \(number)",
                     sameSession: false, units: units, options: options)
             case .logbook(let entryID, let number):
-                let logbook = Logbook(directory: ProjectCompiler.logbookDirectory)
+                let logbook = Logbook(directory: ProjectCompiler.effectiveLogbookDirectory)
                 guard let entry = logbook.entry(id: entryID), let other = LogbookReferences.load(entry),
                     let profile = LogbookReferences.profile(of: entry, lap: number, session: other)
                 else {

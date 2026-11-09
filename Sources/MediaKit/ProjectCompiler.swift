@@ -68,8 +68,16 @@ public enum ProjectCompiler {
     }
 
     /// Where the logbook is read from for `{pb}` and the personal-best timer (#351): the user's
-    /// unless the app points elsewhere, as it does under UI tests.
+    /// unless the app points elsewhere, as it does under UI tests. Set once, at launch.
     nonisolated(unsafe) public static var logbookDirectory: URL?
+
+    /// A logbook for the work running inside `ProjectCompiler.$scopedLogbookDirectory.withValue`
+    /// only (#431): a test's own folder, without repointing the process-wide one that a suite
+    /// running alongside reads.
+    @TaskLocal public static var scopedLogbookDirectory: URL?
+
+    /// The logbook a compile reads: the scoped one, else the process-wide one.
+    public static var effectiveLogbookDirectory: URL? { scopedLogbookDirectory ?? logbookDirectory }
 
     /// Reads the project file and imports every data input.
     public static func load(_ url: URL) async throws -> LoadedProject {
@@ -134,7 +142,7 @@ public enum ProjectCompiler {
         if project.usesLogbookKeys || project.needsPersonalBest {
             let derived = LogbookDerived.make(
                 for: project, sessions: loaded.sessions, location: location,
-                logbook: Logbook(directory: logbookDirectory), previous: previous)
+                logbook: Logbook(directory: effectiveLogbookDirectory), previous: previous)
             loaded.derivedDetails = derived.details
             loaded.personalBests = derived.personalBests
         }

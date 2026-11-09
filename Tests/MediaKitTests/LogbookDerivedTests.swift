@@ -18,28 +18,49 @@ struct LogbookDerivedTests {
             session: session, file: fixture, importerID: "racerender-csv", circuitID: nil, car: "Miata")
         entry.date = Date(timeIntervalSince1970: 1_700_000_000)
         try logbook.save(entry)
-        let previous = ProjectCompiler.logbookDirectory
-        ProjectCompiler.logbookDirectory = folder
-        defer { ProjectCompiler.logbookDirectory = previous }
+        // Scoped to this test's task (#431): repointing the process-wide logbook raced the suites
+        // that run alongside.
+        try await ProjectCompiler.$scopedLogbookDirectory.withValue(folder) {
 
-        let data = Input(label: "d", source: MediaReference(path: fixture.path), kind: .data(DataInputSettings()))
-        let text = DisplayObject(
-            label: "T", inputID: nil, frame: .full, kind: .text(TextParams(text: "PB {pb} · {visits} visits")))
-        let timer = DisplayObject(
-            label: "D", inputID: data.id, frame: .full,
-            kind: .timer(TimerParams(mode: .deltaToBest, deltaReference: .personalBest)))
-        var project = Project(inputs: [data], displayObjects: [text, timer])
-        project.details.car = "Miata"
-        let loaded = try await ProjectCompiler.load(
-            project, location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj")))
-        #expect(loaded.derivedDetails["pb"] == "0:41.20")
-        #expect(loaded.derivedDetails["visits"] == "1")
-        #expect(loaded.derivedDetails["pbCar"] == "Miata")
-        // The personal best is this very session, so the timer keeps measuring the session best.
-        #expect(loaded.personalBests.isEmpty)
-        // A project naming no key and no personal-best timer reads nothing.
-        let plain = try await ProjectCompiler.load(
-            Project(inputs: [data]), location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj")))
-        #expect(plain.derivedDetails.isEmpty && plain.personalBests.isEmpty)
+            let data = Input(label: "d", source: MediaReference(path: fixture.path), kind: .data(DataInputSettings()))
+            let text = DisplayObject(
+                label: "T", inputID: nil, frame: .full, kind: .text(TextParams(text: "PB {pb} · {visits} visits")))
+            let timer = DisplayObject(
+                label: "D", inputID: data.id, frame: .full,
+                kind: .timer(TimerParams(mode: .deltaToBest, deltaReference: .personalBest)))
+            var project = Project(inputs: [data], displayObjects: [text, timer])
+            project.details.car = "Miata"
+            let loaded = try await ProjectCompiler.load(
+                project, location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj")))
+            #expect(loaded.derivedDetails["pb"] == "0:41.20")
+            #expect(loaded.derivedDetails["visits"] == "1")
+            #expect(loaded.derivedDetails["pbCar"] == "Miata")
+            // The personal best is this very session, so the timer keeps measuring the session best.
+            #expect(loaded.personalBests.isEmpty)
+            // A project naming no key and no personal-best timer reads nothing.
+            let plain = try await ProjectCompiler.load(
+                Project(inputs: [data]), location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj")))
+            #expect(plain.derivedDetails.isEmpty && plain.personalBests.isEmpty)
+        }
+    }
+
+    @Test func aScopedLogbookIsSeenOnlyByItsOwnTask() async {
+        // Two tests at once each see their own folder, and the process-wide one is untouched (#431).
+        let before = ProjectCompiler.logbookDirectory
+        let seen = await withTaskGroup(of: (Int, URL?).self) { group in
+            for index in 0..<8 {
+                group.addTask {
+                    let folder = URL(fileURLWithPath: "/tmp/scoped-\(index)")
+                    return await ProjectCompiler.$scopedLogbookDirectory.withValue(folder) {
+                        await Task.yield()
+                        return (index, ProjectCompiler.effectiveLogbookDirectory)
+                    }
+                }
+            }
+            return await group.reduce(into: [:]) { $0[$1.0] = $1.1 }
+        }
+        #expect(seen.count == 8)
+        #expect(seen.allSatisfy { $0.value.path == "/tmp/scoped-\($0.key)" })
+        #expect(ProjectCompiler.logbookDirectory == before)
     }
 }
