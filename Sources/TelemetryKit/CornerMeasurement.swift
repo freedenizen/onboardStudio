@@ -110,7 +110,16 @@ extension CornerMetrics {
             // early apex puts it before turn-in.
             let margin = Int((25 / lap.stepMeters).rounded())
             let slowFrom = max(searchFrom, turnIn - margin)
-            let slowTo = min(searchTo, cornerEnd + margin)
+            var slowTo = min(searchTo, cornerEnd + margin)
+            // Braking that begins after the corner has ended is for the next one: past it the speed
+            // falls into the next braking zone, and a flat-out corner took that braking, and the
+            // speed in it, as its own — a brake point after its apex (#438).
+            if let brakeOn, cornerEnd < slowTo,
+                let next = Self.runs(brakeOn, from: cornerEnd, to: slowTo, mergingGapsUnder: gapPoints)
+                    .first(where: { $0.lowerBound > cornerEnd })
+            {
+                slowTo = max(slowFrom, next.lowerBound - 1)
+            }
             let slowest = (slowFrom...slowTo).min { speed[$0] < speed[$1] } ?? turnIn
 
             var metrics = CornerMetrics(

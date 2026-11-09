@@ -386,7 +386,8 @@ visits months apart; and corner by corner, the best lap of your latest track day
 best of the track day before and against your personal best — brake point, minimum speed and time
 in the corner. A line above the table names the laps it reads, and a comparison's columns appear
 only when there is one to make: none against the personal best when the latest day set it. Click a point to open that session. Sessions entered before corners were kept offer
-**Read Their Corners**. With two cars at the circuit, **Car against car** at the foot of Trends
+**Read Their Corners**, as do sessions whose corners were measured before a correction to how the
+app measures them (#438), so a fixed reading reaches sessions already in the logbook. With two cars at the circuit, **Car against car** at the foot of Trends
 reads each car's best lap against the other's: which is quicker and by how much, both speed traces
 over distance, and a sentence per corner naming the car — where one brakes later, carries more
 speed through the apex or leaves faster.

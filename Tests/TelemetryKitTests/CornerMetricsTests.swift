@@ -57,6 +57,20 @@ struct CornerMetricsTests {
         #expect(abs((metrics[1].phases[.exit]?.upperBound ?? 0) - Self.g.lapLength) < 0.01)
     }
 
+    @Test func brakingThatBeginsAfterACornerEndsIsNotThatCorners() throws {
+        // Both bends flat out, then a gentle braking from 40 to 38 m/s that begins 15 m after each
+        // bend has ended, the way Sonoma's turn 1 runs into the braking for turn 2 (#438).
+        var flat = CoachingFixture.Driving(minimumSpeed: 38)
+        flat.minimumOffset = Self.g.bendLength / 2 + 15 + flat.brakingDistance
+        let metrics = try Self.measured(flat, pedals: true)
+        for corner in metrics {
+            let end = corner.corner.endDistance - corner.corner.apexDistance
+            #expect(end < flat.minimumOffset - flat.brakingDistance, "the braking begins after the corner ends")
+            #expect(corner.brakePointMeters == nil, "took braking at \(corner.brakePointMeters ?? 0) m as its own")
+            #expect(corner.minimumSpeed > 39.5, "minimum \(corner.minimumSpeed) from the next braking zone")
+        }
+    }
+
     @Test func aSlowerLapReadsItsOwnNumbers() throws {
         let metrics = try Self.measured(CoachingFixture.slow)
         let corner = try #require(metrics.first)

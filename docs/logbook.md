@@ -141,7 +141,11 @@ by distance into the lap, the one alignment a live readout can have across sessi
 session's best lap — are read when an entry is made (`LogbookEntry.cornerRecords(of:)`, the
 coaching detector and metrics on that lap) and kept with it, so corner trends across visits are a
 read of the logbook, not of every file; entries from before get them on demand (*Read Their
-Corners*). `LogbookTrends` (`ProjectModel/LogbookTrends.swift`) turns the entries at a circuit key
+Corners*). Each entry records which measurement read its corners (`cornerMeasurement`, #438;
+`LogbookEntry.cornerMeasurement` is the build's): when a fix changes what is measured the number
+steps, and Trends offers the same button for entries read by an earlier one, so a corrected
+reading reaches the sessions already in the logbook. 2 is the first correction: braking that
+begins after a corner has ended is the next corner's. `LogbookTrends` (`ProjectModel/LogbookTrends.swift`) turns the entries at a circuit key
 into dated points (best, optimal, rolling, and the spread of flying laps as consistency), a
 sentence for the summary and VoiceOver, and per-corner trends: the latest visit against the one
 before and the personal best's session, matched by the corner's label. The window's Trends view

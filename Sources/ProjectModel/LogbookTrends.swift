@@ -27,6 +27,21 @@ public struct CornerRecord: Hashable, Codable, Sendable {
 }
 
 extension LogbookEntry {
+    /// The corner measurement this build makes; step it when a fix changes what is measured, so
+    /// entries read before it are offered a fresh reading (#438). 2: braking that begins after a
+    /// corner has ended is the next corner's.
+    public static let cornerMeasurement = 2
+
+    /// Whether Trends should offer to read this entry's corners: none kept yet, or kept from a
+    /// measurement since corrected.
+    public var needsCornerReading: Bool { corners.isEmpty || cornerMeasurement < Self.cornerMeasurement }
+
+    /// Reads the corners of `session`'s best lap into the entry, with this build's measurement.
+    public mutating func readCorners(of session: TelemetrySession) {
+        corners = Self.cornerRecords(of: session)
+        cornerMeasurement = Self.cornerMeasurement
+    }
+
     /// The corners of `session`'s best lap, as the entry keeps them; empty without laps or position.
     public static func cornerRecords(of session: TelemetrySession) -> [CornerRecord] {
         guard let best = LapDeltas.sessionBest(in: session), let profile = LapProfile(lap: best, in: session) else {
