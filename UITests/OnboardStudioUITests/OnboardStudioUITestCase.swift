@@ -46,6 +46,9 @@ class OnboardStudioUITestCase: XCTestCase {
             "-skipLogbook", logbook ? "NO" : "YES", "-openLogbookAtLaunch", "YES",
             // A test that hid the inspector (#280) must not leave it hidden for the next one.
             "-showInspector", "YES",
+            // Nor one that made a blank project from a session leave the next one's New Project
+            // without its layout: the Logbook remembers the last template chosen (#394, #449).
+            "-logbook.projectTemplate", "Classic Dash",
         ]
         app.launchArguments += extraArguments
         app.launchEnvironment["ONBOARD_FIXTURES"] = Self.fixtures.path
