@@ -49,7 +49,7 @@ public enum ProjectLogbook {
             driver: request.driver.isEmpty ? request.session.info.driverName ?? previous?.driver : request.driver)
         if let twin = logbook.entry(sameSessionAs: entry) { return Enrolment(entry: twin, isNew: false) }
         // Onto the day its date and circuit say, as a file added to the logbook itself is (#393).
-        entry.trackDayID = try logbook.day(for: entry).id
+        try logbook.assignDay(to: &entry)
         try logbook.save(entry)
         return Enrolment(entry: entry, isNew: true)
     }

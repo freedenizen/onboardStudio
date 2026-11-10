@@ -110,4 +110,24 @@ struct PersonalBestsTests {
         #expect(project.needsPersonalBest && !project.usesLogbookKeys)
         #expect(!Project().needsPersonalBest)
     }
+
+    /// #455: sessions that name no circuit are not at one place, whatever their files are called.
+    @Test func thereIsNoPersonalBestAtNoCircuit() {
+        func nameless(_ hash: String, best: Double) -> LogbookEntry {
+            LogbookEntry(
+                file: .init(path: "/days/session.csv", contentHash: hash, byteCount: 1, importerID: "x"),
+                date: Date(timeIntervalSince1970: 1_700_000_000), car: "Miata",
+                laps: [.init(number: 1, seconds: best, isComplete: true)], bestLap: best, bestLapNumber: 1)
+        }
+        // Two files with the same name, from who knows where.
+        let entries = [nameless("a", best: 90), nameless("b", best: 80)]
+        #expect(entries.allSatisfy { LogbookFilter.circuitKey(of: $0).isEmpty })
+        #expect(PersonalBests.best(in: entries, circuitKey: "") == nil)
+        #expect(PersonalBests.visits(in: entries, circuitKey: "") == 0)
+        #expect(PersonalBests.trackDays(in: entries, circuitKey: "") == 0)
+        #expect(PersonalBests.badges(in: entries).isEmpty)
+        #expect(LogbookTrends.points(for: entries, circuitKey: "").isEmpty)
+        // Counted over the whole logbook, they are still track days.
+        #expect(PersonalBests.trackDays(in: entries) == 1)
+    }
 }

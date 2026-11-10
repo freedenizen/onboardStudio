@@ -207,11 +207,12 @@ struct LogbookWindow: View {
         .sheet(isPresented: $model.newDayRequested) {
             NewTrackDaySheet(
                 knownCars: LogbookFilter.knownCars(in: model.entries, days: model.days),
+                knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days),
                 lastDay: model.days.first, create: create)
         }
         .onAppear { model.reload() }
         .onChange(of: scope, initial: true) { model.choose(selectedDay) }
-        .onChange(of: model.days) { model.choose(selectedDay) }
+        .onChange(of: model.days) { followTheChosenDay() }
         .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
             let day = selectedDay
             Task { @MainActor in
@@ -370,7 +371,8 @@ struct LogbookWindow: View {
                 if let day = selectedDay {
                     TrackDayHeader(
                         day: day, sessions: model.entries.filter { $0.trackDayID == day.id },
-                        save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day })
+                        save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day },
+                        knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days))
                     Divider()
                 }
                 if shown.isEmpty, isSearching {

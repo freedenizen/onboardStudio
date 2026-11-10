@@ -60,4 +60,29 @@ struct LogbookFilterTests {
         #expect(LogbookFilter.knownCars(in: entries, days: days) == ["Miata", "Elise", "GR86"])
         #expect(LogbookFilter.knownCars(in: [], days: []).isEmpty)
     }
+
+    /// #455: a file from a place the catalogue does not know, naming no track, was a circuit of
+    /// its own in the sidebar, called after the file.
+    @Test func sessionsThatNameNoCircuitAreOneGroupAndNotOneEach() {
+        let nameless = [entry("track"), entry("activity"), entry("generic", car: "Miata")]
+        #expect(nameless.allSatisfy { LogbookFilter.circuitKey(of: $0).isEmpty })
+        #expect(nameless.map(\.title) == ["track", "activity", "generic"], "the file still names the session")
+
+        let groups = LogbookFilter.circuits(in: entries + nameless)
+        #expect(groups.map(\.scope.title) == ["Sonoma Raceway", "Thunderhill", "No circuit"])
+        #expect(groups.last?.count == 3, "one entry, last, as No car is among the cars")
+        let scope = LogbookScope.circuit(id: "", title: "No circuit")
+        #expect(groups.last?.scope == scope)
+        #expect(LogbookFilter.apply(entries + nameless, scope: scope, search: "").count == 3)
+        // A name made of spaces is no name.
+        #expect(LogbookFilter.circuitKey(of: entry("blank", track: "  ")).isEmpty)
+    }
+
+    @Test func theTypedCircuitNamesAreOffered() {
+        let when = Date(timeIntervalSince1970: 1_700_000_000)
+        let days = [TrackDay(date: when, trackName: "Stadium"), TrackDay(date: when, circuitID: "Q112563")]
+        // "Thunderhill" twice on sessions, "Stadium" on a day with none yet; catalogue circuits are
+        // the catalogue's to offer.
+        #expect(LogbookFilter.typedCircuits(in: entries, days: days) == ["Thunderhill", "Stadium"])
+    }
 }

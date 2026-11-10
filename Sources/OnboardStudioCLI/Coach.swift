@@ -199,8 +199,11 @@ struct Coach: AsyncParsableCommand {
         let entries = Logbook().entries()
         let url = URL(fileURLWithPath: path)
         let input = Input(label: "", source: MediaReference(path: path), kind: .data(DataInputSettings()))
-        let key = LogbookReferences.circuitKey(for: input, session: session, url: url)
         let own = try? LogbookEntry.hash(of: url).hex
+        // The circuit the logbook has this very file under, where one named afterwards is kept
+        // (#455); else what the file itself says.
+        let filed = entries.first { $0.file.contentHash == own }.map(LogbookFilter.circuitKey(of:)) ?? ""
+        let key = filed.isEmpty ? LogbookReferences.circuitKey(for: input, session: session, entries: []) : filed
         let candidates = LogbookReferences.sessions(at: key, in: entries, excluding: own)
         let entry: LogbookEntry?
         switch which {

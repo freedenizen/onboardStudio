@@ -14,8 +14,14 @@ struct TrackDayHeader: View {
     let save: (TrackDay) -> Void
     let addSessions: () -> Void
     let remove: () -> Void
+    /// The circuit names typed into the logbook before (#455).
+    var knownCircuits: [String] = []
     @State private var car = ""
     @State private var driver = ""
+    /// The circuit as it is being chosen; the day's until Change is pressed, and the day's again
+    /// once something is chosen.
+    @State private var circuit: Circuit?
+    @State private var typedName = ""
     @State private var showConditions = false
     @FocusState private var focus: Field?
 
@@ -40,6 +46,10 @@ struct TrackDayHeader: View {
                     .accessibilityIdentifier("trackday.header.remove")
             }
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+                GridRow(alignment: .firstTextBaseline) {
+                    Text("Circuit").foregroundStyle(.secondary)
+                    circuitRow
+                }
                 GridRow {
                     Text("Car").foregroundStyle(.secondary)
                     TextField("What was driven", text: $car)
@@ -79,10 +89,45 @@ struct TrackDayHeader: View {
         .padding()
         .onAppear(perform: load)
         .onChange(of: day.id) { load() }
+        .onChange(of: day.circuitKey) { loadCircuit() }
         .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
     }
 
     private var sessionCount: Int { sessions.count }
+
+    /// Where the day was driven, which can be named or corrected after the day exists (#455): a
+    /// day made for files from a place the catalogue does not know begins with no circuit, and
+    /// its sessions were stuck under a circuit named after each file. The choice goes to the
+    /// sessions that had what the day had.
+    private var circuitRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // As wide as Car and Driver under it.
+            CircuitChooser(
+                circuit: $circuit, typedName: $typedName, knownNames: knownCircuits, identifier: "trackday.header",
+                fieldWidth: 240)
+            // Change was pressed and nothing chosen yet: the way back, without choosing again.
+            if circuit == nil, typedName.isEmpty, !day.circuitKey.isEmpty {
+                Button("Keep \(day.title)") { loadCircuit() }.buttonStyle(.link)
+                    .accessibilityIdentifier("trackday.header.circuit.keep")
+            }
+        }
+        .onChange(of: circuit) { commitCircuit() }
+        .onChange(of: typedName) { commitCircuit() }
+    }
+
+    private func loadCircuit() {
+        circuit = day.circuitID.flatMap(CircuitCatalog.circuit(id:))
+        typedName = circuit == nil ? day.trackName ?? "" : ""
+    }
+
+    /// Saves the circuit once one is chosen; while the field is empty the day keeps what it had.
+    private func commitCircuit() {
+        guard circuit != nil || !typedName.isEmpty else { return }
+        var changed = day
+        changed.circuitID = circuit?.id
+        changed.trackName = circuit == nil ? typedName : nil
+        if changed.circuitKey != day.circuitKey { save(changed) }
+    }
 
     /// The camera's clips, each with the session it is the picture of — matched by the clocks,
     /// or chosen here.
@@ -145,6 +190,7 @@ struct TrackDayHeader: View {
     private func load() {
         car = day.car
         driver = day.driver
+        loadCircuit()
     }
 
     private func commit() {
@@ -159,11 +205,12 @@ struct TrackDayHeader: View {
 /// like — before a single file exists. Create saves the day and shows it.
 struct NewTrackDaySheet: View {
     let knownCars: [String]
+    /// The circuit names typed into the logbook before (#455).
+    var knownCircuits: [String] = []
     let lastDay: TrackDay?
     let create: (TrackDay) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var date = Date()
-    @State private var circuitSearch = ""
     @State private var circuit: Circuit?
     @State private var typedName = ""
     @State private var car = ""
@@ -228,39 +275,8 @@ struct NewTrackDaySheet: View {
     }
 
     /// The circuit chosen, or a search of the catalogue; a name the catalogue lacks is kept as typed.
-    @ViewBuilder private var circuitField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let circuit {
-                HStack {
-                    Text(circuit.displayName).accessibilityIdentifier("trackday.new.circuit.chosen")
-                    Button("Change") { self.circuit = nil }.buttonStyle(.link)
-                }
-            } else if !typedName.isEmpty {
-                HStack {
-                    Text("“\(typedName)”, as typed").accessibilityIdentifier("trackday.new.circuit.chosen")
-                    Button("Change") { typedName = "" }.buttonStyle(.link)
-                }
-            } else {
-                TextField("Circuit", text: $circuitSearch, prompt: Text("Search circuits")).labelsHidden()
-                    .accessibilityIdentifier("trackday.new.circuit")
-                ForEach(CircuitCatalog.search(circuitSearch, limit: 5)) { match in
-                    Button(match.displayName) {
-                        circuit = match
-                        circuitSearch = ""
-                    }
-                    .buttonStyle(.link)
-                    .accessibilityIdentifier("trackday.new.match.\(match.name)")
-                }
-                if !circuitSearch.trimmingCharacters(in: .whitespaces).isEmpty {
-                    Button("Use “\(circuitSearch.trimmingCharacters(in: .whitespaces))” as Typed") {
-                        typedName = circuitSearch.trimmingCharacters(in: .whitespaces)
-                        circuitSearch = ""
-                    }
-                    .buttonStyle(.link)
-                    .accessibilityIdentifier("trackday.new.useTyped")
-                }
-            }
-        }
+    private var circuitField: some View {
+        CircuitChooser(circuit: $circuit, typedName: $typedName, knownNames: knownCircuits, identifier: "trackday.new")
     }
 
     private func commit() {

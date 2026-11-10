@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 3
+// ci-shard: 2
 /// J37: a track day into the logbook — files and folders in, a line per file out (#346).
 final class TrackDayUITests: OnboardStudioUITestCase {
     @MainActor
@@ -27,5 +27,52 @@ final class TrackDayUITests: OnboardStudioUITestCase {
         done.click()
         XCTAssertTrue(done.waitForNonExistence(timeout: Self.timeout))
         expectStatus(containing: "to the logbook")
+    }
+
+    /// #455: a file from a place the catalogue does not know used to become a circuit of its own
+    /// in the sidebar, named after the file. Such sessions are gathered as "No circuit", and
+    /// naming the circuit on their day names it on them.
+    @MainActor
+    func testSessionsWithNoCircuitAreGatheredAndTakeTheNameTheirDayIsGiven() throws {
+        launch(logbook: true)
+        XCTAssertTrue(app.windows["Logbook"].waitForExistence(timeout: Self.timeout))
+        // A day begun without saying where: the fixtures onto it, whatever their dates.
+        app.buttons["logbook.newTrackDay"].click()
+        let create = app.buttons["trackday.new.create"]
+        XCTAssertTrue(create.waitForExistence(timeout: Self.timeout), "No New Track Day sheet")
+        create.click()
+        let title = app.staticTexts["trackday.header.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: Self.timeout), "No day header")
+        expect(title, toRead: "Track day")
+        testing("Add Fixture Sessions to Selected Day")
+        finishAddingToDay(.thisDay)
+
+        // One entry for the sessions that name no circuit, and none called after a file.
+        let sidebar = app.descendants(matching: .any).matching(identifier: "logbook.sidebar").firstMatch
+        XCTAssertTrue(sidebar.staticTexts["No circuit"].waitForExistence(timeout: Self.timeout), "No “No circuit”")
+        for file in ["generic", "harrys", "coaching-laps", "racerender-basic", "activity"] {
+            XCTAssertFalse(sidebar.staticTexts[file].exists, "A circuit is named after the file \(file)")
+        }
+        XCTAssertTrue(sidebar.staticTexts["Sonoma Raceway"].exists, "A recognised circuit is still listed")
+
+        // The day is named in its header; the catalogue does not know the place, so as typed.
+        let field = app.textFields["trackday.header.circuit"]
+        XCTAssertTrue(field.waitForExistence(timeout: Self.timeout), "The day's header has no Circuit field")
+        field.click()
+        field.typeText("Stadium")
+        let asTyped = app.descendants(matching: .any).matching(identifier: "trackday.header.useTyped").firstMatch
+        XCTAssertTrue(asTyped.waitForExistence(timeout: Self.timeout), "No way to keep the name as typed")
+        asTyped.click()
+
+        // The day, its sessions and the sidebar follow; the sessions that said where they were stay.
+        expect(title, toRead: "Stadium")
+        XCTAssertTrue(sidebar.staticTexts["Stadium"].waitForExistence(timeout: Self.timeout), "No Stadium circuit")
+        XCTAssertTrue(sidebar.staticTexts["No circuit"].waitForNonExistence(timeout: Self.timeout))
+        XCTAssertTrue(sidebar.staticTexts["Sonoma Raceway"].exists, "A recognised session changed circuit")
+        let day = "\(Date().formatted(date: .abbreviated, time: .omitted)) · Stadium"
+        XCTAssertTrue(
+            app.staticTexts["logbook.day.\(day)"].waitForExistence(timeout: Self.timeout),
+            "The day lost its place in the sidebar when it was named")
+        XCTAssertTrue(app.staticTexts["trackday.header.circuit.chosen"].exists, "The header does not show the choice")
     }
 }
