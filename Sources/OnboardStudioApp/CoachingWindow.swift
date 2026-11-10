@@ -475,23 +475,4 @@ extension CoachingContent {
         let dataTime = analysis.lap.time(atDistance: distance)
         editor.seek(to: max(0, input.sync.projectTime(forInputTime: dataTime)))
     }
-
-    /// In place of the plan and the picture for a logbook session: a project from it, which the
-    /// window then follows (#396).
-    var makeProject: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Next Session").font(.subheadline.weight(.semibold))
-            Text(
-                "A plan, Show Me on the picture and Compare in Video need a project. Make one from this session — "
-                    + "its data file, its clips and the last layout used — and the window follows it."
-            )
-            .font(.callout).foregroundStyle(.secondary)
-            Button("Make a Project") {
-                guard let source = source as? LogbookCoachingSource else { return }
-                LogbookModel.shared.openAsProject(source.entry, template: LogbookModel.lastTemplate(), then: .coaching)
-            }
-            .accessibilityIdentifier("coaching.makeProject")
-        }
-    }
-
 }

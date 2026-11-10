@@ -151,6 +151,18 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
+    /// Whether a project's data input, whose file is at `url`, is this session (#462). The input
+    /// remembers the entry it came from (`DataInputSettings.logbookEntryID`); one that remembers
+    /// none — the project entered nothing in the logbook, or has not finished loading — is the
+    /// session when its file is the entry's.
+    public func isSession(of input: Input, at url: URL) -> Bool {
+        guard let settings = input.dataSettings else { return false }
+        if let remembered = settings.logbookEntryID { return remembered == id }
+        let own = resolveFile() ?? URL(fileURLWithPath: file.path)
+        return own.resolvingSymlinksInPath().standardizedFileURL.path
+            == url.resolvingSymlinksInPath().standardizedFileURL.path
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners

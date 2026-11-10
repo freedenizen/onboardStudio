@@ -57,6 +57,14 @@ extension EditorModel {
         loaded?.mediaURLs[input.id] ?? input.source.resolved(relativeTo: location.baseDirectory)
     }
 
+    /// Whether Coaching, opened on this project, would read the logbook session `entry` (#462):
+    /// the data file it reads is that session's. A project that only has the session among other
+    /// data files, and reads another, is not the session's project.
+    func coaches(_ entry: LogbookEntry) -> Bool {
+        guard let input = ProjectCoachingSource(editor: self).input else { return false }
+        return entry.isSession(of: input, at: dataFileURL(of: input))
+    }
+
     /// Every entry this project's data inputs came from.
     var logbookEntryIDs: [UUID] { project.dataInputs.compactMap { $0.dataSettings?.logbookEntryID } }
 

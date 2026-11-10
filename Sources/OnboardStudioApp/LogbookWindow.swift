@@ -351,7 +351,7 @@ struct LogbookWindow: View {
         LogbookDetail(
             entry: entry, clips: model.clips(of: entry), hasProject: active.editor != nil,
             templates: LogbookModel.templates, newProject: { openAsProject(entry, template: $0) },
-            coach: { CoachingWindow.open(openWindow, entry: entry) },
+            coach: { CoachingWindow.open(openWindow, coaching: entry) },
             compare: { compare(entry, with: $0) }, comparisons: comparisons(for: entry),
             debrief: {
                 model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)

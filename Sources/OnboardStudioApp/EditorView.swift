@@ -66,6 +66,7 @@ struct EditorView: View {
             return true
         }
         .focusedSceneValue(\.editor, editor)
+        .background(EditorWindowLink(editor: editor))
         .sheet(isPresented: $editor.showExport) { ExportSheet(editor: editor) }
         .sheet(item: $editor.clipRequest) { request in VerticalClipSheet(editor: editor, request: request) }
         .sheet(isPresented: $editor.showDebrief) { DebriefSheet(editor: editor) }

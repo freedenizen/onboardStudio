@@ -14,6 +14,13 @@ project just to see where its laps lost time was a detour.*
 3. **File ▸ Export Coaching Sheet as PDF…** and **as Markdown…** write the sheet from the window
    as they do from a project; the window's footer says where it went.
 4. **Project ▸ Coaching…** (⌃⌘C) from an open project brings the window back to that project.
+5. With a project on the session already open — made with New Project a moment ago, say —
+   **Coach…** in the Logbook opens the window on that project, with the plan, Show Me on the
+   picture and Compare in Video, and the project comes forward behind it. A Coaching window that
+   was reading the session before the project opened says the project is open and offers **Use
+   the Open Project** in place of Make a Project. Neither makes a second project (#462).
 
-Tests: `CoachingFromLogbookUITests.testASessionIsCoachedWithNoProjectOpen`. Model:
-`CoachingSettingsTests` (the choices on an entry), `LogbookTests`.
+Tests: `CoachingFromLogbookUITests.testASessionIsCoachedWithNoProjectOpen`,
+`testCoachFindsTheProjectOpenOnTheSession`, `testMakeAProjectFollowsTheProjectAlreadyOpen`. Model:
+`CoachingSettingsTests` (the choices on an entry), `LogbookTests`, `LogbookLinkTests` (which
+project is a session's).
