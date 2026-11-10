@@ -9,6 +9,14 @@ final class DetailsUITests: OnboardStudioUITestCase {
         testing("Add Fixture Data (RaceChrono)")
         XCTAssertTrue(sidebarInput("racechrono-v3").waitForExistence(timeout: Self.timeout), "Data not listed")
 
+        // The file counts seconds since 1970. The inspector says when it ran rather than showing
+        // the count, and says what the start position means (#457).
+        let note = app.staticTexts["sync.startPosition.clock"]
+        XCTAssertTrue(note.waitForExistence(timeout: Self.timeout), "No word on the file's clock times")
+        expect(note, toContain: "Its first sample is at 1767150797 s")
+        let raw = app.staticTexts.matching(NSPredicate(format: "value BEGINSWITH '1767150797 –'")).firstMatch
+        XCTAssertFalse(raw.exists, "The time range is a count of seconds since 1970")
+
         // The file named its track and driver; adding it filled them in.
         menu("Project", "Show Project Details")
         let track = app.textFields["details.track"]

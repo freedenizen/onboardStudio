@@ -49,7 +49,11 @@ struct InputInspector: View {
                 LabeledContent("Channels", value: "\(session.channels.count)")
                 LabeledContent("Laps", value: "\(session.laps.count)")
                 if let range = session.timeRange {
-                    LabeledContent("Time range", value: "\(fmt(range.lowerBound)) – \(fmt(range.upperBound)) s")
+                    // A log on the wall clock says when it ran, not a count of seconds since 1970 (#457).
+                    LabeledContent(
+                        "Time range",
+                        value: session.clockRangeText() ?? "\(fmt(range.lowerBound)) – \(fmt(range.upperBound)) s")
+                    LabeledContent("Duration", value: "\(fmt(session.duration)) s")
                 }
             }
             if let info = editor.loaded?.mediaInfo[input.id] {
@@ -68,12 +72,20 @@ struct InputInspector: View {
             }
         }
         Section("Synchronization") {
+            // Seconds are not grouped in threes: a clock-time position read "1,773,483,132.2" (#457).
             NumberField(
-                "Start position in file (s)", value: binding(\.sync.startPositionInInput, name: "Change Start Position")
+                "Start position in file (s)",
+                value: binding(\.sync.startPositionInInput, name: "Change Start Position"), grouped: false
             )
             .accessibilityIdentifier("sync.startPosition")
-            NumberField("Offset in project (s)", value: binding(\.sync.offsetInProject, name: "Change Offset"))
-                .accessibilityIdentifier("sync.offset")
+            if let note = editor.sessions[input.id]?.clockPositionNote(input.sync.startPositionInInput) {
+                Text(note).font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("sync.startPosition.clock")
+            }
+            NumberField(
+                "Offset in project (s)", value: binding(\.sync.offsetInProject, name: "Change Offset"), grouped: false
+            )
+            .accessibilityIdentifier("sync.offset")
             NumberField("Play speed", value: binding(\.sync.playSpeed, name: "Change Speed"))
                 .accessibilityIdentifier("sync.speed")
             if input.kind.isVideo {

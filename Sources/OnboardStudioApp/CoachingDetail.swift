@@ -148,12 +148,20 @@ struct CornerLinesView: View {
             .help(
                 "The two lines through the corner from GPS, this lap in the accent colour. Lap-to-lap spread is about "
                     + "a metre and absolute accuracy one to three, so read the lines relative to each other.")
-            HStack(spacing: 12) {
-                Label("This lap", systemImage: "line.diagonal").foregroundStyle(Color.accentColor)
-                Label(analysis.reference.label, systemImage: "line.diagonal").foregroundStyle(.secondary)
-                if !others.isEmpty { Label("Other laps", systemImage: "line.diagonal").foregroundStyle(.tertiary) }
-                Label("Brake point", systemImage: "circle.fill")
-                Label("Slowest", systemImage: "square.fill")
+            // Rows of whole entries: an `HStack` shared the width out and broke each over two lines,
+            // one of them inside a word (#457).
+            FlowLayout {
+                Group {
+                    Label("This lap", systemImage: "line.diagonal").foregroundStyle(Color.accentColor)
+                    Label(analysis.reference.label, systemImage: "line.diagonal").foregroundStyle(.secondary)
+                    if !others.isEmpty {
+                        Label("Other laps", systemImage: "line.diagonal").foregroundStyle(.tertiary)
+                    }
+                    Label("Brake point", systemImage: "circle.fill")
+                    Label("Slowest", systemImage: "square.fill")
+                }
+                .lineLimit(1)
+                .padding(.trailing, 6)
             }
             .font(.caption).foregroundStyle(.secondary)
             if let offset = analysis.delta.lateralOffset(atDistance: comparison.reference.corner.apexDistance) {

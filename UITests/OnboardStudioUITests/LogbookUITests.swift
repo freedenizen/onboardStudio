@@ -46,12 +46,40 @@ final class LogbookUITests: OnboardStudioUITestCase {
         XCTAssertTrue(addToProject.waitForExistence(timeout: Self.timeout), "No detail for the selected session")
         XCTAssertTrue(sessionNewProject.exists)
         assertTheSessionsActionsAreInViewAndInFull()
+        assertASessionOutOfTheTableHasNoDetail(search: search, action: addToProject)
         let inputs = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'input.'"))
         let inputsBefore = inputs.count
         addToProject.click()
         let added = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "count > %d", inputsBefore), object: inputs)
         XCTAssertEqual(XCTWaiter().wait(for: [added], timeout: Self.timeout), .completed, "Nothing added")
+    }
+
+    /// A search that finds nothing says so, and a session the search or the sidebar has taken out
+    /// of the table has no detail left on screen with its buttons live (#457). It comes back with
+    /// the session.
+    @MainActor
+    private func assertASessionOutOfTheTableHasNoDetail(search: XCUIElement, action: XCUIElement) {
+        search.click()
+        search.typeText("zzzz")
+        let noResults = app.staticTexts.matching(
+            NSPredicate(format: "value BEGINSWITH 'No Results' OR label BEGINSWITH 'No Results'")
+        ).firstMatch
+        XCTAssertTrue(noResults.waitForExistence(timeout: Self.timeout), "An empty search shows an empty table")
+        XCTAssertTrue(action.waitForNonExistence(timeout: Self.timeout), "The detail is of a session the search hid")
+        search.typeKey("a", modifierFlags: .command)
+        search.typeKey(.delete, modifierFlags: [])
+        XCTAssertTrue(action.waitForExistence(timeout: Self.timeout), "The detail did not come back with the session")
+
+        // The newest session is at the circuit the fixtures call Sonoma; another circuit's sessions
+        // do not include it.
+        let sidebar = app.descendants(matching: .any).matching(identifier: "logbook.sidebar").firstMatch
+        let other = sidebar.staticTexts["Test Circuit"]
+        XCTAssertTrue(other.waitForExistence(timeout: Self.timeout), "No Test Circuit in the sidebar")
+        other.click()
+        XCTAssertTrue(action.waitForNonExistence(timeout: Self.timeout), "The detail is of another circuit's session")
+        sidebar.staticTexts["logbook.scope.all"].click()
+        XCTAssertTrue(action.waitForExistence(timeout: Self.timeout), "The detail did not come back with All Sessions")
     }
 
     /// The ways out of a session are under its detail, not at the end of it, and wrap onto another

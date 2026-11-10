@@ -126,6 +126,13 @@ skips into the recording, *offset in project* delays the video on the project ti
 speed* slows or speeds it up. **Start After Previous Video** chains a clip onto the one above it in
 the list; **Start at 0** resets its offset; the arrow buttons reorder inputs.
 
+A data file has the same section. Some loggers — RaceChrono among them — time every sample by
+the clock, as seconds since 1970, so the file's *start position* is a ten-digit number. The
+inspector says what it is: **Time range** shows when the log ran ("Mar 14, 2026, 10:12:30 AM –
+10:34:05 AM") with its **Duration** beneath, and under the start position a line gives the time of
+day it stands for and how far that is from the file's first sample — or, before anything is
+synchronized, the first sample's own number, which is the one to start from.
+
 **Clip sequences.** The *Clips* section lists the files that make up one continuous video: the
 recording's chapters, or any files you want played back to back. You can see the join without
 opening the inspector: the sidebar row says how many files the input is (`3840×2160, 1428 s ·
@@ -349,11 +356,14 @@ need be, and the sheet's line says which. From the command line, `onboard logboo
 day its date and circuit say), `onboard logbook days` lists the days and `onboard logbook list`
 the sessions with their day.
 
-The window shows it all: a sidebar of track days (under their year when there is more than one),
+The window shows it all: a sidebar of track days (under their year when there is more than one;
+each is its date with the circuit beneath, so two days on one date read apart),
 circuits, cars and years with how many sessions each, a table of sessions (date, circuit, car,
 laps, best, optimal and fastest rolling lap) sortable by any column and narrowed by the search
 field, and, for the selected session, its numbers, every lap with the best marked, the notes, the
-projects made from it and where the file is. What can be done with the session stays at the foot of
+projects made from it and where the file is. A search that finds nothing says so, and the detail
+is of a session in the table: choose another day, or search it away, and the detail goes with it.
+What can be done with the session stays at the foot of
 its detail, in view however many laps are listed above, and the buttons move onto another row
 rather than shorten when the detail is narrow (drag its left edge to widen it). **New Project**
 starts a project with that session's data file and its clips, laid out with the template the last
