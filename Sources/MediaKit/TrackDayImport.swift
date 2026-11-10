@@ -5,11 +5,14 @@ import TelemetryKit
 
 /// A track day into the logbook (#346): every recognised telemetry file and every camera clip with
 /// embedded GPS among the files and folders given becomes an entry; a file already there (same
-/// bytes) is skipped; each file gets a line in the user's words.
+/// bytes) is skipped, and so is a session already there from another file (#465: the same drive
+/// exported in a second format); each file gets a line in the user's words.
 public enum TrackDayImport {
     public enum Outcome: Sendable, Equatable {
         case added(LogbookEntry)
         case alreadyThere(LogbookEntry)
+        /// The drive is in the logbook from another file — another export format (#465).
+        case sameSession(LogbookEntry)
         case notRecognised
         case noData
         case failed(String)
@@ -31,6 +34,13 @@ public enum TrackDayImport {
         }
 
         public var isAdded: Bool { if case .added = outcome { return true } else { return false } }
+        /// The session was in the logbook already: this file, or the same drive from another.
+        public var isAlreadyThere: Bool {
+            switch outcome {
+            case .alreadyThere, .sameSession: true
+            default: false
+            }
+        }
         public var isClip: Bool {
             switch outcome {
             case .clip, .clipAlreadyThere: true
@@ -47,6 +57,9 @@ public enum TrackDayImport {
                 let day = dayLabel.map { ", in \($0)" } ?? ""
                 return "\(name) — added: \(Self.describe(entry))\(day)"
             case .alreadyThere(let entry): return "\(name) — already in the logbook as \(Self.describe(entry))"
+            case .sameSession(let entry):
+                let file = URL(fileURLWithPath: entry.file.path).lastPathComponent
+                return "\(name) — the same session as \(file), already in the logbook: \(Self.describe(entry))"
             case .notRecognised: return "\(name) — not a telemetry file this app reads"
             case .noData: return "\(name) — no position or laps in it"
             case .failed(let reason): return "\(name) — could not be read: \(reason)"
@@ -220,6 +233,9 @@ public enum TrackDayImport {
                 session: session, file: url, importerID: candidate.id, circuitID: circuitID,
                 car: car ?? dayCar ?? previous?.car ?? "",
                 driver: driver ?? dayDriver ?? session.info.driverName ?? previous?.driver)
+            // The same drive from another file — RaceChrono's CSV beside its .rcz — is not a second
+            // session (#465). Before the day, so a refused file makes no day either.
+            if let twin = logbook.entry(sameSessionAs: entry) { return .sameSession(twin) }
             if let day {
                 // Onto the chosen day, with its conditions as the session's to begin with.
                 entry.trackDayID = day.id

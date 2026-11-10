@@ -6,7 +6,8 @@ already knew them.*
 1. **Project ▸ Add Data File…** as always. Once the file has loaded, the status bar says
    *Entered Sonoma in the logbook*: the session is in **Window ▸ Logbook** too, and the input
    remembers which entry is its own. A file already in the logbook (the same bytes) is the same
-   entry, not a second one. Settings ▸ Logbook turns this off.
+   entry, not a second one, and so is another export of a session the logbook has (#465).
+   Settings ▸ Logbook turns this off.
 2. The project's blank **car** and **driver** details are filled from the entry, as the track and
    the day already are from the file.
 3. Save the project and the entry's detail lists it under **Projects**, as a link that opens it;

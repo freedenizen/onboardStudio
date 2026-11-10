@@ -20,7 +20,8 @@ logbooks first and analysers second.
 - **the file** — its path when added, a security-scoped bookmark that follows a move (a plain
   bookmark when the scope cannot be had), the SHA-256 of its bytes and their count, and the
   importer that read it. The hash is how the same file is never entered twice, whatever it is
-  called or wherever it lives; `resolveFile()` tries the bookmark, then the path;
+  called or wherever it lives; `resolveFile()` tries the bookmark, then the path. The same
+  *drive* in another file is caught by its numbers instead (#465, below);
 - **where and when** — the circuit's Wikidata id when `CircuitCatalog` recognised it, the file's
   own track name, and the date the file carries (`SessionInfo.createdAt`); `title` is the circuit,
   else the track name, else the file's name;
@@ -104,6 +105,29 @@ recorded on its entries' `projects` after each compile; every finished export (t
 vertical clip, the debrief) on `exports`. Relinking runs once per load: an input whose file is
 missing takes the entry's bookmark's place as an undoable *Relink Data File*; an entry whose path
 is stale while the project's is good learns the new one.
+
+## One drive, two files (#465)
+
+RaceChrono exports a session as CSV v2, CSV v3 and `.rcz`, and a folder often holds more than
+one. Their bytes differ, so the hash calls them different files, and the drive was entered twice:
+two rows, two points in Trends. `LogbookEntry.isSameSession(as:)`
+(`ProjectModel/LogbookSameSession.swift`) compares what the entries keep: the length of the log
+(within 0.25 s or 0.05 %), the distance driven (within 1 m or 0.01 %; both known or both
+unknown), the date (within a day — a CSV dates the session by its header to the minute, an
+`.rcz` by its first sample), and the time of every lap that both number alike and call complete
+(within 0.02 s). Which laps are complete is left to each format. Measured on one real session in
+all three formats: the two CSVs read alike to the last digit, and the `.rcz` was 0.04 s longer,
+0.02 m further and equal to a millisecond on the laps both called complete.
+
+Strict on purpose: two cars in the same track session, or two loggers in one car, differ by
+seconds and metres and stay two sessions; a drive exported again after its finish line was
+corrected has other lap times and is its own session; an entry with no length recorded is never
+taken for another. `Logbook.entry(sameSessionAs:)` is asked after the hash, in
+`TrackDayImport.importOne` — the outcome is `.sameSession`, counted with the files already there,
+and its line names the file the logbook has the session from — and in `ProjectLogbook.enter`, so
+a project given the other export remembers the entry the logbook already has. The check comes
+before a day is found or made, so a file that is not added leaves no day behind. Duplicates
+entered before this are not merged: nothing in the logbook can be merged yet (#454).
 
 ## Taking it with you (#350)
 
