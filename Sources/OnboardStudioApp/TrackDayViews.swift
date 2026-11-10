@@ -181,7 +181,10 @@ struct NewTrackDaySheet: View {
                 LabeledContent("Circuit") { circuitField }
                 LabeledContent("Car") {
                     HStack {
-                        TextField("What you drove", text: $car).accessibilityIdentifier("trackday.new.car")
+                        // The row is labelled already: a second title would be drawn beside it as
+                        // "Car · What you drove" (#457). The prompt is the hint inside the field.
+                        TextField("Car", text: $car, prompt: Text("What you drove")).labelsHidden()
+                            .accessibilityIdentifier("trackday.new.car")
                         if !knownCars.isEmpty {
                             Menu {
                                 ForEach(knownCars, id: \.self) { known in Button(known) { car = known } }
@@ -237,7 +240,8 @@ struct NewTrackDaySheet: View {
                     Button("Change") { typedName = "" }.buttonStyle(.link)
                 }
             } else {
-                TextField("Search circuits", text: $circuitSearch).accessibilityIdentifier("trackday.new.circuit")
+                TextField("Circuit", text: $circuitSearch, prompt: Text("Search circuits")).labelsHidden()
+                    .accessibilityIdentifier("trackday.new.circuit")
                 ForEach(CircuitCatalog.search(circuitSearch, limit: 5)) { match in
                     Button(match.displayName) {
                         circuit = match
@@ -289,13 +293,35 @@ struct TrackDaySidebarSection: View {
         }
     }
 
-    private func yearOf(_ group: LogbookFilter.Group) -> Int? {
-        guard case .day(let id, _) = group.scope else { return nil }
-        return days.first { $0.id == id }?.year
+    private func yearOf(_ group: LogbookFilter.Group) -> Int? { day(of: group)?.year }
+
+    /// The date over the circuit. On one line — "Aug 23, 2026 · Sonoma Raceway" — the sidebar cut
+    /// the circuit off after a letter or two once the count was beside it, and two days on one
+    /// date could not be told apart (#457).
+    private func row(_ group: LogbookFilter.Group) -> some View {
+        Label {
+            if let day = day(of: group) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(day.date.formatted(date: .abbreviated, time: .omitted))
+                    Text(day.title).font(.caption).foregroundStyle(.secondary)
+                }
+                .lineLimit(1)
+            } else {
+                Text(group.scope.title)
+            }
+        } icon: {
+            Image(systemName: "calendar.day.timeline.left")
+        }
+        .badge(group.count).tag(group.scope)
+        .help(group.scope.title)
+        // One element, read as the day was on one line: "Aug 23, 2026 · Sonoma Raceway".
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(group.scope.title)
+        .accessibilityIdentifier("logbook.day.\(group.scope.title)")
     }
 
-    private func row(_ group: LogbookFilter.Group) -> some View {
-        Label(group.scope.title, systemImage: "calendar.day.timeline.left").badge(group.count).tag(group.scope)
-            .accessibilityIdentifier("logbook.day.\(group.scope.title)")
+    private func day(of group: LogbookFilter.Group) -> TrackDay? {
+        guard case .day(let id, _) = group.scope else { return nil }
+        return days.first { $0.id == id }
     }
 }

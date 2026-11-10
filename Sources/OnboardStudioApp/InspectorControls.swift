@@ -15,6 +15,7 @@ struct NumberField: View {
     let fractionDigits: ClosedRange<Int>
     let step: Double
     let range: ClosedRange<Double>?
+    let grouped: Bool
 
     @State private var draft: Double
     @State private var pending = false
@@ -22,10 +23,11 @@ struct NumberField: View {
 
     /// `step` is how far one press of ↑/↓ moves the value. It defaults to 1, which suits the
     /// percentages, degrees and counts most of these fields hold — pass a smaller step for a
-    /// field that lives between 0 and 1, where ±1 would be useless.
+    /// field that lives between 0 and 1, where ±1 would be useless. `grouped` is whether
+    /// thousands are set apart, which a count wants and a time in seconds does not.
     init(
         _ title: String, value: Binding<Double>, fractionDigits: ClosedRange<Int> = 0...3,
-        step: Double = 1, range: ClosedRange<Double>? = nil
+        step: Double = 1, range: ClosedRange<Double>? = nil, grouped: Bool = true
     ) {
         self.title = title
         _value = value
@@ -33,30 +35,34 @@ struct NumberField: View {
         self.fractionDigits = fractionDigits
         self.step = step
         self.range = range
+        self.grouped = grouped
     }
 
     var body: some View {
-        TextField(title, value: $draft, format: .number.precision(.fractionLength(fractionDigits)))
-            .focused($focused)
-            .onSubmit(commit)
-            .onChange(of: draft) { _, new in if focused, new != value { pending = true } }
-            .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
-            .onChange(of: value) { _, new in if !pending { draft = new } }
-            .onDisappear(perform: commit)
-            // Bare ↑/↓ only. Inside a text field ⇧↑/⇧↓ extend the selection, which is the standard
-            // macOS gesture and belongs to the field editor; `onKeyPress(keys:)` does not match a
-            // modified key anyway, so they are left alone on purpose rather than by accident.
-            .onKeyPress(keys: [.upArrow, .downArrow]) { press in
-                adjust(by: press.key == .upArrow ? step : -step)
-                return .handled
-            }
-            .onKeyPress(.escape) {
-                guard pending else { return .ignored }
-                draft = value
-                pending = false
-                focused = false
-                return .handled
-            }
+        TextField(
+            title, value: $draft,
+            format: .number.precision(.fractionLength(fractionDigits)).grouping(grouped ? .automatic : .never)
+        )
+        .focused($focused)
+        .onSubmit(commit)
+        .onChange(of: draft) { _, new in if focused, new != value { pending = true } }
+        .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
+        .onChange(of: value) { _, new in if !pending { draft = new } }
+        .onDisappear(perform: commit)
+        // Bare ↑/↓ only. Inside a text field ⇧↑/⇧↓ extend the selection, which is the standard
+        // macOS gesture and belongs to the field editor; `onKeyPress(keys:)` does not match a
+        // modified key anyway, so they are left alone on purpose rather than by accident.
+        .onKeyPress(keys: [.upArrow, .downArrow]) { press in
+            adjust(by: press.key == .upArrow ? step : -step)
+            return .handled
+        }
+        .onKeyPress(.escape) {
+            guard pending else { return .ignored }
+            draft = value
+            pending = false
+            focused = false
+            return .handled
+        }
     }
 
     private func commit() {

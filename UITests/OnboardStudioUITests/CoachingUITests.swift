@@ -39,6 +39,10 @@ final class CoachingUITests: OnboardStudioUITestCase {
         // the two lines, and the way to the video.
         let detail = app.staticTexts["Time lost by phase"]
         XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "Selecting a corner showed no detail")
+        // The legend under the corner's map keeps each entry whole, on one line (#457: "Slow / est").
+        let slowest = app.staticTexts.matching(NSPredicate(format: "value == 'Slowest'")).firstMatch
+        XCTAssertTrue(slowest.waitForExistence(timeout: Self.timeout), "No legend under the corner's map")
+        XCTAssertLessThan(slowest.frame.height, 22, "A legend entry is broken over two lines")
         let compareInVideo = app.buttons["coaching.compareInVideo"]
         XCTAssertTrue(compareInVideo.waitForExistence(timeout: Self.timeout), "No Compare in Video for a real lap")
         compareInVideo.click()

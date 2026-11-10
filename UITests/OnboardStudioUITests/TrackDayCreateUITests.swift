@@ -15,6 +15,12 @@ final class TrackDayCreateUITests: OnboardStudioUITestCase {
         // The sheet: a circuit from the catalogue, a car typed, Create.
         let search = app.textFields["trackday.new.circuit"]
         XCTAssertTrue(search.waitForExistence(timeout: Self.timeout), "No New Track Day sheet")
+        // Each row is named once: the hint is inside the field, not a second label beside the
+        // row's own (#457: "Car · What you drove", "Circuit · Search circuits").
+        XCTAssertFalse(app.staticTexts["Search circuits"].exists, "The circuit row has a second label")
+        XCTAssertFalse(app.staticTexts["What you drove"].exists, "The car row has a second label")
+        XCTAssertEqual(search.placeholderValue, "Search circuits")
+        XCTAssertEqual(app.textFields["trackday.new.car"].placeholderValue, "What you drove")
         search.click()
         search.typeText("Sonoma")
         // Link-style buttons read as links, so the match is found by identifier alone.

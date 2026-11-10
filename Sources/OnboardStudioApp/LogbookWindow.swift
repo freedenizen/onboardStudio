@@ -292,9 +292,27 @@ struct LogbookWindow: View {
     }
 
     /// The session whose detail is on screen: the one selected, while the sessions are what the
-    /// window shows. What New Project in the toolbar is about, too (#449).
+    /// window shows and it is one of them. A session the sidebar or the search has taken out of
+    /// the table has no detail and no buttons to press (#457). What New Project in the toolbar is
+    /// about, too (#449).
     var shownEntry: LogbookEntry? {
-        view == .sessions ? model.entries.first { $0.id == selection } : nil
+        guard view == .sessions, let entry = model.entries.first(where: { $0.id == selection }),
+            LogbookFilter.matches(entry, scope: scope), LogbookFilter.matches(entry, search: search)
+        else { return nil }
+        return entry
+    }
+
+    private var isSearching: Bool { !search.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    /// A session opened from Trends or the Season: selected among the sessions, with whatever
+    /// would keep it out of the table — the sidebar's choice, a search — put aside.
+    private func show(_ id: UUID) {
+        if let entry = model.entries.first(where: { $0.id == id }) {
+            if !LogbookFilter.matches(entry, scope: scope) { scope = .all }
+            if !LogbookFilter.matches(entry, search: search) { search = "" }
+        }
+        selection = id
+        view = .sessions
     }
 
     @ViewBuilder private var content: some View {
@@ -314,17 +332,11 @@ struct LogbookWindow: View {
         } else if view == .season {
             SeasonView(
                 entries: model.entries, plans: (active.editor?.trackLibrary ?? TrackLibrary()).all(),
-                onOpen: { id in
-                    selection = id
-                    view = .sessions
-                })
+                onOpen: show)
         } else if view == .trends {
             LogbookTrendsView(
                 entries: model.entries, circuitKey: trendsCircuit?.id, circuitTitle: trendsCircuit?.title ?? "",
-                onOpen: { id in
-                    selection = id
-                    view = .sessions
-                })
+                onOpen: show)
         } else {
             VStack(spacing: 0) {
                 if let day = selectedDay {
@@ -333,9 +345,14 @@ struct LogbookWindow: View {
                         save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day })
                     Divider()
                 }
-                LogbookTable(
-                    entries: shown, bests: PersonalBests.badges(in: model.entries),
-                    selection: $selection, sortOrder: $sortOrder)
+                if shown.isEmpty, isSearching {
+                    // Not an empty striped table (#457).
+                    ContentUnavailableView.search(text: search).frame(maxHeight: .infinity)
+                } else {
+                    LogbookTable(
+                        entries: shown, bests: PersonalBests.badges(in: model.entries),
+                        selection: $selection, sortOrder: $sortOrder)
+                }
                 if let message {
                     Divider()
                     Text(message).font(.callout).foregroundStyle(.secondary)
