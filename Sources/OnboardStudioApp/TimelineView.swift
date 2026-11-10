@@ -23,6 +23,10 @@ struct TimelineView: View {
                     VStack(spacing: 0) {
                         TimelineRuler(editor: editor, width: contentWidth)
                         Divider()
+                        if !editor.project.retimes.isEmpty {
+                            RetimeLaneView(editor: editor, width: contentWidth)
+                            Divider()
+                        }
                         MarkerLaneView(editor: editor, width: contentWidth)
                         Divider()
                         if !editor.project.videoInputs.isEmpty {
@@ -52,6 +56,7 @@ struct TimelineView: View {
         // about, only without the label on it.
         .frame(
             height: MarkerLaneView.height + 1
+                + (editor.project.retimes.isEmpty ? 0 : RetimeLaneView.height + 1)
                 + (editor.project.dataInputs.isEmpty ? 0 : DataLaneView.height + 1)
                 + (editor.project.timeline.segments.isEmpty ? 0 : SegmentLaneView.height)
                 + (editor.project.videoInputs.isEmpty ? 12 + 18 + 3 : 12 + 18 + 26 + 4))

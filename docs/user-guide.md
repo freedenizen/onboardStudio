@@ -72,7 +72,14 @@ The **Getting Started** checklist in the inspector tracks these steps and offers
   held (the step is set in **Settings ▸ Editing**). With nothing selected, ← and → step a frame
   instead; `,` and `.` always step a frame, whatever is selected. **J**, **K** and **L** play
   backward, stop and play forward, each further tap faster. **I** and **O** mark a range on the
-  ruler, which **Export** then offers as *In to out*; ⌥X clears it. In the inspector, ↑ and ↓ raise
+  ruler, which **Export** then offers as *In to out*; ⌥X clears it. **Playback ▸ Change Speed of
+  In to Out** plays that range at 25%, 50%, 75%, 150% or 200% (or back at **Normal Speed**), and
+  **Hold Frame** (⇧H) freezes the frame at the playhead for a second: picture, gauges, graphs and
+  maps slow down and stand still together, with the sound muted meanwhile. Each shows as a band on
+  a **Retime** lane under the ruler — "50%", "Hold 1 s" — which the timeline keeps at its length,
+  so nothing else on it moves and the playhead crawls through a slowed band and pauses on a hold.
+  Click one to go to it; right-click to change its speed or length, or to remove it. The export
+  plays them too, and is longer by what they add. In the inspector, ↑ and ↓ raise
   and lower the number field you are in (⇧↑ and ⇧↓ select text there, as they do in any field).
 - **Transport and timeline (below the preview)**: play, step, scrub. The timeline has a time
   ruler (click or drag it to scrub), a marker lane (§6a), a lane with one bar per video, a lane

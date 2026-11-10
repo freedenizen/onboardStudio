@@ -16,6 +16,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Video stabilisation | ✅ | Not in RaceRender. From the camera's motion data (GoPro HERO8+ CORI), from the picture's own movement (any camera), or with a user-installed Gyroflow, whose steadied picture replaces the recording's while telemetry and sync stay with the recording |
 | Audio volume / balance / channel select | ✅ | |
 | Play speed, start position, offset in project | ✅ | `SyncSettings` |
+| Slow motion and freeze frame over part of the video | ✅ | Not in RaceRender, which has one play speed per input. A speed for In to Out and a hold at the playhead (#443), the overlays slowed and held with the picture; corner clips slow their braking zone and hold where the reference braked (#360) |
 | Containers AVFoundation cannot open (MTS, AVI, MKV) | ✅ | Converted with ffmpeg when installed |
 
 ## Data input

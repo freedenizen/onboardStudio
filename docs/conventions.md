@@ -101,6 +101,9 @@ first sample is later reported its first lap as starting before its own data.
   a range on the timeline for playback, render or a lift/extract. **Onboard Studio has I and O**
   (#230) for a scratch range shown on the ruler, which the export sheet offers (and starts on);
   ⌥X clears it, as in Final Cut. It is not saved with the project.
+- **⇧H holds a frame**, Final Cut's Hold (#443): **Playback ▸ Hold Frame** freezes the frame at the
+  playhead for a second. Speed changes take In to Out (**Playback ▸ Change Speed of In to Out**) and
+  have no key, as Final Cut's retime presets are reached through a menu too.
 - `Home` / `End` go to start and end.
 - **A click in a timeline lane moves the playhead** there in all three apps. Onboard Studio does
   this in the video and data lanes as well as the ruler and segment strip (#106); J-K-L and I/O
