@@ -51,14 +51,14 @@ swift run onboard bench --export --codec hevc --seconds 60
   **Force-pushing a feature branch is fine and is how you rebase one.** Rebase locally and
   `git push --force-with-lease`; never `gh pr update-branch --rebase`, which re-creates the
   commits on GitHub's side **unsigned** and fails the required `Verify commit signatures` check.
-  `UI tests` is reported by an aggregating job that fans out to `UI tests (build)` and three
+  `UI tests` is reported by an aggregating job that fans out to `UI tests (build)` and four
   `UI tests (shard N)` jobs; only the aggregate name is required, so the shards can be rebalanced
   freely. A new XCUITest class names its shard in a `// ci-shard: N` line above its
   declaration — `Scripts/check-ui-test-shards.sh` (run by Lint (fast) and the pre-commit hook)
   fails the build if one is missing; `ci.yml` is not edited for it. A shard retries a failed
   test once; a test that passes only on retry is recorded on the `flaky-tests` issue, so look
   there before calling a test stable.
-- **One PR in CI at a time; the rest are drafts.** CI runs one PR at a time (a run is six macOS
+- **One PR in CI at a time; the rest are drafts.** CI runs one PR at a time (a run is seven macOS
   jobs), and a draft skips the macOS jobs and the Claude review — its **UI tests** check is red
   on purpose, so a draft never reads green (#239). Open further PRs with
   `gh pr create --draft`, and `gh pr ready <n>` the next one only when the one before has merged —

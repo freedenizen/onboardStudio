@@ -204,8 +204,11 @@ jobs:
 
   # Sharded across runners rather than parallelised on one: parallel macOS UI test workers run
   # several copies of the app on a single screen, fighting over the key window and the menu bar.
-  # Shards are balanced by measured per-class time (see #100, #435): about 22 minutes of tests
-  # each. Move a class with its `// ci-shard: N` line when one shard runs long.
+  # Shards are balanced by measured per-class time (see #100, #435, #493): about 20 minutes of
+  # tests each on a slow runner, 17 on an ordinary one. Runners differ by as much as 45 %, so a
+  # shard needs that much room under the limit below: three shards of 26 were stopped by it
+  # with every test passed. Move a class with its `// ci-shard: N` line when one shard runs long,
+  # and add a shard — here and in Scripts/check-ui-test-shards.sh — when they all do.
   ui-tests-shard:
     name: UI tests (${{ matrix.name }})
     needs: [changes, ui-tests-build]
@@ -227,6 +230,8 @@ jobs:
             shard: 2
           - name: shard 3
             shard: 3
+          - name: shard 4
+            shard: 4
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
