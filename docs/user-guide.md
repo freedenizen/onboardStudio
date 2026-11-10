@@ -348,11 +348,14 @@ The window shows it all: a sidebar of track days (under their year when there is
 circuits, cars and years with how many sessions each, a table of sessions (date, circuit, car,
 laps, best, optimal and fastest rolling lap) sortable by any column and narrowed by the search
 field, and, for the selected session, its numbers, every lap with the best marked, the notes, the
-projects made from it and where the file is. **New Project** starts a project with that session's
-data file and its clips, laid out with the template the last New Project used (Classic Dash to
-begin with); the pop-up beside it offers every template, or a blank project. **Add to Current
-Project** adds the session to the project in front. **Remove from Logbook…** takes a session out,
-and the trash button in a day's header takes the day and its sessions out; no file is touched.
+projects made from it and where the file is. What can be done with the session stays at the foot of
+its detail, in view however many laps are listed above, and the buttons move onto another row
+rather than shorten when the detail is narrow (drag its left edge to widen it). **New Project**
+starts a project with that session's data file and its clips, laid out with the template the last
+New Project used (Classic Dash to begin with); the arrow on the button offers every template, or a
+blank project. **Add to Current Project** adds the session to the project in front. **Remove from
+Logbook…** takes a session out, and the trash button in a day's header takes the day and its
+sessions out; no file is touched.
 
 The camera's clips live on the day too. Each recording added — GoPro chapters joined — is listed
 under **Clips** in the day's header with when it started and how long it ran, and is matched to

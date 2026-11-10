@@ -52,13 +52,13 @@ final class LogbookClipsUITests: OnboardStudioUITestCase {
         var found = false
         for index in 0..<min(rows.count, 8) where !found {
             rows.element(boundBy: index).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
-            XCTAssertTrue(app.buttons["logbook.open"].waitForExistence(timeout: Self.timeout))
+            XCTAssertTrue(sessionNewProject.waitForExistence(timeout: Self.timeout))
             found = video.waitForExistence(timeout: 1)
         }
         XCTAssertTrue(found, "No session lists the clip under Video")
 
         // New Project: the clip and the data file, laid out.
-        app.buttons["logbook.open"].click()
+        pressSplitButton(sessionNewProject)
         XCTAssertTrue(app.windows["Untitled"].waitForExistence(timeout: Self.timeout), "No new project")
         XCTAssertTrue(
             sidebarInput("test-3s").waitForExistence(timeout: Self.timeout * 2), "The clip is not a video input")

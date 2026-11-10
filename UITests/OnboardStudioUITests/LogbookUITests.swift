@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 
 // ci-shard: 1
@@ -43,12 +44,35 @@ final class LogbookUITests: OnboardStudioUITestCase {
         rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
         let addToProject = app.buttons["logbook.addToProject"]
         XCTAssertTrue(addToProject.waitForExistence(timeout: Self.timeout), "No detail for the selected session")
-        XCTAssertTrue(app.buttons["logbook.open"].exists)
+        XCTAssertTrue(sessionNewProject.exists)
+        assertTheSessionsActionsAreInViewAndInFull()
         let inputs = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'input.'"))
         let inputsBefore = inputs.count
         addToProject.click()
         let added = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "count > %d", inputsBefore), object: inputs)
         XCTAssertEqual(XCTWaiter().wait(for: [added], timeout: Self.timeout), .completed, "Nothing added")
+    }
+
+    /// The ways out of a session are under its detail, not at the end of it, and wrap onto another
+    /// row rather than shorten: each is inside the window without scrolling, and at least as wide
+    /// as its own title (#448: they read "C…", "Re…" and "Ex…", below the fold).
+    @MainActor
+    private func assertTheSessionsActionsAreInViewAndInFull() {
+        let window = app.windows["Logbook"]
+        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+        let actions = [
+            ("logbook.open", "New Project"), ("logbook.addToProject", "Add to Current Project"),
+            ("logbook.coach", "Coach…"), ("logbook.replay", "Replay…"), ("logbook.compareWith", "Compare With"),
+            ("logbook.debrief", "Export Coaching Debrief…"), ("logbook.showInFinder", "Show in Finder"),
+            ("logbook.remove", "Remove from Logbook…"),
+        ]
+        for (identifier, title) in actions {
+            let control = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+            XCTAssertTrue(control.exists, "\(title) is missing")
+            XCTAssertTrue(window.frame.contains(control.frame), "\(title) is out of view at \(control.frame)")
+            let titleWidth = (title as NSString).size(withAttributes: [.font: font]).width
+            XCTAssertGreaterThan(control.frame.width, titleWidth, "\(title) is cut short")
+        }
     }
 }

@@ -78,7 +78,7 @@ search over circuit, car, driver, notes, tags and file name — so it is tested 
 hands the entry to the next editor through `PendingLogbookOpen`, as New from Template hands a
 template; **Add to Current Project** calls the front editor's `addData(at:)`. The toolbar's Add
 Track Day… and a drop of files or folders on the window run `TrackDayImport` behind the same
-sheet. Fits 1024×768 (sidebar 170–280, detail 720 minimum).
+sheet. Fits 1024×768 (sidebar 170–280, the sessions 460 minimum, a session's detail 320–420).
 
 ## Conditions and notes (#348)
 
@@ -271,6 +271,14 @@ have reached by hand; **Export Coaching Debrief…** is `LogbookModel.openAsProj
 with the Coaching Debrief template and `then: .debrief`, so the new editor puts the debrief sheet
 up once it appears. It is disabled until the session has a clip on its day, with the help text
 saying why.
+
+The detail is a pane of the window's own `HSplitView`, beside the `NavigationSplitView`, as the
+editor's inspector is (#448). Inside the detail column a split view gave the table and the detail
+their minimum widths and left the rest of the column empty, whatever their ideal widths and
+layout priorities said, so the buttons had 248 points between them. They are in `FlowLayout` rows
+in a `safeAreaInset` under the scrolling detail: a button that does not fit starts another row, and
+none of them scrolls out of view. **New Project** is one `Menu` with a `primaryAction` — a split
+button — in place of a button and an icon-only menu beside it.
 
 ## On the command line (#398)
 

@@ -215,6 +215,16 @@ class OnboardStudioUITestCase: XCTestCase {
 
     func sidebarInput(_ label: String) -> XCUIElement { app.staticTexts["input.\(label)"] }
     func sidebarObject(_ label: String) -> XCUIElement { app.staticTexts["object.\(label)"] }
+
+    /// New Project in a session's detail in the Logbook. It is a split button (#448), which the
+    /// tests see as a pop-up button holding the button that makes the project and the arrow that
+    /// offers the templates.
+    var sessionNewProject: XCUIElement { app.popUpButtons["logbook.open"] }
+
+    /// Presses the button of a split button, to the left of its arrow.
+    func pressSplitButton(_ element: XCUIElement) {
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).click()
+    }
     var statusLine: XCUIElement { app.staticTexts["status.message"] }
     var transportTime: XCUIElement { app.staticTexts["transport.time"] }
 
