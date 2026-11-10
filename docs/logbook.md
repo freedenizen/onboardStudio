@@ -252,8 +252,10 @@ Project used (`logbook.projectTemplate`), Classic Dash to begin with; a pop-up o
 From v0.34.0 the Logbook is what opens when the app does (`.defaultLaunchBehavior` on its
 `Window` scene, `Preferences.openLogbookAtLaunch`, Settings ▸ Logbook; `AppDelegate` opens no
 untitled document while it is on). The welcome window's reasons to exist moved: starting a
-project is the toolbar's **New Project** menu (`Menu` with a primary action — a blank project —
-and the built-in and user templates, Open Project…, Templates… and the sample project beneath),
+project is the toolbar's **New Project** menu (a blank project, the built-in and user templates,
+Open Project…, Templates… and the sample project; while a session is selected its Blank Project
+and templates make the project from that session, under a heading that names it, and **New
+Project Without a Session** is the empty one — #449, `LogbookWindow.shownEntry`),
 recents are File ▸ Open Recent, and the template cards with their right-click management (#44,
 J17) are the **Templates** window (`TemplatesWindow.swift`, Window ▸ Templates), which is the old
 launcher view without its identity pane and project buttons. An editor no longer dismisses the

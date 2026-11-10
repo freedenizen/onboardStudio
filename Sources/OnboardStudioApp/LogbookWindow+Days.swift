@@ -73,15 +73,36 @@ extension LogbookWindow {
         NSDocumentController.shared.newDocument(nil)
     }
 
-    /// The toolbar's New Project (#395): a blank project at a click; the templates, an existing
-    /// project, the Templates window and the sample beneath.
+    /// A new project from the session (#394), laid out with `template`; the next New Project on a
+    /// session uses the same layout, as it does after a choice in the session's own menu.
+    func newProject(fromSession entry: LogbookEntry, template: ProjectTemplate?) {
+        UserDefaults.standard.set(template?.name ?? "", forKey: "logbook.projectTemplate")
+        openAsProject(entry, template: template)
+    }
+
+    /// The toolbar's New Project (#395): a blank project, the templates, an existing project, the
+    /// Templates window and the sample. With a session selected the project is made from that
+    /// session, as the button in its detail makes it, and the menu names the session (#449): the
+    /// same two words did two different things a few hundred points apart.
     var newProjectMenu: some View {
         // Where a project starts, now that the Logbook is the window at launch (#395).
         Menu {
-            Button("Blank Project") { NSDocumentController.shared.newDocument(nil) }
-            Section("From a Template") {
-                ForEach(LogbookModel.templates(), id: \.name) { template in
-                    Button(template.name) { newProject(from: template) }
+            if let entry = shownEntry {
+                Section("From \(sessionName(entry))") {
+                    Button("Blank Project") { newProject(fromSession: entry, template: nil) }
+                    ForEach(LogbookModel.templates(), id: \.name) { template in
+                        Button(template.name) { newProject(fromSession: entry, template: template) }
+                    }
+                }
+                Section {
+                    Button("New Project Without a Session") { NSDocumentController.shared.newDocument(nil) }
+                }
+            } else {
+                Button("Blank Project") { NSDocumentController.shared.newDocument(nil) }
+                Section("From a Template") {
+                    ForEach(LogbookModel.templates(), id: \.name) { template in
+                        Button(template.name) { newProject(from: template) }
+                    }
                 }
             }
             Divider()
@@ -92,6 +113,20 @@ extension LogbookWindow {
         } label: {
             Label("New Project", systemImage: "doc.badge.plus")
         }
+    }
+
+    /// What the toolbar's New Project will make, for its help tag.
+    var newProjectHelp: String {
+        shownEntry == nil
+            ? "A blank project; the menu offers the templates, an existing project and the sample"
+            : "A new project from the selected session, or one without it; the menu also offers an "
+                + "existing project and the sample"
+    }
+
+    /// "Sonoma Raceway, Aug 23, 2026": a session in the few words a menu has room for.
+    private func sessionName(_ entry: LogbookEntry) -> String {
+        guard let date = entry.date else { return entry.title }
+        return "\(entry.title), \(date.formatted(date: .abbreviated, time: .omitted))"
     }
 
     // MARK: - Against another session (#397)

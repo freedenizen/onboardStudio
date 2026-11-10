@@ -169,7 +169,7 @@ struct LogbookWindow: View {
         // the rest of the column empty, so the detail never had the width it asked for (#448).
         HSplitView {
             browser.frame(minWidth: 640).layoutPriority(1)
-            if view == .sessions, let entry = model.entries.first(where: { $0.id == selection }) {
+            if let entry = shownEntry {
                 detail(of: entry).frame(minWidth: 320, idealWidth: 320, maxWidth: 420)
             }
         }
@@ -244,7 +244,7 @@ struct LogbookWindow: View {
                     }
                     ToolbarItem(placement: .primaryAction) {
                         newProjectMenu
-                            .help("A blank project; the menu offers the templates, an existing project and the sample")
+                            .help(newProjectHelp)
                             .accessibilityLabel("New Project")
                             .accessibilityIdentifier("logbook.newProject")
                     }
@@ -289,6 +289,12 @@ struct LogbookWindow: View {
 
     var shown: [LogbookEntry] {
         LogbookFilter.apply(model.entries, scope: scope, search: search).sorted(using: sortOrder)
+    }
+
+    /// The session whose detail is on screen: the one selected, while the sessions are what the
+    /// window shows. What New Project in the toolbar is about, too (#449).
+    var shownEntry: LogbookEntry? {
+        view == .sessions ? model.entries.first { $0.id == selection } : nil
     }
 
     @ViewBuilder private var content: some View {
