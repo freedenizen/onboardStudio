@@ -134,6 +134,22 @@ final class LapUITests: OnboardStudioUITestCase {
         menu("Marker", "Previous Lap")
         expectStatus(containing: "No lap that way")
     }
+
+    /// A data file that runs on after the video ends is cut off where the timeline ends. Its bar
+    /// used to be drawn to its own length and centred in the lane, so its laps and the playhead
+    /// mark sat minutes away from the ruler, and the bar reached out of the window (#463).
+    @MainActor
+    func testADataFileLongerThanTheVideoStaysOnTheRuler() throws {
+        launch()
+        addFixtureVideo()  // three seconds
+        testing("Add Fixture Data (Coaching Laps)")  // a little under three minutes
+        XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout), "Data not listed")
+        let bar = app.descendants(matching: .any).matching(identifier: "timeline.data.coaching-laps").firstMatch
+        XCTAssertTrue(bar.waitForExistence(timeout: Self.timeout), "No bar for the data file on the timeline")
+        let window = app.windows.firstMatch.frame
+        XCTAssertTrue(window.contains(bar.frame), "The data bar reaches out of the window: \(bar.frame) in \(window)")
+        XCTAssertEqual(bar.value as? String, "4 laps")
+    }
 }
 
 // ci-shard: 2

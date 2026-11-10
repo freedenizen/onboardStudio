@@ -698,7 +698,9 @@ the lap number and its time in the status line. Going back from mid-lap lands on
 lap you are in, as previous-edit does in an editor; a second press goes to the one before.
 
 Laps that fall past the end of the video cannot be reached — the timeline ends when the picture
-does.
+does. The bar ends there too: a log that runs on after the camera stopped, or one chapter of a
+longer recording, shows the part of the file that the picture covers, with its laps under the
+times on the ruler.
 
 ### 6d. Sectors
 
