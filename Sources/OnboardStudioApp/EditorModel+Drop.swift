@@ -177,7 +177,8 @@ extension EditorModel {
         let dropped = InputPlanning.sort(dropped: urls)
         dropped.images.forEach { addImage(at: $0) }
         dropped.data.forEach { addData(at: $0) }
-        if !dropped.videos.isEmpty { addVideos(at: dropped.videos) }
+        // With the chapters that follow on disk, as Add Video… brings them (#468).
+        if !dropped.videos.isEmpty { addVideos(at: CameraChapters.completing(dropped.videos)) }
         // Last, so that it is what the status line is left saying.
         if let refusal = Self.refusal(ofFolders: dropped.folders) { statusMessage = refusal }
     }

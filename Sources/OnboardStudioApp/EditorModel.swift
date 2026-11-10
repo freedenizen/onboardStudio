@@ -383,7 +383,7 @@ extension EditorModel {
         let urls = OpenPanels.chooseVideos(
             title: "Add Video", message: "Chapters of one recording are joined into one video.")
         guard !urls.isEmpty else { return }
-        addVideos(at: urls)
+        addVideos(at: CameraChapters.completing(urls))
     }
 
     func forgetTrackDefinition(for id: InputID) {

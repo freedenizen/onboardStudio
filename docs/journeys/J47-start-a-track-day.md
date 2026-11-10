@@ -6,7 +6,7 @@ is kept in groups sessions under a day or an event first.*
 1. **Window ▸ Logbook**, then **New Track Day…** in the toolbar (or **File ▸ New Track Day…**,
    ⌥⌘N, from anywhere). The sheet asks the date, the circuit (search the catalogue, or keep a name
    as typed), the car (with the cars the logbook knows a click away), the driver, the weather and
-   the track, and notes.
+   the surface (dry, damp, wet…), and notes.
 2. **Create**. The day appears under **Track Days** in the sidebar — "23 Aug 2026 · Sonoma
    Raceway", under its year when the logbook spans more than one — chosen, with its header above
    an empty table: *No sessions yet. Add Files… or drop the day's files here.* The car and

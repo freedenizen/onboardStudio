@@ -29,6 +29,37 @@ extension LogbookWindow {
         view = .sessions
     }
 
+    /// The circuit the trends are of: the one chosen in the sidebar, else the only one there is.
+    var trendsCircuit: (id: String, title: String)? {
+        if case .circuit(let id, let title) = scope { return (id, title) }
+        if let day = selectedDay, let id = day.circuitID { return (id, day.title) }
+        let circuits = LogbookFilter.circuits(in: model.entries)
+        if circuits.count == 1, case .circuit(let id, let title) = circuits[0].scope { return (id, title) }
+        return nil
+    }
+
+    // MARK: - A drop (#468)
+
+    /// Shown while files are dragged over the window: that it takes them, and where they will go.
+    var dropHighlight: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .strokeBorder(Color.accentColor, lineWidth: 3)
+            .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(alignment: .bottom) {
+                Label(
+                    selectedDay.map { "Add to \($0.label)" } ?? "Add to the Logbook, each file on its own day",
+                    systemImage: "plus.circle.fill"
+                )
+                .font(.headline)
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(.regularMaterial, in: Capsule())
+                .padding(.bottom, 24)
+            }
+            .padding(4)
+            .allowsHitTesting(false)
+            .accessibilityIdentifier("logbook.dropHighlight")
+    }
+
     // MARK: - Sidebar
 
     var sidebar: some View {

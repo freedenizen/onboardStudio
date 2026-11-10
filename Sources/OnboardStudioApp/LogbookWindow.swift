@@ -157,6 +157,8 @@ struct LogbookWindow: View {
     @State private var confirmDayRemoval: TrackDay?
     /// What the last export or import did, under the table (#350).
     @State var message: String?
+    /// Files are being dragged over the window (#468).
+    @State var isDropTarget = false
     @Environment(\.openWindow) var openWindow
     @Bindable var model = LogbookModel.shared
     private var active = ActiveEditor.shared
@@ -173,6 +175,7 @@ struct LogbookWindow: View {
                 detail(of: entry).frame(minWidth: 320, idealWidth: 320, maxWidth: 420)
             }
         }
+        .overlay { if isDropTarget { dropHighlight } }
         .sheet(item: $model.trackDayRequest) { request in
             TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
         }
@@ -184,7 +187,7 @@ struct LogbookWindow: View {
         .onAppear { model.reload() }
         .onChange(of: scope, initial: true) { model.selectedDay = selectedDay }
         .onChange(of: model.days) { model.selectedDay = selectedDay }
-        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+        .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
             let day = selectedDay
             Task { @MainActor in
                 let urls = await Self.urls(from: providers)
@@ -383,15 +386,6 @@ struct LogbookWindow: View {
     }
 
     private func circuitKey(of entry: LogbookEntry) -> String { LogbookFilter.circuitKey(of: entry) }
-
-    /// The circuit the trends are of: the one chosen in the sidebar, else the only one there is.
-    private var trendsCircuit: (id: String, title: String)? {
-        if case .circuit(let id, let title) = scope { return (id, title) }
-        if let day = selectedDay, let id = day.circuitID { return (id, day.title) }
-        let circuits = LogbookFilter.circuits(in: model.entries)
-        if circuits.count == 1, case .circuit(let id, let title) = circuits[0].scope { return (id, title) }
-        return nil
-    }
 
     // MARK: - Into a project
 

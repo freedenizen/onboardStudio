@@ -44,8 +44,18 @@ enum OpenPanels {
         panel.canChooseDirectories = true
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = true
-        return panel.runModal() == .OK ? panel.urls : []
+        // Where files were last added from, not where the last panel of any kind was: after an
+        // export that was the folder of the exported videos (#468).
+        let lastFolder = UserDefaults.standard.string(forKey: addFilesFolderKey)
+        if let lastFolder, FileManager.default.fileExists(atPath: lastFolder) {
+            panel.directoryURL = URL(fileURLWithPath: lastFolder, isDirectory: true)
+        }
+        guard panel.runModal() == .OK else { return [] }
+        if let folder = panel.directoryURL { UserDefaults.standard.set(folder.path, forKey: addFilesFolderKey) }
+        return panel.urls
     }
+
+    private static let addFilesFolderKey = "logbook.addFilesFolder"
 
     static func chooseImage() -> URL? {
         let panel = NSOpenPanel()

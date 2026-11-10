@@ -202,7 +202,8 @@ struct NewTrackDaySheet: View {
                     Text("Not noted").tag(SessionConditions.Weather?.none)
                     ForEach(SessionConditions.Weather.allCases, id: \.self) { Text($0.displayName).tag(Optional($0)) }
                 }
-                Picker("Track", selection: $track) {
+                // "Surface", not "Track": two rows under Circuit, "Track" asked which track (#468).
+                Picker("Surface", selection: $track) {
                     Text("Not noted").tag(SessionConditions.Track?.none)
                     ForEach(SessionConditions.Track.allCases, id: \.self) { Text($0.displayName).tag(Optional($0)) }
                 }
