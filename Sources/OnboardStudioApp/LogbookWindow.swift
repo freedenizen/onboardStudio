@@ -164,11 +164,71 @@ struct LogbookWindow: View {
     static func open(_ openWindow: OpenWindowAction) { openWindow(id: windowID) }
 
     var body: some View {
+        // The session's detail is a pane of the window, as the editor's inspector is. Inside the
+        // detail column an `HSplitView` gave the table and the detail their minimum widths and left
+        // the rest of the column empty, so the detail never had the width it asked for (#448).
+        HSplitView {
+            browser.frame(minWidth: 640).layoutPriority(1)
+            if view == .sessions, let entry = model.entries.first(where: { $0.id == selection }) {
+                detail(of: entry).frame(minWidth: 320, idealWidth: 320, maxWidth: 420)
+            }
+        }
+        .sheet(item: $model.trackDayRequest) { request in
+            TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
+        }
+        .sheet(isPresented: $model.newDayRequested) {
+            NewTrackDaySheet(
+                knownCars: LogbookFilter.cars(in: model.entries).map(\.scope.title).filter { $0 != "No car" },
+                lastDay: model.days.first, create: create)
+        }
+        .onAppear { model.reload() }
+        .onChange(of: scope, initial: true) { model.selectedDay = selectedDay }
+        .onChange(of: model.days) { model.selectedDay = selectedDay }
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            let day = selectedDay
+            Task { @MainActor in
+                let urls = await Self.urls(from: providers)
+                if !urls.isEmpty { model.trackDayRequest = TrackDayRequest(urls: urls, day: day) }
+            }
+            return true
+        }
+        .confirmationDialog(
+            "Remove this track day from the logbook?",
+            isPresented: Binding(get: { confirmDayRemoval != nil }, set: { if !$0 { confirmDayRemoval = nil } }),
+            presenting: confirmDayRemoval
+        ) { day in
+            Button("Remove Track Day", role: .destructive) {
+                try? AppLogbook.shared.removeDay(id: day.id, andSessions: true)
+                model.reload()
+                if case .day(let id, _) = scope, id == day.id { scope = .all }
+            }
+        } message: { day in
+            let count = model.entries.filter { $0.trackDayID == day.id }.count
+            Text(
+                "\(day.label) and its \(count) session\(count == 1 ? "" : "s") are taken out of the logbook. "
+                    + "The files are not touched.")
+        }
+        .confirmationDialog(
+            "Remove this session from the logbook?",
+            isPresented: Binding(get: { confirmRemoval != nil }, set: { if !$0 { confirmRemoval = nil } }),
+            presenting: confirmRemoval
+        ) { entry in
+            Button("Remove from Logbook", role: .destructive) {
+                model.remove(entry)
+                if selection == entry.id { selection = nil }
+            }
+        } message: { entry in
+            Text("\(entry.title) is taken out of the logbook. The file itself is not touched.")
+        }
+    }
+
+    /// The sidebar and what it narrows: the sessions, their trends or the season.
+    private var browser: some View {
         NavigationSplitView {
             sidebar.navigationSplitViewColumnWidth(min: 170, ideal: 200, max: 280)
         } detail: {
             content
-                .frame(minWidth: 720, minHeight: 420)
+                .frame(minWidth: 460, minHeight: 420)
                 .toolbar {
                     ToolbarItem(placement: .principal) {
                         Picker("View", selection: $view) {
@@ -223,53 +283,6 @@ struct LogbookWindow: View {
                 }
                 .searchable(text: $search, placement: .toolbar, prompt: "Circuit, car, driver, notes")
         }
-        .sheet(item: $model.trackDayRequest) { request in
-            TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
-        }
-        .sheet(isPresented: $model.newDayRequested) {
-            NewTrackDaySheet(
-                knownCars: LogbookFilter.cars(in: model.entries).map(\.scope.title).filter { $0 != "No car" },
-                lastDay: model.days.first, create: create)
-        }
-        .onAppear { model.reload() }
-        .onChange(of: scope, initial: true) { model.selectedDay = selectedDay }
-        .onChange(of: model.days) { model.selectedDay = selectedDay }
-        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-            let day = selectedDay
-            Task { @MainActor in
-                let urls = await Self.urls(from: providers)
-                if !urls.isEmpty { model.trackDayRequest = TrackDayRequest(urls: urls, day: day) }
-            }
-            return true
-        }
-        .confirmationDialog(
-            "Remove this track day from the logbook?",
-            isPresented: Binding(get: { confirmDayRemoval != nil }, set: { if !$0 { confirmDayRemoval = nil } }),
-            presenting: confirmDayRemoval
-        ) { day in
-            Button("Remove Track Day", role: .destructive) {
-                try? AppLogbook.shared.removeDay(id: day.id, andSessions: true)
-                model.reload()
-                if case .day(let id, _) = scope, id == day.id { scope = .all }
-            }
-        } message: { day in
-            let count = model.entries.filter { $0.trackDayID == day.id }.count
-            Text(
-                "\(day.label) and its \(count) session\(count == 1 ? "" : "s") are taken out of the logbook. "
-                    + "The files are not touched.")
-        }
-        .confirmationDialog(
-            "Remove this session from the logbook?",
-            isPresented: Binding(get: { confirmRemoval != nil }, set: { if !$0 { confirmRemoval = nil } }),
-            presenting: confirmRemoval
-        ) { entry in
-            Button("Remove from Logbook", role: .destructive) {
-                model.remove(entry)
-                if selection == entry.id { selection = nil }
-            }
-        } message: { entry in
-            Text("\(entry.title) is taken out of the logbook. The file itself is not touched.")
-        }
     }
 
     // MARK: - Table and detail
@@ -307,46 +320,43 @@ struct LogbookWindow: View {
                     view = .sessions
                 })
         } else {
-            HSplitView {
-                VStack(spacing: 0) {
-                    if let day = selectedDay {
-                        TrackDayHeader(
-                            day: day, sessions: model.entries.filter { $0.trackDayID == day.id },
-                            save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day })
-                        Divider()
-                    }
-                    LogbookTable(
-                        entries: shown, bests: PersonalBests.badges(in: model.entries),
-                        selection: $selection, sortOrder: $sortOrder)
-                    if let message {
-                        Divider()
-                        Text(message).font(.callout).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(8)
-                            .accessibilityIdentifier("logbook.message")
-                    }
+            VStack(spacing: 0) {
+                if let day = selectedDay {
+                    TrackDayHeader(
+                        day: day, sessions: model.entries.filter { $0.trackDayID == day.id },
+                        save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day })
+                    Divider()
                 }
-                .frame(minWidth: 460)
-                .layoutPriority(1)
-                if let entry = model.entries.first(where: { $0.id == selection }) {
-                    LogbookDetail(
-                        entry: entry, clips: model.clips(of: entry), hasProject: active.editor != nil,
-                        templates: LogbookModel.templates, newProject: { openAsProject(entry, template: $0) },
-                        coach: { CoachingWindow.open(openWindow, entry: entry) },
-                        compare: { compare(entry, with: $0) }, comparisons: comparisons(for: entry),
-                        debrief: {
-                            model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)
-                        },
-                        replay: { ReplayWindow.open(openWindow, entry: entry) },
-                        addToProject: { addToCurrentProject(entry) },
-                        remove: { confirmRemoval = entry },
-                        save: { model.save($0) },
-                        personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
-                        visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))
-                    )
-                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 420)
+                LogbookTable(
+                    entries: shown, bests: PersonalBests.badges(in: model.entries),
+                    selection: $selection, sortOrder: $sortOrder)
+                if let message {
+                    Divider()
+                    Text(message).font(.callout).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(8)
+                        .accessibilityIdentifier("logbook.message")
                 }
             }
         }
+    }
+
+    /// The selected session: its numbers, its laps, and what can be done with it.
+    private func detail(of entry: LogbookEntry) -> some View {
+        LogbookDetail(
+            entry: entry, clips: model.clips(of: entry), hasProject: active.editor != nil,
+            templates: LogbookModel.templates, newProject: { openAsProject(entry, template: $0) },
+            coach: { CoachingWindow.open(openWindow, entry: entry) },
+            compare: { compare(entry, with: $0) }, comparisons: comparisons(for: entry),
+            debrief: {
+                model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)
+            },
+            replay: { ReplayWindow.open(openWindow, entry: entry) },
+            addToProject: { addToCurrentProject(entry) },
+            remove: { confirmRemoval = entry },
+            save: { model.save($0) },
+            personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
+            visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))
+        )
     }
 
     private func circuitKey(of entry: LogbookEntry) -> String { LogbookFilter.circuitKey(of: entry) }

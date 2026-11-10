@@ -192,79 +192,101 @@ struct LogbookDetail: View {
                     }
                 }
                 Text(entry.file.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                HStack(spacing: 4) {
-                    Button("New Project") { newProject(templates().first { $0.name == templateName }) }
-                        .help(newProjectHelp)
-                        .accessibilityIdentifier("logbook.open")
-                    Menu {
-                        Button("Blank Project") {
-                            templateName = ""
-                            newProject(nil)
-                        }
-                        Divider()
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityIdentifier("logbook.detail")
+        .safeAreaInset(edge: .bottom, spacing: 0) { actions }
+    }
+
+    /// What can be done with the session. Under the detail rather than at the end of it, so the
+    /// buttons are in view however many laps there are, and in rows that wrap, so each keeps its
+    /// whole title however narrow the pane is (#448).
+    private var actions: some View {
+        VStack(alignment: .leading) {
+            FlowLayout {
+                Menu {
+                    Button("Blank Project") {
+                        templateName = ""
+                        newProject(nil)
+                    }
+                    Section("From a Template") {
                         ForEach(templates(), id: \.name) { template in
                             Button(template.name) {
                                 templateName = template.name
                                 newProject(template)
                             }
                         }
-                    } label: {
-                        Label("New Project from Template", systemImage: "chevron.down")
                     }
-                    .labelStyle(.iconOnly).fixedSize()
-                    .accessibilityLabel("New Project from Template")
-                    .help("A new project from this session, laid out with the template you choose")
-                    .accessibilityIdentifier("logbook.openFrom")
-                    Spacer().frame(width: 8)
-                    Button("Add to Current Project", action: addToProject)
-                        .disabled(!hasProject)
-                        .accessibilityIdentifier("logbook.addToProject")
+                } label: {
+                    Text("New Project")
+                } primaryAction: {
+                    newProject(templates().first { $0.name == templateName })
                 }
-                HStack(spacing: 4) {
-                    Button("Coach…", action: coach)
-                        .help("Where this session's laps lost time, with no project needed")
-                        .accessibilityIdentifier("logbook.coach")
-                    Button("Replay…", action: replay)
-                        .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
-                        .accessibilityIdentifier("logbook.replay")
-                    Menu("Compare With") {
-                        ForEach(comparisons, id: \.entry.id) { choice in
-                            Button(choice.title) { compare(choice.entry) }
-                        }
-                    }
-                    .fixedSize()
-                    .disabled(comparisons.isEmpty)
-                    .help("Coach this session against another of the logbook's at this circuit")
-                    .accessibilityIdentifier("logbook.compareWith")
-                    Button("Export Coaching Debrief…", action: debrief)
-                        .disabled(clips.isEmpty)
-                        .help(
-                            clips.isEmpty
-                                ? "A debrief video needs the session's clip: assign one on its day first"
-                                : "A project laid out for a debrief from this session, with the export sheet up"
-                        )
-                        .accessibilityIdentifier("logbook.debrief")
-                }
-                HStack {
-                    Button("Show in Finder") {
-                        if let url = entry.resolveFile() { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-                    }
-                    Button("Remove from Logbook…", role: .destructive, action: remove)
-                        .accessibilityIdentifier("logbook.remove")
-                }
+                .fixedSize()
+                .help(newProjectHelp)
+                .accessibilityIdentifier("logbook.open")
+                Button("Add to Current Project", action: addToProject)
+                    .disabled(!hasProject)
+                    .help(
+                        hasProject
+                            ? "Add this session's data file to the project in front"
+                            : "Adds this session to the project in front: open or make one first"
+                    )
+                    .accessibilityIdentifier("logbook.addToProject")
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
+            FlowLayout {
+                Button("Coach…", action: coach)
+                    .help("Where this session's laps lost time, with no project needed")
+                    .accessibilityIdentifier("logbook.coach")
+                Button("Replay…", action: replay)
+                    .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
+                    .accessibilityIdentifier("logbook.replay")
+                Menu("Compare With") {
+                    ForEach(comparisons, id: \.entry.id) { choice in
+                        Button(choice.title) { compare(choice.entry) }
+                    }
+                }
+                .fixedSize()
+                .disabled(comparisons.isEmpty)
+                .help("Coach this session against another of the logbook's at this circuit")
+                .accessibilityIdentifier("logbook.compareWith")
+                Button("Export Coaching Debrief…", action: debrief)
+                    .disabled(clips.isEmpty)
+                    .help(
+                        clips.isEmpty
+                            ? "A debrief video needs the session's clip: assign one on its day first"
+                            : "A project laid out for a debrief from this session, with the export sheet up"
+                    )
+                    .accessibilityIdentifier("logbook.debrief")
+            }
+            FlowLayout {
+                Button("Show in Finder") {
+                    if let url = entry.resolveFile() { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                }
+                .help("Show this session's data file in the Finder")
+                .accessibilityIdentifier("logbook.showInFinder")
+                Button("Remove from Logbook…", role: .destructive, action: remove)
+                    .help("Take this session out of the logbook; its file is not touched")
+                    .accessibilityIdentifier("logbook.remove")
+            }
         }
-        .accessibilityIdentifier("logbook.detail")
+        .controlSize(.small)
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
     }
 
-    /// "A new project with this session's data file, 2 clips and the Classic Dash layout".
+    /// "A new project with this session's data file, 2 clips and the Classic Dash layout; the
+    /// arrow offers the other templates, or a blank project".
     private var newProjectHelp: String {
         var parts = ["this session's data file"]
         if !clips.isEmpty { parts.append("\(clips.count) clip\(clips.count == 1 ? "" : "s")") }
         let layout = templateName.isEmpty ? "no layout" : "the \(templateName) layout"
-        return "A new project with \(parts.joined(separator: ", ")) and \(layout)"
+        return "A new project with \(parts.joined(separator: ", ")) and \(layout); "
+            + "the arrow offers the other templates, or a blank project"
     }
 
     /// "1:56.88 · lap 4 · 23 Aug 2026 · Miata", or "this session" when it is the one.

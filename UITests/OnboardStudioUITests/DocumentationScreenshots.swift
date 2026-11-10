@@ -97,7 +97,7 @@ final class DocumentationScreenshots: OnboardStudioUITestCase {
         let row = table.descendants(matching: .any).matching(rowTypes).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: Self.timeout), "No session under the day")
         row.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
-        XCTAssertTrue(app.buttons["logbook.open"].waitForExistence(timeout: Self.timeout))
+        XCTAssertTrue(sessionNewProject.waitForExistence(timeout: Self.timeout))
         settle()
         shoot(logbook, "logbook")
         // The same session raced in 3D (#415): the standings up and the cars a few seconds in.

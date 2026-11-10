@@ -51,7 +51,7 @@ final class TrackDayCreateUITests: OnboardStudioUITestCase {
         XCTAssertFalse(app.staticTexts["trackday.header.empty"].exists)
         // The sessions took the day's car.
         rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
-        XCTAssertTrue(app.buttons["logbook.open"].waitForExistence(timeout: Self.timeout))
+        XCTAssertTrue(sessionNewProject.waitForExistence(timeout: Self.timeout))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "value CONTAINS 'Miata'")).firstMatch.exists)
     }
 
