@@ -265,7 +265,9 @@ blank project is unchanged; `LogbookLaunchUITests` starts with the Logbook.
 
 ## The ways out of a session (#397)
 
-Beside **Coach…** in a session's detail: **Compare With ▸** (`LogbookWindow.comparisons(for:)` —
+**Coach…** in a session's detail reads the project open on the session when there is one
+(#462, `CoachingWindow.open(_:coaching:)`; see `docs/coaching.md`), else the session alone.
+Beside it: **Compare With ▸** (`LogbookWindow.comparisons(for:)` —
 `LogbookReferences.sessions` at the entry's circuit key, the personal best and the last visit
 named first) writes the chosen session onto the entry's `coaching.reference` as
 `.logbook(entryID:lap:)` and opens the Coaching window on it, exactly the state the window would

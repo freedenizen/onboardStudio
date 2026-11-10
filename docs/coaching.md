@@ -485,7 +485,15 @@ follow-the-front-document behaviour. What needs a project — Show Me moving the
 in Video, the next-session plan, "Add Data File…" — is simply not there for a logbook session,
 and **Make a Project** stands in the plan's place: it opens a project from the session (data
 file, clips, the last template used; `LogbookOpenRequest.then = .coaching`) and the window turns
-to it. The sheet export is `CoachingSheetExporter` now, called by the editor (status line) and
+to it. A project already open on the session is found rather than made again (#462):
+`ActiveEditor` keeps every project that has been the active one with its window
+(`EditorWindowLink`), and `ActiveEditor.editor(coaching:)` returns the first whose coaching input
+is the session — `LogbookEntry.isSession(of:at:)`: the entry the input remembers, else the same
+file, for a project that entered nothing in the logbook or has not finished loading — and whose
+window is on screen or in the Dock. The Logbook's Coach… (`CoachingWindow.open(_:coaching:)`)
+reads that project and brings it forward behind the window; in a window already reading the
+session, Make a Project becomes **Use the Open Project** and follows it. A project that holds the
+session among other data files and reads another is not the session's project. The sheet export is `CoachingSheetExporter` now, called by the editor (status line) and
 the logbook source (a line in the window's footer) alike, through a `CoachingSheetAction` focused
 value so File ▸ Export Coaching Sheet needs no editor. The CLI did this from the start:
 `onboard coach session.csv`.

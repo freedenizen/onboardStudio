@@ -756,7 +756,11 @@ A session in the **Logbook** is coached without a project: select it and **Coach
 reads its file and offers the same lap and reference choices (the logbook's other sessions at the
 circuit among them), keeps the choices with the session, and writes the coaching sheet from
 **File ▸ Export Coaching Sheet**; what needs a picture or a plan is replaced by **Make a
-Project**, which opens a project from the session and brings the window to it. Beside **Coach…**,
+Project**, which opens a project from the session and brings the window to it. With a project on
+the session already open, **Coach…** reads that project instead — the plan, **Show Me** on the
+picture and **Compare in Video** are there, and the project comes forward behind the window — and
+a Coaching window that was already reading the session offers **Use the Open Project** in place of
+Make a Project; neither makes a second project of the same session. Beside **Coach…**,
 **Compare With ▸** lists the logbook's other sessions at the circuit — the personal best here and
 the last visit first — and opens the window with that one as the reference; **Export Coaching
 Debrief…** (once the session has a clip) opens a project laid out for a debrief with the sheet up.
