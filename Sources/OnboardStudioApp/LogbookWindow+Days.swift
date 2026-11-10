@@ -68,7 +68,8 @@ extension LogbookWindow {
                 .accessibilityIdentifier("logbook.scope.all")
             if !model.days.isEmpty {
                 TrackDaySidebarSection(
-                    groups: LogbookFilter.days(in: model.entries, days: model.days), days: model.days)
+                    groups: LogbookFilter.days(in: model.entries, days: model.days), days: model.days,
+                    openYears: Bindable(model).openYears)
             }
             let circuits = LogbookFilter.circuits(in: model.entries)
             if !circuits.isEmpty {
