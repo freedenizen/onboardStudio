@@ -274,12 +274,10 @@ struct ReplayHUD: Equatable {
     // MARK: - What the HUD says
 
     /// Speed in the app's unit, the lap time and the gap for the watched car.
-    func hud(speedUnit: SpeedUnitSetting) -> ReplayHUD? {
+    func hud(speedUnit: SpeedDisplayUnit) -> ReplayHUD? {
         guard let watched else { return nil }
         let metresPerSecond = watched.lap.profile.value(of: .speed, atDistance: watched.distance) ?? 0
-        let speed =
-            speedUnit == .mph
-            ? "\(Int((metresPerSecond * 2.23694).rounded())) mph" : "\(Int((metresPerSecond * 3.6).rounded())) km/h"
+        let speed = speedUnit.text(metersPerSecond: metresPerSecond)
         let lapTime = TimeParsing.lapTimeString(min(time, watched.lap.lapTime), decimals: 2)
         let gap = watched.gapSeconds > 0 ? "+\(String(format: "%.2f", watched.gapSeconds))" : "leading"
         return ReplayHUD(speed: speed, lapTime: lapTime, gap: gap)

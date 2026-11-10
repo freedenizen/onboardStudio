@@ -15,7 +15,7 @@ struct SpeedUnitPicker: View {
     private var resolver: UnitResolver {
         RenderPlanner.unitResolver(
             for: object, in: editor.project, sessions: editor.sessions,
-            appSpeedUnit: SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic)
+            appSpeedUnit: SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic, regionalSpeedUnit: .regional())
     }
 
     var body: some View {

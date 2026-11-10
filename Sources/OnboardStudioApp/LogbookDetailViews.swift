@@ -116,6 +116,9 @@ struct LogbookDetail: View {
     var visits = 0
     /// The template the last New Project used; the next one uses it too.
     @AppStorage("logbook.projectTemplate") private var templateName = "Classic Dash"
+    /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
+    @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
+    private var speedUnit: SpeedDisplayUnit { (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown() }
 
     var body: some View {
         ScrollView {
@@ -130,7 +133,9 @@ struct LogbookDetail: View {
                         detail: entry.bestLapNumber.map { "lap \($0)" })
                     row("Optimal lap", entry.optimalLap.map { TimeParsing.lapTimeString($0) })
                     row("Fastest rolling lap", entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) })
-                    row("Top speed", entry.topSpeed.map { "\(Int(($0 * 3.6).rounded())) km/h" })
+                    row(
+                        "Top speed", entry.topSpeed.map { speedUnit.text(metersPerSecond: $0) },
+                        identifier: "logbook.detail.topSpeed")
                     row("Laps", "\(entry.completeLapCount) complete of \(entry.laps.count)")
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                 }
@@ -312,12 +317,14 @@ struct LogbookDetail: View {
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
 
-    @ViewBuilder private func row(_ label: String, _ value: String?, detail: String? = nil) -> some View {
+    @ViewBuilder private func row(
+        _ label: String, _ value: String?, detail: String? = nil, identifier: String = ""
+    ) -> some View {
         if let value {
             GridRow {
                 Text(label).foregroundStyle(.secondary)
                 HStack(spacing: 6) {
-                    Text(value).monospacedDigit()
+                    Text(value).monospacedDigit().accessibilityIdentifier(identifier)
                     if let detail { Text(detail).foregroundStyle(.secondary) }
                 }
             }

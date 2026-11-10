@@ -300,7 +300,9 @@ the editor is published to the menu bar from the window too, so the Project menu
 
 Without a choice the lap read is the lap at the playhead when it is complete and not the
 reference, else the quickest lap that is not the reference. Units follow the app's speed unit:
-mph gives mph and feet, anything else km/h and metres.
+mph gives mph and feet, anything else km/h and metres; *Automatic* follows the region
+(`CoachingUnits.following`, #464), except in a project saved before schema 3, whose notes stay
+metric as that build wrote them.
 
 The selected corner's **detail** (`CoachingDetail.swift`, #322) sits beside the table: the time
 lost per phase as bars, both laps' readings side by side with where each came from, and the two

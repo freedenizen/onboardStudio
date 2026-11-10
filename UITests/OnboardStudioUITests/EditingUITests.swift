@@ -44,7 +44,7 @@ final class TemplateUITests: OnboardStudioUITestCase {
     }
 }
 
-// ci-shard: 3
+// ci-shard: 1
 /// J4: the manual sync wizard.
 final class SyncUITests: OnboardStudioUITestCase {
     /// #76: manual sync is a panel under the preview, not a sheet over it. Each nudge applies

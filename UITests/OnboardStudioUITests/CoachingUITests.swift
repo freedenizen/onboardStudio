@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 3
+// ci-shard: 1
 /// J33: find where the time went — the Coaching window reads a lap against the best lap, names
 /// the corners that cost the most, and takes the playhead there (#321).
 final class CoachingUITests: OnboardStudioUITestCase {

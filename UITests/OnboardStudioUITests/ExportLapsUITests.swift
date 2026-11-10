@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 2
+// ci-shard: 3
 /// J23: export a session as one file per lap (#150).
 final class ExportLapsUITests: OnboardStudioUITestCase {
     @MainActor

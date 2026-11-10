@@ -16,6 +16,9 @@ struct CarVersusCarSection: View {
     @State private var comparison: CarVersusCar?
     @State private var loading = false
     @State private var failure: String?
+    /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
+    @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
+    private var speedUnit: SpeedDisplayUnit { (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown() }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -41,7 +44,8 @@ struct CarVersusCarSection: View {
             }
         }
         .onAppear { pickDefaults() }
-        .task(id: firstCar + "|" + secondCar) { await compare() }
+        // The sentences are written in the app's units, so a change of unit reads them again.
+        .task(id: firstCar + "|" + secondCar + "|" + appSpeedUnit) { await compare() }
     }
 
     private func pickDefaults() {
@@ -76,11 +80,14 @@ struct CarVersusCarSection: View {
         let traces = comparison.speedTraces()
         return VStack(alignment: .leading, spacing: 4) {
             Chart(traces) { trace in
-                LineMark(x: .value("Distance", trace.distance), y: .value("Speed", trace.speed * 3.6))
-                    .foregroundStyle(by: .value("Car", trace.car))
+                LineMark(
+                    x: .value("Distance", trace.distance),
+                    y: .value("Speed", trace.speed * speedUnit.factorFromMetersPerSecond)
+                )
+                .foregroundStyle(by: .value("Car", trace.car))
             }
             .chartXAxisLabel("m into the lap")
-            .chartYAxisLabel("km/h")
+            .chartYAxisLabel(speedUnit.symbol)
             .frame(height: 160)
             .accessibilityLabel("Speed traces of both cars' best laps")
             .accessibilityValue(comparison.headline)
