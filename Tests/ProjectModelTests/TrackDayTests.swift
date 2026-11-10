@@ -133,4 +133,67 @@ struct TrackDayTests {
         try LogbookTransfer.import(from: orphan, into: target)
         #expect(target.entries().allSatisfy { $0.trackDayID != nil } && target.days().count == 2)
     }
+
+    /// #453: a session took the day's car when it was added and kept that copy whatever the day
+    /// said afterwards. A change on the day now reaches the sessions that still have what it had.
+    @Test func aDaysCarAndDriverGoToTheSessionsThatTookThem() throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        var day = TrackDay(date: Self.morning, trackName: "Somewhere", car: "Miata", driver: "Me")
+        try logbook.saveDay(day)
+        let elsewhere = TrackDay(date: Self.morning.addingTimeInterval(86_400), trackName: "Elsewhere", car: "Miata")
+        try logbook.saveDay(elsewhere)
+        func session(_ hash: String, car: String, driver: String = "Me", on day: TrackDay) throws -> LogbookEntry {
+            var session = entry(hash: hash, date: Self.morning, trackName: "Somewhere", car: car)
+            session.driver = driver
+            session.trackDayID = day.id
+            try logbook.save(session)
+            return session
+        }
+        let took = try session("a", car: "Miata", on: day)
+        let ownCar = try session("b", car: "GR86", on: day)
+        let ownDriver = try session("c", car: "Miata", driver: "Alex", on: day)
+        let otherDay = try session("d", car: "Miata", on: elsewhere)
+
+        // A typo corrected on the day: the sessions that had the day's car have the new one.
+        day.car = "MX-5"
+        let changed = try logbook.updateDay(day)
+        #expect(Set(changed.map(\.id)) == [took.id, ownDriver.id])
+        #expect(logbook.entry(id: took.id)?.car == "MX-5")
+        #expect(logbook.entry(id: ownDriver.id)?.car == "MX-5")
+        #expect(logbook.entry(id: ownCar.id)?.car == "GR86", "a car of its own is kept")
+        #expect(logbook.entry(id: otherDay.id)?.car == "Miata", "another day's sessions are not this day's")
+        #expect(logbook.day(id: day.id)?.car == "MX-5")
+
+        // The driver the same way, and one who was named on the session stays.
+        day.driver = "Sam"
+        #expect(try logbook.updateDay(day).count == 2)
+        #expect(logbook.entry(id: took.id)?.driver == "Sam")
+        #expect(logbook.entry(id: ownCar.id)?.driver == "Sam")
+        #expect(logbook.entry(id: ownDriver.id)?.driver == "Alex")
+
+        // Anything else edited on the day — its notes, its conditions — touches no session.
+        day.notes = "Hot."
+        #expect(try logbook.updateDay(day).isEmpty)
+        #expect(logbook.day(id: day.id)?.notes == "Hot.")
+    }
+
+    /// A day made by a files-first import has no car, and neither have its sessions: typing one on
+    /// the day is typing it on all of them.
+    @Test func aCarTypedOnADayWithNoneReachesItsSessions() throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        var day = TrackDay(date: Self.morning, trackName: "Somewhere")
+        try logbook.saveDay(day)
+        var first = entry(hash: "a", date: Self.morning, trackName: "Somewhere", car: "")
+        first.trackDayID = day.id
+        var second = entry(hash: "b", date: Self.morning, trackName: "Somewhere", car: "GR86")
+        second.trackDayID = day.id
+        try logbook.save(first)
+        try logbook.save(second)
+        day.car = "Miata"
+        #expect(try logbook.updateDay(day).map(\.id) == [first.id])
+        #expect(logbook.entry(id: first.id)?.car == "Miata")
+        #expect(logbook.entry(id: second.id)?.car == "GR86")
+    }
 }

@@ -68,10 +68,20 @@ import UniformTypeIdentifiers
         cars = logbook.cars()
     }
 
-    /// Writes an edited day — its car, driver, conditions, notes, clips — and shows it.
+    /// Writes an edited day — its car, driver, conditions, notes, clips — and shows it. A change
+    /// of car or driver goes to the sessions that took them from the day (#453).
     func saveDay(_ day: TrackDay) {
-        try? AppLogbook.shared.saveDay(day)
+        _ = try? AppLogbook.shared.updateDay(day)
+        note(car: day.car)
         reload()
+    }
+
+    /// A car named for the first time joins the garage, wherever it was typed.
+    func note(car: String) {
+        guard !car.isEmpty, !cars.contains(where: { $0.name.caseInsensitiveCompare(car) == .orderedSame }) else {
+            return
+        }
+        try? AppLogbook.shared.saveCars(cars + [Car(name: car)])
     }
 
     func remove(_ entry: LogbookEntry) {
@@ -79,9 +89,11 @@ import UniformTypeIdentifiers
         reload()
     }
 
-    /// Writes an edited entry — its conditions and notes (#348) — and shows it.
+    /// Writes an edited entry — its car and driver (#453), its conditions and notes (#348) — and
+    /// shows it.
     func save(_ entry: LogbookEntry) {
         try? AppLogbook.shared.save(entry)
+        note(car: entry.car)
         reload()
     }
 
@@ -194,7 +206,7 @@ struct LogbookWindow: View {
         }
         .sheet(isPresented: $model.newDayRequested) {
             NewTrackDaySheet(
-                knownCars: LogbookFilter.cars(in: model.entries).map(\.scope.title).filter { $0 != "No car" },
+                knownCars: LogbookFilter.knownCars(in: model.entries, days: model.days),
                 lastDay: model.days.first, create: create)
         }
         .onAppear { model.reload() }
@@ -393,6 +405,7 @@ struct LogbookWindow: View {
             addToProject: { addToCurrentProject(entry) },
             remove: { confirmRemoval = entry },
             save: { model.save($0) },
+            knownCars: LogbookFilter.knownCars(in: model.entries, days: model.days),
             personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
             visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))
         )

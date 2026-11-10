@@ -344,7 +344,11 @@ A day begins before its files do. **Window ▸ Logbook**, then **New Track Day�
 (or **File ▸ New Track Day…**, ⌥⌘N): the date, the circuit (search the catalogue, or keep a name
 as typed), the car, the driver, the weather and the surface, and notes. **Create** puts the day under
 **Track Days** in the sidebar and shows it above an empty table, with the car and driver as fields
-in its header and **Conditions and Notes** folded under it. **Add Files…**, or drop the logger's
+in its header and **Conditions and Notes** folded under it. The day's car and driver are its
+sessions' too: change one in the header and every session that took it from the day changes with
+it, so a typo is corrected once. A session driven in something else has **Car** and **Driver**
+fields of its own in its detail, with the cars the logbook already knows a click away, and keeps
+what you put there whatever the day says later. **Add Files…**, or drop the logger's
 files and camera clips on the window — while they are over it the window is outlined and says
 where they will go — and each goes on that day with its car, driver and
 conditions to begin with; the sheet says what happened to each file in plain words. A file that

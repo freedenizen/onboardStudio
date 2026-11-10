@@ -56,6 +56,23 @@ public enum LogbookFilter {
             }
     }
 
+    /// The cars the logbook names, on its days and on its sessions, most used first (#453): what
+    /// a Car field offers. One list for the sheet that begins a day and the field that corrects a
+    /// session — the sheet used to prefill the last day's car and offer the sessions' beside it,
+    /// and the two could disagree.
+    public static func knownCars(in entries: [LogbookEntry], days: [TrackDay]) -> [String] {
+        var counts: [String: Int] = [:]
+        for name in entries.map(\.car) + days.map(\.car) {
+            let car = name.trimmingCharacters(in: .whitespaces)
+            if !car.isEmpty { counts[car, default: 0] += 1 }
+        }
+        return counts.sorted { lhs, rhs in
+            lhs.value != rhs.value
+                ? lhs.value > rhs.value : lhs.key.localizedStandardCompare(rhs.key) == .orderedAscending
+        }
+        .map(\.key)
+    }
+
     /// The sidebar's years, newest first; undated sessions are not a year.
     public static func years(in entries: [LogbookEntry]) -> [Group] {
         var counts: [Int: Int] = [:]

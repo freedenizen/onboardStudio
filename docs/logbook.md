@@ -244,6 +244,14 @@ it — title, date and count, car and driver as fields committed on Return or lo
 empty-day line, **Add Files…** and **Remove Track Day…** (a confirmation; the sessions go
 with it, the files stay).
 
+A session takes its car and driver from the day when it is added, and that copy used to be final
+(#453): correcting the day's car changed the header alone, and a session had no field of its own.
+`Logbook.updateDay(_:)` — what `LogbookModel.saveDay` calls — writes the day and carries a change
+of car or driver to the sessions that still have what the day had; one given its own keeps it.
+`SessionCarFields` puts **Car** and **Driver** in a session's detail, committed like the day's.
+Every Car field offers `LogbookFilter.knownCars(in:days:)`: the days' cars and the sessions', one
+list, so the New Track Day sheet no longer prefills one name and offers another.
+
 The toolbar's **Add Files…** (and a drop on the window) runs `TrackDayImport.run(…, day:)` with
 the chosen day, so the sessions take its id, car, driver and conditions; with no day chosen each
 file goes on the day `Logbook.day(for:)` finds or makes, and the report line ends ", in 23 Aug

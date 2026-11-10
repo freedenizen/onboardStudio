@@ -49,4 +49,15 @@ struct LogbookFilterTests {
         #expect(LogbookFilter.apply(all, scope: .all, search: "d.csv").count == 1, "the file's name")
         #expect(LogbookFilter.apply(all, scope: .year(2025), search: "gr86").isEmpty)
     }
+
+    /// #453: one list of cars for every Car field — the days' and the sessions', most used first.
+    @Test func theKnownCarsAreTheDaysAndTheSessions() {
+        let when = Date(timeIntervalSince1970: 1_700_000_000)
+        let days = [
+            TrackDay(date: when, car: "Miata"), TrackDay(date: when, car: "Elise"), TrackDay(date: when, car: " "),
+        ]
+        // "Miata" on two sessions and a day; "Elise" on a day with no session yet; no car is not a car.
+        #expect(LogbookFilter.knownCars(in: entries, days: days) == ["Miata", "Elise", "GR86"])
+        #expect(LogbookFilter.knownCars(in: [], days: []).isEmpty)
+    }
 }

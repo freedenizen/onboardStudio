@@ -203,6 +203,29 @@ extension Logbook {
         try Self.writeDay(stamped, to: url(forDay: day.id))
     }
 
+    /// Writes an edited day and carries a change of its car or driver to its sessions (#453).
+    /// A session takes the day's car when it is added, and it kept that copy whatever the day
+    /// said afterwards: a typo corrected on the day left every session under the old name, and a
+    /// car typed on a day made by a files-first import left them all under none. A session that
+    /// still has what the day had follows the day; one given a car or driver of its own keeps it.
+    /// Returns the sessions changed.
+    @discardableResult
+    public func updateDay(_ day: TrackDay) throws -> [LogbookEntry] {
+        let old = self.day(id: day.id)
+        try saveDay(day)
+        guard let old, old.car != day.car || old.driver != day.driver else { return [] }
+        var changed: [LogbookEntry] = []
+        for var entry in sessions(of: day) {
+            let before = entry
+            if old.car != day.car, entry.car == old.car { entry.car = day.car }
+            if old.driver != day.driver, entry.driver == old.driver { entry.driver = day.driver }
+            guard entry != before else { continue }
+            try save(entry)
+            changed.append(entry)
+        }
+        return changed
+    }
+
     /// Takes the day out; with `andSessions`, its sessions too. No file of the user's is touched.
     public func removeDay(id: UUID, andSessions: Bool = false) throws {
         if andSessions {

@@ -110,6 +110,8 @@ struct LogbookDetail: View {
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
+    /// The cars the logbook names, for correcting this session's without retyping (#453).
+    var knownCars: [String] = []
     /// The personal best at this session's circuit (#351) and how many track days the logbook has
     /// there (#426).
     var personalBest: PersonalBest?
@@ -128,6 +130,9 @@ struct LogbookDetail: View {
                     Text(subtitle).font(.callout).foregroundStyle(.secondary)
                 }
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
+                    // What was driven and by whom first, as the day's header has them, in the same
+                    // columns as the numbers under them (#453).
+                    SessionCarFields(entry: entry, knownCars: knownCars, save: save)
                     row(
                         "Best lap", entry.bestLap.map { TimeParsing.lapTimeString($0) },
                         detail: entry.bestLapNumber.map { "lap \($0)" })

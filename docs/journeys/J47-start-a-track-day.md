@@ -11,7 +11,9 @@ is kept in groups sessions under a day or an event first.*
    Raceway", under its year when the logbook spans more than one — chosen, with its header above
    an empty table: *No sessions yet. Add Files… or drop the day's files here.* The car and
    driver are fields in the header; **Conditions and Notes** fold out under it. Edits are kept as
-   they are made, as a session's conditions are.
+   they are made, as a session's conditions are. A change of the day's car or driver goes to the
+   sessions that took it from the day (#453); a session driven in another car says so in its own
+   **Car** field, in its detail, and keeps it.
 3. **Add Files…**, or drop the logger's files on the window: each goes on this day, with the
    day's car, driver and conditions to begin with. The sheet says what happened to each file. A
    file with no circuit of its own takes the day's, and its line says so.
