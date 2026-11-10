@@ -273,12 +273,13 @@ up once it appears. It is disabled until the session has a clip on its day, with
 saying why.
 
 The detail is a pane of the window's own `HSplitView`, beside the `NavigationSplitView`, as the
-editor's inspector is (#448). Inside the detail column a split view gave the table and the detail
-their minimum widths and left the rest of the column empty, whatever their ideal widths and
-layout priorities said, so the buttons had 248 points between them. They are in `FlowLayout` rows
-in a `safeAreaInset` under the scrolling detail: a button that does not fit starts another row, and
-none of them scrolls out of view. **New Project** is one `Menu` with a `primaryAction` — a split
-button — in place of a button and an icon-only menu beside it.
+editor's inspector is (#448). Inside the detail column, at the default window size, a split view
+gave the table and the detail their minimum widths and left the rest of the column empty, whatever
+their ideal widths and layout priorities said, so the buttons had 248 points between them. In a
+wider window the table took the extra width and the detail stayed at its minimum, never its ideal.
+The buttons are in `FlowLayout` rows in a `safeAreaInset` under the scrolling detail: one that does
+not fit starts another row, and none of them scrolls out of view. **New Project** is one `Menu`
+with a `primaryAction` — a split button — in place of a button and an icon-only menu beside it.
 
 ## On the command line (#398)
 
