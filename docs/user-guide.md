@@ -342,11 +342,14 @@ tracks, and never uploaded.
 
 A day begins before its files do. **Window ▸ Logbook**, then **New Track Day…** in the toolbar
 (or **File ▸ New Track Day…**, ⌥⌘N): the date, the circuit (search the catalogue, or keep a name
-as typed), the car, the driver, the weather and track, and notes. **Create** puts the day under
+as typed), the car, the driver, the weather and the surface, and notes. **Create** puts the day under
 **Track Days** in the sidebar and shows it above an empty table, with the car and driver as fields
 in its header and **Conditions and Notes** folded under it. **Add Files…**, or drop the logger's
-files and camera clips on the window, and each goes on that day with its car, driver and
-conditions to begin with; the sheet says what happened to each file in plain words. The circuit is
+files and camera clips on the window — while they are over it the window is outlined and says
+where they will go — and each goes on that day with its car, driver and
+conditions to begin with; the sheet says what happened to each file in plain words. A video this
+app exported from one of the sessions is left out, and the sheet says so: it is the finished
+overlay, not a recording. The circuit is
 recognised, the date read from the file, and a file already in the logbook is skipped, whatever
 it is called now. **Add Files…** with no day chosen (or **File ▸ Add Track Day to Logbook…**)
 takes a whole day's folders at once: each file goes on the day its date and circuit say, made if
@@ -380,7 +383,7 @@ under **Clips** in the day's header with when it started and how long it ran, an
 the session it is the picture of by the camera's clock (a GoPro's GPS clock, else the file's
 date) against the log's; a clip that overlaps no session says so, and the pop-up beside it lets
 you say whose it is. A clip with GPS in it and no session of its own is entered as a session as
-well. A session's detail lists its clips under **Video**, and they go into a New Project with it. Under **Conditions** in the detail, note the weather, the track (dry, damp, wet, drying,
+well. A session's detail lists its clips under **Video**, and they go into a New Project with it. Under **Conditions** in the detail, note the weather, the surface (dry, damp, wet, drying,
 greasy), the air temperature, the tyres and the setup, and anything else under **Notes**: pickers
 and the temperature are kept as soon as set, text on Return or when you leave the field; the
 table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and

@@ -100,6 +100,41 @@ struct TrackDayImportTests {
         #expect(logbook.days().count == 2)
     }
 
+    /// #468: a video exported from a session's project, offered with the day's files, is the
+    /// finished overlay and not that session's picture.
+    @Test func aVideoTheAppExportedIsNotTakenForARecording() async throws {
+        let logbook = temporaryLogbook()
+        let folder = FileManager.default.temporaryDirectory.appending(path: "exports-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: logbook.directory)
+            try? FileManager.default.removeItem(at: folder)
+        }
+        let day = TrackDay(date: Date(timeIntervalSince1970: 1_700_000_000), trackName: "Fixtures")
+        try logbook.saveDay(day)
+        _ = await TrackDayImport.run([Self.fixtures.appending(path: "racechrono-v3.csv")], into: logbook, day: day)
+        let export = folder.appending(path: "overlay.mp4")
+        try FileManager.default.copyItem(at: Self.fixtures.appending(path: "test-3s.mp4"), to: export)
+        let session = try #require(logbook.entries().first)
+        ProjectLogbook.record(export: export, in: [session.id], logbook: logbook)
+
+        let reports = await TrackDayImport.run([folder], into: logbook, day: day)
+        let report = try #require(reports.first)
+        guard case .ownExport(let source) = report.outcome else {
+            Issue.record("the export was taken for a recording: \(report.line)")
+            return
+        }
+        #expect(source.id == session.id)
+        #expect(!report.isClip && !report.isAdded)
+        #expect(report.line.contains("not added: a video exported from"), Comment(rawValue: report.line))
+        #expect(logbook.day(id: day.id)?.clips.isEmpty == true, "nothing was put on the day")
+        // The same file with no export recorded on any session is a clip like any other.
+        let other = folder.appending(path: "camera.mp4")
+        try FileManager.default.copyItem(at: Self.fixtures.appending(path: "test-3s.mp4"), to: other)
+        let again = await TrackDayImport.run([other], into: logbook, day: day)
+        #expect(again.first?.isClip == true, "\(again.map(\.line))")
+    }
+
     @Test func aClipGoesOnTheDayAndIsMatchedOrLeftToAssign() async throws {
         let logbook = temporaryLogbook()
         defer { try? FileManager.default.removeItem(at: logbook.directory) }

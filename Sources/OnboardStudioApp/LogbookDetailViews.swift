@@ -383,8 +383,8 @@ struct ConditionsEditor: View {
                     .accessibilityIdentifier("logbook.weather")
                 }
                 GridRow {
-                    Text("Track").foregroundStyle(.secondary)
-                    Picker("Track", selection: binding(\.track)) {
+                    Text("Surface").foregroundStyle(.secondary)
+                    Picker("Surface", selection: binding(\.track)) {
                         Text("Not noted").tag(SessionConditions.Track?.none)
                         ForEach(SessionConditions.Track.allCases, id: \.self) {
                             Text($0.displayName).tag(Optional($0))

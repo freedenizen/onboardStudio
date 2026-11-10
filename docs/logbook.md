@@ -207,7 +207,7 @@ matched to it by clock without reading the file again.
 
 `NewTrackDaySheet` (`Sources/OnboardStudioApp/TrackDayViews.swift`): a `Form` of the date, the
 circuit (a search of `CircuitCatalog` with the match chosen, or the name kept as typed), the car
-(a text field with the logbook's cars in a menu beside it), the driver, the weather and track
+(a text field with the logbook's cars in a menu beside it), the driver, the weather and surface
 pickers and notes; Create saves the day, adds a new car to the garage, and chooses the day in the
 sidebar. It opens from the toolbar, the empty state and File ▸ New Track Day… (⌥⌘N, which opens
 the Logbook window with `LogbookModel.newDayRequested`). The sidebar's **Track Days** section

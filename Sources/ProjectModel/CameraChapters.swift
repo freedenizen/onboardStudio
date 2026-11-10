@@ -23,6 +23,18 @@ public enum CameraChapters {
         return found
     }
 
+    /// A selection with the rest of each recording (#468): the files given, and after each
+    /// recording's last given file the chapter files that follow it on disk. A camera's first
+    /// chapter chosen or dropped alone brings the others, however it arrived — it used to depend
+    /// on the way in, and a drop gave half the recording.
+    public static func completing(
+        _ urls: [URL], fileExists: (URL) -> Bool = { FileManager.default.fileExists(atPath: $0.path) }
+    ) -> [URL] {
+        group(urls).flatMap { recording in
+            recording + (recording.last.map { following($0, fileExists: fileExists) } ?? [])
+        }
+    }
+
     /// Groups a selection of files into recordings: each group starts with a file that is not the
     /// chapter after another selected file, followed by its selected chapters in order. Files the
     /// schemes do not recognise are groups of one. Groups keep the selection's order.

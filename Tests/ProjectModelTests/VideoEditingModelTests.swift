@@ -60,6 +60,33 @@ struct VideoEditingModelTests {
         #expect(CameraChapters.following(dir.appending(path: "holiday.mp4"), fileExists: exists).isEmpty)
         #expect(CameraChapters.next(after: dir.appending(path: "GX990037.MP4"))?.lastPathComponent == "GX1000037.MP4")
     }
+
+    /// #468: a recording's first chapter, dropped or chosen alone, brings the chapters after it.
+    @Test func aSelectionIsCompletedWithTheChaptersThatFollowOnDisk() {
+        let dir = URL(fileURLWithPath: "/cam")
+        let existing: Set<String> = [
+            "GX010012.MP4", "GX020012.MP4", "GX030012.MP4", "GX010015.MP4", "lap.mov", "clip_1.mov", "clip_2.mov",
+        ]
+        func exists(_ url: URL) -> Bool { existing.contains(url.lastPathComponent) }
+        func completed(_ names: [String]) -> [String] {
+            CameraChapters.completing(names.map { dir.appending(path: $0) }, fileExists: exists)
+                .map(\.lastPathComponent)
+        }
+        // The first chapter alone: the whole recording.
+        #expect(completed(["GX010012.MP4"]) == ["GX010012.MP4", "GX020012.MP4", "GX030012.MP4"])
+        // Two of three given: the third follows; nothing is listed twice.
+        #expect(completed(["GX010012.MP4", "GX020012.MP4"]) == ["GX010012.MP4", "GX020012.MP4", "GX030012.MP4"])
+        #expect(completed(["GX010012.MP4", "GX020012.MP4", "GX030012.MP4"]).count == 3)
+        // A later chapter on its own brings what is after it, not what was before.
+        #expect(completed(["GX020012.MP4"]) == ["GX020012.MP4", "GX030012.MP4"])
+        // Each recording is completed where it stands in the selection; a file with no chapters
+        // is left as it is.
+        #expect(
+            completed(["lap.mov", "GX010012.MP4", "GX010015.MP4"])
+                == ["lap.mov", "GX010012.MP4", "GX020012.MP4", "GX030012.MP4", "GX010015.MP4"])
+        #expect(completed(["clip_1.mov"]) == ["clip_1.mov", "clip_2.mov"])
+        #expect(completed([]).isEmpty)
+    }
 }
 
 @Suite("Clips, chapter groups and snapping")

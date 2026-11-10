@@ -16,6 +16,8 @@ public enum TrackDayImport {
         /// A camera clip kept on the day (#394), with the session it was matched to, if any.
         case clip(ClipRecord, session: LogbookEntry?)
         case clipAlreadyThere(ClipRecord)
+        /// A video this app exported from the session's project (#468): not a camera recording.
+        case ownExport(LogbookEntry)
     }
 
     public struct Report: Sendable {
@@ -58,6 +60,8 @@ public enum TrackDayImport {
                 }
                 return "\(name) — \(what): no session at that time, assign it in the logbook"
             case .clipAlreadyThere: return "\(name) — video already on the day"
+            case .ownExport(let entry):
+                return "\(name) — not added: a video exported from \(Self.describe(entry)), not a recording"
             }
         }
 
@@ -155,6 +159,14 @@ public enum TrackDayImport {
     /// first, as it was before days existed, and is then the picture of that session.
     static func importClip(_ first: URL, chapters: [URL], into logbook: Logbook, batch: Batch) async -> Outcome {
         let chosen = batch.day
+        // A video exported from a session's project, picked up with the day's folder or offered by
+        // the panel beside the footage, is the finished overlay, not that session's picture (#468).
+        let path = first.standardizedFileURL.path
+        if let source = logbook.entries().first(where: { entry in
+            entry.exports.contains { URL(fileURLWithPath: $0.path).standardizedFileURL.path == path }
+        }) {
+            return .ownExport(source)
+        }
         do {
             var clip = try await ClipMatcher.record(first, chapters: chapters)
             if let known = logbook.days().first(where: { $0.clips.contains { $0.fingerprint == clip.fingerprint } }),
