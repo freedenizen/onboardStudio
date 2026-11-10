@@ -372,10 +372,24 @@ Compare in Video now offers it for those references.
 file per corner of the coaching lap, each from two seconds before its brake point to two seconds
 after it, in the project's own layout — so with Compare Laps and a Corner Callout it is the
 side-by-side corner clip with the note on it. The corners come from the coaching track (read at
-compile when the range asks for it, or on demand for the sheet's preview of the files). The slow
-motion through the braking zone and the held frame of the reference's brake point described in
-the issue are not in this version; they need a per-piece playback rate the composition does not
-have yet and are filed separately.
+compile when the range asks for it, or on demand for the sheet's preview of the files).
+
+**Slowed braking and a held sight picture** (#360, on the retimes of #442):
+`ExportRange.eachCorner(onlyOpportunities:retime:)` carries a `CornerClipRetime`, and each
+`CornerExport` its own `retimes` in project time (`ProjectCompiler.cornerRetimes`):
+
+- the lap's brake point (`phaseStart`) to its slowest point (`apexDistance + minimumSpeedMeters`)
+  at `brakingRate`, only when the lap braked for the corner;
+- a hold of `referenceHoldSeconds` at the moment the lap reaches the *distance* at which the
+  reference braked (`comparison.reference.phaseStart`), only when the reference braked and only
+  inside the clip. It is the same spot on the circuit, so it reads with or without Compare Laps;
+  with it, both pictures stand at that spot. Distances are each lap's own, which on one circuit
+  agree to about a metre within a session (`docs/tracks-and-sectors.md`).
+
+Each retimed file is compiled with its retimes (`compile(_:adding:)`) and exported over its range
+in project time; the export maps it to output time. `nil`, as every export saved before has, plays
+at speed; the sheet starts a fresh choice at `.standard` (0.5×, 1 s). The Debrief keeps its corners
+at speed.
 
 ## Across the logbook (v0.33.0)
 

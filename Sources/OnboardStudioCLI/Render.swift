@@ -56,6 +56,22 @@ struct Render: AsyncParsableCommand {
             """)
     var corners: String?
 
+    @Option(
+        name: .long,
+        help: """
+            With --corners: play each corner from its brake point to its slowest point at this rate, picture and \
+            gauges alike, sound muted (0.5 = half speed).
+            """)
+    var slowBraking: Double?
+
+    @Option(
+        name: .long,
+        help: """
+            With --corners: hold the whole frame for this many seconds when the lap reaches the spot where the \
+            reference lap braked, as a sight picture.
+            """)
+    var holdReference: Double?
+
     @Flag(
         name: .long,
         help: """
@@ -119,6 +135,7 @@ struct Render: AsyncParsableCommand {
         var settings: ExportSettings
         var batch: [BatchFile] = []
         var debriefPlan: (plan: DebriefPlan, project: Project)?
+        var loadedProject: ProjectCompiler.LoadedProject?
         if let project {
             guard video == nil else { throw ValidationError("Use either --video or --project, not both.") }
             let result = try await loadProject(project, range: exportRange)
@@ -127,6 +144,7 @@ struct Render: AsyncParsableCommand {
             exportRange = result.range
             batch = result.batch
             debriefPlan = result.debrief
+            loadedProject = result.loaded
         } else {
             guard let video else { throw ValidationError("Provide --video or --project.") }
             let inputURL = URL(fileURLWithPath: video)
@@ -168,13 +186,30 @@ struct Render: AsyncParsableCommand {
             try await export(compiled, settings: settings, range: exportRange, to: outputURL)
             return
         }
-        // One file per lap (#150) or per corner (#326), into the --out folder.
+        try await exportBatch(batch, of: project, from: (compiled, loadedProject), settings: settings, to: outputURL)
+    }
+
+    /// One file per lap (#150) or per corner (#326), into the --out folder. A retimed corner clip
+    /// is its own composition: its retimes scale the media (#360).
+    private func exportBatch(
+        _ batch: [BatchFile], of project: String,
+        from source: (compiled: CompiledComposition, loaded: ProjectCompiler.LoadedProject?),
+        settings: ExportSettings, to outputURL: URL
+    ) async throws {
+        let (compiled, loaded) = source
         try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
         let base = URL(fileURLWithPath: project).deletingPathExtension().lastPathComponent
         for file in batch {
             let url = outputURL.appending(path: "\(base) – \(file.title).\(settings.fileExtension)")
             if !json { print("\(file.title): \(fmt(file.range.lowerBound))–\(fmt(file.range.upperBound)) s") }
-            try await export(compiled, settings: settings, range: file.range, to: url)
+            var fileCompiled = compiled
+            if !file.retimes.isEmpty, let loaded {
+                fileCompiled = try await ProjectCompiler.compile(loaded, adding: file.retimes)
+                if background != nil {
+                    fileCompiled = ProjectCompiler.prepareForExport(fileCompiled, settings: settings)
+                }
+            }
+            try await export(fileCompiled, settings: settings, range: file.range, to: url)
         }
     }
 
@@ -207,6 +242,7 @@ struct Render: AsyncParsableCommand {
     struct BatchFile {
         let title: String
         let range: ClosedRange<Double>
+        var retimes: [Retime] = []
     }
 
     private func export(
@@ -243,6 +279,8 @@ struct Render: AsyncParsableCommand {
         var batch: [BatchFile] = []
         /// `--debrief`: the pieces of the one video, and the project they are cut from.
         var debrief: (plan: DebriefPlan, project: Project)?
+        /// What was compiled, for a batch file with its own retimes to compile again.
+        var loaded: ProjectCompiler.LoadedProject?
     }
 
 }
@@ -276,16 +314,7 @@ extension Render {
             else { throw ValidationError("No lap could be read for a debrief from the project's data.") }
             debriefPlan = plan
         } else if let corners {
-            let onlyOpportunities: Bool
-            switch corners {
-            case "all": onlyOpportunities = false
-            case "opportunities": onlyOpportunities = true
-            default: throw ValidationError("--corners must be all or opportunities.")
-            }
-            let files = ProjectCompiler.cornerExports(
-                .eachCorner(onlyOpportunities: onlyOpportunities), in: loaded, duration: compiled.duration)
-            guard !files.isEmpty else { throw ValidationError("No corners could be read from the project's data.") }
-            batch = files.map { BatchFile(title: $0.title, range: $0.range) }
+            batch = try cornerBatch(corners, in: loaded, duration: compiled.duration)
         } else if laps == "each" {
             let eachLap = ProjectCompiler.lapExports(
                 .eachLap(completeOnly: !includePartialLaps, slowerThanBest: skipSlowerThan.map { $0 / 100 }),
@@ -308,7 +337,26 @@ extension Render {
         }
         return LoadedForRender(
             compiled: compiled, settings: settings, range: exportRange, batch: batch,
-            debrief: debriefPlan.map { ($0, loaded.project) })
+            debrief: debriefPlan.map { ($0, loaded.project) }, loaded: loaded)
+    }
+
+    /// `--corners all|opportunities`, retimed by `--slow-braking` and `--hold-reference` (#360).
+    private func cornerBatch(_ corners: String, in loaded: ProjectCompiler.LoadedProject, duration: Double) throws
+        -> [BatchFile]
+    {
+        let onlyOpportunities: Bool
+        switch corners {
+        case "all": onlyOpportunities = false
+        case "opportunities": onlyOpportunities = true
+        default: throw ValidationError("--corners must be all or opportunities.")
+        }
+        let retime =
+            slowBraking == nil && holdReference == nil
+            ? nil : CornerClipRetime(brakingRate: slowBraking, referenceHoldSeconds: holdReference)
+        let files = ProjectCompiler.cornerExports(
+            .eachCorner(onlyOpportunities: onlyOpportunities, retime: retime), in: loaded, duration: duration)
+        guard !files.isEmpty else { throw ValidationError("No corners could be read from the project's data.") }
+        return files.map { BatchFile(title: $0.title, range: $0.range, retimes: $0.retimes) }
     }
 
     /// Project export settings with CLI overrides applied.

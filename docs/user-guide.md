@@ -875,6 +875,15 @@ corners where time went against the reference, biggest loss first. With a Compar
 a Corner Callout in the project that is a corner-by-corner debrief, one file per corner, from one
 Export. On the command line: `onboard render --project X --out folder --corners all|opportunities`.
 
+Two options make a corner clip teach more. **Slow the braking zone** plays each corner from its
+brake point to its slowest point at 50% (or 25% or 75%), and **Hold where the reference braked**
+freezes the whole frame for a second (or half a second up to three) when your lap reaches the spot
+where the reference lap braked: the sight picture of where to brake. The picture and every gauge,
+graph and map slow down and stand still together, and the sound is muted while they do. Both are on
+for a new Every Corner export; one saved without them plays at speed. The sheet's sentence about
+the files says what they will do. On the command line, add `--slow-braking 0.5` and
+`--hold-reference 1` to `--corners`.
+
 **Export Coaching Debrief…** (Project menu) writes the session as one short video to watch
 before the next one: a title card with the track, the day, the best lap, the optimal lap and the
 fastest rolling lap; then the corners of the coaching lap that cost the most against the reference
