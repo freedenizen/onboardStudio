@@ -43,4 +43,48 @@ final class LogbookLaunchUITests: OnboardStudioUITestCase {
         XCTAssertTrue(app.windows["Templates"].waitForExistence(timeout: Self.timeout), "No Templates window")
         XCTAssertTrue(app.buttons["launcher.template.Classic Dash"].waitForExistence(timeout: Self.timeout))
     }
+
+    /// With a session selected, New Project in the toolbar makes the project from that session and
+    /// says so, as the button in the session's detail does; a project with nothing in it is still
+    /// one item away (#449: the toolbar's menu ignored the selection).
+    @MainActor
+    func testNewProjectInTheToolbarIsFromTheSelectedSession() throws {
+        launch(logbook: true)
+        XCTAssertTrue(app.windows["Logbook"].waitForExistence(timeout: Self.timeout), "No Logbook window at launch")
+        testing("Add Fixture Track Day")
+        let done = app.buttons["trackday.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: Self.timeout), "No Add Track Day sheet")
+        XCTAssertTrue(app.staticTexts["trackday.summary"].waitForExistence(timeout: Self.timeout * 3))
+        done.click()
+        let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch
+        let rowTypes = NSPredicate(
+            format: "elementType == %d OR elementType == %d", XCUIElement.ElementType.tableRow.rawValue,
+            XCUIElement.ElementType.outlineRow.rawValue)
+        let row = table.descendants(matching: .any).matching(rowTypes).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: Self.timeout), "No sessions listed")
+        row.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
+        XCTAssertTrue(sessionNewProject.waitForExistence(timeout: Self.timeout), "No detail for the selected session")
+
+        // The menu is about the session now: its heading names it, and the way round it is spelt out.
+        let newProject = app.menuButtons["logbook.newProject"]
+        newProject.click()
+        let items = newProject.menus.menuItems
+        XCTAssertTrue(items["New Project Without a Session"].waitForExistence(timeout: Self.timeout))
+        XCTAssertTrue(
+            items.matching(NSPredicate(format: "title BEGINSWITH 'From '")).firstMatch.exists,
+            "The menu does not say which session the project is from")
+        XCTAssertFalse(items["From a Template"].exists, "The templates are the session's while it is selected")
+        items["Blank Project"].click()
+        let project = app.windows["Untitled"]
+        XCTAssertTrue(project.waitForExistence(timeout: Self.timeout), "No project from the session")
+        let inputs = project.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'input.'"))
+        XCTAssertTrue(inputs.firstMatch.waitForExistence(timeout: Self.timeout * 2), "The session's file is not in it")
+
+        // And without the session: a project with nothing in it.
+        menu("Window", "Logbook")
+        toolbarMenu("logbook.newProject", "New Project Without a Session")
+        let empty = app.windows["Untitled 2"]
+        XCTAssertTrue(empty.waitForExistence(timeout: Self.timeout), "No second project")
+        XCTAssertTrue(empty.staticTexts["welcome.title"].waitForExistence(timeout: Self.timeout), "It is not empty")
+    }
 }

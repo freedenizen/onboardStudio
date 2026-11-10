@@ -12,11 +12,14 @@ and, ideally, a data log.
 1. **Launch Onboard Studio.** The **Logbook** opens: every track day you have driven, with its
    sessions and clips, and the way into the work. **New Track Day…** begins a day (the date, the
    circuit, the car); **Add Files…** or a drop puts the day's logger files and camera clips on it;
-   select a session and **New Project** opens a project with its data, its clips and gauges
-   already laid out — the rest of this guide from step 5 applies. To start from files instead,
+   select a session and **New Project** — the button in its detail, or the menu in the toolbar,
+   which names the session it will use — opens a project with its data, its clips and gauges
+   already laid out; the rest of this guide from step 5 applies. To start from files instead,
    the toolbar's **New Project** menu offers a **Blank Project**, a project **from a template**
    (gauges already laid out, which attach themselves to the video and data files you add next),
-   **Open Project…** and the sample project; **File ▸ Open Recent** has your recent projects.
+   **Open Project…** and the sample project. While a session is selected that menu's projects
+   are made from the session, and **New Project Without a Session** is the empty one.
+   **File ▸ Open Recent** has your recent projects.
    Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a blank project
    instead; **Window ▸ Logbook** (⌃⌘L) brings it back. A new project opens with a welcome panel
    and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be
@@ -353,7 +356,10 @@ its detail, in view however many laps are listed above, and the buttons move ont
 rather than shorten when the detail is narrow (drag its left edge to widen it). **New Project**
 starts a project with that session's data file and its clips, laid out with the template the last
 New Project used (Classic Dash to begin with); the arrow on the button offers every template, or a
-blank project. **Add to Current Project** adds the session to the project in front. **Remove from
+blank project. The toolbar's **New Project** menu does the same while a session is selected, under
+a heading that names the session, so the two never disagree; its **New Project Without a
+Session** starts an empty project instead. **Add to Current Project** adds the session to the
+project in front. **Remove from
 Logbook…** takes a session out, and the trash button in a day's header takes the day and its
 sessions out; no file is touched.
 
