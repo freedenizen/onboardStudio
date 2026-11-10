@@ -114,7 +114,7 @@ struct ReplayHUD: Equatable {
                     id: other.id.rawValue.uuidString, title: other.label, subtitle: "", session: otherSession,
                     isHome: false))
         }
-        let key = LogbookReferences.circuitKey(for: input, session: session, url: editor.dataFileURL(of: input))
+        let key = LogbookReferences.circuitKey(for: input, session: session, entries: LogbookModel.shared.entries)
         let own = input.dataSettings?.logbookEntryID.flatMap { id in LogbookModel.shared.entries.first { $0.id == id } }
         groups += logbookGroups(at: key, excluding: own?.file.contentHash)
         self.groups = groups

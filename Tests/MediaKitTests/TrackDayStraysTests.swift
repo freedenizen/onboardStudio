@@ -56,7 +56,10 @@ struct TrackDayStraysTests {
             return
         }
         #expect(entry.trackDayID == day.id && entry.car == "GR86")
-        #expect(undated.notes.isEmpty, "a day with no catalogue circuit lends none: \(undated.line)")
+        // The day's circuit was typed, and the file names none: it takes the day's name (#455),
+        // where it used to be listed under a circuit named after the file.
+        #expect(entry.trackName == "Fixtures" && LogbookFilter.circuitKey(of: entry) == "Fixtures")
+        #expect(undated.notes == ["no circuit recognised in the file, so the day's"], "\(undated.line)")
         // Nothing of the file that waits is in the logbook: no session, no day made for it.
         #expect(logbook.entries().map(\.id) == [entry.id])
         #expect(logbook.days().map(\.id) == [day.id])

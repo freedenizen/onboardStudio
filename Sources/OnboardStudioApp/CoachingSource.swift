@@ -94,7 +94,7 @@ enum CoachingSourceKind: Hashable {
 
     func circuitKey(for session: TelemetrySession) -> String {
         guard let input else { return "" }
-        return LogbookReferences.circuitKey(for: input, session: session, url: model.dataFileURL(of: input))
+        return LogbookReferences.circuitKey(for: input, session: session, entries: LogbookModel.shared.entries)
     }
 
     var ownContentHash: String? {

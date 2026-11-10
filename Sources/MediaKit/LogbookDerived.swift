@@ -12,13 +12,18 @@ public enum LogbookDerived {
         var personalBests: [InputID: LapProfile] = [:]
     }
 
-    /// The key the logbook files a session under, for a data input: the circuit the project
-    /// recorded, else the one the session looks like, else the file's track name, else its name.
-    public static func circuitKey(for input: Input, session: TelemetrySession, url: URL) -> String {
+    /// The key the logbook files a session under, for a data input: the one of the logbook entry
+    /// the input was entered as — which is where a circuit named afterwards is kept (#455) — else
+    /// the circuit the project recorded, else the one the session looks like, else the file's
+    /// track name. Empty when none of them names a circuit: a file's name is not one.
+    public static func circuitKey(for input: Input, session: TelemetrySession, entries: [LogbookEntry]) -> String {
+        if let id = input.dataSettings?.logbookEntryID, let entry = entries.first(where: { $0.id == id }) {
+            let key = LogbookFilter.circuitKey(of: entry)
+            if !key.isEmpty { return key }
+        }
         if let recorded = input.dataSettings?.circuitID { return recorded }
         if let match = CircuitCatalog.identify(session) { return match.circuit.id }
-        if let name = session.info.trackName, !name.isEmpty { return name }
-        return url.deletingPathExtension().lastPathComponent
+        return session.info.trackName?.trimmingCharacters(in: .whitespaces) ?? ""
     }
 
     static func make(
@@ -30,7 +35,7 @@ public enum LogbookDerived {
         guard let input = project.dataInputs.first(where: { sessions[$0.id] != nil }), let session = sessions[input.id]
         else { return result }
         let url = location.resolve(input.source)
-        let key = circuitKey(for: input, session: session, url: url)
+        let key = circuitKey(for: input, session: session, entries: entries)
         let car = project.details.car
         if project.usesLogbookKeys {
             result.details = PersonalBests.detailKeys(in: entries, circuitKey: key, car: car)

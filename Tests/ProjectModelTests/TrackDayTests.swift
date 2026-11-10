@@ -196,4 +196,104 @@ struct TrackDayTests {
         #expect(logbook.entry(id: first.id)?.car == "Miata")
         #expect(logbook.entry(id: second.id)?.car == "GR86")
     }
+
+    /// #455: a day made for files from a place the catalogue does not know has no circuit, and
+    /// neither have its sessions. Naming it on the day names it on them.
+    @Test func aDaysCircuitGoesToTheSessionsThatHadWhatItHad() throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        var day = TrackDay(date: Self.morning)
+        try logbook.saveDay(day)
+        func session(_ hash: String, circuitID: String? = nil, trackName: String? = nil) throws -> LogbookEntry {
+            var session = entry(hash: hash, date: Self.morning, circuitID: circuitID, trackName: trackName)
+            session.trackDayID = day.id
+            try logbook.save(session)
+            return session
+        }
+        let nameless = try session("a")
+        let ownName = try session("b", trackName: "Kart Track")
+        let recognised = try session("c", circuitID: "Q112563")
+
+        // Named as typed: the session with no circuit takes it; the two that say where they were do not.
+        day.trackName = "Stadium"
+        #expect(try logbook.updateDay(day).map(\.id) == [nameless.id])
+        #expect(logbook.entry(id: nameless.id).map(LogbookFilter.circuitKey(of:)) == "Stadium")
+        #expect(logbook.entry(id: ownName.id)?.trackName == "Kart Track")
+        #expect(logbook.entry(id: recognised.id)?.circuitID == "Q112563")
+
+        // The spelling corrected on the day follows to the session that took the day's.
+        day.trackName = "The Stadium"
+        #expect(try logbook.updateDay(day).map(\.id) == [nameless.id])
+        #expect(logbook.entry(id: nameless.id)?.trackName == "The Stadium")
+
+        // Found in the catalogue after all: the session is at that circuit, by its id.
+        day.circuitID = "Q1140156"
+        day.trackName = nil
+        #expect(try logbook.updateDay(day).map(\.id) == [nameless.id])
+        #expect(logbook.entry(id: nameless.id)?.circuitID == "Q1140156")
+        #expect(logbook.entry(id: recognised.id)?.circuitID == "Q112563", "its trace says where it was")
+    }
+
+    /// A file with no date of its own goes on the day its file is dated, not the day it was added.
+    @Test func anUndatedSessionGoesOnTheDayItsFileIsDated() throws {
+        let logbook = temporaryLogbook()
+        let folder = FileManager.default.temporaryDirectory.appending(path: "undated-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: logbook.directory)
+            try? FileManager.default.removeItem(at: folder)
+        }
+        let file = folder.appending(path: "log.csv")
+        try Data("x".utf8).write(to: file)
+        try FileManager.default.setAttributes(
+            [.creationDate: Self.morning, .modificationDate: Self.morning.addingTimeInterval(3_600)],
+            ofItemAtPath: file.path)
+        var undated = LogbookEntry(file: .init(path: file.path, contentHash: "u", byteCount: 1, importerID: "x"))
+        undated.added = Self.morning.addingTimeInterval(30 * 86_400)
+        #expect(try logbook.day(for: undated).date == TrackDay.startOfDay(Self.morning))
+
+        // A file that is not where the entry says leaves only the day it was added.
+        var gone = LogbookEntry(
+            file: .init(path: folder.appending(path: "gone.csv").path, contentHash: "g", byteCount: 1, importerID: "x"))
+        gone.added = Self.morning.addingTimeInterval(60 * 86_400)
+        #expect(try logbook.day(for: gone).date == TrackDay.startOfDay(gone.added))
+        // And a file that says when it was driven is believed over its own date.
+        var dated = undated
+        dated.date = Self.morning.addingTimeInterval(-10 * 86_400)
+        #expect(try logbook.day(for: dated).date == TrackDay.startOfDay(try #require(dated.date)))
+    }
+
+    /// A session with no circuit of its own is put on the day its date says, and when that day
+    /// has a circuit it is at the day's (#455): nothing says it was driven anywhere else.
+    @Test func aSessionWithNoCircuitTakesTheCircuitOfTheDayItJoins() throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        let named = TrackDay(date: Self.morning, trackName: "Stadium")
+        try logbook.saveDay(named)
+
+        var nameless = entry(hash: "a", date: Self.morning)
+        #expect(try logbook.assignDay(to: &nameless).id == named.id)
+        #expect(nameless.trackDayID == named.id && nameless.trackName == "Stadium")
+
+        // One that says where it was goes on a day of its own, and keeps its name.
+        var elsewhere = entry(hash: "b", date: Self.morning, trackName: "Kart Track")
+        let own = try logbook.assignDay(to: &elsewhere)
+        #expect(own.id != named.id && elsewhere.trackName == "Kart Track")
+
+        // A catalogue circuit on the day is taken by its id.
+        let logbookTwo = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbookTwo.directory) }
+        let sonoma = TrackDay(date: Self.morning, circuitID: "Q112563")
+        try logbookTwo.saveDay(sonoma)
+        var noGPS = entry(hash: "c", date: Self.morning)
+        try logbookTwo.assignDay(to: &noGPS)
+        #expect(noGPS.circuitID == "Q112563" && noGPS.trackDayID == sonoma.id)
+
+        // A day with no circuit lends none.
+        let logbookThree = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbookThree.directory) }
+        var alone = entry(hash: "d", date: Self.morning)
+        try logbookThree.assignDay(to: &alone)
+        #expect(LogbookFilter.circuitKey(of: alone).isEmpty)
+    }
 }

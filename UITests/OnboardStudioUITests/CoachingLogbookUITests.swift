@@ -29,7 +29,7 @@ final class CoachingLogbookUITests: OnboardStudioUITestCase {
         logbookItem.click()
         let headline = app.staticTexts["coaching.headline"]
         let read = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value CONTAINS %@", "coaching-laps"), object: headline)
+            predicate: NSPredicate(format: "value CONTAINS %@", "Stadium"), object: headline)
         XCTAssertEqual(
             XCTWaiter().wait(for: [read], timeout: Self.timeout * 3), .completed, headline.value as? String ?? "")
         let alignment = app.staticTexts["coaching.alignment"]

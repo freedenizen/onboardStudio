@@ -24,7 +24,9 @@ logbooks first and analysers second.
   *drive* in another file is caught by its numbers instead (#465, below);
 - **where and when** — the circuit's Wikidata id when `CircuitCatalog` recognised it, the file's
   own track name, and the date the file carries (`SessionInfo.createdAt`); `title` is the circuit,
-  else the track name, else the file's name;
+  else the track name, else the file's name. The file's name is a title only: the *circuit* a
+  session is grouped under (`LogbookFilter.circuitKey`) is the id, else the track name, else
+  nothing (#455, below);
 - **what** — the car (typed once, remembered per circuit by the import) and the driver (the file's,
   else typed);
 - **the laps** — number, time and completeness for each, and the session's best (with its number),
@@ -243,6 +245,30 @@ it — title, date and count, car and driver as fields committed on Return or lo
 `ConditionsEditor` (now over either an entry or a day) folded under *Conditions and Notes*, the
 empty-day line, **Add Files…** and **Remove Track Day…** (a confirmation; the sessions go
 with it, the files stay).
+
+A session that names no circuit has none (#455). `LogbookFilter.circuitKey(of:)` used to fall back
+to the file's name, so every unrecognised file was a circuit of its own in the sidebar and two
+files named alike were two visits to one place. The key is now empty for such a session;
+`circuits(in:)` gathers them as one group, id `""`, titled *No circuit* and sorted last;
+`PersonalBests`, `LogbookTrends.points` and `LogbookReferences.sessions(at:)` answer nothing for
+the empty key. The project side asks the entry first: `LogbookDerived.circuitKey(for:session:entries:)`
+takes the key of the entry the input was entered as (`logbookEntryID`), which is where a circuit
+named afterwards is kept.
+
+A circuit is named on the day. `TrackDayHeader` has a **Circuit** row holding `CircuitChooser`,
+the control the New Track Day sheet uses (catalogue matches, `LogbookFilter.typedCircuits` — the
+names typed before — and the text as typed); `Logbook.updateDay` carries the day's new circuit to
+the sessions whose key was the day's old one, as it does the car. A session takes the day's
+circuit on the way in as well: `TrackDayImport.file` when the chosen day's circuit was typed, and
+`Logbook.assignDay(to:)` — used by the import with no day chosen and by `ProjectLogbook.enter` —
+when a session with no circuit joins, by its date, a day that has one. `Logbook.day(for:)` dates
+an undated session by its file (`fileDate`, the earlier of creation and last change) rather than
+by the day it was added. `LogbookWindow.followTheChosenDay` keeps the sidebar's selection when a
+day's label changes with its circuit.
+
+The Testing menu's second-visit hooks say where the coaching fixture was driven
+(`UITestSupport.secondVisitDay`): its file names no circuit, so two of its sessions are two visits
+to one place only once that is said, as it is for a user.
 
 A session takes its car and driver from the day when it is added, and that copy used to be final
 (#453): correcting the day's car changed the header alone, and a session had no field of its own.

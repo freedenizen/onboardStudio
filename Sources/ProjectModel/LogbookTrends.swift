@@ -80,7 +80,9 @@ public enum LogbookTrends {
     /// The sessions at `circuitKey` (in `car`, when given), oldest first — by the day they were
     /// driven, or the day they were entered when the file carried no date.
     public static func points(for entries: [LogbookEntry], circuitKey: String, car: String? = nil) -> [Point] {
-        entries.filter { entry in
+        // Sessions that name no circuit are not visits to one place (#455).
+        guard !circuitKey.isEmpty else { return [] }
+        return entries.filter { entry in
             LogbookFilter.circuitKey(of: entry) == circuitKey
                 && (car.map { $0.isEmpty || entry.car.caseInsensitiveCompare($0) == .orderedSame } ?? true)
         }

@@ -348,7 +348,16 @@ in its header and **Conditions and Notes** folded under it. The day's car and dr
 sessions' too: change one in the header and every session that took it from the day changes with
 it, so a typo is corrected once. A session driven in something else has **Car** and **Driver**
 fields of its own in its detail, with the cars the logbook already knows a click away, and keeps
-what you put there whatever the day says later. **Add Files…**, or drop the logger's
+what you put there whatever the day says later.
+
+The header's **Circuit** row says where the day was driven, and it can be set or corrected after
+the day exists: search the catalogue, pick a name you typed before, or keep what you type. A
+session whose trace is recognised nowhere and whose file names no track has no circuit: such
+sessions are gathered in the sidebar under **No circuit** rather than each under a circuit named
+after its file, and have no personal best or Trends until their day is named. Naming the day
+names every session on it that had none; a session that says where it was keeps its own. A
+session with no circuit that is added to a named day, or lands on one by its date, takes that
+day's. A file that carries no date goes on the day its file is dated, not the day you added it. **Add Files…**, or drop the logger's
 files and camera clips on the window — while they are over it the window is outlined and says
 where they will go — and each goes on that day with its car, driver and
 conditions to begin with; the sheet says what happened to each file in plain words. A file that
@@ -378,7 +387,7 @@ the sessions with their day.
 The window shows it all: a sidebar of track days (under their year when there is more than one,
 the year of the day you have chosen open;
 each is its date with the circuit beneath, so two days on one date read apart),
-circuits, cars and years with how many sessions each, a table of sessions (date, circuit, car,
+circuits (ending with **No circuit** when some sessions name none), cars and years with how many sessions each, a table of sessions (date, circuit, car,
 laps, best, optimal and fastest rolling lap) sortable by any column and narrowed by the search
 field, and, for the selected session, its numbers, every lap with the best marked, the notes, the
 projects made from it and where the file is. A search that finds nothing says so, and the detail

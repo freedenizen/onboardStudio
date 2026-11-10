@@ -28,7 +28,9 @@ final class LogbookActionsUITests: OnboardStudioUITestCase {
         choice.click()
         let headline = app.staticTexts["coaching.headline"]
         XCTAssertTrue(headline.waitForExistence(timeout: Self.timeout * 2), "No coaching reading")
-        expect(headline, toContain: "coaching-laps")
+        // The day's circuit was typed, and the fixture names none: both visits are at the day's
+        // (#455), where each used to be at a circuit named after its file.
+        expect(headline, toContain: "Thunderhill")
         app.typeKey("w", modifierFlags: .command)
 
         // The session that took the clip (whichever the pop-up listed first): a debrief project

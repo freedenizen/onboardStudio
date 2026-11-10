@@ -4,17 +4,21 @@ import Foundation
 /// a circuit, a car or a year — narrowed by a search, so the choosing is testable without a view.
 public enum LogbookScope: Hashable, Sendable {
     case all
-    /// `id` is the entry's `circuitID` when it has one, else its track name, else nothing.
+    /// `id` is the entry's `circuitID` when it has one, else its track name; empty for the
+    /// sessions that name no circuit (#455), which the sidebar gathers as "No circuit".
     case circuit(id: String, title: String)
     case car(String)
     case year(Int)
     /// One track day (#392); `title` is the day's label, "23 Aug 2026 · Sonoma".
     case day(id: UUID, title: String)
 
+    /// What the sidebar calls the sessions that name no circuit (#455).
+    public static let noCircuit = "No circuit"
+
     public var title: String {
         switch self {
         case .all: "All Sessions"
-        case .circuit(_, let title): title
+        case .circuit(let id, let title): id.isEmpty ? Self.noCircuit : title
         case .day(_, let title): title
         case .car(let car): car.isEmpty ? "No car" : car
         case .year(let year): String(year)
@@ -28,19 +32,48 @@ public enum LogbookFilter {
         public var count: Int
     }
 
-    /// The key a circuit is grouped under: the catalogue id, else the track name, else the file.
-    public static func circuitKey(of entry: LogbookEntry) -> String { entry.circuitID ?? entry.title }
+    /// The key a circuit is grouped under: the catalogue id, else the track name the file or its
+    /// day gave it. Empty when the session names no circuit (#455). The key used to fall back to
+    /// the file's name, so every file from an unrecognised place became a circuit of its own in
+    /// the sidebar — `track`, `activity`, `generic` — and two files that happened to be named
+    /// alike were taken for two visits to one place.
+    public static func circuitKey(of entry: LogbookEntry) -> String {
+        if let id = entry.circuitID { return id }
+        let name = entry.trackName?.trimmingCharacters(in: .whitespaces) ?? ""
+        return name
+    }
 
-    /// The sidebar's circuits, most sessions first, then by name.
+    /// The sidebar's circuits, most sessions first, then by name; the sessions that name no
+    /// circuit last, as one entry, the way the cars list ends with "No car".
     public static func circuits(in entries: [LogbookEntry]) -> [Group] {
         var counts: [String: (title: String, count: Int)] = [:]
         for entry in entries {
             let key = circuitKey(of: entry)
-            counts[key, default: (entry.title, 0)].count += 1
+            counts[key, default: (key.isEmpty ? LogbookScope.noCircuit : entry.title, 0)].count += 1
         }
         return
             counts.map { Group(scope: .circuit(id: $0.key, title: $0.value.title), count: $0.value.count) }
-            .sorted { ($0.count, $1.scope.title) > ($1.count, $0.scope.title) }
+            .sorted { lhs, rhs in
+                if case .circuit(let id, _) = lhs.scope, id.isEmpty { return false }
+                if case .circuit(let id, _) = rhs.scope, id.isEmpty { return true }
+                return (lhs.count, rhs.scope.title) > (rhs.count, lhs.scope.title)
+            }
+    }
+
+    /// The circuit names typed into the logbook, on its days and its sessions, most used first
+    /// (#455): what a day's Circuit field offers beside the catalogue, so a circuit the catalogue
+    /// does not know is spelt the same way on its second visit.
+    public static func typedCircuits(in entries: [LogbookEntry], days: [TrackDay]) -> [String] {
+        var counts: [String: Int] = [:]
+        let names = entries.filter { $0.circuitID == nil }.map(\.trackName) + days.map(\.trackName)
+        for name in names.compactMap({ $0?.trimmingCharacters(in: .whitespaces) }) where !name.isEmpty {
+            counts[name, default: 0] += 1
+        }
+        return counts.sorted { lhs, rhs in
+            lhs.value != rhs.value
+                ? lhs.value > rhs.value : lhs.key.localizedStandardCompare(rhs.key) == .orderedAscending
+        }
+        .map(\.key)
     }
 
     /// The sidebar's cars, most sessions first; the sessions with no car last, if any.

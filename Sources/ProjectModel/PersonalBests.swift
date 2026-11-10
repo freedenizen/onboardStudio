@@ -32,6 +32,8 @@ public enum PersonalBests {
     public static func best(
         in entries: [LogbookEntry], circuitKey: String, car: String? = nil, year: Int? = nil
     ) -> PersonalBest? {
+        // Sessions that name no circuit are not at one place (#455): there is no best among them.
+        guard !circuitKey.isEmpty else { return nil }
         let candidates = entries.filter { entry in
             LogbookFilter.circuitKey(of: entry) == circuitKey && entry.bestLap != nil
                 && (car.map { entry.car.caseInsensitiveCompare($0) == .orderedSame } ?? true)
@@ -48,7 +50,8 @@ public enum PersonalBests {
     /// How many sessions the logbook has at the circuit: what `{visits}` has always filled with, so a
     /// saved project renders as it did.
     public static func visits(in entries: [LogbookEntry], circuitKey: String) -> Int {
-        entries.filter { LogbookFilter.circuitKey(of: $0) == circuitKey }.count
+        guard !circuitKey.isEmpty else { return 0 }
+        return entries.filter { LogbookFilter.circuitKey(of: $0) == circuitKey }.count
     }
 
     /// How many track days the logbook has at the circuit (#426): the days it was driven, however
@@ -56,7 +59,8 @@ public enum PersonalBests {
     public static func trackDays(
         in entries: [LogbookEntry], circuitKey: String? = nil, calendar: Calendar = .current
     ) -> Int {
-        Set(
+        if let circuitKey, circuitKey.isEmpty { return 0 }
+        return Set(
             entries.filter { entry in circuitKey.map { LogbookFilter.circuitKey(of: entry) == $0 } ?? true }
                 .map { calendar.startOfDay(for: $0.date ?? $0.added) }
         ).count
@@ -79,6 +83,8 @@ public enum PersonalBests {
         for entry in ordered {
             guard let best = entry.bestLap else { continue }
             let key = LogbookFilter.circuitKey(of: entry)
+            // No circuit, no personal best there (#455).
+            guard !key.isEmpty else { continue }
             for scope in [key, key + "|" + entry.car.lowercased()]
             where best < bestSoFar[scope]?.seconds ?? .infinity {
                 bestSoFar[scope] = (best, entry.id)

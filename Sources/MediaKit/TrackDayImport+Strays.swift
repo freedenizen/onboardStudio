@@ -176,8 +176,14 @@ extension TrackDayImport {
         do {
             var entry = reading.entry
             let day = batch.day
-            let tookDayCircuit = entry.circuitID == nil && day?.circuitID != nil
+            var tookDayCircuit = entry.circuitID == nil && day?.circuitID != nil
             if entry.circuitID == nil { entry.circuitID = day?.circuitID }
+            // A day whose circuit was typed lends its name the same way (#455): the session was
+            // listed under a circuit named after its file, on a day that said where it was.
+            if LogbookFilter.circuitKey(of: entry).isEmpty, let name = day?.trackName, !name.isEmpty {
+                entry.trackName = name
+                tookDayCircuit = true
+            }
             let previous = entry.circuitID.flatMap { id in logbook.entries().first { $0.circuitID == id } }
             let dayCar = day.flatMap { $0.car.isEmpty ? nil : $0.car }
             let dayDriver = day.flatMap { $0.driver.isEmpty ? nil : $0.driver }
@@ -191,7 +197,7 @@ extension TrackDayImport {
                 entry.trackDayID = day.id
                 if entry.conditions.isEmpty { entry.conditions = day.conditions }
             } else {
-                entry.trackDayID = try logbook.day(for: entry).id
+                try logbook.assignDay(to: &entry)
             }
             try logbook.save(entry)
             return Filed(outcome: .added(entry), tookDayCircuit: tookDayCircuit)

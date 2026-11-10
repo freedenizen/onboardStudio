@@ -208,17 +208,28 @@ extension Logbook {
     /// said afterwards: a typo corrected on the day left every session under the old name, and a
     /// car typed on a day made by a files-first import left them all under none. A session that
     /// still has what the day had follows the day; one given a car or driver of its own keeps it.
+    ///
+    /// The circuit goes the same way (#455). A day made for files from a place the catalogue does
+    /// not know has no circuit, and neither have its sessions; naming it on the day names it on
+    /// them, and correcting the day's circuit corrects every session that was filed under the
+    /// old one. A session at another circuit than the day had keeps its own.
     /// Returns the sessions changed.
     @discardableResult
     public func updateDay(_ day: TrackDay) throws -> [LogbookEntry] {
         let old = self.day(id: day.id)
         try saveDay(day)
-        guard let old, old.car != day.car || old.driver != day.driver else { return [] }
+        guard let old, old.car != day.car || old.driver != day.driver || old.circuitKey != day.circuitKey
+        else { return [] }
         var changed: [LogbookEntry] = []
         for var entry in sessions(of: day) {
             let before = entry
             if old.car != day.car, entry.car == old.car { entry.car = day.car }
             if old.driver != day.driver, entry.driver == old.driver { entry.driver = day.driver }
+            if old.circuitKey != day.circuitKey, LogbookFilter.circuitKey(of: entry) == old.circuitKey {
+                entry.circuitID = day.circuitID
+                // A catalogue circuit is named by its id; the file's own track name stays beside it.
+                if day.circuitID == nil { entry.trackName = day.trackName }
+            }
             guard entry != before else { continue }
             try save(entry)
             changed.append(entry)
@@ -243,9 +254,36 @@ extension Logbook {
     /// are, else made now from the entry (its car and driver copied) and saved.
     public func day(for entry: LogbookEntry) throws -> TrackDay {
         if let id = entry.trackDayID, let day = day(id: id) { return day }
+        // A file with no date of its own goes on the day its file is dated (#455), as a clip with
+        // no clock does: the day of the import is only when it reached this Mac.
         return try day(
-            on: entry.date ?? entry.added, circuitID: entry.circuitID,
+            on: entry.date ?? Self.fileDate(of: entry) ?? entry.added, circuitID: entry.circuitID,
             trackName: entry.circuitID == nil ? entry.trackName : nil, car: entry.car, driver: entry.driver)
+    }
+
+    /// When the entry's file was written, as far as the file system knows: the earlier of its
+    /// creation and its last change. `nil` when the file is not where the entry says.
+    static func fileDate(of entry: LogbookEntry) -> Date? { fileDate(at: URL(fileURLWithPath: entry.file.path)) }
+
+    public static func fileDate(at url: URL) -> Date? {
+        guard let values = try? url.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+        else { return nil }
+        return [values.creationDate, values.contentModificationDate].compactMap { $0 }.min()
+    }
+
+    /// Puts `entry` on the day its date and circuit say (`day(for:)`). When it names no circuit
+    /// and the day it joined has one, it takes the day's (#455): it is on that day because
+    /// nothing says it was driven anywhere else — a log without GPS beside one that has it, or a
+    /// second file from a circuit that was named on the day. Returns the day.
+    @discardableResult
+    public func assignDay(to entry: inout LogbookEntry) throws -> TrackDay {
+        let day = try day(for: entry)
+        entry.trackDayID = day.id
+        if LogbookFilter.circuitKey(of: entry).isEmpty, !day.circuitKey.isEmpty {
+            entry.circuitID = day.circuitID
+            if day.circuitID == nil { entry.trackName = day.trackName }
+        }
+        return day
     }
 
     /// The day on `date` at the circuit, found or made (#394): a clip with no session of its own

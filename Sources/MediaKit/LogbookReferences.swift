@@ -6,15 +6,17 @@ import TelemetryKit
 /// being read, the personal best among them, the last visit, and reading one in on demand.
 public enum LogbookReferences {
     /// The logbook's key for the session a project is reading.
-    public static func circuitKey(for input: Input, session: TelemetrySession, url: URL) -> String {
-        LogbookDerived.circuitKey(for: input, session: session, url: url)
+    public static func circuitKey(for input: Input, session: TelemetrySession, entries: [LogbookEntry]) -> String {
+        LogbookDerived.circuitKey(for: input, session: session, entries: entries)
     }
 
     /// Sessions at `circuitKey` other than the one being read (`ownHash`, when known), newest first.
     public static func sessions(
         at circuitKey: String, in entries: [LogbookEntry], excluding ownHash: String? = nil
     ) -> [LogbookEntry] {
-        entries.filter {
+        // Sessions that name no circuit are not at one place (#455): none is a reference for another.
+        guard !circuitKey.isEmpty else { return [] }
+        return entries.filter {
             LogbookFilter.circuitKey(of: $0) == circuitKey && $0.bestLap != nil && $0.file.contentHash != ownHash
         }
     }

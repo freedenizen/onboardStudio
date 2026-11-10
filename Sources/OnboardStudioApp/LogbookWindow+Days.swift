@@ -26,13 +26,25 @@ extension LogbookWindow {
         view = .sessions
     }
 
-    /// The circuit the trends are of: the one chosen in the sidebar, else the only one there is.
+    /// The circuit the trends are of: the one chosen in the sidebar, else the day's, else the only
+    /// one there is. "No circuit" is not one (#455): its sessions are not visits to one place.
     var trendsCircuit: (id: String, title: String)? {
-        if case .circuit(let id, let title) = scope { return (id, title) }
-        if let day = selectedDay, let id = day.circuitID { return (id, day.title) }
+        if case .circuit(let id, let title) = scope { return id.isEmpty ? nil : (id, title) }
+        if let day = selectedDay, !day.circuitKey.isEmpty { return (day.circuitKey, day.title) }
         let circuits = LogbookFilter.circuits(in: model.entries)
-        if circuits.count == 1, case .circuit(let id, let title) = circuits[0].scope { return (id, title) }
+        if circuits.count == 1, case .circuit(let id, let title) = circuits[0].scope, !id.isEmpty { return (id, title) }
         return nil
+    }
+
+    /// The days were read again: the chosen day is still the chosen day when its circuit, and so
+    /// its label, changed (#455) — the sidebar selects by the label, and lost the row.
+    func followTheChosenDay() {
+        if case .day(let id, let title) = scope, let day = model.days.first(where: { $0.id == id }),
+            day.label != title
+        {
+            scope = .day(id: id, title: day.label)
+        }
+        model.choose(selectedDay)
     }
 
     // MARK: - A drop (#468)

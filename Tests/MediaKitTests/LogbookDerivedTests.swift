@@ -17,12 +17,18 @@ struct LogbookDerivedTests {
         var entry = try LogbookEntry.make(
             session: session, file: fixture, importerID: "racerender-csv", circuitID: nil, car: "Miata")
         entry.date = Date(timeIntervalSince1970: 1_700_000_000)
+        // The fixture's trace is at no circuit of the catalogue and its file names none: the
+        // circuit was named in the logbook afterwards (#455), and a file's name is not one.
+        entry.trackName = "Stadium"
         try logbook.save(entry)
         // Scoped to this test's task (#431): repointing the process-wide logbook raced the suites
         // that run alongside.
         try await ProjectCompiler.$scopedLogbookDirectory.withValue(folder) {
 
-            let data = Input(label: "d", source: MediaReference(path: fixture.path), kind: .data(DataInputSettings()))
+            // The input remembers the entry it was entered as, which is where its circuit is kept.
+            var settings = DataInputSettings()
+            settings.logbookEntryID = entry.id
+            let data = Input(label: "d", source: MediaReference(path: fixture.path), kind: .data(settings))
             let text = DisplayObject(
                 label: "T", inputID: nil, frame: .full, kind: .text(TextParams(text: "PB {pb} · {visits} visits")))
             let timer = DisplayObject(
@@ -41,6 +47,16 @@ struct LogbookDerivedTests {
             let plain = try await ProjectCompiler.load(
                 Project(inputs: [data]), location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj")))
             #expect(plain.derivedDetails.isEmpty && plain.personalBests.isEmpty)
+
+            // While the session names no circuit there is no best "here": another file that
+            // happens to be called the same is not another visit (#455).
+            var unnamed = entry
+            unnamed.trackName = nil
+            try logbook.save(unnamed)
+            let nowhere = try await ProjectCompiler.load(
+                project, location: ProjectLocation(URL(fileURLWithPath: "/tmp/x.onboardproj")))
+            #expect(nowhere.derivedDetails["visits"] == "0")
+            #expect(nowhere.derivedDetails["pb"] != "0:41.20")
         }
     }
 

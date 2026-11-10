@@ -52,11 +52,47 @@ enum UITestSupport {
         let copy = folder.appending(path: "coaching-laps.csv")
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
         try? lines.dropLast(2).joined(separator: "\n").write(to: copy, atomically: true, encoding: .utf8)
+        let day = secondVisitDay()
         Task {
-            _ = await TrackDayImport.run([copy], into: AppLogbook.shared, car: car)
+            _ = await TrackDayImport.run([copy], into: AppLogbook.shared, car: car, day: day)
             LogbookModel.shared.reload()
             editor?.statusMessage = "Entered the second visit in the \(car)."
         }
+    }
+
+    /// The day a second visit to the coaching fixture's circuit goes on (#455). The fixture's file
+    /// names no circuit and its trace lies at none of the catalogue, so two of its sessions are
+    /// two visits to one place only once somebody says where that is — which is what this does,
+    /// as a driver would: a session of the fixture already in the logbook is named (or keeps the
+    /// circuit its day gave it), and the new visit goes on a day at the same circuit — the first
+    /// visit's own day when that is at the circuit, else a new one. A new day is dated as the
+    /// fixture's file is, so the fixture added to a project afterwards, which has no date of its
+    /// own, lands on it and takes its circuit.
+    @MainActor
+    static func secondVisitDay() -> TrackDay {
+        let logbook = AppLogbook.shared
+        let visits = logbook.entries().filter {
+            URL(fileURLWithPath: $0.file.path).lastPathComponent == "coaching-laps.csv"
+        }
+        let known = visits.first { !LogbookFilter.circuitKey(of: $0).isEmpty }
+        // The first visit is on a day at its circuit already: the second joins it there, as it
+        // did when both were filed by their date alone.
+        if let known, let day = known.trackDayID.flatMap({ logbook.day(id: $0) }),
+            day.circuitKey == LogbookFilter.circuitKey(of: known)
+        {
+            return day
+        }
+        let name = known?.trackName ?? "Stadium"
+        for var visit in visits where known?.circuitID == nil && LogbookFilter.circuitKey(of: visit).isEmpty {
+            visit.trackName = name
+            try? logbook.save(visit)
+        }
+        let date = fixture("coaching-laps.csv").flatMap(Logbook.fileDate(at:)) ?? Date()
+        let day = TrackDay(
+            date: date, circuitID: known?.circuitID, trackName: known?.circuitID == nil ? name : nil)
+        try? logbook.saveDay(day)
+        LogbookModel.shared.reload()
+        return day
     }
 
     /// The editor that appeared last. Headless CI runners do not always give the document window
@@ -153,10 +189,12 @@ struct UITestCommands: Commands {
                 let copy = folder.appending(path: "coaching-laps.csv")
                 let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
                 try? lines.dropLast(2).joined(separator: "\n").write(to: copy, atomically: true, encoding: .utf8)
+                // Onto a day at the circuit the first visit is at (#455).
+                let day = UITestSupport.secondVisitDay()
                 if let editor {
-                    editor.trackDayRequest = TrackDayRequest(urls: [copy])
+                    editor.trackDayRequest = TrackDayRequest(urls: [copy], day: day)
                 } else {
-                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [copy])
+                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [copy], day: day)
                 }
             }
             Button("Add Fixture Image") {
