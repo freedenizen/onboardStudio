@@ -55,6 +55,19 @@ struct ExportOptionsTests {
         await #expect(throws: ProjectCompiler.LoadError.self) { try await ProjectCompiler.compile(none) }
     }
 
+    @Test func aFolderAsAnInputIsAProblemInWords() async throws {
+        let loaded = try await loadedProject()
+        let folder = FileManager.default.temporaryDirectory.appending(path: "Day \(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        var project = loaded.project
+        project.inputs[1].source = MediaReference(path: folder.path)
+        let fresh = try await ProjectCompiler.load(project, location: loaded.location)
+        let problem = try #require(fresh.problems[project.inputs[1].id])
+        #expect(problem.contains("is a folder, not a file"))
+        #expect(!problem.contains("Error Domain"))
+    }
+
     @Test func lapRangesMapThroughSync() async throws {
         let loaded = try await loadedProject()
         let both = ProjectCompiler.exportRange(.laps(first: 1, last: 2), in: loaded, duration: 3)

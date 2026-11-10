@@ -34,10 +34,18 @@ public enum Diagnostics {
 
     /// Logs why `url` could not be loaded and returns the problem as the input reports it.
     static func failedToLoad(_ url: URL, _ error: any Error) -> String {
-        let problem = "\(error)"
         let file = url.lastPathComponent
-        importing.error("Could not load \(file, privacy: .public): \(problem, privacy: .public)")
-        return problem
+        importing.error("Could not load \(file, privacy: .public): \("\(error)", privacy: .public)")
+        return message(for: error)
+    }
+
+    /// An error in words for the person looking at it. Our own errors describe themselves; one
+    /// from Cocoa or AVFoundation prints as "Error Domain=… Code=… UserInfo={…}", which belongs in
+    /// the log, so those are given by their localized description (#466).
+    static func message(for error: any Error) -> String {
+        if let text = (error as? any LocalizedError)?.errorDescription { return text }
+        let described = "\(error)"
+        return described.hasPrefix("Error Domain=") ? error.localizedDescription : described
     }
 
     /// This process's log lines since `date`, oldest first, one per line. Empty rather than an

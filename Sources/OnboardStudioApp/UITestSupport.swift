@@ -121,6 +121,10 @@ struct UITestCommands: Commands {
             Button("Add Fixture Data (Noisy CAN)") { add(data: "racechrono-v3-noisy.csv") }
             Button("Add Fixture Data (GPX)") { add(data: "track.gpx") }
             Button("Add Fixture Data (Coaching Laps)") { add(data: "coaching-laps.csv") }
+            // A folder dragged onto the window, which no test can drag (#466).
+            Button("Drop Fixture Folder") {
+                if let folder = UITestSupport.fixtures { editor?.addDroppedFiles([folder]) }
+            }
             Button("Add Fixture Track Day") {
                 guard let folder = UITestSupport.fixtures else { return }
                 // Through the project in front, else the Logbook window (#395: there may be none).
