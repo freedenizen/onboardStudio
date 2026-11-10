@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 3
 /// #464: with nothing chosen a RaceChrono project's speedometer read metres per second, and the
 /// Logbook read km/h whatever Settings said. Speed is now in the unit chosen, else the file's own
 /// mph or km/h, else the region's.

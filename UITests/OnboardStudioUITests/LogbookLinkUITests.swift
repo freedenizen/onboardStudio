@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 3
 /// J40: a data file added to a project is in the logbook too, without being asked (#349).
 final class LogbookLinkUITests: OnboardStudioUITestCase {
     @MainActor
