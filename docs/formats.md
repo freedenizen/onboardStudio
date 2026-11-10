@@ -56,8 +56,11 @@ unix time,,,s,m,m,deg,…,m/s,…,rpm,…
   which become `canbus:<name>` for a `200: canbus` source and `obd:<name>` for `200: obd`. The
   two are kept apart because a CAN log carries far more than OBD-II exposes. Projects saved
   before CAN had its own role name those channels `obd:`; that name still resolves.
-- `lap_number` transitions define laps. The first run is marked partial when it does not start
-  at lap 0, and the last run is always partial.
+- `lap_number` transitions define laps. The column is blank until the car first crosses the line,
+  so the lap that starts there — lap 1 — is a whole lap, and what was driven before it (the
+  out-lap) is no lap at all (#477; it used to be read as partial because it is numbered 1, not
+  0). A lap column that is numbered from the file's first row starts mid-lap, and that first run
+  is partial unless it is lap 0. The last run is always partial.
 - Blank cells (common for vehicle channels) are skipped, so channels may have fewer samples than rows.
 
 ## GPX (`gpx`)
@@ -144,6 +147,13 @@ when `ONBOARD_SAMPLES_DIR` points at a folder containing `vbo/`, and skip otherw
 A zip. `session.json` carries the track name, RaceChrono's own track id, the best and optimal lap
 times, and a lap list with each lap's `isInvalid` flag; `sessionfragment.json` says which device
 produced which streams (type 1 GPS, 2 accelerometer, 3 gyro, 12 CAN bus).
+
+Each lap in that list has a `startTimestamp` and a `finishTimestamp` of its own, and laps are read
+from both (#477). The first lap starts at the first crossing of the line, some way into the log;
+the out-lap before it is no lap of the logger's. Read from the finishes alone, the first lap ran
+from the start of the log and swallowed the out-lap. A lap still being driven when the log stopped
+has no finish, and closes the session as a partial lap. The archive and the CSV export of one
+session now give the same laps.
 
 Channel members are named `channel_<deviceType>_<deviceId>_<canId>_<channelId>_<kind>`.
 

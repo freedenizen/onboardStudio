@@ -92,11 +92,16 @@ private struct RCZSessionJSON: Decodable {
     var laps: [RCZLapJSON]?
 
     /// Lap boundaries as the logger recorded them, rather than as `SessionBuilder` would infer
-    /// them from the trace.
+    /// them from the trace: where each lap finished and where it began (#477). The first lap
+    /// begins at the first crossing of the line, some way into the log; the stretch before it is
+    /// the out-lap and is no lap of the logger's. A lap still being driven when the log stopped
+    /// has no finish and is left to the builder, which closes the session with it.
     func lapMarkers(origin: Int64) -> [RawLapMarker] {
         (laps ?? []).compactMap { lap -> RawLapMarker? in
             guard let finish = lap.finishTimestamp, let number = lap.number else { return nil }
-            return RawLapMarker(number: number, time: Double(finish - origin) / 1000)
+            return RawLapMarker(
+                number: number, time: Double(finish - origin) / 1000,
+                start: lap.startTimestamp.map { Double($0 - origin) / 1000 })
         }
     }
 }

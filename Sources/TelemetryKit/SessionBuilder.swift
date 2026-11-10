@@ -46,6 +46,12 @@ public enum SessionBuilder {
         public var trimStart: Double?
         /// Ignore samples after this point (`nil` = to the end).
         public var trimEnd: Double?
+        /// Read the first lap as builds before #477 did, for a project saved by one: a lap marker
+        /// ends a lap that began where the one before ended — the first with the data, so a
+        /// RaceChrono archive's first lap swallows the out-lap — and a lap column that starts at
+        /// a number other than 0 starts mid-lap, so its first lap is incomplete even when the
+        /// column was blank until the car crossed the line.
+        public var legacyFirstLap: Bool
 
         public init(
             roleOverrides: [String: ChannelRole] = [:],
@@ -63,10 +69,12 @@ public enum SessionBuilder {
             sectorMode: SectorMode = .equalDistance(count: SectorMode.defaultCount),
             cornerLabels: [String] = [],
             trimStart: Double? = nil,
-            trimEnd: Double? = nil
+            trimEnd: Double? = nil,
+            legacyFirstLap: Bool = false
         ) {
             self.trimStart = trimStart
             self.trimEnd = trimEnd
+            self.legacyFirstLap = legacyFirstLap
             self.roleOverrides = roleOverrides
             self.deriveSpeedFromPosition = deriveSpeedFromPosition
             self.deriveHeadingFromPosition = deriveHeadingFromPosition
@@ -140,7 +148,7 @@ public enum SessionBuilder {
         if let line = options.finishLine {
             session.laps = LapDetector.detect(in: session, line: line, ignoreFirst: options.ignoreFirstCrossings)
         } else {
-            session.laps = deriveLaps(table: table, session: session)
+            session.laps = deriveLaps(table: table, session: session, legacyFirstLap: options.legacyFirstLap)
         }
         // Pit-lane fragments cannot be the best lap, and every object can read the deltas to it.
         session.laps = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
@@ -241,15 +249,17 @@ public enum SessionBuilder {
 
     /// Explicit markers take precedence; otherwise laps come from transitions of a lap-number
     /// channel. Returns an empty array if neither is available.
-    static func deriveLaps(table: RawTable, session: TelemetrySession) -> [Lap] {
+    static func deriveLaps(table: RawTable, session: TelemetrySession, legacyFirstLap: Bool = false) -> [Lap] {
+        let start = session.timeRange?.lowerBound ?? 0
         let end = session.timeRange?.upperBound
         if !table.lapMarkers.isEmpty {
             return lapsFromMarkers(
-                table.lapMarkers.sorted { $0.time < $1.time },
-                sessionStart: session.timeRange?.lowerBound ?? 0, sessionEnd: end)
+                table.lapMarkers.sorted { $0.time < $1.time }, sessionStart: start, sessionEnd: end,
+                legacyFirstLap: legacyFirstLap)
         }
         if let lapChannel = session[.lap] {
-            return lapsFromLapNumbers(lapChannel, sessionEnd: end)
+            return lapsFromLapNumbers(
+                lapChannel, sessionStart: start, sessionEnd: end, legacyFirstLap: legacyFirstLap)
         }
         return []
     }
@@ -257,16 +267,29 @@ public enum SessionBuilder {
     /// RaceRender semantics: `# Lap N: t` marks the *end* of lap N at time t. Lap 0 starts at
     /// the session start; each subsequent lap starts where the previous ended.
     ///
+    /// A marker that says where its lap began is believed instead (#477). RaceChrono's archive
+    /// gives every lap a start, and the first begins at the first crossing of the line: measured
+    /// from the start of the data it swallowed the out-lap, was minutes long and still counted as
+    /// complete — while the same session's CSV called that lap incomplete. A lap whose own start
+    /// was trimmed away begins with the data and is not complete.
+    ///
     /// `sessionStart` is where the data actually begins, not zero: a trimmed session — or a file
     /// whose first sample is not at t=0 — would otherwise report its first lap as starting before
     /// any of its data.
     private static func lapsFromMarkers(
-        _ markers: [RawLapMarker], sessionStart: Double, sessionEnd: Double?
+        _ markers: [RawLapMarker], sessionStart: Double, sessionEnd: Double?, legacyFirstLap: Bool
     ) -> [Lap] {
         var laps: [Lap] = []
         var start = sessionStart
         for marker in markers where marker.time > sessionStart {
-            laps.append(Lap(number: marker.number, start: start, end: marker.time, isComplete: true))
+            if let own = marker.start, !legacyFirstLap {
+                laps.append(
+                    Lap(
+                        number: marker.number, start: max(own, sessionStart), end: marker.time,
+                        isComplete: own >= sessionStart))
+            } else {
+                laps.append(Lap(number: marker.number, start: start, end: marker.time, isComplete: true))
+            }
             start = marker.time
         }
         if let sessionEnd, sessionEnd > start, let lastNumber = markers.last?.number {
@@ -278,8 +301,16 @@ public enum SessionBuilder {
     /// Contiguous runs of the same lap number become laps. The first run is marked incomplete
     /// when the data starts mid-lap (its number is not 0) and the last run is incomplete because
     /// the file ends before the next boundary.
-    private static func lapsFromLapNumbers(_ channel: Channel, sessionEnd: Double?) -> [Lap] {
+    ///
+    /// A column that is blank until its first number does not start mid-lap (#477): the number
+    /// appears where the lap begins. RaceChrono leaves its lap column empty until the car first
+    /// crosses the line, and the lap that starts there is a whole one — it was read as incomplete
+    /// because it is numbered 1 and not 0.
+    private static func lapsFromLapNumbers(
+        _ channel: Channel, sessionStart: Double, sessionEnd: Double?, legacyFirstLap: Bool
+    ) -> [Lap] {
         guard !channel.isEmpty else { return [] }
+        let beginsWithTheData = legacyFirstLap || channel.times[0] <= sessionStart
         // Lap numbers are small integers; anything else (a corrupt file) is clamped, not trapped on.
         func lapNumber(_ value: Double) -> Int { Int(min(max(value.isFinite ? value.rounded() : 0, -1e6), 1e6)) }
         var runs: [(number: Int, start: Double)] = []
@@ -296,7 +327,7 @@ public enum SessionBuilder {
         for (index, run) in runs.enumerated() {
             let isLast = index == runs.count - 1
             let end = isLast ? sessionEnd : runs[index + 1].start
-            let isFirstPartial = index == 0 && run.number != 0
+            let isFirstPartial = index == 0 && run.number != 0 && beginsWithTheData
             laps.append(Lap(number: run.number, start: run.start, end: end, isComplete: !isLast && !isFirstPartial))
         }
         return laps

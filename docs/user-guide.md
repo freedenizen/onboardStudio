@@ -734,6 +734,13 @@ counted and stops it competing for the best lap — rather than leaving it in pl
 Splitting data duplicates the gauges reading it, for the same reason splitting a video duplicates
 the camera.
 
+**A RaceChrono session's laps are the ones RaceChrono timed.** Lap 1 begins the first time the car
+crosses the line and is a whole lap; the drive out of the pits before it is not a lap. The
+session reads the same whether you add its `.rcz` archive or its CSV export. Projects saved
+before this was put right keep the laps they had — the archive's lap 1 with the out-lap in it, the
+CSV's lap 1 marked partial — so nothing in a finished video moves; add the data file again to
+have it read afresh.
+
 There is no separate "split at marker" or "trim to marker": jump to the marker with **⇧↑** /
 **⇧↓**, which puts the playhead on it, then split or trim. That is how Resolve works too, and one
 command cannot disagree with another about where the cut goes.

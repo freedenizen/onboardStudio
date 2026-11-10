@@ -32,11 +32,18 @@ public struct RawColumn: Sendable, Equatable {
 /// An explicit lap boundary recorded in the file (e.g. RaceRender `# Lap N:` tags).
 public struct RawLapMarker: Sendable, Equatable {
     public var number: Int
+    /// When the lap ended.
     public var time: Double
+    /// When the lap began, where the file says so (#477): RaceChrono's archive lists every lap
+    /// with a start of its own, and its first lap starts at the first crossing of the line, not
+    /// at the start of the log. `nil` for a file that only marks where laps end (RaceRender's
+    /// `# Lap N:` tags): then a lap begins where the one before ended, the first with the data.
+    public var start: Double?
 
-    public init(number: Int, time: Double) {
+    public init(number: Int, time: Double, start: Double? = nil) {
         self.number = number
         self.time = time
+        self.start = start
     }
 }
 
