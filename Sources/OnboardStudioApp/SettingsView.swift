@@ -32,8 +32,10 @@ struct SettingsView: View {
                 }
                 .accessibilityIdentifier("settings.speedUnit")
                 Text(
-                    "Automatic shows speed in whatever unit the data file recorded it in. A project, "
-                        + "and any single object, can still choose its own."
+                    "Automatic shows speed in the unit the data file recorded it in, or in your region's "
+                        + "when the file records metres per second, as RaceChrono's do. The Logbook, "
+                        + "Coaching and Replay use your region's. A project, and any single object, can "
+                        + "still choose its own."
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }

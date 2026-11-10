@@ -39,10 +39,13 @@ import UniformTypeIdentifiers
     func carComparison(first: LogbookEntry, firstCar: String, second: LogbookEntry, secondCar: String) async
         -> CarVersusCar?
     {
-        let key = "\(first.id)|\(second.id)"
+        // Written in the app's units, as the chart beside it is drawn (#464).
+        let setting = SpeedUnitSetting(rawValue: UserDefaults.standard.value(for: Preferences.speedUnit))
+        let units = CoachingUnits.following(setting ?? .automatic)
+        let key = "\(first.id)|\(second.id)|\(units.speed.symbol)"
         if let cached = carComparisons[key] { return cached }
         let made = await Task.detached(priority: .userInitiated) {
-            CarVersusCar.make(first: first, firstCar: firstCar, second: second, secondCar: secondCar)
+            CarVersusCar.make(first: first, firstCar: firstCar, second: second, secondCar: secondCar, units: units)
         }.value
         if let made { carComparisons[key] = made }
         return made

@@ -13,8 +13,9 @@ enum CoachingTracks {
         let settings = project.coaching
         // The notes are written in the app's speed unit: mph gives mph and feet, the rest km/h
         // and metres. The same reading the Coaching window makes.
-        let appSpeedUnit = SpeedUnitSetting(rawValue: UserDefaults.standard.value(for: Preferences.speedUnit))
-        let units: CoachingUnits = appSpeedUnit == .mph ? .imperial : .metric
+        let appSpeedUnit =
+            SpeedUnitSetting(rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic
+        let units = CoachingUnits.following(appSpeedUnit, legacyAutomatic: project.settings.legacyAutomaticUnits)
         for input in project.dataInputs {
             guard let session = sessions[input.id] else { continue }
             // Reuse when nothing it was read from changed: the inputs, their sessions and the

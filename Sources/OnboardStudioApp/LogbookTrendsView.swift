@@ -14,6 +14,9 @@ struct LogbookTrendsView: View {
     let onOpen: (UUID) -> Void
     @State private var car = ""
     @State private var readingCorners = false
+    /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
+    @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
+    private var speedUnit: SpeedDisplayUnit { (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown() }
 
     private var cars: [String] {
         Array(Set(entries.filter { LogbookFilter.circuitKey(of: $0) == circuitKey }.map(\.car).filter { !$0.isEmpty }))
@@ -206,9 +209,9 @@ struct LogbookTrendsView: View {
                     Text(trend.latest?.brakePointMeters.map { "\(Int($0.rounded())) m" } ?? "—")
                     if last { Text(Self.metres(trend.brakePointChange)) }
                     if best { Text(Self.metres(trend.brakePointToBest)) }
-                    Text(trend.latest.map { Self.speed($0.minimumSpeed) } ?? "—")
-                    if last { Text(Self.speedDelta(trend.minimumSpeedChange)) }
-                    if best { Text(Self.speedDelta(trend.minimumSpeedToBest)) }
+                    Text(trend.latest.map { speedUnit.text(metersPerSecond: $0.minimumSpeed) } ?? "—")
+                    if last { Text(Self.speedDelta(trend.minimumSpeedChange, in: speedUnit)) }
+                    if best { Text(Self.speedDelta(trend.minimumSpeedToBest, in: speedUnit)) }
                     Text(trend.latest.map { String(format: "%.2f s", $0.timeInCorner) } ?? "—")
                     if last { Text(Self.seconds(trend.timeChange)) }
                 }
@@ -258,12 +261,8 @@ struct LogbookTrendsView: View {
         return value.magnitude < 0.5 ? "same" : String(format: "%+.0f m", value)
     }
 
-    static func speed(_ metresPerSecond: Double) -> String { String(format: "%.0f km/h", metresPerSecond * 3.6) }
-
-    static func speedDelta(_ value: Double?) -> String {
-        guard let value else { return "—" }
-        let kph = value * 3.6
-        return kph.magnitude < 0.5 ? "same" : String(format: "%+.0f km/h", kph)
+    static func speedDelta(_ value: Double?, in unit: SpeedDisplayUnit) -> String {
+        value.map { unit.changeText(metersPerSecond: $0) } ?? "—"
     }
 
     static func seconds(_ value: Double?) -> String {

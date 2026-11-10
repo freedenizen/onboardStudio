@@ -73,14 +73,20 @@ public enum RenderPlanner {
 
     /// #75's chain for one object — object → project → app → the data it reads — so the
     /// renderer and the inspector describing what the renderer will do agree by construction.
+    ///
+    /// `regionalSpeedUnit` is the road unit of the user's region, which stands in for a file that
+    /// recorded metres per second (#464). Given by the caller, as the app's unit is, so the
+    /// planner stays a pure function of what it is given; a project saved before schema 3 does
+    /// not take it, and goes on showing what its file recorded.
     public static func unitResolver(
         for object: DisplayObject, in project: Project, sessions: [InputID: TelemetrySession],
-        appSpeedUnit: SpeedUnitSetting
+        appSpeedUnit: SpeedUnitSetting, regionalSpeedUnit: SpeedDisplayUnit? = nil
     ) -> UnitResolver {
         let session = dataInputID(for: object, in: project).flatMap { sessions[$0] }
         return UnitResolver(
             app: appSpeedUnit, project: project.settings.speedUnit,
-            automatic: session.flatMap(recordedSpeedUnit(of:)))
+            automatic: session.flatMap(recordedSpeedUnit(of:)),
+            regional: project.settings.legacyAutomaticUnits ? nil : regionalSpeedUnit)
     }
 
     /// #89's chain for every channel of one object's data input: which unit each is drawn in, and
@@ -92,7 +98,8 @@ public enum RenderPlanner {
     /// other attribute has no object-level pin yet, so the table is the whole of its chain.
     public static func displayUnits(
         for object: DisplayObject, in project: Project, sessions: [InputID: TelemetrySession],
-        appSpeedUnit: SpeedUnitSetting, globalAttributeMappings: AttributeMappingTable
+        appSpeedUnit: SpeedUnitSetting, regionalSpeedUnit: SpeedDisplayUnit? = nil,
+        globalAttributeMappings: AttributeMappingTable
     ) -> DisplayUnits {
         guard let inputID = dataInputID(for: object, in: project), let session = sessions[inputID] else {
             return DisplayUnits()
@@ -100,7 +107,9 @@ public enum RenderPlanner {
         let mappings = AttributeMappingResolver(
             global: globalAttributeMappings, project: project.settings.attributeMappings,
             input: project.input(inputID)?.dataSettings?.attributeMappings ?? AttributeMappingTable())
-        let speed = unitResolver(for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit)
+        let speed = unitResolver(
+            for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit,
+            regionalSpeedUnit: regionalSpeedUnit)
 
         // What this object pinned for its own channels, which outranks the table. Applied per
         // channel rather than to the whole session: a graph of speed and rpm drawing "mph" means
@@ -146,6 +155,7 @@ public enum RenderPlanner {
         scriptRenderer: ScriptRendererFactory? = nil,
         mapBackgrounds: [MapBackgroundRequest: MapBackground] = [:],
         appSpeedUnit: SpeedUnitSetting = .automatic,
+        regionalSpeedUnit: SpeedDisplayUnit? = nil,
         globalAttributeMappings: AttributeMappingTable = AttributeMappingTable(),
         lapComparison: LapTimeWarp? = nil,
         coaching: [InputID: CoachingTrack] = [:],
@@ -161,13 +171,15 @@ public enum RenderPlanner {
             let sync = (object.kind.needsImage ? project.dataInputs.first?.sync : input?.sync) ?? .identity
             // #75's and #89's chains, resolved here so every renderer is handed units it can
             // convert with rather than settings that may still say "automatic".
-            let resolver = unitResolver(for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit)
+            let resolver = unitResolver(
+                for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit,
+                regionalSpeedUnit: regionalSpeedUnit)
             let context = ObjectContext(
                 objectID: object.id, frame: object.frame, opacity: object.opacity, sampler: sampler, sync: sync,
                 cache: cache, speedUnit: resolver.speed(object.kind.speedUnit),
                 units: displayUnits(
                     for: object, in: project, sessions: sessions, appSpeedUnit: appSpeedUnit,
-                    globalAttributeMappings: globalAttributeMappings),
+                    regionalSpeedUnit: regionalSpeedUnit, globalAttributeMappings: globalAttributeMappings),
                 typeface: typeface(for: object, in: project), textScale: object.textScale ?? 1,
                 lapComparison: lapComparison, followsComparedLap: object.followsComparedLap,
                 coaching: dataInputID.flatMap { coaching[$0] },

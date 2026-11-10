@@ -37,7 +37,7 @@ struct DisplayUnitPicker: View {
     private var resolved: DisplayUnits {
         RenderPlanner.displayUnits(
             for: object, in: editor.project, sessions: editor.sessions,
-            appSpeedUnit: SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic,
+            appSpeedUnit: SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic, regionalSpeedUnit: .regional(),
             globalAttributeMappings: AttributeMappingTable(json: globalMappings))
     }
 

@@ -67,6 +67,12 @@ resolves to the old values.
   `showPlayheadLine`, and new ones sit in the middle with a line. A graph in a project at schema 1,
   or in a template or style at format 1, is set to `playheadPosition` 1 and `showPlayheadLine`
   false: the right edge with no line, as every graph drew before.
+- **Schema 3 (#464).** *Automatic* changed its meaning for speed. Where every level defers, a file
+  that recorded metres per second is now shown in the region's road unit, and coaching notes are
+  written in the region's units; before, the speedometer read m/s and the notes were metric
+  unless the app was set to mph. A project at schema 2 or earlier is given
+  `settings.legacyAutomaticUnits` true, which keeps both as they were. Templates and styles carry
+  no such setting and need no step: a project made from one is a new project.
 
 ### This covers `project.json` only
 
@@ -104,10 +110,11 @@ can carry; the answer is a migration pinning the old value, never regenerating t
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null,
                 "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } },
-                "overlayOpacity": 1, "speedUnit": "automatic", "attributeMappings": {} },
+                "overlayOpacity": 1, "speedUnit": "automatic", "attributeMappings": {},
+                "legacyAutomaticUnits": false },
   "export": { "codec": "h264", "width": 1920, "height": 1080, "frameRate": 30, "videoBitrate": 16000000,
               "audioBitrate": 192000, "audioSampleRate": 48000, "audioChannels": 2 },
   "inputs": [ … ],
@@ -150,6 +157,14 @@ definition, which is how the next project at that circuit learns what was planne
 
 `settings.typeface` (optional, `{ "family", "face" }`) is the font for every object that has not
 chosen its own `typeface`; absent means the built-in fonts.
+
+`settings.legacyAutomaticUnits` (always written, #464) says what *Automatic* means for speed in
+this project. `false`, in every project made at schema 3 or later: where the object, the project
+and the app all defer, a file that recorded metres per second is shown in the region's road unit
+(mph under the US and UK measurement systems, km/h elsewhere), and coaching notes are written in
+the region's units. `true`, set by the migration on a project saved before schema 3: such a file
+is shown in m/s, and the notes are in km/h and metres unless the app's speed unit is mph — what
+those builds did. A file that recorded mph or km/h is shown in its own unit either way.
 
 `settings.overlayOpacity` (0…1, default 1) fades the whole overlay layer (everything but the videos) over the picture, on top of each object's own `opacity`.
 

@@ -662,6 +662,15 @@ into are offered, so a temperature gauge is never asked whether it would like to
 Speed keeps its own picker (mph, kph, m/s), which is what projects saved before attributes existed
 already use.
 
+With nothing chosen anywhere — the object, the project and **Settings ▸ Units ▸ Speed** all on
+*Automatic* — speed is shown in the unit the data file recorded it in when that is mph or km/h. A
+file that records metres per second, as RaceChrono's CSV does, is shown in your region's road unit
+instead: mph in the United States and the United Kingdom, km/h everywhere else. The caption under
+the picker says which it is and why. The Logbook, Trends, Coaching and Replay have no one file to
+ask, so they show the unit chosen in Settings, and your region's when that is *Automatic*. Choose
+m/s at any level and you still get it. A project saved before this keeps what it showed: its
+speedometer goes on reading m/s, and its coaching notes km/h and metres, until you choose a unit.
+
 A gauge or bar **added** while a data file is loaded takes its scale and unit label from what that
 channel actually reads, rather than the template's 0–100 %. A brake pressure running to 1900 kPa
 gets a 0–1900 kPa scale instead of a bar pinned at full all lap. Opening a saved project never
@@ -846,8 +855,9 @@ a notes app. Files are named for the track and the lap (`Sonoma – Lap 2 coachi
 `onboard coach … --markdown` prints the Markdown from the command line.
 
 When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
-points are read from the speed trace and the window says so. Notes are in km/h and metres, or in
-mph and feet when the app's speed unit is mph. The lap and reference you chose are saved with the
+points are read from the speed trace and the window says so. Notes are in mph and feet when the
+app's speed unit is mph — chosen in Settings, or your region's when Settings say *Automatic* — and
+in km/h and metres otherwise. The lap and reference you chose are saved with the
 project; changing them is undoable. The method, its thresholds and the research behind it are in
 [coaching.md](coaching.md); `onboard coach` does the same from the command line (§8).
 

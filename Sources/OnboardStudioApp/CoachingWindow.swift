@@ -107,7 +107,13 @@ struct CoachingContent: View {
     @State private var selectingForShowMe = false
     @State private var sortOrder = [KeyPathComparator(\CornerRow.timeLost, order: .reverse)]
 
-    var units: CoachingUnits { appSpeedUnit == SpeedUnitSetting.mph.rawValue ? .imperial : .metric }
+    /// The app's units; a project saved before the region decided *Automatic* (#464) keeps the
+    /// metric notes its video is rendered with, so the window and the picture agree.
+    var units: CoachingUnits {
+        .following(
+            SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic,
+            legacyAutomatic: source.editor?.project.settings.legacyAutomaticUnits ?? false)
+    }
 
     var body: some View {
         Group {

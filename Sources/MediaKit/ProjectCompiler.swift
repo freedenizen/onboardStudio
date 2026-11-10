@@ -246,6 +246,9 @@ public enum ProjectCompiler {
                 // render tests pin a unit without touching the running app's settings.
                 appSpeedUnit: SpeedUnitSetting(
                     rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic,
+                // The region's road unit, for a file that recorded metres per second (#464); read
+                // here for the same reason.
+                regionalSpeedUnit: .regional(),
                 // #89's global level, read here for the same reason, so the planner stays a pure
                 // function of what it is given.
                 globalAttributeMappings: AttributeMappingTable(

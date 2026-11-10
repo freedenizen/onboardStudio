@@ -22,11 +22,18 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
     /// each object in its built-in fonts, which is what a project saved before fonts could be
     /// chosen always did.
     public var typeface: Typeface?
+    /// *Automatic* means what it meant before schema 3 (#464): a speed object shows the unit its
+    /// file recorded even when that is metres per second, and coaching notes are in km/h and
+    /// metres unless the app is set to mph. Set by `Project.migrateIfNeeded()` on a project saved
+    /// by an earlier build, so opening it changes nothing; `false` for every project made since,
+    /// where the region's road unit stands in instead.
+    public var legacyAutomaticUnits: Bool
 
     public init(
         outputWidth: Int = 1920, outputHeight: Int = 1080, frameRate: Double = 30, duration: Double? = nil,
         framing: CameraFraming = .none, overlayOpacity: Double = 1, speedUnit: SpeedUnitSetting = .automatic,
-        attributeMappings: AttributeMappingTable = AttributeMappingTable(), typeface: Typeface? = nil
+        attributeMappings: AttributeMappingTable = AttributeMappingTable(), typeface: Typeface? = nil,
+        legacyAutomaticUnits: Bool = false
     ) {
         self.outputWidth = outputWidth
         self.outputHeight = outputHeight
@@ -37,11 +44,12 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
         self.speedUnit = speedUnit
         self.attributeMappings = attributeMappings
         self.typeface = typeface
+        self.legacyAutomaticUnits = legacyAutomaticUnits
     }
 
     private enum CodingKeys: String, CodingKey {
         case outputWidth, outputHeight, frameRate, duration, framing, overlayOpacity, speedUnit
-        case attributeMappings, typeface
+        case attributeMappings, typeface, legacyAutomaticUnits
     }
 
     public init(from decoder: any Decoder) throws {
@@ -64,6 +72,9 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
             try c.decodeIfPresent(AttributeMappingTable.self, forKey: .attributeMappings) ?? AttributeMappingTable()
         // Absent before fonts could be chosen, and absent means the built-in fonts it always drew.
         typeface = try c.decodeIfPresent(Typeface.self, forKey: .typeface)
+        // Absent before schema 3. This decoder cannot see the schema, so it does not decide: the
+        // migration sets it for a project saved by an earlier build.
+        legacyAutomaticUnits = try c.decodeIfPresent(Bool.self, forKey: .legacyAutomaticUnits) ?? false
     }
 
     /// The same settings with the framing removed (framing is applied by the compositor, so it
@@ -78,7 +89,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 2
+    public static let currentSchemaVersion = 3
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -202,6 +213,12 @@ public struct Project: Hashable, Codable, Sendable {
             // 1 → 2 (#156): graphs drew the current moment at the right edge, with no line.
             for index in displayObjects.indices { displayObjects[index].kind.pinGraphPlayheadToTheRightEdge() }
             schemaVersion = 2
+        }
+        if schemaVersion < 3 {
+            // 2 → 3 (#464): Automatic took the file's own speed unit, metres per second included,
+            // and coaching notes were metric unless the app said mph.
+            settings.legacyAutomaticUnits = true
+            schemaVersion = 3
         }
         schemaVersion = Self.currentSchemaVersion
     }

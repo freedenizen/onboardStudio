@@ -124,7 +124,7 @@ struct ReplayWindow: View {
     private var hud: some View {
         Group {
             if let watched = model.watched,
-                let hud = model.hud(speedUnit: SpeedUnitSetting(rawValue: appSpeedUnit) ?? .kph)
+                let hud = model.hud(speedUnit: (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown())
             {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(watched.lap.label).font(.headline).accessibilityIdentifier("replay.hud.lap")
