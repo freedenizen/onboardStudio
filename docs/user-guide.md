@@ -7,7 +7,7 @@ and, ideally, a data log.
 
 ## 1. Your first overlay in five minutes
 
-![The Logbook at launch: track days in the sidebar, a day's sessions in the table with its header above, and the New Project menu in the toolbar](images/logbook.png)
+![The Logbook at launch: track days in the sidebar, a day's sessions in the table with its header above, the selected session's laps with what can be done with it underneath, and the New Project menu in the toolbar](images/logbook.png)
 
 1. **Launch Onboard Studio.** The **Logbook** opens: every track day you have driven, with its
    sessions and clips, and the way into the work. **New Track Day…** begins a day (the date, the
