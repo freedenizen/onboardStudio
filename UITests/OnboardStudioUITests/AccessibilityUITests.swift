@@ -30,8 +30,8 @@ final class AccessibilityUITests: OnboardStudioUITestCase {
 
     /// Text reads against what is behind it in the light appearance, which is what CI runners and
     /// most users have, as well as in the appearance the Mac is set to. An element reaching past
-    /// the window — a data lane longer than the visible timeline — is measured partly against
-    /// whatever is outside it, so only elements inside the window are held to it.
+    /// the window — as the bar of a data file longer than the video did until #463 — is measured
+    /// partly against whatever is outside it, so only elements inside the window are held to it.
     ///
     /// Local only: on CI's runners the forced-light pass reports inspector labels and ruler
     /// labels that pass on a Mac — the audit measures the window as the runner renders it, and
