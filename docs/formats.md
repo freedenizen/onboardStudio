@@ -25,7 +25,9 @@ RaceRender's native format, also written by TrackAddict and several loggers.
 
 ## RaceChrono / RaceChrono Pro CSV (`racechrono-csv`)
 
-CSV v3 as exported by RaceChrono Pro 7.3+ (v2 files are read on a best-effort basis).
+CSV v3 as exported by RaceChrono Pro 7.3+ (v2 files are read on a best-effort basis). The same
+session exported as v2, as v3 and as `.rcz` is one session in the logbook, whichever is added
+first (`docs/logbook.md`, "One drive, two files").
 
 ```
 This file is created using RaceChrono Pro v9.1.3 ( http://racechrono.com/ ).

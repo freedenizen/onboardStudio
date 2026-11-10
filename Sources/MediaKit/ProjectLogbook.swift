@@ -35,8 +35,8 @@ public enum ProjectLogbook {
         }
     }
 
-    /// The entry for the request's file: the existing one with the same bytes, else a new one
-    /// saved now.
+    /// The entry for the request's file: the existing one with the same bytes, or of the same
+    /// drive read from another file (#465), else a new one saved now.
     public static func enter(_ request: Request, into logbook: Logbook) throws -> Enrolment {
         let url = request.url
         let (hash, _) = try LogbookEntry.hash(of: url)
@@ -47,6 +47,7 @@ public enum ProjectLogbook {
             session: request.session, file: url, importerID: importer, circuitID: request.circuitID,
             car: request.car.isEmpty ? previous?.car ?? "" : request.car,
             driver: request.driver.isEmpty ? request.session.info.driverName ?? previous?.driver : request.driver)
+        if let twin = logbook.entry(sameSessionAs: entry) { return Enrolment(entry: twin, isNew: false) }
         // Onto the day its date and circuit say, as a file added to the logbook itself is (#393).
         entry.trackDayID = try logbook.day(for: entry).id
         try logbook.save(entry)

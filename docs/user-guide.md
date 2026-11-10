@@ -341,7 +341,9 @@ in its header and **Conditions and Notes** folded under it. **Add Files…**, or
 files and camera clips on the window, and each goes on that day with its car, driver and
 conditions to begin with; the sheet says what happened to each file in plain words. The circuit is
 recognised, the date read from the file, and a file already in the logbook is skipped, whatever
-it is called now. **Add Files…** with no day chosen (or **File ▸ Add Track Day to Logbook…**)
+it is called now. So is a session the logbook already has from another file: RaceChrono exports
+one session as CSV v2, CSV v3 and `.rcz`, and a folder holding more than one of them is still one
+session — the sheet's line names the file the logbook has it from. **Add Files…** with no day chosen (or **File ▸ Add Track Day to Logbook…**)
 takes a whole day's folders at once: each file goes on the day its date and circuit say, made if
 need be, and the sheet's line says which. From the command line, `onboard logbook new-day --date
 2026-08-23 --circuit Sonoma --car Miata` begins a day, `onboard logbook add <files or folders>
@@ -377,7 +379,8 @@ table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only wh
 the search finds it. Nothing is required.
 
 A data file added to a project goes into the logbook as well (Settings ▸ Logbook turns this off):
-the status bar says so, the same file is never entered twice, and the project's blank car and
+the status bar says so, the same file is never entered twice, nor the same session from another
+export of it, and the project's blank car and
 driver are filled from what the logbook knows. A saved project is listed on its sessions under
 **Projects**, every video exported from it under **Exports**, both as links. A data file you have
 moved is found again through whichever side still knows where it is, once, when the project opens.

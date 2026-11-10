@@ -66,7 +66,7 @@ struct TrackDayImportSheet: View {
 
     private var summary: String {
         let added = reports.filter(\.isAdded).count
-        let skipped = reports.filter { if case .alreadyThere = $0.outcome { return true } else { return false } }.count
+        let skipped = reports.filter(\.isAlreadyThere).count
         let clips = reports.filter(\.isClip).count
         var parts = ["\(added) session\(added == 1 ? "" : "s") added"]
         if clips > 0 { parts.append("\(clips) clip\(clips == 1 ? "" : "s")") }
