@@ -39,4 +39,26 @@ struct DiagnosticsTests {
             [.modificationDate: Date().addingTimeInterval(-60 * 86_400)], ofItemAtPath: old.path)
         #expect(Diagnostics.crashReports(within: 14, in: folder).map(\.lastPathComponent) == [recent.lastPathComponent])
     }
+
+    // MARK: - A failure in words (#466)
+
+    @Test func aCocoaErrorIsGivenInWordsNotAsItsDump() {
+        let error = NSError(
+            domain: NSCocoaErrorDomain, code: NSFileReadNoSuchFileError,
+            userInfo: [NSFilePathErrorKey: "/nowhere/session.csv"])
+        #expect("\(error)".hasPrefix("Error Domain="))
+        let message = Diagnostics.message(for: error)
+        #expect(!message.isEmpty)
+        #expect(!message.contains("Error Domain"))
+        #expect(!message.contains("UserInfo"))
+    }
+
+    @Test func ourOwnErrorsDescribeThemselves() {
+        struct Readable: LocalizedError {
+            var errorDescription: String? { "The log has no time column." }
+        }
+        #expect(Diagnostics.message(for: Readable()) == "The log has no time column.")
+        let missing = ProjectCompiler.LoadError.missingFile(URL(fileURLWithPath: "/nowhere/session.csv"))
+        #expect(Diagnostics.message(for: missing) == "File not found: /nowhere/session.csv")
+    }
 }

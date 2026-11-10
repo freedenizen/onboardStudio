@@ -47,6 +47,17 @@ final class FirstLaunchUITests: OnboardStudioUITestCase {
         XCTAssertTrue(app.windows["Keyboard Shortcuts"].waitForExistence(timeout: Self.timeout))
         XCTAssertTrue(app.staticTexts["Add video"].exists)
     }
+
+    /// Files can be dropped anywhere in the window; a folder is not one. It used to be added as a
+    /// data file that could only fail, with the error's debug description for a message (#466).
+    @MainActor
+    func testADroppedFolderIsNotAddedAndSaysWhy() throws {
+        launch()
+        testing("Drop Fixture Folder")
+        expectStatus(containing: "is a folder, and a project takes files")
+        let inputs = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'input.'"))
+        XCTAssertEqual(inputs.count, 0, "The folder was added as an input")
+    }
 }
 
 // ci-shard: 1

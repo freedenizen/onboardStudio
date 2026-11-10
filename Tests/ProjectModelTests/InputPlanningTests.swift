@@ -160,4 +160,37 @@ struct InputPlanningTests {
         #expect(project.displayObjects.count == 1)
         #expect(project.displayObjects.first?.inputID == nil)
     }
+
+    // MARK: - Dropped files (#466)
+
+    @Test func droppedFilesAreSortedByWhatAProjectDoesWithThem() {
+        let files = InputPlanning.sort(
+            dropped: [
+                Self.url("GX010029.MP4"), Self.url("session.csv"), Self.url("logo.png"), Self.url("lap.360"),
+                Self.url("session.rcz"),
+            ], isFolder: { _ in false })
+        #expect(
+            files
+                == DroppedFiles(
+                    videos: [Self.url("GX010029.MP4"), Self.url("lap.360")], images: [Self.url("logo.png")],
+                    data: [Self.url("session.csv"), Self.url("session.rcz")]))
+    }
+
+    @Test func aDroppedFolderIsSetAsideHoweverItIsNamed() {
+        // A day's folder, a folder that happens to end in .mp4, and a project package.
+        let folders = [Self.url("Sonoma Aug 23"), Self.url("clips.mp4"), Self.url("Lap.onboardproj")]
+        let files = InputPlanning.sort(dropped: folders + [Self.url("session.csv")], isFolder: folders.contains)
+        #expect(files == DroppedFiles(data: [Self.url("session.csv")], folders: folders))
+    }
+
+    @Test func aFolderIsToldFromAFileOnDisk() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "Day \(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let file = folder.appending(path: "session.csv")
+        try Data("time".utf8).write(to: file)
+        #expect(InputPlanning.isFolder(folder))
+        #expect(!InputPlanning.isFolder(file))
+        #expect(!InputPlanning.isFolder(folder.appending(path: "missing.csv")))
+    }
 }

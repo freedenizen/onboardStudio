@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 
 /// Where a video file added to a project should go.
 public enum VideoAddition: Equatable, Sendable {
@@ -137,5 +138,53 @@ extension Project {
             displayObjects[index].inputID = nil
         }
         bindOrphanObjects()
+    }
+}
+
+/// What a set of dropped files is to a project.
+public struct DroppedFiles: Equatable, Sendable {
+    public var videos: [URL] = []
+    public var images: [URL] = []
+    public var data: [URL] = []
+    /// Folders, project packages among them: a project takes files, so these are none of the above.
+    public var folders: [URL] = []
+
+    public init(videos: [URL] = [], images: [URL] = [], data: [URL] = [], folders: [URL] = []) {
+        self.videos = videos
+        self.images = images
+        self.data = data
+        self.folders = folders
+    }
+}
+
+extension InputPlanning {
+    /// Sorts dropped files by what a project does with each: videos, images, and everything else
+    /// as a data log. A folder is set aside instead of being read as a log, which could only fail
+    /// (#466) — the Logbook is what takes a day's folder.
+    public static func sort(dropped urls: [URL], isFolder: (URL) -> Bool = InputPlanning.isFolder) -> DroppedFiles {
+        var files = DroppedFiles()
+        for url in urls {
+            let type = UTType(filenameExtension: url.pathExtension) ?? .data
+            if isFolder(url) {
+                files.folders.append(url)
+            } else if type.conforms(to: .movie) || type.conforms(to: .video)
+                || videoExtensions.contains(url.pathExtension.lowercased())
+            {
+                files.videos.append(url)
+            } else if type.conforms(to: .image) {
+                files.images.append(url)
+            } else {
+                files.data.append(url)
+            }
+        }
+        return files
+    }
+
+    /// Extensions that are video whatever the system says of them.
+    static let videoExtensions: Set<String> = ["mp4", "mov", "m4v", "mts", "m2ts", "avi", "mkv", "360"]
+
+    /// Whether `url` is a directory on disk, a file package included.
+    public static func isFolder(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
     }
 }

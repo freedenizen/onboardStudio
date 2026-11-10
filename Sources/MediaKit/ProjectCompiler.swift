@@ -105,6 +105,7 @@ public enum ProjectCompiler {
             let unchanged = isUnchanged(input, in: project, since: previous, global: global)
             do {
                 guard FileManager.default.fileExists(atPath: url.path) else { throw LoadError.missingFile(url) }
+                if InputPlanning.isFolder(url) { throw LoadError.folder(url) }
                 switch input.kind {
                 case .data(let settings):
                     if unchanged, let cached = previous?.sessions[input.id] {
@@ -192,11 +193,15 @@ public enum ProjectCompiler {
 
     public enum LoadError: Error, CustomStringConvertible {
         case missingFile(URL)
+        /// The input is a folder, which no importer reads (#466).
+        case folder(URL)
         case noPlayableVideo
 
         public var description: String {
             switch self {
             case .missingFile(let url): "File not found: \(url.path)"
+            case .folder(let url):
+                "“\(url.lastPathComponent)” is a folder, not a file. Remove it and add the files inside it."
             case .noPlayableVideo: "The project has no video input that can be opened."
             }
         }

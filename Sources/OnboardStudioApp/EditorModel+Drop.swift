@@ -2,7 +2,6 @@ import Foundation
 import Importers
 import MediaKit
 import ProjectModel
-import UniformTypeIdentifiers
 
 // MARK: - Adding files: chapters, drops, multi-select
 
@@ -172,21 +171,28 @@ extension EditorModel {
         selectedInputID = input.id
     }
 
-    /// Files dropped on the window: videos (joined into recordings), images, or data logs.
+    /// Files dropped on the window: videos (joined into recordings), images, or data logs. A
+    /// folder is none of them and is not added; the status line says what to do with it (#466).
     func addDroppedFiles(_ urls: [URL]) {
-        var videos: [URL] = []
-        for url in urls {
-            let type = UTType(filenameExtension: url.pathExtension) ?? .data
-            if type.conforms(to: .movie) || type.conforms(to: .video)
-                || ["mp4", "mov", "m4v", "mts", "m2ts", "avi", "mkv", "360"].contains(url.pathExtension.lowercased())
-            {
-                videos.append(url)
-            } else if type.conforms(to: .image) {
-                addImage(at: url)
-            } else {
-                addData(at: url)
-            }
+        let dropped = InputPlanning.sort(dropped: urls)
+        dropped.images.forEach { addImage(at: $0) }
+        dropped.data.forEach { addData(at: $0) }
+        if !dropped.videos.isEmpty { addVideos(at: dropped.videos) }
+        // Last, so that it is what the status line is left saying.
+        if let refusal = Self.refusal(ofFolders: dropped.folders) { statusMessage = refusal }
+    }
+
+    /// Why dropped folders were not added, and where they do go.
+    static func refusal(ofFolders folders: [URL]) -> String? {
+        guard let first = folders.first else { return nil }
+        let packages = [ProjectLocation.packageExtension, ProjectLocation.legacyPackageExtension]
+        let projects = folders.filter { packages.contains($0.pathExtension.lowercased()) }
+        if projects.count == folders.count {
+            return "“\(first.lastPathComponent)” is a project, not a file to add to this one: open it with "
+                + "File ▸ Open…."
         }
-        if !videos.isEmpty { addVideos(at: videos) }
+        let name = folders.count == 1 ? "“\(first.lastPathComponent)” is a folder" : "Those are folders"
+        return "\(name), and a project takes files: drop the video and data files inside, or enter the "
+            + "folder in the Logbook with File ▸ Add Track Day to Logbook…."
     }
 }

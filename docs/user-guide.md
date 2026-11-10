@@ -23,7 +23,9 @@ and, ideally, a data log.
    Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a blank project
    instead; **Window ▸ Logbook** (⌃⌘L) brings it back. A new project opens with a welcome panel
    and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be
-   dropped anywhere in the window. (**Help ▸ Open the Sample Project** opens a short clip with a
+   dropped anywhere in the window. A folder is not taken apart there — the status line says so:
+   drop the files inside it, or enter the folder in the Logbook, which is what takes a day's
+   folder whole. (**Help ▸ Open the Sample Project** opens a short clip with a
    synthetic log if you just want to poke around.)
 2. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
    a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) Onboard Studio joins the following chapters
