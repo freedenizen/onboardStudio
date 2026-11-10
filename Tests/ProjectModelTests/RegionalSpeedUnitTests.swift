@@ -100,7 +100,7 @@ struct RegionalSpeedUnitTests {
     @Test func aProjectSavedBeforeKeepsWhatAutomaticMeantThen() throws {
         let old = try saved(before: try Project().encoded(), version: 2)
         let opened = try Project.decode(old)
-        #expect(opened.schemaVersion == 3)
+        #expect(opened.schemaVersion == Project.currentSchemaVersion)
         #expect(opened.settings.legacyAutomaticUnits, "the migration states what that build did")
         // And it stays stated once saved again.
         #expect(try Project.decode(try opened.encoded()).settings.legacyAutomaticUnits)

@@ -73,6 +73,12 @@ resolves to the old values.
   unless the app was set to mph. A project at schema 2 or earlier is given
   `settings.legacyAutomaticUnits` true, which keeps both as they were. Templates and styles carry
   no such setting and need no step: a project made from one is a new project.
+- **Schema 4 (#477).** A RaceChrono file's first lap is read where it begins: from the archive's
+  own start for it, and as a whole lap from a CSV whose lap column is blank until the first
+  crossing. Before, the archive's first lap ran from the start of the log and the CSV's was
+  partial. Every data input of a project at schema 3 or earlier is given `legacyFirstLap` true,
+  so its lap numbers, counts, best lap and deltas stay as they were. A data file added to such a
+  project afterwards is a new input and is read the new way.
 
 ### This covers `project.json` only
 
@@ -110,7 +116,7 @@ can carry; the answer is a migration pinning the old value, never regenerating t
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null,
                 "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } },
                 "overlayOpacity": 1, "speedUnit": "automatic", "attributeMappings": {},
@@ -174,7 +180,7 @@ those builds did. A file that recorded mph or km/h is shown in its own unit eith
 |---|---|
 | `id` | UUID, referenced by display objects |
 | `source.path` | file path, relative to the package or absolute |
-| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … , "logbookEntryID": <uuid> } } }` — `logbookEntryID` (optional, #349) is the logbook entry the file was entered as when it was added; absent before the logbook existed or with the preference off; bookkeeping that changes no render |
+| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … , "logbookEntryID": <uuid> } } }` — `logbookEntryID` (optional, #349) is the logbook entry the file was entered as when it was added; absent before the logbook existed or with the preference off; bookkeeping that changes no render. `legacyFirstLap` (always written, #477): `true` on the inputs of a project saved before schema 4, whose first lap is read as those builds read it; `false` on every input added since |
 | `sync` | `startPositionInInput`, `offsetInProject`, `playSpeed` — `inputTime = (t − offsetInProject) × playSpeed + startPositionInInput` |
 
 Data input settings (all optional):

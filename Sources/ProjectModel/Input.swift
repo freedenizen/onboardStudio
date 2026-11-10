@@ -254,6 +254,12 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// The logbook entry made from this file when it was added (#349); `nil` before the logbook
     /// existed, or when the preference was off. Bookkeeping only: it changes no render.
     public var logbookEntryID: UUID?
+    /// The file's first lap is read as builds before schema 4 read it (#477): a RaceChrono
+    /// archive's first lap runs from the start of the log, out-lap and all, and a lap column
+    /// that is blank until the first crossing gives an incomplete first lap. Set by
+    /// `Project.migrateIfNeeded()` on the inputs of a project saved by an earlier build, so its
+    /// lap numbers, counts and deltas stay as they were; `false` for every input added since.
+    public var legacyFirstLap: Bool
 
     public init(
         importerID: String? = nil,
@@ -269,8 +275,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         sectors: SectorSpec = SectorSpec(),
         circuitID: String? = nil,
         cornerLabels: [String] = [],
-        trim: TrimRange = .none
+        trim: TrimRange = .none,
+        legacyFirstLap: Bool = false
     ) {
+        self.legacyFirstLap = legacyFirstLap
         self.importerID = importerID
         self.roleOverrides = roleOverrides
         self.unitOverrides = unitOverrides
@@ -292,7 +300,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID
         case cornerLabels, trim
-        case logbookEntryID
+        case logbookEntryID, legacyFirstLap
     }
 
     public init(from decoder: any Decoder) throws {
@@ -321,6 +329,9 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         // Absent in projects saved before data could be trimmed; no trim is the right reading.
         trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
         logbookEntryID = try c.decodeIfPresent(UUID.self, forKey: .logbookEntryID)
+        // Absent before schema 4. This decoder cannot see the schema, so it does not decide: the
+        // migration sets it on the inputs of a project saved by an earlier build.
+        legacyFirstLap = try c.decodeIfPresent(Bool.self, forKey: .legacyFirstLap) ?? false
     }
 }
 

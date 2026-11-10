@@ -89,7 +89,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 3
+    public static let currentSchemaVersion = 4
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -219,6 +219,16 @@ public struct Project: Hashable, Codable, Sendable {
             // and coaching notes were metric unless the app said mph.
             settings.legacyAutomaticUnits = true
             schemaVersion = 3
+        }
+        if schemaVersion < 4 {
+            // 3 → 4 (#477): a RaceChrono archive's first lap ran from the start of the log, and a
+            // lap column that was blank until the first crossing gave an incomplete first lap.
+            for index in inputs.indices {
+                guard case .data(var data) = inputs[index].kind else { continue }
+                data.legacyFirstLap = true
+                inputs[index].kind = .data(data)
+            }
+            schemaVersion = 4
         }
         schemaVersion = Self.currentSchemaVersion
     }

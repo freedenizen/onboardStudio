@@ -85,6 +85,9 @@ struct RCZTests {
         let table = try table()
         #expect(table.info.trackName == "Synthetic")
         #expect(table.lapMarkers.map(\.number) == [1, 2])
+        // Each lap with the start the archive gives it (#477), not only where it ended.
+        #expect(table.lapMarkers.map(\.start) == [0, 0.8])
+        #expect(table.lapMarkers.map(\.time) == [0.8, 1.56])
         #expect(try session().laps.count >= 1)
     }
 
@@ -145,6 +148,11 @@ struct RCZReferenceTests {
         guard let archive = url("session_20260823_163604_sonoma.rcz") else { return }
         let session = try RCZImporter().importSession(at: archive)
         #expect(session.laps.count == 9)
+        // The first lap is the logger's: it begins at the first crossing of the line, after the
+        // out-lap, and is not the longest lap of the session for having swallowed it (#477).
+        let first = try #require(session.laps.first)
+        #expect(first.isComplete && first.start > (session.timeRange?.lowerBound ?? 0))
+        #expect(first.duration != session.laps.filter(\.isComplete).compactMap(\.duration).max())
         let best = session.laps.filter(\.isComplete).compactMap(\.duration).min()
         #expect(abs(try #require(best) - 116.883) < 0.01, "session.json says bestLaptime 116883 ms")
     }
