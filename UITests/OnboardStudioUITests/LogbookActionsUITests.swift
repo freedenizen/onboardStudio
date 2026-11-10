@@ -69,12 +69,9 @@ final class LogbookActionsUITests: OnboardStudioUITestCase {
         app.buttons["trackday.new.create"].click()
         XCTAssertTrue(app.staticTexts["trackday.header.title"].waitForExistence(timeout: Self.timeout))
         testing("Add Fixture Sessions to Selected Day")
-        var done = app.buttons["trackday.done"]
-        XCTAssertTrue(done.waitForExistence(timeout: Self.timeout))
-        XCTAssertTrue(app.staticTexts["trackday.summary"].waitForExistence(timeout: Self.timeout * 3))
-        done.click()
+        finishAddingToDay(.thisDay)
         testing("Add Fixture Second Visit")
-        done = app.buttons["trackday.done"]
+        let done = app.buttons["trackday.done"]
         XCTAssertTrue(done.waitForExistence(timeout: Self.timeout))
         XCTAssertTrue(app.staticTexts["trackday.summary"].waitForExistence(timeout: Self.timeout * 3))
         done.click()

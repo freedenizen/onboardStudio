@@ -143,7 +143,9 @@ struct LogbookCommand: AsyncParsableCommand {
         @Option(name: .long, help: "The driver for every session added (else what the file says).")
         var driver: String?
 
-        @Option(name: .long, help: "The track day to put the files on: its id, or its date (2026-08-23).")
+        @Option(
+            name: .long,
+            help: "The track day every file goes on, whatever its own date: its id, or its date (2026-08-23).")
         var day: String?
 
         @Option(name: .long, help: "With --day as a date: the circuit, when more than one day was driven then.")

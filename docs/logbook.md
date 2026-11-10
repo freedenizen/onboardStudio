@@ -236,7 +236,9 @@ pickers and notes; Create saves the day, adds a new car to the garage, and choos
 sidebar. It opens from the toolbar, the empty state and File ▸ New Track Day… (⌥⌘N, which opens
 the Logbook window with `LogbookModel.newDayRequested`). The sidebar's **Track Days** section
 (`TrackDaySidebarSection`) lists `LogbookFilter.days` newest first, under a `DisclosureGroup` per
-year when there is more than one; choosing one narrows the table and puts `TrackDayHeader` above
+year when there is more than one — folded shut, except that `LogbookModel.choose(_:)` opens the
+year of the day chosen (`openYears`, #485), so the selected row is never folded out of sight when
+a second year arrives; choosing one narrows the table and puts `TrackDayHeader` above
 it — title, date and count, car and driver as fields committed on Return or losing focus, the
 `ConditionsEditor` (now over either an entry or a day) folded under *Conditions and Notes*, the
 empty-day line, **Add Files…** and **Remove Track Day…** (a confirmation; the sessions go
@@ -248,6 +250,18 @@ file goes on the day `Logbook.day(for:)` finds or makes, and the report line end
 2026 · Sonoma". `ProjectLogbook.enter` places a file added to a project the same way. The
 request and the sheet live on `LogbookModel` (`trackDayRequest`), so the Testing menu's *Add
 Fixture Sessions to Selected Day* can drive them.
+
+A chosen day does not take a file that says it is from another (#456). The sheet runs the import
+with `strays: .kept`: a session dated another calendar day than the day's, or whose trace was
+recognised at another catalogue circuit, and a clip whose clock says another day, are read and
+returned as `Outcome.waiting(Stray)` — nothing is saved for them, and no day is made. A file with
+no date is not another day's, a trace no circuit was recognised in is not another circuit's (it
+takes the day's, and `Report.notes` says so in the line), and a day with a typed circuit is
+compared by date alone. The sheet then asks, and `TrackDayImport.place(_:onto:into:)` files what
+was kept without reading it again: onto the day (the line notes *dated another day than this
+one*), or with `nil` onto the day each file's own date and circuit say, exactly as an import with
+no day chosen. The default, `strays: .ontoTheDay`, is what `onboard logbook add --day` does:
+naming the day on the command line is the answer.
 
 ## The day's clips (#394)
 

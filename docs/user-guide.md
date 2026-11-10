@@ -347,7 +347,16 @@ as typed), the car, the driver, the weather and the surface, and notes. **Create
 in its header and **Conditions and Notes** folded under it. **Add Files…**, or drop the logger's
 files and camera clips on the window — while they are over it the window is outlined and says
 where they will go — and each goes on that day with its car, driver and
-conditions to begin with; the sheet says what happened to each file in plain words. A video this
+conditions to begin with; the sheet says what happened to each file in plain words. A file that
+is not from that day is not put on it unasked. If a file is dated another day, or was recorded at
+another circuit than the day's, the sheet adds the files that could be the day's and then stops:
+it says how many are not from the day and lists each with what is different. **Put on Their Own
+Days** files each where its own date and circuit say, as **Add Files…** does when no day is
+chosen; **Add to This Day** puts them on the day you chose anyway, which is the answer when a
+logger's or a camera's clock was wrong; **Leave Them Out** adds none of them. A file with no date
+of its own goes on the day, and one in which no circuit was recognised takes the day's — its line
+says so. A day whose circuit you typed, rather than chose from the catalogue, is compared by date
+alone. A video this
 app exported from one of the sessions is left out, and the sheet says so: it is the finished
 overlay, not a recording. The circuit is
 recognised, the date read from the file, and a file already in the logbook is skipped, whatever
@@ -358,10 +367,12 @@ takes a whole day's folders at once: each file goes on the day its date and circ
 need be, and the sheet's line says which. From the command line, `onboard logbook new-day --date
 2026-08-23 --circuit Sonoma --car Miata` begins a day, `onboard logbook add <files or folders>
 --day <id or date>` puts files on it (`--car`, `--driver`; without `--day`, each file goes on the
-day its date and circuit say), `onboard logbook days` lists the days and `onboard logbook list`
+day its date and circuit say; with it, every file goes on that day and the line of one dated
+otherwise says so), `onboard logbook days` lists the days and `onboard logbook list`
 the sessions with their day.
 
-The window shows it all: a sidebar of track days (under their year when there is more than one;
+The window shows it all: a sidebar of track days (under their year when there is more than one,
+the year of the day you have chosen open;
 each is its date with the circuit beneath, so two days on one date read apart),
 circuits, cars and years with how many sessions each, a table of sessions (date, circuit, car,
 laps, best, optimal and fastest rolling lap) sortable by any column and narrowed by the search

@@ -6,7 +6,8 @@ import TelemetryKit
 /// A track day into the logbook (#346): every recognised telemetry file and every camera clip with
 /// embedded GPS among the files and folders given becomes an entry; a file already there (same
 /// bytes) is skipped, and so is a session already there from another file (#465: the same drive
-/// exported in a second format); each file gets a line in the user's words.
+/// exported in a second format); each file gets a line in the user's words. A file that is not
+/// from the day chosen for it can be kept back until the user says where it goes (#456).
 public enum TrackDayImport {
     public enum Outcome: Sendable, Equatable {
         case added(LogbookEntry)
@@ -21,6 +22,9 @@ public enum TrackDayImport {
         case clipAlreadyThere(ClipRecord)
         /// A video this app exported from the session's project (#468): not a camera recording.
         case ownExport(LogbookEntry)
+        /// Read for a chosen day and not from it (#456): not in the logbook until `place` is told
+        /// where.
+        case waiting(Stray)
     }
 
     public struct Report: Sendable {
@@ -28,11 +32,15 @@ public enum TrackDayImport {
         public let outcome: Outcome
         /// The day the session was put on when none was chosen (#393): "23 Aug 2026 · Sonoma".
         public let dayLabel: String?
+        /// What the chosen day decided for a session added to it (#456): its circuit when the
+        /// file had none, its date in spite of the file's. Said in the line, after the session.
+        public let notes: [String]
 
-        public init(url: URL, outcome: Outcome, dayLabel: String? = nil) {
+        public init(url: URL, outcome: Outcome, dayLabel: String? = nil, notes: [String] = []) {
             self.url = url
             self.outcome = outcome
             self.dayLabel = dayLabel
+            self.notes = notes
         }
 
         public var isAdded: Bool { if case .added = outcome { return true } else { return false } }
@@ -49,6 +57,8 @@ public enum TrackDayImport {
             default: false
             }
         }
+        /// Kept back until the user says where it goes (#456).
+        public var isWaiting: Bool { if case .waiting = outcome { return true } else { return false } }
 
         /// "session_3.csv — added: Sonoma, 12 laps, best 1:56.88", and ", in 23 Aug 2026 · Sonoma"
         /// when the day was found for it rather than chosen.
@@ -57,7 +67,8 @@ public enum TrackDayImport {
             switch outcome {
             case .added(let entry):
                 let day = dayLabel.map { ", in \($0)" } ?? ""
-                return "\(name) — added: \(Self.describe(entry))\(day)"
+                let noted = notes.isEmpty ? "" : " (\(notes.joined(separator: "; ")))"
+                return "\(name) — added: \(Self.describe(entry))\(day)\(noted)"
             case .alreadyThere(let entry): return "\(name) — already in the logbook as \(Self.describe(entry))"
             case .sameSession(let entry):
                 let file = URL(fileURLWithPath: entry.file.path).lastPathComponent
@@ -75,6 +86,7 @@ public enum TrackDayImport {
             case .clipAlreadyThere: return "\(name) — video already on the day"
             case .ownExport(let entry):
                 return "\(name) — not added: a video exported from \(Self.describe(entry)), not a recording"
+            case .waiting(let stray): return "\(name) — not added yet: \(stray.reason)"
             }
         }
 
@@ -123,16 +135,18 @@ public enum TrackDayImport {
     /// Imports every file into `logbook`, onto `day` when one was chosen (#393), else each onto
     /// the day its date and circuit say (`Logbook.day(for:)`). `car` for the whole batch, else the
     /// day's, else the last session at the same circuit's car; `driver` likewise, else what the
-    /// file says. `progress` is told the index, the count and the file before each one.
+    /// file says. With `strays: .kept`, a file that is not from the chosen day is read and kept
+    /// back for `place` (#456). `progress` is told the index, the count and the file before each one.
     public static func run(
         _ urls: [URL], into logbook: Logbook, tracks: TrackLibrary? = nil, car: String? = nil, driver: String? = nil,
-        day: TrackDay? = nil, progress: @Sendable (Int, Int, URL) -> Void = { _, _, _ in }
+        day: TrackDay? = nil, strays: Strays = .ontoTheDay,
+        progress: @Sendable (Int, Int, URL) -> Void = { _, _, _ in }
     ) async -> [Report] {
         let files = files(in: urls)
         let clips = CameraChapters.group(files.filter(ClipMatcher.isClip))
         let telemetry = files.filter { !ClipMatcher.isClip($0) }
         let count = telemetry.count + clips.count
-        let batch = Batch(tracks: tracks, car: car, driver: driver, day: day)
+        let batch = Batch(tracks: tracks, car: car, driver: driver, day: day, strays: strays)
         var reports: [Report] = []
         for (index, url) in telemetry.enumerated() {
             progress(index, count, url)
@@ -144,34 +158,50 @@ public enum TrackDayImport {
             guard let first = group.first else { continue }
             progress(telemetry.count + index, count, first)
             let outcome = await importClip(first, chapters: Array(group.dropFirst()), into: logbook, batch: batch)
-            reports.append(report(outcome, for: first, chosen: day, logbook: logbook))
+            reports.append(report(Filed(outcome: outcome), for: first, chosen: day, logbook: logbook))
         }
         return reports
     }
 
     /// What one Add Track Day… was told: the track library to read lines from, the car and
-    /// driver for every file, and the day they go on when one was chosen.
+    /// driver for every file, the day they go on when one was chosen, and what becomes of a file
+    /// that is not from that day.
     struct Batch: Sendable {
         var tracks: TrackLibrary?
         var car: String?
         var driver: String?
         var day: TrackDay?
+        var strays = Strays.ontoTheDay
     }
 
-    /// The report for an outcome, naming the day a session was put on when none was chosen.
-    static func report(_ outcome: Outcome, for url: URL, chosen day: TrackDay?, logbook: Logbook) -> Report {
+    /// What became of one file, and whether a session added took the day's circuit for want of
+    /// one of its own — which the entry alone cannot say.
+    struct Filed: Sendable {
+        var outcome: Outcome
+        var tookDayCircuit = false
+    }
+
+    /// The report for an outcome: naming the day a session was put on when none was chosen, and
+    /// saying what a chosen day decided for it (#456) — the circuit, or the date.
+    static func report(_ filed: Filed, for url: URL, chosen day: TrackDay?, logbook: Logbook) -> Report {
         var label: String?
-        if day == nil, case .added(let entry) = outcome, let id = entry.trackDayID {
-            label = logbook.day(id: id)?.label
+        var notes: [String] = []
+        if case .added(let entry) = filed.outcome {
+            if let day {
+                if filed.tookDayCircuit { notes.append("no circuit recognised in the file, so the day's") }
+                if let date = entry.date, TrackDay.startOfDay(date) != day.date {
+                    notes.append("dated another day than this one")
+                }
+            } else if let id = entry.trackDayID {
+                label = logbook.day(id: id)?.label
+            }
         }
-        return Report(url: url, outcome: outcome, dayLabel: label)
+        return Report(url: url, outcome: filed.outcome, dayLabel: label, notes: notes)
     }
 
-    /// A camera recording onto its day (#394): probed for its clock and length, matched against
-    /// the day's sessions; a clip with GPS that matches none is read as a session of its own
-    /// first, as it was before days existed, and is then the picture of that session.
+    /// A camera recording (#394): probed for its clock and length, then filed on its day — or kept
+    /// back, when a day was chosen and the clip's clock says another (#456).
     static func importClip(_ first: URL, chapters: [URL], into logbook: Logbook, batch: Batch) async -> Outcome {
-        let chosen = batch.day
         // A video exported from a session's project, picked up with the day's folder or offered by
         // the panel beside the footage, is the finished overlay, not that session's picture (#468).
         let path = first.standardizedFileURL.path
@@ -181,55 +211,32 @@ public enum TrackDayImport {
             return .ownExport(source)
         }
         do {
-            var clip = try await ClipMatcher.record(first, chapters: chapters)
-            if let known = logbook.days().first(where: { $0.clips.contains { $0.fingerprint == clip.fingerprint } }),
-                let existing = known.clips.first(where: { $0.fingerprint == clip.fingerprint })
-            {
-                return .clipAlreadyThere(existing)
+            let clip = try await ClipMatcher.record(first, chapters: chapters)
+            if let existing = knownClip(clip, in: logbook) { return .clipAlreadyThere(existing) }
+            if batch.strays == .kept, let day = batch.day, let stray = Stray(clip, at: first, against: day) {
+                return .waiting(stray)
             }
-            var day: TrackDay
-            var sessions: [LogbookEntry]
-            if let chosen {
-                day = logbook.day(id: chosen.id) ?? chosen
-                sessions = logbook.sessions(of: day)
-            } else {
-                // The day the clock says, among the days with sessions then; else one of its own.
-                let date = clip.recordedAt ?? Date()
-                day = try logbook.day(on: date, car: batch.car ?? "", driver: batch.driver ?? "")
-                sessions = logbook.sessions(of: day)
-            }
-            var matched = ClipMatcher.match(clip, to: sessions)
-            var onDay = batch
-            onDay.day = day
-            if matched == nil, clip.hasGPS, case .added(let own) = importOne(first, into: logbook, batch: onDay) {
-                matched = (own.id, .clock)
-                sessions.append(own)
-            }
-            clip.sessionID = matched?.id
-            clip.matchedBy = matched?.by
-            day = logbook.day(id: day.id) ?? day
-            day.clips.append(clip)
-            try logbook.saveDay(day)
-            return .clip(clip, session: matched.flatMap { id, _ in sessions.first { $0.id == id } })
+            return try fileClip(clip, first: first, into: logbook, batch: batch)
         } catch {
             return .failed(error.localizedDescription)
         }
     }
 
-    static func importOne(_ url: URL, into logbook: Logbook, batch: Batch) -> Outcome {
-        let (tracks, car, driver, day) = (batch.tracks, batch.car, batch.driver, batch.day)
+    /// One telemetry file: read, then filed on its day — or kept back, when a day was chosen and
+    /// the file says it is from another (#456).
+    static func importOne(_ url: URL, into logbook: Logbook, batch: Batch) -> Filed {
         do {
             let (hash, _) = try LogbookEntry.hash(of: url)
-            if let existing = logbook.entry(forContentHash: hash) { return .alreadyThere(existing) }
-            guard let candidate = try FormatDetector.detect(url) else { return .notRecognised }
+            if let existing = logbook.entry(forContentHash: hash) { return Filed(outcome: .alreadyThere(existing)) }
+            guard let candidate = try FormatDetector.detect(url) else { return Filed(outcome: .notRecognised) }
             var session = try candidate.importer.importSession(at: url, options: SessionBuilder.Options())
             guard session[.latitude] != nil || !session.laps.isEmpty || !session.channels.isEmpty else {
-                return .noData
+                return Filed(outcome: .noData)
             }
             let match = CircuitCatalog.identify(session)
             // A clip or a phone log with no laps of its own, at a circuit whose line is known:
             // read it again with that line, as adding it to a project would.
-            if session.laps.isEmpty, let match, let line = tracks?.definition(id: match.circuit.id)?.startFinish {
+            if session.laps.isEmpty, let match, let line = batch.tracks?.definition(id: match.circuit.id)?.startFinish {
                 var options = SessionBuilder.Options()
                 options.finishLine = FinishLine(
                     latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees,
@@ -237,28 +244,18 @@ public enum TrackDayImport {
                 options.ignoreFirstCrossings = line.ignoreFirstCrossings
                 if let again = try? candidate.importer.importSession(at: url, options: options) { session = again }
             }
-            let circuitID = match?.circuit.id ?? day?.circuitID
-            let previous = circuitID.flatMap { id in logbook.entries().first { $0.circuitID == id } }
-            let dayCar = day.flatMap { $0.car.isEmpty ? nil : $0.car }
-            let dayDriver = day.flatMap { $0.driver.isEmpty ? nil : $0.driver }
-            var entry = try LogbookEntry.make(
-                session: session, file: url, importerID: candidate.id, circuitID: circuitID,
-                car: car ?? dayCar ?? previous?.car ?? "",
-                driver: driver ?? dayDriver ?? session.info.driverName ?? previous?.driver)
-            // The same drive from another file — RaceChrono's CSV beside its .rcz — is not a second
-            // session (#465). Before the day, so a refused file makes no day either.
-            if let twin = logbook.entry(sameSessionAs: entry) { return .sameSession(twin) }
-            if let day {
-                // Onto the chosen day, with its conditions as the session's to begin with.
-                entry.trackDayID = day.id
-                if entry.conditions.isEmpty { entry.conditions = day.conditions }
-            } else {
-                entry.trackDayID = try logbook.day(for: entry).id
+            // As the file alone describes it; the day's circuit, car and driver come with the filing.
+            let entry = try LogbookEntry.make(
+                session: session, file: url, importerID: candidate.id, circuitID: match?.circuit.id)
+            let reading = Reading(entry: entry, fileDriver: session.info.driverName)
+            if batch.strays == .kept, let day = batch.day, let stray = Stray(reading, at: url, against: day) {
+                // A drive the logbook has from another file is that, not a file to ask about (#465).
+                if let twin = logbook.entry(sameSessionAs: entry) { return Filed(outcome: .sameSession(twin)) }
+                return Filed(outcome: .waiting(stray))
             }
-            try logbook.save(entry)
-            return .added(entry)
+            return file(reading, into: logbook, batch: batch)
         } catch {
-            return .failed(error.localizedDescription)
+            return Filed(outcome: .failed(error.localizedDescription))
         }
     }
 }

@@ -278,14 +278,21 @@ struct NewTrackDaySheet: View {
 struct TrackDaySidebarSection: View {
     let groups: [LogbookFilter.Group]
     let days: [TrackDay]
+    /// The years folded open. The window opens the chosen day's (#485): with no state of their
+    /// own the years all started shut, and the day being worked on lost its row in the sidebar
+    /// the moment a file from another year arrived.
+    @Binding var openYears: Set<Int>
 
     var body: some View {
         Section("Track Days") {
             let years = Set(days.map(\.year))
             if years.count > 1 {
                 ForEach(years.sorted(by: >), id: \.self) { year in
-                    DisclosureGroup(String(year)) {
+                    DisclosureGroup(isExpanded: isOpen(year)) {
                         ForEach(groups.filter { yearOf($0) == year }, id: \.scope) { group in row(group) }
+                    } label: {
+                        // On the label alone: on the group it would name every day inside it.
+                        Text(String(year)).accessibilityIdentifier("logbook.year.\(year)")
                     }
                 }
             } else {
@@ -295,6 +302,14 @@ struct TrackDaySidebarSection: View {
     }
 
     private func yearOf(_ group: LogbookFilter.Group) -> Int? { day(of: group)?.year }
+
+    private func isOpen(_ year: Int) -> Binding<Bool> {
+        Binding(
+            get: { openYears.contains(year) },
+            set: { open in
+                if open { openYears.insert(year) } else { openYears.remove(year) }
+            })
+    }
 
     /// The date over the circuit. On one line — "Aug 23, 2026 · Sonoma Raceway" — the sidebar cut
     /// the circuit off after a letter or two once the count was beside it, and two days on one

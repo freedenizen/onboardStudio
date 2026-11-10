@@ -21,7 +21,17 @@ import UniformTypeIdentifiers
     /// File ▸ New Track Day… asked for the sheet (#393).
     var newDayRequested = false
     /// The day chosen in the sidebar, for the Testing menu and the ways in.
-    var selectedDay: TrackDay?
+    private(set) var selectedDay: TrackDay?
+    /// The years of the sidebar's Track Days that are folded open, once there is more than one.
+    /// Choosing a day opens its year (#485); folding is otherwise the user's.
+    var openYears: Set<Int> = []
+
+    /// The sidebar chose `day`, or none. Its year is opened, so the row that is selected is not
+    /// folded out of sight when the logbook comes to span a second year (#485).
+    func choose(_ day: TrackDay?) {
+        selectedDay = day
+        if let year = day?.year { openYears.insert(year) }
+    }
 
     private var carComparisons: [String: CarVersusCar] = [:]
 
@@ -185,8 +195,8 @@ struct LogbookWindow: View {
                 lastDay: model.days.first, create: create)
         }
         .onAppear { model.reload() }
-        .onChange(of: scope, initial: true) { model.selectedDay = selectedDay }
-        .onChange(of: model.days) { model.selectedDay = selectedDay }
+        .onChange(of: scope, initial: true) { model.choose(selectedDay) }
+        .onChange(of: model.days) { model.choose(selectedDay) }
         .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
             let day = selectedDay
             Task { @MainActor in

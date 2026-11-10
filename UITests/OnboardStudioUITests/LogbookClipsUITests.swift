@@ -19,14 +19,11 @@ final class LogbookClipsUITests: OnboardStudioUITestCase {
         app.buttons["trackday.new.create"].click()
         XCTAssertTrue(app.staticTexts["trackday.header.title"].waitForExistence(timeout: Self.timeout))
 
-        // The fixtures onto the day: the clip has no clock the sessions agree with, so it waits.
+        // The fixtures onto the day, whatever their dates: the clip has no clock the sessions agree
+        // with, so it waits.
         testing("Add Fixture Sessions to Selected Day")
-        let done = app.buttons["trackday.done"]
-        XCTAssertTrue(done.waitForExistence(timeout: Self.timeout))
-        let summary = app.staticTexts["trackday.summary"]
-        XCTAssertTrue(summary.waitForExistence(timeout: Self.timeout * 3))
-        XCTAssertTrue((summary.value as? String ?? "").contains("clip"), summary.value as? String ?? "")
-        done.click()
+        let summary = finishAddingToDay(.thisDay)
+        XCTAssertTrue(summary.contains("clip"), summary)
         let clip = app.popUpButtons["trackday.clip.test-3s.mp4"]
         XCTAssertTrue(clip.waitForExistence(timeout: Self.timeout), "The clip is not listed on the day")
         XCTAssertEqual(clip.value as? String, "Not assigned")

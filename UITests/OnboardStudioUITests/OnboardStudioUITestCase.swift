@@ -214,6 +214,30 @@ class OnboardStudioUITestCase: XCTestCase {
         XCTAssertTrue(sidebarInput("racerender-basic").waitForExistence(timeout: Self.timeout), "Data not listed")
     }
 
+    /// The answers to the Add Sessions sheet's question about files that are not from the chosen
+    /// day (#456), by the identifiers of their buttons.
+    enum StrayAnswer: String {
+        case thisDay = "trackday.strays.thisDay"
+        case ownDays = "trackday.strays.ownDays"
+    }
+
+    /// Sees Add Fixture Sessions to Selected Day through. The fixtures are dated all over the
+    /// calendar, so the sheet stops and asks where the ones that are not the day's go (#456);
+    /// answered, it sums up, and Done closes it. Returns the summary.
+    @discardableResult
+    func finishAddingToDay(_ answer: StrayAnswer, file: StaticString = #filePath, line: UInt = #line) -> String {
+        let question = app.staticTexts["trackday.strays.question"]
+        XCTAssertTrue(
+            question.waitForExistence(timeout: Self.timeout * 3), "The sheet did not ask about files of other days",
+            file: file, line: line)
+        app.buttons[answer.rawValue].click()
+        let summary = app.staticTexts["trackday.summary"]
+        XCTAssertTrue(summary.waitForExistence(timeout: Self.timeout * 3), "No summary", file: file, line: line)
+        let said = text(of: summary)
+        app.buttons["trackday.done"].click()
+        return said
+    }
+
     // MARK: - Elements
 
     func sidebarInput(_ label: String) -> XCUIElement { app.staticTexts["input.\(label)"] }
