@@ -58,6 +58,28 @@ final class TrackDayCreateUITests: OnboardStudioUITestCase {
         rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
         XCTAssertTrue(sessionNewProject.waitForExistence(timeout: Self.timeout))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "value CONTAINS 'Miata'")).firstMatch.exists)
+
+        // …and they go on following it (#453): a correction on the day reaches every session that
+        // took its car, where it used to change the header and leave them under the old name.
+        let sessionCar = app.textFields["logbook.detail.car"]
+        XCTAssertTrue(sessionCar.waitForExistence(timeout: Self.timeout), "A session has no Car field")
+        XCTAssertEqual(sessionCar.value as? String, "Miata")
+        let dayCar = app.textFields["trackday.header.car"]
+        dayCar.click()
+        dayCar.typeKey("a", modifierFlags: .command)
+        dayCar.typeText("MX-5\n")
+        expect(sessionCar, toRead: "MX-5")
+        let sidebar = app.descendants(matching: .any).matching(identifier: "logbook.sidebar").firstMatch
+        XCTAssertTrue(sidebar.staticTexts["MX-5"].waitForExistence(timeout: Self.timeout), "Cars did not follow")
+        XCTAssertFalse(sidebar.staticTexts["Miata"].exists, "Sessions were left under the old name")
+
+        // One session was driven in another car: its own field says so, and the day keeps its car.
+        sessionCar.click()
+        sessionCar.typeKey("a", modifierFlags: .command)
+        sessionCar.typeText("GR86\n")
+        XCTAssertTrue(sidebar.staticTexts["GR86"].waitForExistence(timeout: Self.timeout), "The session's car was lost")
+        XCTAssertEqual(dayCar.value as? String, "MX-5")
+        XCTAssertTrue(sidebar.staticTexts["MX-5"].exists, "The other sessions changed car with it")
     }
 
     /// #456: the files that are not the day's go on the days they say, when that is the answer —

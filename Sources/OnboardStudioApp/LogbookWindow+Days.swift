@@ -20,10 +20,7 @@ extension LogbookWindow {
 
     func create(_ day: TrackDay) {
         try? AppLogbook.shared.saveDay(day)
-        // A car typed for the first time joins the garage.
-        if !day.car.isEmpty, !model.cars.contains(where: { $0.name.caseInsensitiveCompare(day.car) == .orderedSame }) {
-            try? AppLogbook.shared.saveCars(model.cars + [Car(name: day.car)])
-        }
+        model.note(car: day.car)
         model.reload()
         scope = .day(id: day.id, title: day.label)
         view = .sessions
