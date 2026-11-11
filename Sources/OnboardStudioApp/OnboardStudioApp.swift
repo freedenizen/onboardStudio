@@ -54,8 +54,7 @@ struct OnboardStudioApp: App {
             EditorCommands()
             TimelineCommands()
             UndoCommands()
-            SidebarCommands()
-            ToolbarCommands()
+            WindowCommands()
             AttributeWindowCommands()
             CoachingSheetCommands()
             if UITestSupport.isActive { UITestCommands() }
@@ -103,6 +102,16 @@ struct OnboardStudioApp: App {
         // inside newDocument, so hand it over first.
         PendingTemplate.shared.template = template
         NSDocumentController.shared.newDocument(nil)
+    }
+}
+
+/// The system's sidebar and toolbar commands: View ▸ Show Sidebar (⌃⌘S), Show Toolbar and Customize
+/// Toolbar… (#450). One struct for the two, because the commands builder of Swift 6.3 — the one CI
+/// builds with — takes at most ten commands in a block, and the scene's block is at ten.
+struct WindowCommands: Commands {
+    var body: some Commands {
+        SidebarCommands()
+        ToolbarCommands()
     }
 }
 
