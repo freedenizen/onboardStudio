@@ -1,7 +1,9 @@
 import AppKit
+import Importers
 import MediaKit
 import ProjectModel
 import SwiftUI
+import TelemetryKit
 
 /// Hooks for the XCUITest suite (`UITests/`). Active only when the app is launched with
 /// `-uiTesting YES`; they replace the file panels the tests cannot drive with menu items that add
@@ -95,6 +97,26 @@ enum UITestSupport {
         return day
     }
 
+    /// Enters the RaceChrono v2 fixture and then puts its entry back to what a build before #477
+    /// wrote: the laps of the old reading, and the first lap measurement.
+    @MainActor
+    static func addSessionReadBeforeTheLapFix() {
+        guard let fixture = fixture("racechrono-v2.csv") else { return }
+        Task {
+            let logbook = AppLogbook.shared
+            _ = await TrackDayImport.run([fixture], into: logbook)
+            if var entry = logbook.entries().first(where: { $0.file.path == fixture.path }),
+                let session = try? FormatDetector.importSession(
+                    at: fixture, options: SessionBuilder.Options(legacyFirstLap: true))
+            {
+                entry.readLaps(of: session)
+                entry.lapMeasurement = 1
+                try? logbook.save(entry)
+            }
+            LogbookModel.shared.reload()
+        }
+    }
+
     /// The editor that appeared last. Headless CI runners do not always give the document window
     /// key status, which leaves `@FocusedValue(\.editor)` empty; the Testing menu falls back to this.
     static weak var currentEditor: EditorModel?
@@ -180,6 +202,9 @@ struct UITestCommands: Commands {
             // shorter, so it is another session at the same place (#352).
             Button("Set Project Car Miata") { editor?.setDetail("Change Car") { $0.car = "Miata" } }
             Button("Add Fixture Second Visit in a GR86") { UITestSupport.addSecondVisit(to: editor, car: "GR86") }
+            // A RaceChrono session as a build before #477 entered it: its first lap called partial,
+            // and no note of a later reading (#498).
+            Button("Add Fixture Session Read Before the Lap Fix") { UITestSupport.addSessionReadBeforeTheLapFix() }
             Button("Add Fixture Second Visit") {
                 guard let fixture = UITestSupport.fixture("coaching-laps.csv"),
                     let text = try? String(contentsOf: fixture, encoding: .utf8)

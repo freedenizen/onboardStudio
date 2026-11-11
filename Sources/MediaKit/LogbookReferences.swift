@@ -48,6 +48,24 @@ public enum LogbookReferences {
         return try? ProjectCompiler.importData(at: url, settings: settings)
     }
 
+    /// Reads again the files of the entries that were read before a correction to their laps
+    /// (#498), and writes what the laps come to now — the laps, the best, optimal and fastest
+    /// rolling lap, the best lap's corners — leaving everything the driver wrote. Returns the ids
+    /// of those whose file could not be found or read; they are left as they were.
+    public static func readLapsAgain(of ids: [UUID], in logbook: Logbook) -> [UUID] {
+        var unread: [UUID] = []
+        for id in ids {
+            guard var entry = logbook.entry(id: id), entry.needsLapReading else { continue }
+            guard let session = load(entry) else {
+                unread.append(id)
+                continue
+            }
+            entry.readLaps(of: session)
+            try? logbook.save(entry)
+        }
+        return unread
+    }
+
     /// The reference lap's profile: `lap` of the entry's session, else its best lap.
     public static func profile(of entry: LogbookEntry, lap: Int?, session: TelemetrySession) -> LapProfile? {
         let number = lap ?? entry.bestLapNumber

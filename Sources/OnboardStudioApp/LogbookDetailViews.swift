@@ -141,7 +141,9 @@ struct LogbookDetail: View {
                     row(
                         "Top speed", entry.topSpeed.map { speedUnit.text(metersPerSecond: $0) },
                         identifier: "logbook.detail.topSpeed")
-                    row("Laps", "\(entry.completeLapCount) complete of \(entry.laps.count)")
+                    row(
+                        "Laps", "\(entry.completeLapCount) complete of \(entry.laps.count)",
+                        identifier: "logbook.detail.laps")
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                 }
                 .font(.callout)

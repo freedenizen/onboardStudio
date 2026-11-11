@@ -375,6 +375,7 @@ struct LogbookWindow: View {
                         knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days))
                     Divider()
                 }
+                lapReadingOffer
                 if shown.isEmpty, isSearching {
                     // Not an empty striped table (#457).
                     ContentUnavailableView.search(text: search).frame(maxHeight: .infinity)

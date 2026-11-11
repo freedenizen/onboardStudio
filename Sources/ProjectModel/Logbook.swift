@@ -77,6 +77,10 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// Which measurement read `corners` (#438): below `LogbookEntry.cornerMeasurement`, they were
     /// read by a build since corrected, and Trends offers to read them again.
     public var cornerMeasurement: Int
+    /// Which reading produced `laps` and what is worked out from them (#498): below
+    /// `LogbookEntry.lapMeasurement`, the file was read by a build since corrected, and the Logbook
+    /// offers to read it again.
+    public var lapMeasurement: Int
     /// The track day the session belongs to (#392); `nil` only until `Logbook.ensureDays` runs.
     public var trackDayID: UUID?
     /// How long the file runs, from its first sample to its last (#392), so a clip can be matched
@@ -118,6 +122,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.exports = exports
         self.corners = corners
         self.cornerMeasurement = Self.cornerMeasurement
+        self.lapMeasurement = Self.lapMeasurement
         self.trackDayID = trackDayID
         self.durationSeconds = durationSeconds
         self.coaching = coaching
@@ -166,7 +171,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
-        case cornerMeasurement, trackDayID, durationSeconds, coaching, added, modified
+        case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
     }
 
     public init(from decoder: any Decoder) throws {
@@ -193,6 +198,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         corners = try c.decodeIfPresent([CornerRecord].self, forKey: .corners) ?? []
         // Absent in entries written before #438: their corners came from the first measurement.
         cornerMeasurement = try c.decodeIfPresent(Int.self, forKey: .cornerMeasurement) ?? 1
+        // Absent in entries written before #498: their laps came from the first reading.
+        lapMeasurement = try c.decodeIfPresent(Int.self, forKey: .lapMeasurement) ?? 1
         trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
         durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
         coaching = try? c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
@@ -217,14 +224,44 @@ extension LogbookEntry {
         let source = SourceFile(
             path: url.path, bookmark: bookmark, contentHash: hash, byteCount: bytes, importerID: importerID)
         let stats = SessionStats(session: session)
-        let rolling = CoachingReference.fastestRolling.resolve(in: session)?.duration
-        let laps = session.laps.map { LapRecord(number: $0.number, seconds: $0.duration, isComplete: $0.isComplete) }
-        return LogbookEntry(
+        var entry = LogbookEntry(
             file: source, circuitID: circuitID, trackName: session.info.trackName, date: session.info.createdAt,
-            car: car, driver: driver ?? session.info.driverName ?? "", laps: laps, bestLap: stats.bestLap?.seconds,
-            bestLapNumber: stats.bestLap?.number, optimalLap: stats.optimalLap, fastestRollingLap: rolling,
-            topSpeed: stats.topSpeed, distanceMeters: distance(of: session), corners: cornerRecords(of: session),
+            car: car, driver: driver ?? session.info.driverName ?? "",
+            topSpeed: stats.topSpeed, distanceMeters: distance(of: session),
             durationSeconds: session.duration > 0 ? session.duration : nil)
+        entry.readLaps(of: session)
+        return entry
+    }
+
+    /// The reading the laps of an entry are from. 2 (#477): a RaceChrono file's first lap begins
+    /// at the first crossing of the line and is a whole lap — read from an `.rcz` archive it had
+    /// swallowed the out-lap, and from a CSV it was called partial.
+    public static let lapMeasurement = 2
+
+    /// Whether the Logbook should offer to read this entry's file again (#498): it was read
+    /// before the first lap was corrected, and it is one the correction can change — an archive,
+    /// or a file whose first lap was called partial. A file it cannot change is not offered:
+    /// reading it again would cost the time and move nothing. Laps that begin at lap 0 are not
+    /// the file's own count but the app's, from a start/finish line; the correction is not about
+    /// them, and read again without that line they would be lost.
+    public var needsLapReading: Bool {
+        guard lapMeasurement < Self.lapMeasurement, let first = laps.first, first.number != 0 else { return false }
+        return file.importerID == "racechrono-rcz" || !first.isComplete
+    }
+
+    /// Reads the laps of `session` into the entry with this build's reading, and with them what
+    /// is worked out from the laps: the best, the optimal and the fastest rolling lap, and the
+    /// corners of the best lap, which may be another lap now. Nothing the driver wrote — the car,
+    /// the conditions, the notes — is touched.
+    public mutating func readLaps(of session: TelemetrySession) {
+        let stats = SessionStats(session: session)
+        laps = session.laps.map { LapRecord(number: $0.number, seconds: $0.duration, isComplete: $0.isComplete) }
+        bestLap = stats.bestLap?.seconds
+        bestLapNumber = stats.bestLap?.number
+        optimalLap = stats.optimalLap
+        fastestRollingLap = CoachingReference.fastestRolling.resolve(in: session)?.duration
+        lapMeasurement = Self.lapMeasurement
+        readCorners(of: session)
     }
 
     /// How far the session drove, from its distance channel; `nil` without one.

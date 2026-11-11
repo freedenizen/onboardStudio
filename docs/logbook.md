@@ -31,7 +31,8 @@ logbooks first and analysers second.
   else typed);
 - **the laps** — number, time and completeness for each, and the session's best (with its number),
   optimal (`SessionStats.optimalLap`, the best sectors spliced) and **fastest rolling lap**
-  (`CoachingReference.fastestRolling`), and the top speed in m/s;
+  (`CoachingReference.fastestRolling`), and the top speed in m/s; and which reading the laps are
+  from (`lapMeasurement`, #498, below);
 - **words** — notes and tags now; weather, track condition, temperature, tyres and setup come with
   #348, as optional keys the decoder already tolerates;
 - **the projects** made from it, by path and name (#349 fills them in);
@@ -82,6 +83,28 @@ hands the entry to the next editor through `PendingLogbookOpen`, as New from Tem
 template; **Add to Current Project** calls the front editor's `addData(at:)`. The toolbar's Add
 Track Day… and a drop of files or folders on the window run `TrackDayImport` behind the same
 sheet. Fits 1024×768 (sidebar 170–280, the sessions 460 minimum, a session's detail 320–420).
+
+## Laps read before a correction (#498)
+
+An entry keeps the laps it was read with, so a fix to how a file's laps are read does not reach
+the sessions already in the logbook: after #477 a RaceChrono session added earlier went on showing
+a first lap that had swallowed the out-lap (`.rcz`) or was called partial (CSV), while the same
+file opened in a project gave the corrected laps. Each entry now records which reading its laps
+are from — `lapMeasurement`, always written, absent = 1; `LogbookEntry.lapMeasurement` is the
+build's, and 2 is #477 — as `cornerMeasurement` does for corners (#438).
+
+`needsLapReading` is true for an entry of an earlier reading that the correction can change: an
+archive, or a file whose first lap is partial, and in both only when the laps do not begin at
+lap 0. Lap 0 is the app's own count from a start/finish line, which #477 did not touch, and which
+a plain re-read would not reproduce. `LapReadingOffer` shows above the table when any session in
+it needs reading, and `LogbookReferences.readLapsAgain(of:in:)` reads each file with the importer
+that read it first and calls `LogbookEntry.readLaps(of:)` — the laps, best, optimal, fastest
+rolling lap and the best lap's corners, and nothing the driver wrote. It returns the ids it could
+not read; those keep their laps and their `lapMeasurement`, so they are offered again.
+
+Asked for, not done at launch: it reads every such file, and it can change a best lap, which the
+user should see happen rather than find. The next correction to lap reading steps
+`LogbookEntry.lapMeasurement` and widens or replaces the test in `needsLapReading`.
 
 ## Conditions and notes (#348)
 

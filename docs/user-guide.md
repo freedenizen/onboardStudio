@@ -404,6 +404,17 @@ project in front. **Remove from
 Logbook…** takes a session out, and the trash button in a day's header takes the day and its
 sessions out; no file is touched.
 
+A session's laps are written into the logbook when it is added, so a session added by a build
+before a correction to how laps are read keeps the laps it was read with. When some of the
+sessions in the table are such sessions, a line above the table says how many and offers **Read
+Them Again** (**Read It Again** for one): the files are read once more, and the laps, the best,
+optimal and fastest rolling lap and the best lap's corners become what the app reads now. The
+car, the driver, the conditions, the notes and the day are left as they are. The first such
+correction is to a RaceChrono session's first lap: read from a CSV it was called partial, and
+read from an `.rcz` archive it ran from the start of the log, out-lap and all — so a best lap can
+change, and the count of complete laps can go up by one. A session whose file is not where the
+logbook has it is named in the line and left as it was; it is offered again once the file is back.
+
 The camera's clips live on the day too. Each recording added — GoPro chapters joined — is listed
 under **Clips** in the day's header with when it started and how long it ran, and is matched to
 the session it is the picture of by the camera's clock (a GoPro's GPS clock, else the file's
