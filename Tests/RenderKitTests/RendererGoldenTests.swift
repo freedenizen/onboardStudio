@@ -74,8 +74,12 @@ struct RendererGoldenTests {
     }
 
     @Test func speedometer() throws {
-        let frame = try render(.speedometer(.speedometer(unit: .mph, max: 120)), time: 5)
-        try GoldenImage.assertMatches(frame, named: "speedometer-mph-5s")
+        // One of the two goldens that have failed on a runner and passed on the rerun (#447):
+        // if it is rejected, the frame is rendered again and the report says whether that matched.
+        let kind = DisplayObjectKind.speedometer(.speedometer(unit: .mph, max: 120))
+        try GoldenImage.assertMatches(try render(kind, time: 5), named: "speedometer-mph-5s") {
+            try render(kind, time: 5)
+        }
     }
 
     @Test func tachometerWithRedline() throws {

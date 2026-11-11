@@ -12,6 +12,10 @@ paths:
 - `UPDATE_GOLDENS=1 swift test --filter RenderKitTests` regenerates goldens. **Look at the diff
   before committing** — a regenerated golden that hides a real regression is worse than a failure.
 - A golden containing text can flake once under the parallel run; rerun before chasing it.
+- A rejected frame is kept beside a picture of where it differs (`<name>-actual.png`,
+  `<name>-difference.png`) in `GOLDEN_FAILURES_DIR`, else the temporary directory. In CI that is
+  the `golden-failures` artifact of the failed Test job: **download it before rerunning** — #447
+  went two failures without a picture because nothing kept one.
 - Pixel-probe tests render small frames with `FrameCompositor` and assert colours at known
   coordinates; add one of those for a new drawing primitive before reaching for a golden.
 

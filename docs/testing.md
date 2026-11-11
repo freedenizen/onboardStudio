@@ -16,6 +16,13 @@ swift test --filter "RaceChrono"            # tests whose name matches
   new format or parsing rule.
 - **RenderKit**: pixel-probe tests render small frames with `FrameCompositor` and assert colours
   at known coordinates. Golden-image tests join in M3 (`UPDATE_GOLDENS=1 swift test` regenerates).
+  A frame a golden rejects is kept as `<name>-actual.png`, with `<name>-difference.png` — white
+  where it differs — in `GOLDEN_FAILURES_DIR`, or the temporary directory when that is not set;
+  the failure says how much differs, by how much at most, and within which rectangle. CI sets
+  the variable and keeps the folder as the `golden-failures` artifact of a failed Test job, so a
+  golden that fails only on a runner (#447) leaves something to look at. A test can hand
+  `assertMatches` a closure that renders the frame again; it is asked only after a rejection,
+  and the failure then also says whether the second render matched.
 - **MediaKit**: real AVFoundation round-trips on `Tests/Fixtures/test-3s.mp4`: probe, build a
   composition, export, then decode a frame of the *output* and check the overlay is there. When
   `ffprobe` is installed the output is cross-checked with it; otherwise that test is skipped.

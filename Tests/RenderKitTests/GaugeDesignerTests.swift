@@ -163,7 +163,10 @@ struct GaugeDesignerGoldenTests {
             markerWidth: 0.1)
         let frame = UnitRect(x: 0.1, y: 0.1, width: 0.8, height: 0.8)  // rim between 128 and 160 px from (200, 200)
         let straight = try render(.steeringWheel(params), frame: frame, time: 1, session: session)
-        try GoldenImage.assertMatches(straight, named: "steering-wheel-straight")
+        // The other golden that has failed on a runner and passed on the rerun (#447).
+        try GoldenImage.assertMatches(straight, named: "steering-wheel-straight") {
+            try render(.steeringWheel(params), frame: frame, time: 1, session: session)
+        }
         let top = PixelBuffers.pixel(in: straight, x: 200, y: 56)
         #expect(top.r > 200 && top.g > 200 && top.b < 80, "marker at twelve o'clock: \(top)")
         // The rim is drawn half transparent over the black frame.
