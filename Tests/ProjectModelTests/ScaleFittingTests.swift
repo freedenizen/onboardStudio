@@ -91,8 +91,9 @@ struct ScaleFittingTests {
     }
 
     /// Speed is stored in m/s and drawn in the object's speed unit, so a scale fitted to the
-    /// stored range would be wrong by exactly that factor — a 0…60 dial for a 130 mph car.
-    @Test func aSpeedGaugeKeepsItsTemplateScale() {
+    /// stored range would be wrong by exactly that factor — a 0…60 dial for a 130 mph car. With no
+    /// unit to fit it in, a speed keeps the scale it has.
+    @Test func aSpeedGaugeKeepsItsScaleWhenTheUnitIsNotKnown() {
         let speedo = GaugeParams.speedometer()
         #expect(speedo.fitted(to: [summary("speed", unit: "m/s", 0, 58)]) == speedo)
         #expect(summary("speed", 0, 58).isConvertedForDisplay)

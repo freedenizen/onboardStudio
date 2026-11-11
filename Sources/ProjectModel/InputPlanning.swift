@@ -125,6 +125,39 @@ extension Project {
 }
 
 extension Project {
+    /// Fits the dial of every speedometer that still has its preset scale to the data it now has
+    /// (#487), in the unit `unit` says the object is drawn in. A template is laid out before any
+    /// file is loaded, with a dial of 0–160; left at that, a car shown in km/h pegged the needle
+    /// at 99 mph on every straight. A dial whose scale somebody changed is theirs and is left
+    /// alone, and so is every dial in a project saved before this — neither waits for data.
+    /// Returns the labels of the objects it fitted.
+    @discardableResult
+    public mutating func fitSpeedScales(
+        _ channels: [InputID: [ChannelSummary]], unit: (DisplayObject) -> SpeedDisplayUnit
+    ) -> [String] {
+        let preset = GaugeParams.speedometer()
+        var fitted: [String] = []
+        for index in displayObjects.indices {
+            let object = displayObjects[index]
+            guard let params = object.kind.gaugeParams, params.scaleAwaitsData else { continue }
+            guard let inputID = object.inputID, let available = channels[inputID], !available.isEmpty else { continue }
+            var changed = params
+            let untouched =
+                (params.minValue, params.maxValue, params.majorTick, params.minorTick)
+                == (preset.minValue, preset.maxValue, preset.majorTick, preset.minorTick)
+            if untouched { changed = params.fitted(to: available, speedUnit: unit(object)) }
+            // Fitted, or changed by hand: either way it no longer waits.
+            changed.scaleAwaitsData = false
+            displayObjects[index].kind = object.kind.replacingGaugeParams(changed)
+            if untouched, changed.maxValue != params.maxValue || changed.majorTick != params.majorTick {
+                fitted.append(object.label)
+            }
+        }
+        return fitted
+    }
+}
+
+extension Project {
     /// Removes an input and keeps every object that used it (#213).
     ///
     /// Removing a data file used to delete the gauges, maps and timers bound to it, so replacing a

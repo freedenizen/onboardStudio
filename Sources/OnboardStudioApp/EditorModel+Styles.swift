@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import ProjectModel
+import RenderKit
 
 // MARK: - Object styles
 
@@ -90,14 +91,15 @@ extension EditorModel {
         // A gauge and a bar *are* a scale, and the template's is written for a percentage. Fit it
         // to what the channel actually reads, now, while the object is being made — never later,
         // when it would be changing a scale somebody chose.
-        switch kind {
-        case .gauge(let params): kind = .gauge(params.fitted(to: channelSummaries(for: dataInput)))
-        case .speedometer(let params): kind = .speedometer(params.fitted(to: channelSummaries(for: dataInput)))
-        case .tachometer(let params): kind = .tachometer(params.fitted(to: channelSummaries(for: dataInput)))
-        default: break
+        // A speed is fitted in the unit it will be drawn in (#487): a dial of 0–160 is one in miles
+        // per hour, and in km/h the needle stopped at 99 mph.
+        let summaries = channelSummaries(for: dataInput)
+        let unit = speedUnit(for: DisplayObject(label: "", inputID: dataInput, frame: .full, kind: kind))
+        if let params = kind.gaugeParams {
+            kind = kind.replacingGaugeParams(params.fitted(to: summaries, speedUnit: unit))
         }
         if case .bar(let params) = kind {
-            kind = .bar(params.fitted(to: channelSummaries(for: dataInput)))
+            kind = .bar(params.fitted(to: summaries, speedUnit: unit))
         }
         let object = DisplayObject.makeDefault(
             kind: kind, inputID: kind.needsData ? dataInput : videoInput, index: project.displayObjects.count)
@@ -131,12 +133,34 @@ extension EditorModel {
         return loaded?.channelSummaries[inputID] ?? []
     }
 
-    /// After data loads: template objects that name no channel take the one this logger offers.
+    /// The unit `object` is drawn in, as the renderer resolves it: its own, the project's, the
+    /// app's, the file's, the region's.
+    func speedUnit(for object: DisplayObject) -> SpeedDisplayUnit {
+        let app = SpeedUnitSetting(rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic
+        return RenderPlanner.unitResolver(
+            for: object, in: project, sessions: sessions, appSpeedUnit: app, regionalSpeedUnit: .regional()
+        ).speed(object.kind.speedUnit)
+    }
+
+    /// After data loads: template objects that name no channel take the one this logger offers,
+    /// and a speedometer still on its preset dial is fitted to the file in the unit it shows (#487).
     func bindEmptyChannels() {
         guard let summaries = loaded?.channelSummaries, !summaries.isEmpty else { return }
         var copy = project
         let bound = copy.bindEmptyChannels(summaries)
-        guard !bound.isEmpty else { return }
+        let fitted = copy.fitSpeedScales(summaries, unit: speedUnit(for:))
+        guard !bound.isEmpty else {
+            if !fitted.isEmpty {
+                // A dial drawn differently is an edit Undo can take back.
+                edit("Fit Speed Scale") { $0 = copy }
+            } else if copy != project {
+                // The dial already fitted, or was changed by hand: only the note that it was
+                // waiting is cleared. Bookkeeping, with no undo step of its own.
+                document.apply(nil, name: "Fit Speed Scale") { $0 = copy }
+                syncFromDocument()
+            }
+            return
+        }
         edit("Bind Channels") { $0 = copy }
         // Say when a direction was measured rather than assumed, so a wrong guess is visible and
         // can be overridden instead of leaving the user wondering why the wheel turns backwards.

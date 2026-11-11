@@ -262,18 +262,39 @@ extension GaugeParams {
     /// A gauge carrying zones keeps its authored scale. A redline at 6500 of 8000 is a statement
     /// about the scale it was drawn against, and moving the scale underneath it would leave the
     /// zone somewhere its author never put it — possibly off the dial entirely.
-    public func fitted(to channels: [ChannelSummary]) -> GaugeParams {
-        guard zones.isEmpty, let summary = channels.first(where: { $0.identifier == channel }),
-            !summary.isConvertedForDisplay, let bounds = summary.suggestedBounds
-        else { return self }
+    ///
+    /// A speed is stored in metres per second and drawn in the object's unit, so its scale can
+    /// only be fitted when that unit is known (#487): with `speedUnit` the dial is the one a
+    /// speedometer in that unit would have for this file's top speed (`speedScale(top:)`), and a
+    /// speed difference gets a symmetric scale in it. Without one a speed keeps its scale, as it
+    /// always did.
+    public func fitted(to channels: [ChannelSummary], speedUnit: SpeedDisplayUnit? = nil) -> GaugeParams {
+        guard zones.isEmpty, let recorded = channels.first(where: { $0.identifier == channel }) else { return self }
+        var summary = recorded
+        if recorded.isConvertedForDisplay {
+            guard let speedUnit else { return self }
+            summary = recorded.shown(in: speedUnit)
+            if channel == "speed", let top = summary.maxValue, top > 0 {
+                var dial = self
+                let scale = GaugeParams.speedScale(top: top)
+                (dial.minValue, dial.maxValue, dial.majorTick, dial.minorTick) = (
+                    0, scale.max, scale.major, scale.minor
+                )
+                dial.scaleAwaitsData = false
+                return dial
+            }
+        }
+        guard let bounds = summary.suggestedBounds else { return self }
         var result = self
+        result.scaleAwaitsData = false
         result.minValue = bounds.min
         result.maxValue = bounds.max
         result.majorTick = GaugeParams.tick(over: bounds.max - bounds.min, parts: 5)
         result.minorTick = GaugeParams.tick(over: bounds.max - bounds.min, parts: 10)
         // The template's label states a unit the channel may not be in; the channel's own is right
-        // whenever it has one. An empty unit leaves the label alone rather than blanking it.
-        if !summary.unit.isEmpty { result.unitLabel = summary.unit }
+        // whenever it has one. An empty unit leaves the label alone rather than blanking it. A
+        // speed is labelled by its unit setting, not by this.
+        if !summary.unit.isEmpty, !recorded.isConvertedForDisplay { result.unitLabel = summary.unit }
         return result
     }
 
@@ -290,14 +311,20 @@ extension GaugeParams {
 extension BarParams {
     /// The same bar, scaled to what its channel actually reads in this data (#180). Zones pin the
     /// scale here for the same reason they do on a gauge — the delta bars are built from them.
-    public func fitted(to channels: [ChannelSummary]) -> BarParams {
-        guard zones.isEmpty, let summary = channels.first(where: { $0.identifier == channel }),
-            !summary.isConvertedForDisplay, let bounds = summary.suggestedBounds
-        else { return self }
+    /// A bar of speed is scaled in the unit it is drawn in, when that is known (#487).
+    public func fitted(to channels: [ChannelSummary], speedUnit: SpeedDisplayUnit? = nil) -> BarParams {
+        guard zones.isEmpty, let recorded = channels.first(where: { $0.identifier == channel }) else { return self }
+        var summary = recorded
+        if recorded.isConvertedForDisplay {
+            guard let speedUnit else { return self }
+            summary = recorded.shown(in: speedUnit)
+        }
+        guard let bounds = summary.suggestedBounds else { return self }
         var result = self
         result.minValue = bounds.min
-        result.maxValue = bounds.max
-        if !summary.unit.isEmpty { result.unitLabel = summary.unit }
+        result.maxValue =
+            channel == "speed" ? GaugeParams.speedScale(top: summary.maxValue ?? bounds.max).max : bounds.max
+        if !summary.unit.isEmpty, !recorded.isConvertedForDisplay { result.unitLabel = summary.unit }
         return result
     }
 }

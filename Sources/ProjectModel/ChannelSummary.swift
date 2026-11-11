@@ -66,6 +66,15 @@ extension ChannelSummary {
     /// this can ask.
     public var isConvertedForDisplay: Bool { identifier == "speed" || identifier == "speedDelta" }
 
+    /// A speed's range in the unit it is drawn in (#487): the stored range is in metres per
+    /// second, and a scale has to be fitted in the numbers the dial will show.
+    public func shown(in unit: SpeedDisplayUnit) -> ChannelSummary {
+        var copy = self
+        copy.minValue = minValue.map { $0 * unit.factorFromMetersPerSecond }
+        copy.maxValue = maxValue.map { $0 * unit.factorFromMetersPerSecond }
+        return copy
+    }
+
     /// Rounds `value` away from zero to a step derived from the span, so 1873 becomes 1900 and
     /// 1.37 becomes 1.4. The same idiom `suggestedThreshold` uses, kept in one place.
     private static func roundedOut(_ value: Double, span: Double) -> Double {

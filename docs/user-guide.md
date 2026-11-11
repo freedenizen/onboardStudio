@@ -689,6 +689,14 @@ channel actually reads, rather than the template's 0–100 %. A brake pressure r
 gets a 0–1900 kPa scale instead of a bar pinned at full all lap. Opening a saved project never
 rescales anything: it renders the way you left it.
 
+A speedometer's dial is fitted to the unit it shows as well as to the car: for a session that
+reaches 130 mph it runs 0–160 in steps of 20 in miles per hour and 0–240 in kilometres per hour,
+with a little room above the top speed either way. That happens when you add the speedometer, and
+for a template's speedometer when its project first gets a data file, since a template is laid out
+before any file is known. A dial whose scale you have set yourself is left as you set it, and so
+is one in a project saved earlier: there the scale is still the 0–160 it was saved with, and
+**Maximum** and the ticks in the inspector are where to change it.
+
 ## 6. Timeline segments
 
 A segment starts at a project time and changes any object's visibility, position, size or opacity

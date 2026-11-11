@@ -298,8 +298,16 @@ extension Render {
             chosen.apply(to: &project)
         }
         var loaded = try await ProjectCompiler.load(project, location: location)
-        // Lights and steering wheels without a channel take the one this logger offers.
+        // Lights and steering wheels without a channel take the one this logger offers, and a
+        // speedometer still on its preset dial is fitted to the file in the unit it shows (#487).
         loaded.project.bindEmptyChannels(loaded.channelSummaries)
+        let app = SpeedUnitSetting(rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic
+        let (settled, sessions) = (loaded.project, loaded.sessions)
+        loaded.project.fitSpeedScales(loaded.channelSummaries) { object in
+            RenderPlanner.unitResolver(
+                for: object, in: settled, sessions: sessions, appSpeedUnit: app, regionalSpeedUnit: .regional()
+            ).speed(object.kind.speedUnit)
+        }
         for (id, problem) in loaded.problems {
             let label = loaded.project.input(id)?.label ?? "\(id)"
             FileHandle.standardError.write(Data("warning: \(label): \(problem)\n".utf8))

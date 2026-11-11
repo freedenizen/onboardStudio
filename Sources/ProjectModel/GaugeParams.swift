@@ -43,6 +43,12 @@ public struct GaugeParams: Hashable, Codable, Sendable {
     public var faceColor: RGBAColor
     public var needleColor: RGBAColor
     public var textColor: RGBAColor
+    /// The scale is still the preset's and waits for a data file to be fitted to (#487): a
+    /// speedometer is made 0–160, which is a dial in miles per hour and stops the needle at 99 mph
+    /// when it is shown in km/h. Set by the speedometer preset, and cleared when the scale has
+    /// been fitted — or found to have been changed by hand. Absent from a file saved before the
+    /// field existed, which reads as `false`: such a dial keeps the scale it was saved with.
+    public var scaleAwaitsData = false
 
     public init(
         channel: String,
@@ -108,7 +114,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         case channel, title, minValue, maxValue, speedUnit, unitLabel, majorTick, minorTick, sweep, rotation
         case counterClockwise, style, secondChannel, secondNeedleColor, needle, ticks, zones, zoneTargets
         case arcWidth, arcTrackColor, showFace, faceImageInputID, valueDivisor, showValue, decimals
-        case faceColor, needleColor, textColor
+        case faceColor, needleColor, textColor, scaleAwaitsData
         // Pre-0.5 files: a single red zone.
         case redlineFrom, redlineColor
     }
@@ -151,6 +157,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         faceColor = try c.decodeIfPresent(RGBAColor.self, forKey: .faceColor) ?? d.faceColor
         needleColor = try c.decodeIfPresent(RGBAColor.self, forKey: .needleColor) ?? d.needleColor
         textColor = try c.decodeIfPresent(RGBAColor.self, forKey: .textColor) ?? d.textColor
+        scaleAwaitsData = try c.decodeIfPresent(Bool.self, forKey: .scaleAwaitsData) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -183,6 +190,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         try c.encode(faceColor, forKey: .faceColor)
         try c.encode(needleColor, forKey: .needleColor)
         try c.encode(textColor, forKey: .textColor)
+        try c.encode(scaleAwaitsData, forKey: .scaleAwaitsData)
     }
 
     /// The start of the first zone that runs to the maximum (the classic red line), if any.
@@ -191,13 +199,40 @@ public struct GaugeParams: Hashable, Codable, Sendable {
     }
 
     public static func speedometer(unit: SpeedUnitSetting = .automatic, max: Double = 160) -> GaugeParams {
-        GaugeParams(
+        var params = GaugeParams(
             channel: "speed", title: "SPEED", minValue: 0, maxValue: max, speedUnit: unit, majorTick: 20, minorTick: 10)
+        // 0–160 by 20 is a guess until there is a file and a unit to fit the dial to (#487).
+        params.scaleAwaitsData = true
+        return params
+    }
+
+    /// A speedometer's dial for a car that reaches `top`, in the unit the dial shows (#487): the
+    /// smallest round step between labels that keeps them to a dozen or so, and a maximum that is
+    /// a whole number of steps with a little room above the top speed — 0–160 by 20 for 130 mph,
+    /// 0–240 by 20 for 210 km/h, 0–65 by 5 for 58 m/s.
+    public static func speedScale(top: Double) -> SpeedScale {
+        let reach = Swift.max(top, 1) * 1.08
+        let steps: [Double] = [1, 2, 5, 10, 20, 50, 100, 200, 500]
+        let major = steps.first { (reach / $0).rounded(.up) <= 13 } ?? 1_000
+        return SpeedScale(max: (reach / major).rounded(.up) * major, major: major, minor: major / 2)
     }
 
     public static func tachometer(max: Double = 8000, redline: Double = 6500) -> GaugeParams {
         GaugeParams(
             channel: "rpm", title: "RPM", minValue: 0, maxValue: max, unitLabel: "rpm", majorTick: 1000, minorTick: 500,
             zones: [GaugeZone(from: redline, to: nil, color: .red)])
+    }
+}
+
+/// A speedometer's dial: where it ends, and the steps between its labels and its marks.
+public struct SpeedScale: Hashable, Sendable {
+    public var max: Double
+    public var major: Double
+    public var minor: Double
+
+    public init(max: Double, major: Double, minor: Double) {
+        self.max = max
+        self.major = major
+        self.minor = minor
     }
 }

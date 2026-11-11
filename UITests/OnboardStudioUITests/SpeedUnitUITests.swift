@@ -51,5 +51,12 @@ final class SpeedUnitUITests: OnboardStudioUITestCase {
         let resolved = app.staticTexts["object.speedUnitResolved"]
         XCTAssertTrue(resolved.waitForExistence(timeout: Self.timeout), "The picker does not say what Automatic is")
         expect(resolved, toRead: "Showing kph for your region, as the data is in m/s.")
+
+        // The dial is one for kilometres per hour (#487). The fixture reaches about 112 km/h, so
+        // it runs to 130 in tens; it was 0–160 whatever the unit, which is a dial in miles per hour.
+        let maximum = app.textFields["gauge.maximum"]
+        XCTAssertTrue(maximum.waitForExistence(timeout: Self.timeout), "No Maximum field for the gauge")
+        reveal(maximum)
+        XCTAssertEqual(maximum.value as? String, "130", "The dial was not fitted to the unit it shows")
     }
 }
