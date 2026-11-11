@@ -95,10 +95,24 @@ jobs:
       # so a PR runs the suite plain; the push to main keeps the report and the artifact.
       - name: Test
         if: github.event_name == 'pull_request'
+        env:
+          GOLDEN_FAILURES_DIR: ${{ runner.temp }}/golden-failures
         run: swift test --parallel
       - name: Test with coverage
         if: github.event_name != 'pull_request'
+        env:
+          GOLDEN_FAILURES_DIR: ${{ runner.temp }}/golden-failures
         run: swift test --enable-code-coverage --parallel
+      # A golden image that is rejected leaves the frame it rejected and a picture of where it
+      # differs (#447): without them a failure here is a percentage and nothing to look at.
+      - name: Keep the frames a golden test rejected
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: golden-failures
+          path: ${{ runner.temp }}/golden-failures
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Coverage report
         if: github.event_name != 'pull_request'
         run: |
