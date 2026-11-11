@@ -43,17 +43,21 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
         (app.radioButtons[view].exists ? app.radioButtons[view] : app.buttons[view]).click()
     }
 
+    /// The widths are read off the window rather than assumed: how far the detail can be dragged
+    /// depends on the window, which on a small screen (CI's is 1,024 points wide) has room for
+    /// less than the detail's own 420-point limit, because the sessions keep their minimum.
     @MainActor
     func testTheDetailStaysAsWideAsItWasDragged() throws {
         launch(logbook: true)
         showASessionsDetail()
         XCTAssertEqual(detailWidth, 320, accuracy: 2, "It starts at its narrowest")
 
-        // Its left edge, dragged 60 points to the left.
+        // Its left edge, dragged 60 points to the left: wider, by no more than it was dragged.
         let grab = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         grab.press(forDuration: 0.3, thenDragTo: grab.withOffset(CGVector(dx: -60, dy: 0)))
-        XCTAssertEqual(detailWidth, 380, accuracy: 3, "Dragging its edge did not widen it")
         let dragged = detailWidth
+        XCTAssertGreaterThan(dragged, 335, "Dragging its edge did not widen it")
+        XCTAssertLessThanOrEqual(dragged, 383, "It went further than it was dragged")
 
         // Trends has no detail; back on the sessions it is as wide as it was left.
         choose("Trends")
@@ -72,15 +76,23 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
         XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout))
         XCTAssertEqual(detailWidth, dragged, accuracy: 1, "Losing and regaining the selection lost the width")
 
-        // Past its widest it stops there.
-        let again = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        again.press(forDuration: 0.3, thenDragTo: again.withOffset(CGVector(dx: -300, dy: 0)))
-        XCTAssertEqual(detailWidth, 420, accuracy: 2, "It can be dragged past its widest")
+        // Dragged as far as it goes it stops: at its widest, or sooner where the window is small.
+        let far = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        far.press(forDuration: 0.3, thenDragTo: far.withOffset(CGVector(dx: -300, dy: 0)))
+        let widest = detailWidth
+        XCTAssertGreaterThanOrEqual(widest, dragged - 1, "Dragging further left made it narrower")
+        XCTAssertLessThanOrEqual(widest, 422, "It can be dragged past its widest")
 
-        // And the next time the app opens.
+        // Then a little narrower, to a width that is neither where it starts nor where it stops.
+        let back = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        back.press(forDuration: 0.3, thenDragTo: back.withOffset(CGVector(dx: 20, dy: 0)))
+        let left = detailWidth
+        XCTAssertEqual(left, widest - 20, accuracy: 4, "Dragging its edge right did not narrow it")
+
+        // And the next time the app opens, it is as wide as it was left.
         app.terminate()
         launch(logbook: true, extraArguments: ["-keepPaneWidths", "YES"])
         showASessionsDetail()
-        XCTAssertEqual(detailWidth, 420, accuracy: 2, "The next launch lost the width")
+        XCTAssertEqual(detailWidth, left, accuracy: 2, "The next launch lost the width")
     }
 }
