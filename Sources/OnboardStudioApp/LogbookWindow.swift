@@ -194,10 +194,13 @@ struct LogbookWindow: View {
         // The session's detail is a pane of the window, as the editor's inspector is. Inside the
         // detail column an `HSplitView` gave the table and the detail their minimum widths and left
         // the rest of the column empty, so the detail never had the width it asked for (#448).
+        // The split view forgets where its divider was whenever the pane goes; the keeper in the
+        // pane puts it back (#483).
         HSplitView {
             browser.frame(minWidth: 640).layoutPriority(1)
             if let entry = shownEntry {
                 detail(of: entry).frame(minWidth: 320, idealWidth: 320, maxWidth: 420)
+                    .background(LogbookDetailWidthKeeper())
             }
         }
         .overlay { if isDropTarget { dropHighlight } }
