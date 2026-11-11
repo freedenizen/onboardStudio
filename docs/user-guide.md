@@ -245,6 +245,13 @@ misdetected column is fixed and every column's fate is listed (see below). *Proc
 resampling, smoothing, speed/heading from GPS and calculated fields (`kph = speed * 3.6`).
 *Laps* come from the file when it has them, or from a start/finish line you pick on the map.
 
+A data file is read from disk once. A large log takes a few seconds to read the first time — when
+it is added to the logbook, say; making a project from that session, opening **Coach…** or
+**Replay…** on it, or adding the same file to a second project then starts without that wait,
+each with its own settings. Change the file on disk and it is read afresh the next time it is
+opened. What was read is let go after ten minutes unused, or sooner when the Mac is short of
+memory.
+
 Supported files: RaceChrono (CSV v2/v3 and `.rcz` archives), RaceRender CSV, GPX, TCX, Garmin FIT,
 NMEA, Racelogic VBO, DJI SRT, GoPro GPMF (inside the video) and generic CSV/TSV from most logging
 apps. Details and column names are in [formats.md](formats.md).

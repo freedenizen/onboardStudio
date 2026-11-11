@@ -68,6 +68,20 @@ two thin executables.
   session costs the same per frame as a two-minute one (`LongSessionTests`).
 - `onboard bench` measures overlay drawing, export throughput against real time and resident
   memory; `docs/parity.md` records the current numbers. CI runs it on the fixture project.
+- A data file is parsed once however many readers open it (#482). Reading a log is nearly all
+  parsing — a synthetic 40 MB RaceChrono CSV of 330,000 rows takes 2.4 s to parse and 0.08 s to
+  build into a session, in a release build — and the Logbook's import, a project's compile and
+  the Coaching and Replay windows each read the file for themselves. `ParsedFileCache`
+  (`Sources/Importers/ParsedFileCache.swift`) keeps the importer's `RawTable` for the file as it
+  was, and `TelemetryImporter.importSession` — the one way every reader comes to a file — asks it
+  before reading. What a reader reads *through* (channel mapping, units, resampling, the finish
+  line, the trim) is applied by `SessionBuilder.build`, which each reader still runs for itself,
+  so two readers with different settings share the parsing and nothing else. The file is checked
+  with `stat` on every request — size, modification time, and which file it is on the volume — and
+  read again when any of them differs (not through `URL` resource values, which a `URL` remembers).
+  Readers that arrive together wait for one parse. Tables go least recently used first past eight
+  files or 512 MB of samples, after ten minutes unused, and all at once under memory pressure; a
+  table larger than the budget is never kept.
 
 ## Build and release
 
