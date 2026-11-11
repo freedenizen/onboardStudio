@@ -83,9 +83,9 @@ extension TelemetryImporter {
         SessionBuilder.build(try parsedFile(at: url), options: options)
     }
 
-    /// The file as this importer parses it, from `ParsedFileCache.shared` when the file is as it
-    /// was when it was last read.
+    /// The file as this importer parses it, from the cache (`ParsedFileCache.current`, the shared
+    /// one unless the task has its own) when the file is as it was when it was last read.
     public func parsedFile(at url: URL) throws -> RawTable {
-        try ParsedFileCache.shared.table(at: url, importerID: Self.id) { try importFile(at: url) }
+        try ParsedFileCache.current.table(at: url, importerID: Self.id) { try importFile(at: url) }
     }
 }

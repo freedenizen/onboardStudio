@@ -19,6 +19,12 @@ import TelemetryKit
 public final class ParsedFileCache: @unchecked Sendable {
     public static let shared = ParsedFileCache()
 
+    /// The cache the importers read through: the shared one, unless a caller has put another in
+    /// its place for the task it is running. That is how a test has a cache nothing else reads
+    /// through — in the shared one, whatever else the process is importing at the time can push a
+    /// file out before the test has looked for it.
+    @TaskLocal public static var current: ParsedFileCache = .shared
+
     public struct Limits: Sendable {
         /// The most the kept tables may come to, by `ParsedFileCache.cost(of:)`. A table larger
         /// than this is not kept at all.

@@ -81,7 +81,9 @@ two thin executables.
   read again when any of them differs (not through `URL` resource values, which a `URL` remembers).
   Readers that arrive together wait for one parse. Tables go least recently used first past eight
   files or 512 MB of samples, after ten minutes unused, and all at once under memory pressure; a
-  table larger than the budget is never kept.
+  table larger than the budget is never kept. A task can read through a cache of its own
+  (`ParsedFileCache.$current.withValue`); tests that count readings do, because everything else
+  importing in the process reads through the shared one and can push a file out of it.
 
 ## Build and release
 

@@ -218,7 +218,10 @@ struct ParsedFileCacheTests {
     }
 }
 
-/// The same through the importers, which is how every reader in the app comes to a file.
+/// The same through the importers, which is how every reader in the app comes to a file. Each
+/// test reads through a cache of its own (`ParsedFileCache.$current`): the shared one is also
+/// read through by every other test in the process, which can push a file out of it before the
+/// test has looked — as happened to the first version of these on CI.
 @Suite("Importers share one reading of a file (#482)")
 struct SharedReadingTests {
     func copy(of fixture: String) throws -> URL {
@@ -234,49 +237,67 @@ struct SharedReadingTests {
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let importer = RaceChronoCSVImporter()
         let id = RaceChronoCSVImporter.id
+        let cache = ParsedFileCache()
         // As the Logbook reads it, then as a project that trims the first half off reads it.
-        let whole = try importer.importSession(at: url)
         var options = SessionBuilder.Options()
         let raw = try importer.importFile(at: url)
         options.trimStart = raw.times[raw.times.count / 2]
-        let trimmed = try importer.importSession(at: url, options: options)
-        #expect(ParsedFileCache.shared.timesRead(url, importerID: id) == 1)
+        let (whole, trimmed, again) = try ParsedFileCache.$current.withValue(cache) {
+            (
+                try importer.importSession(at: url), try importer.importSession(at: url, options: options),
+                try importer.importSession(at: url)
+            )
+        }
+        #expect(cache.counts == ParsedFileCache.Counts(hits: 2, reads: 1))
+        #expect(cache.timesRead(url, importerID: id) == 1)
         // The second reader's settings are its own: nothing of the first reader's session came along.
         let wholeCount = try #require(whole[.speed]).times.count
         let trimmedCount = try #require(trimmed[.speed]).times.count
         #expect(trimmedCount < wholeCount)
         // And the first reader, asking again, gets what it got before.
-        let again = try importer.importSession(at: url)
         let againTimes = try #require(again[.speed]).times
         let wholeTimes = try #require(whole[.speed]).times
         #expect(againTimes == wholeTimes)
         #expect(again.laps == whole.laps)
-        #expect(ParsedFileCache.shared.timesRead(url, importerID: id) == 1)
     }
 
     @Test func theDetectorsImportSharesItToo() throws {
         let url = try copy(of: "racechrono-v3.csv")
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
-        _ = try FormatDetector.importSession(at: url)
-        _ = try FormatDetector.importSession(at: url)
-        _ = try RaceChronoCSVImporter().importSession(at: url)
-        #expect(ParsedFileCache.shared.timesRead(url, importerID: RaceChronoCSVImporter.id) == 1)
+        let cache = ParsedFileCache()
+        try ParsedFileCache.$current.withValue(cache) {
+            _ = try FormatDetector.importSession(at: url)
+            _ = try FormatDetector.importSession(at: url)
+            _ = try RaceChronoCSVImporter().importSession(at: url)
+        }
+        #expect(cache.counts == ParsedFileCache.Counts(hits: 2, reads: 1))
+        #expect(cache.timesRead(url, importerID: RaceChronoCSVImporter.id) == 1)
     }
 
     @Test func aFileEditedBetweenTwoImportsIsReadAgain() throws {
         let url = try copy(of: "racechrono-v3.csv")
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let importer = RaceChronoCSVImporter()
-        let before = try importer.importSession(at: url)
+        let cache = ParsedFileCache()
+        let before = try ParsedFileCache.$current.withValue(cache) { try importer.importSession(at: url) }
         // The last data row goes: the file is shorter and the session ends sooner.
         var lines = try String(contentsOf: url, encoding: .utf8).split(
             separator: "\n", omittingEmptySubsequences: false)
         while lines.last?.isEmpty == true { lines.removeLast() }
         lines.removeLast()
         try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
-        let after = try importer.importSession(at: url)
+        let after = try ParsedFileCache.$current.withValue(cache) { try importer.importSession(at: url) }
         let beforeCount = try #require(before[.speed]).times.count
         let afterCount = try #require(after[.speed]).times.count
         #expect(afterCount == beforeCount - 1)
+        // Read twice, and never answered from memory: the file was not what it had been.
+        #expect(cache.counts == ParsedFileCache.Counts(hits: 0, reads: 2))
+    }
+
+    @Test func withoutACacheOfItsOwnATaskReadsThroughTheSharedOne() {
+        #expect(ParsedFileCache.current === ParsedFileCache.shared)
+        let own = ParsedFileCache()
+        ParsedFileCache.$current.withValue(own) { #expect(ParsedFileCache.current === own) }
+        #expect(ParsedFileCache.current === ParsedFileCache.shared)
     }
 }
