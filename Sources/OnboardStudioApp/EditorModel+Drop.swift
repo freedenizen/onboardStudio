@@ -194,6 +194,6 @@ extension EditorModel {
         }
         let name = folders.count == 1 ? "“\(first.lastPathComponent)” is a folder" : "Those are folders"
         return "\(name), and a project takes files: drop the video and data files inside, or enter the "
-            + "folder in the Logbook with File ▸ Add Track Day to Logbook…."
+            + "folder in the Logbook with File ▸ Add Files to Logbook…."
     }
 }

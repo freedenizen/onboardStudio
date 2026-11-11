@@ -382,7 +382,7 @@ overlay, not a recording. The circuit is
 recognised, the date read from the file, and a file already in the logbook is skipped, whatever
 it is called now. So is a session the logbook already has from another file: RaceChrono exports
 one session as CSV v2, CSV v3 and `.rcz`, and a folder holding more than one of them is still one
-session — the sheet's line names the file the logbook has it from. **Add Files…** with no day chosen (or **File ▸ Add Track Day to Logbook…**)
+session — the sheet's line names the file the logbook has it from. **Add Files…** with no day chosen (or **File ▸ Add Files to Logbook…**)
 takes a whole day's folders at once: each file goes on the day its date and circuit say, made if
 need be, and the sheet's line says which. From the command line, `onboard logbook new-day --date
 2026-08-23 --circuit Sonoma --car Miata` begins a day, `onboard logbook add <files or folders>
@@ -411,6 +411,22 @@ Session** starts an empty project instead. **Add to Current Project** adds the s
 project in front. **Remove from
 Logbook…** takes a session out, and the trash button in a day's header takes the day and its
 sessions out; no file is touched.
+
+Everything the Logbook does is in the menu bar too, with keys for the common things. The
+**Session** menu, between View and Project, acts on the session whose detail is on show, as the
+buttons at the foot of the detail do: **New Project from Session** (⇧⌘N, with the template the
+last New Project used) or **New Project from Session with Template**, **Add to Current Project**,
+**Coach…** (⌃⌘C), **Replay…**, **Compare With**, **Export Coaching Debrief…**, **Show in Finder**
+(⇧⌘R) and **Remove from Logbook…** (⌘⌫ while the table of sessions has the keyboard; in a text
+field ⌘⌫ deletes to the start of the line, as it does everywhere). **View** switches between
+**Sessions**, **Trends** and **Season** with ⌘1, ⌘2 and ⌘3, shows and hides the sidebar (⌃⌘S) and
+the toolbar, and **Customize Toolbar…** sets the toolbar to show its buttons' names under their
+icons, or leaves out the ones you never use. **Edit ▸ Find Sessions** (⌘F) puts the keyboard in
+the search field. **File ▸ Add Files to Logbook…** does what **Add Files…** does, from any
+window: on the day chosen in the sidebar, else each file on its own day. With no project in
+front, the project's own menus — Project, Arrange, Marker, Playback — are dimmed and their keys
+are left alone, so Space, Delete and the letters do nothing unexpected in the Logbook. Help ▸
+Keyboard Shortcuts lists the Logbook's keys with the rest.
 
 A session's laps are written into the logbook when it is added, so a session added by a build
 before a correction to how laps are read keeps the laps it was read with. When some of the
@@ -479,8 +495,9 @@ post.
 The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
 folder of one file per session (narrow the table first to export only a circuit, a car or a year),
 **…with Data Files** copies the data files in beside them, **Export Sessions as CSV…** and
-**Export Laps as CSV…** for a spreadsheet, **Export as Markdown…** for a coach; **Import
-Logbook…** reads such a folder back, skipping what is already here and updating what is newer.
+**Export Laps as CSV…** for a spreadsheet, **Export Logbook as Markdown…** for a coach; **Import
+Logbook Export…** reads such a folder back, skipping what is already here and updating what is newer.
+The same commands are in the File menu while the Logbook is in front.
 From the command line: `onboard logbook export <folder|.csv|.md>` and `onboard logbook import`.
 
 ## 5. Objects

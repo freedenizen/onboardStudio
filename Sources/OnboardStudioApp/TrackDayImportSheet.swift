@@ -16,7 +16,7 @@ struct TrackDayRequest: Identifiable {
 }
 
 extension EditorModel {
-    /// File ▸ Add Track Day to Logbook…
+    /// File ▸ Add Files to Logbook… with a project in front
     func requestTrackDay() {
         let urls = OpenPanels.chooseTrackDay()
         guard !urls.isEmpty else { return }
@@ -47,7 +47,7 @@ struct TrackDayImportSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(request.day.map { "Add Sessions to \($0.label)" } ?? "Add Track Day to Logbook").font(.title2)
+            Text(request.day.map { "Add Sessions to \($0.label)" } ?? "Add Files to Logbook").font(.title2)
             switch phase {
             case .reading: ProgressView(current.map { "Reading \($0)…" } ?? "Looking for files…")
             case .asking: question

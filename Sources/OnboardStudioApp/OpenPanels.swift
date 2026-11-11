@@ -27,7 +27,7 @@ enum OpenPanels {
     static func chooseLogbookFolder() -> URL? {
         if let directory = UITestSupport.exportDirectory { return directory }
         let panel = NSOpenPanel()
-        panel.title = "Import Logbook"
+        panel.title = "Import Logbook Export"
         panel.message = "Choose a folder of sessions exported from a logbook."
         panel.prompt = "Import"
         panel.canChooseDirectories = true
@@ -39,7 +39,7 @@ enum OpenPanels {
     /// The day's files and folders; with `day`, into that day (#393).
     static func chooseTrackDay(for day: TrackDay? = nil) -> [URL] {
         let panel = NSOpenPanel()
-        panel.title = day.map { "Add Sessions to \($0.label)" } ?? "Add Track Day to Logbook"
+        panel.title = day.map { "Add Sessions to \($0.label)" } ?? "Add Files to Logbook"
         panel.message = "Choose the day's telemetry files and camera clips, or the folders holding them."
         panel.canChooseDirectories = true
         panel.canChooseFiles = true

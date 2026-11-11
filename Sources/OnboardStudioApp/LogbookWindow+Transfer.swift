@@ -39,7 +39,7 @@ extension LogbookWindow {
     func exportMarkdown() {
         guard
             let url = OpenPanels.chooseDocumentDestination(
-                title: "Export as Markdown", suggestedName: "Logbook",
+                title: "Export Logbook as Markdown", suggestedName: "Logbook",
                 type: UTType(filenameExtension: "md") ?? .plainText, fileExtension: "md")
         else { return }
         write(LogbookTransfer.markdown(exported, title: scope.title), to: url, what: "\(exported.count) sessions")

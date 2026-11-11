@@ -9,9 +9,9 @@ readable by other tools; a logbook you cannot take with you is a trap.*
    beside them, so the folder is complete on another Mac.
 3. **Export Sessions as CSV…** (one line per session: date, circuit, car, driver, laps, best,
    optimal, rolling, top speed, conditions, notes, file) and **Export Laps as CSV…** (one line per
-   lap) for a spreadsheet; **Export as Markdown…** for a coach: a table of the sessions, then
+   lap) for a spreadsheet; **Export Logbook as Markdown…** for a coach: a table of the sessions, then
    each session's laps and notes.
-4. **Import Logbook…** reads such a folder back: a session already here (the same bytes) is
+4. **Import Logbook Export…** reads such a folder back: a session already here (the same bytes) is
    skipped, or updated when the file's copy is newer; copied data files are found beside their
    entries; cars join the garage. The line under the table says what happened.
 5. From the command line: `onboard logbook export <folder> [--with-files]`,
