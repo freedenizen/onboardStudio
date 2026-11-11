@@ -11,7 +11,7 @@ permissions:
 jobs:
   status:
     name: Query Apple notary service
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 10
     steps:
       - name: History and submission details

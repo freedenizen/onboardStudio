@@ -1,0 +1,6 @@
+# GitHub's `xcode-27` image (macOS 27 with Xcode 27, #507) is a standard GitHub-hosted runner, but
+# newer than the list of hosted labels in the actionlint version CI pins. Without this, actionlint
+# takes it for an unknown self-hosted label.
+self-hosted-runner:
+  labels:
+    - xcode-27

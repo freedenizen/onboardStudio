@@ -26,12 +26,15 @@ jobs:
     # the "UI tests" check below fails on a draft: that is what keeps a draft from reading green.
     needs: changes
     if: needs.changes.outputs.draft != 'true'
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
-        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+        id: xcode
+        run: |
+          sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+          echo "version=$(xcodebuild -version | awk 'NR == 1 { print $2 }')" >> "$GITHUB_OUTPUT"
       - name: swift format
         run: swift format lint --strict --recursive Sources Tests UITests Package.swift
       # A pinned portable binary: `brew install swiftlint` resolved a formula and its
@@ -72,23 +75,28 @@ jobs:
     # the "UI tests" check below fails on a draft: that is what keeps a draft from reading green.
     needs: changes
     if: needs.changes.outputs.draft != 'true'
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
-        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+        id: xcode
+        run: |
+          sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+          echo "version=$(xcodebuild -version | awk 'NR == 1 { print $2 }')" >> "$GITHUB_OUTPUT"
       - name: Toolchain
         run: swift --version && xcodebuild -version
       - uses: actions/cache@v6
         with:
           path: .build
+          # Keyed on the Xcode version too: a .build made by one compiler is not restored into a
+          # build by another (#507).
           # The repository name is part of the runner's workspace path, and Clang bakes that
           # absolute path into the precompiled headers inside .build. Keying on it means a cache
           # is only ever restored into the same path it was built at; renaming the repo (or a
           # fork) starts fresh instead of restoring unusable .pcm files.
-          key: spm-${{ runner.os }}-${{ github.event.repository.name }}-${{ hashFiles('Package.resolved') }}
-          restore-keys: spm-${{ runner.os }}-${{ github.event.repository.name }}-
+          key: spm-${{ runner.os }}-xcode-${{ steps.xcode.outputs.version }}-${{ github.event.repository.name }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-xcode-${{ steps.xcode.outputs.version }}-${{ github.event.repository.name }}-
       - name: Build
         run: swift build
       # Coverage instrumentation costs ~80 s on a ~30 s test run, and nothing gates on the report,
@@ -185,12 +193,15 @@ jobs:
     name: UI tests (build)
     needs: changes
     if: needs.changes.outputs.app == 'true'
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
-        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+        id: xcode
+        run: |
+          sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+          echo "version=$(xcodebuild -version | awk 'NR == 1 { print $2 }')" >> "$GITHUB_OUTPUT"
       - name: Generate Xcode project
         run: brew install xcodegen && xcodegen generate --quiet
       - name: Build for testing
@@ -227,7 +238,7 @@ jobs:
     name: UI tests (${{ matrix.name }})
     needs: [changes, ui-tests-build]
     if: needs.changes.outputs.app == 'true'
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 30
     permissions:
       contents: read
@@ -249,7 +260,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
-        run: sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+        id: xcode
+        run: |
+          sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+          echo "version=$(xcodebuild -version | awk 'NR == 1 { print $2 }')" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v8
         with:
           name: ui-tests-products

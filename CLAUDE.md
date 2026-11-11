@@ -64,6 +64,10 @@ swift run onboard bench --export --codec hevc --seconds 60
   `gh pr create --draft`, and `gh pr ready <n>` the next one only when the one before has merged —
   rebase it first, so it is tested once against the `main` it will land on (#237). Related issues
   can share one PR (`Closes #79.` and `Closes #153.`).
+- CI's macOS jobs run on GitHub's `xcode-27` image (macOS 27) and select the newest Xcode on it —
+  27.2, the same as the development Mac (#507). `macos-latest` is still macOS 26 with Xcode 26.6,
+  whose Swift 6.3 failed to compile what Swift 6.4 builds. The `.build` cache is keyed on the Xcode
+  version, and `.github/actionlint.yaml` names the label, which actionlint does not know yet.
 - The nightly workflow (`.github/workflows/nightly.yml`) runs what a PR does not wait for:
   the ffprobe-backed media tests, `onboard render` on the fixture, an unsigned bundle and the
   bench against a budget; red opens the `nightly-red` issue.
