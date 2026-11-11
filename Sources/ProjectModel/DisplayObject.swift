@@ -234,6 +234,16 @@ public enum DisplayObjectKind: Hashable, Codable, Sendable {
         }
     }
 
+    /// The same kind with `params` in place of its own; a kind that is no round gauge unchanged.
+    public func replacingGaugeParams(_ params: GaugeParams) -> DisplayObjectKind {
+        switch self {
+        case .speedometer: .speedometer(params)
+        case .tachometer: .tachometer(params)
+        case .gauge: .gauge(params)
+        default: self
+        }
+    }
+
     /// What this object's own speed-unit setting says, or `automatic` for a kind that has none
     /// to say it with. The five kinds that draw a speed are the five that carry the setting.
     public var speedUnit: SpeedUnitSetting {

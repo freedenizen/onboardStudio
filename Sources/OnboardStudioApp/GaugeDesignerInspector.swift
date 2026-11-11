@@ -14,6 +14,7 @@ struct GaugeDesignerInspector: View {
             CommittingTextField("Title", text: field(\.title, "Title"))
             NumberField("Minimum", value: field(\.minValue, "Minimum"))
             NumberField("Maximum", value: field(\.maxValue, "Maximum"))
+                .accessibilityIdentifier("gauge.maximum")
             NumberField("Major tick", value: field(\.majorTick, "Major Tick"))
             NumberField("Minor tick", value: field(\.minorTick, "Minor Tick"))
             if ChannelRole(identifier: params.channel) == .speed {
