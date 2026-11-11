@@ -11,6 +11,17 @@ import TelemetryKit
 enum UITestSupport {
     static var isActive: Bool { UserDefaults.standard.bool(forKey: "uiTesting") }
 
+    /// Where the widths of panes are kept: the app's preferences. Under the UI tests a store of
+    /// their own, emptied at launch, so a test that drags a divider neither starts from the width
+    /// the developer left in the real app nor leaves its own there. `-keepPaneWidths YES` keeps
+    /// what the launch before left, for the test that quits and opens the app again.
+    static let paneDefaults: UserDefaults = {
+        let suite = "com.freedenizen.onboardstudio.uitests.panes"
+        guard isActive, let store = UserDefaults(suiteName: suite) else { return .standard }
+        if !UserDefaults.standard.bool(forKey: "keepPaneWidths") { store.removePersistentDomain(forName: suite) }
+        return store
+    }()
+
     /// `ONBOARD_FIXTURES`: the `Tests/Fixtures` directory.
     static var fixtures: URL? {
         ProcessInfo.processInfo.environment["ONBOARD_FIXTURES"].map { URL(fileURLWithPath: $0, isDirectory: true) }

@@ -84,6 +84,22 @@ template; **Add to Current Project** calls the front editor's `addData(at:)`. Th
 Track Day… and a drop of files or folders on the window run `TrackDayImport` behind the same
 sheet. Fits 1024×768 (sidebar 170–280, the sessions 460 minimum, a session's detail 320–420).
 
+The detail keeps the width it was dragged to (#483). SwiftUI's `HSplitView` has no autosave name
+and puts a pane back at its minimum width every time it returns — after a visit to Trends, after
+the selection is lost and made again, at the next launch — and the system inspector column
+(`.inspector`) opens at its ideal width once and at its minimum after that; around the whole
+`NavigationSplitView` it also raised an AppKit update-constraints exception when its edge was
+dragged. A divider of the app's own was tried and kept the width, with a stray hairline in the
+detail's foot to show for it. So the split view stays as it is, and
+`LogbookDetailWidthKeeper` — a zero-size view in the detail pane — finds the `NSSplitView` SwiftUI
+made, sets its divider from the kept width when the pane appears, and writes the width down when
+`NSSplitView.didResizeSubviewsNotification` says a divider was dragged (a window resize does not
+count). The width is the preference `logbook.detailWidth`; `LogbookDetailWidth.fitted` holds it
+to 320–420 and shows it narrower, without forgetting it, in a window too narrow to leave the
+sessions their minimum. Under the UI tests the width is kept in a store of its own
+(`UITestSupport.paneDefaults`), emptied at launch unless `-keepPaneWidths YES`, so a test neither
+reads nor leaves a width in the real preferences.
+
 ## Laps read before a correction (#498)
 
 An entry keeps the laps it was read with, so a fix to how a file's laps are read does not reach

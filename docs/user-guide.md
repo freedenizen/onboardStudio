@@ -401,7 +401,8 @@ projects made from it and where the file is. A search that finds nothing says so
 is of a session in the table: choose another day, or search it away, and the detail goes with it.
 What can be done with the session stays at the foot of
 its detail, in view however many laps are listed above, and the buttons move onto another row
-rather than shorten when the detail is narrow (drag its left edge to widen it). **New Project**
+rather than shorten when the detail is narrow (drag its left edge to widen it; it stays as wide
+as you left it, whichever session you choose next and the next time the app opens). **New Project**
 starts a project with that session's data file and its clips, laid out with the template the last
 New Project used (Classic Dash to begin with); the arrow on the button offers every template, or a
 blank project. The toolbar's **New Project** menu does the same while a session is selected, under
