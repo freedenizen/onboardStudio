@@ -36,6 +36,16 @@ extension LogbookWindow {
         return nil
     }
 
+    /// Above the table when some of its sessions were read before a correction to their laps
+    /// (#498): what they are, and a button that reads their files again.
+    @ViewBuilder var lapReadingOffer: some View {
+        let stale = shown.filter(\.needsLapReading)
+        if !stale.isEmpty {
+            LapReadingOffer(entries: stale) { model.reload() }
+            Divider()
+        }
+    }
+
     /// The days were read again: the chosen day is still the chosen day when its circuit, and so
     /// its label, changed (#455) — the sidebar selects by the label, and lost the row.
     func followTheChosenDay() {

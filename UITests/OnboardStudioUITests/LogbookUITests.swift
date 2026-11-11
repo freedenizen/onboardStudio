@@ -55,6 +55,37 @@ final class LogbookUITests: OnboardStudioUITestCase {
         XCTAssertEqual(XCTWaiter().wait(for: [added], timeout: Self.timeout), .completed, "Nothing added")
     }
 
+    /// #498: a session added before the first lap was corrected (#477) kept the laps it was read
+    /// with. The Logbook says so above the table and reads the file again when asked: the first
+    /// lap, called partial, is the whole lap it was.
+    @MainActor
+    func testASessionReadBeforeTheLapFixIsReadAgainOnRequest() throws {
+        launch(logbook: true)
+        XCTAssertTrue(app.windows["Logbook"].waitForExistence(timeout: Self.timeout))
+        testing("Add Fixture Session Read Before the Lap Fix")
+        let offer = app.staticTexts["logbook.lapReading.text"]
+        XCTAssertTrue(offer.waitForExistence(timeout: Self.timeout * 3), "Nothing offers to read the session again")
+        expect(offer, toRead: "1 session here was read before a correction to the first lap.")
+
+        let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch
+        let rowTypes = NSPredicate(
+            format: "elementType == %d OR elementType == %d", XCUIElement.ElementType.tableRow.rawValue,
+            XCUIElement.ElementType.outlineRow.rawValue)
+        let rows = table.descendants(matching: .any).matching(rowTypes)
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: Self.timeout), "The session is not listed")
+        rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
+        let laps = app.staticTexts["logbook.detail.laps"]
+        XCTAssertTrue(laps.waitForExistence(timeout: Self.timeout), "No detail for the session")
+        expect(laps, toRead: "0 complete of 2")
+
+        let read = app.buttons["logbook.lapReading.read"]
+        XCTAssertEqual(read.label, "Read It Again")
+        read.click()
+        expect(laps, toRead: "1 complete of 2")
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: offer)
+        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: Self.timeout), .completed, "Still offered once read")
+    }
+
     /// A search that finds nothing says so, and a session the search or the sidebar has taken out
     /// of the table has no detail left on screen with its buttons live (#457). It comes back with
     /// the session.
