@@ -65,7 +65,7 @@ names the importer; the session is built with default options and the circuit id
 with no laps at a circuit whose start/finish the track library knows is read again with that line,
 as adding it to a project would; the car is the batch's, else the last session's at that circuit;
 the driver is the batch's, else the file's, else the last session's. Every file gets a `Report`
-whose `line` is the sentence the sheet and the CLI print. File ▸ Add Track Day to Logbook… runs
+whose `line` is the sentence the sheet and the CLI print. File ▸ Add Files to Logbook… runs
 it off the main thread behind a sheet (`TrackDayImportSheet`); `onboard logbook add` and `list`
 do it on the command line. Under UI tests the app's logbook is a scratch folder
 (`ONBOARD_TEST_LOGBOOK_DIR`), as the templates are.
@@ -83,6 +83,18 @@ hands the entry to the next editor through `PendingLogbookOpen`, as New from Tem
 template; **Add to Current Project** calls the front editor's `addData(at:)`. The toolbar's Add
 Track Day… and a drop of files or folders on the window run `TrackDayImport` behind the same
 sheet. Fits 1024×768 (sidebar 170–280, the sessions 460 minimum, a session's detail 320–420).
+
+The menu bar (#450): the window publishes a `LogbookCommandContext` as a focused scene value — the
+session on show, its view, whether the table has the keyboard, and the same closures the detail's
+buttons and the toolbar call — and `LogbookCommands` builds the **Session** menu and the window's
+items in File, Edit and View from it, so a menu item and its button cannot drift apart. Commands
+that exist for two windows hold their key only while their own window is in front
+(`keyboardShortcut(_:modifiers:when:)`): a dimmed menu item still takes its key and does nothing
+with it, and of two items on one key a dimmed one listed first blocks the other (measured with
+`NSMenu.performKeyEquivalent`). That is why the editor's menus (`EditorCommands`,
+`TimelineCommands`) give up their keys with no project in front, why ⌃⌘C is Coaching… in a
+project and Coach… in the Logbook, and why ⌘⌫ removes a session only while the table has the
+keyboard. The toolbar is customizable (`.toolbar(id: "logbook")`).
 
 The detail keeps the width it was dragged to (#483). SwiftUI's `HSplitView` has no autosave name
 and puts a pane back at its minimum width every time it returns — after a visit to Trends, after

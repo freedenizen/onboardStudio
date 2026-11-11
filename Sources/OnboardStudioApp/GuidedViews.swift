@@ -229,7 +229,7 @@ struct ShortcutsView: View {
         ("⇧⌘D", "Add data file"),
         ("⌘Y", "Synchronize data"), ("⌥⌘A", "Map attributes, for the selected data file"),
         ("⌘1 / ⌘2 / ⌘F", "In the attribute window: attributes, import report, filter"),
-        ("⌃⌘C", "Coaching: where a lap lost time, corner by corner"),
+        ("⌃⌘C", "Coaching: where a lap lost time, corner by corner; in the Logbook, the selected session's"),
         ("⌘E", "Export video"), ("⌘K", "Add timeline segment at playhead"),
         ("M / ⌘M", "Add a marker at the playhead; ⌘M names it too"),
         ("⇧↑ / ⇧↓", "Previous / next marker"), ("⌥↑ / ⌥↓", "Previous / next lap"),
@@ -245,6 +245,11 @@ struct ShortcutsView: View {
         ("⇧C / ⇧T", "Crop / frame the picture on the preview"),
         ("⌥⌘I", "Show / hide the inspector"),
         ("⇧⌘F / ⇧⌘B", "Bring to front / send to back; with ⌥, one place"),
+        ("⌘1 / ⌘2 / ⌘3", "In the Logbook: sessions, trends, season"),
+        ("⇧⌘N", "In the Logbook: a new project from the selected session"),
+        ("⌘F (Logbook)", "In the Logbook: find sessions"),
+        ("⇧⌘R / ⌘⌫", "In the Logbook: show the session's file in the Finder / remove it from the logbook"),
+        ("⌃⌘S", "Show / hide the sidebar"),
     ]
 
     var body: some View {

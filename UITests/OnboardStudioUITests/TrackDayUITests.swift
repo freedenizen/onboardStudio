@@ -13,8 +13,8 @@ final class TrackDayUITests: OnboardStudioUITestCase {
         XCTAssertTrue(file.waitForExistence(timeout: Self.timeout), "No File menu")
         file.click()
         XCTAssertTrue(
-            file.menus.menuItems["Add Track Day to Logbook…"].waitForExistence(timeout: Self.timeout),
-            "File ▸ Add Track Day to Logbook… is missing")
+            file.menus.menuItems["Add Files to Logbook…"].waitForExistence(timeout: Self.timeout),
+            "File ▸ Add Files to Logbook… is missing")
         app.typeKey(.escape, modifierFlags: [])
         testing("Add Fixture Track Day")
         let done = app.buttons["trackday.done"]

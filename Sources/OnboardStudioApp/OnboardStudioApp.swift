@@ -49,8 +49,12 @@ struct OnboardStudioApp: App {
                 Button("Check for Updates…") { updater.checkForUpdates() }
                     .disabled(!updater.canCheckForUpdates)
             }
+            // Declared first so the Session menu stands between View and Project (#450).
+            LogbookCommands()
             EditorCommands()
+            TimelineCommands()
             UndoCommands()
+            WindowCommands()
             AttributeWindowCommands()
             CoachingSheetCommands()
             if UITestSupport.isActive { UITestCommands() }
@@ -101,6 +105,16 @@ struct OnboardStudioApp: App {
     }
 }
 
+/// The system's sidebar and toolbar commands: View ▸ Show Sidebar (⌃⌘S), Show Toolbar and Customize
+/// Toolbar… (#450). One struct for the two, because the commands builder of Swift 6.3 — the one CI
+/// builds with — takes at most ten commands in a block, and the scene's block is at ten.
+struct WindowCommands: Commands {
+    var body: some Commands {
+        SidebarCommands()
+        ToolbarCommands()
+    }
+}
+
 /// Hands a template to the next editor that appears (New from Template).
 @MainActor
 final class PendingTemplate {
@@ -117,9 +131,16 @@ extension UTType {
 }
 
 /// Menu commands that act on the focused editor.
+///
+/// With no project in front — the Logbook, Coaching without a project — every item that acts on a
+/// project is dimmed, and gives up its key (#450): a dimmed item still takes its key and does
+/// nothing with it, which would leave Space, Delete and ⌃⌘C dead in the window that is in front.
 struct EditorCommands: Commands {
     @FocusedValue(\.editor) private var editor
     @Environment(\.openWindow) private var openWindow
+
+    /// A project is in front: its items are live and hold their keys.
+    private var live: Bool { editor != nil }
 
     var body: some Commands {
         CommandGroup(replacing: .help) {
@@ -146,162 +167,181 @@ struct EditorCommands: Commands {
             }
             .keyboardShortcut("n", modifiers: [.command, .option])
         }
-        CommandGroup(after: .importExport) {
-            // A whole day's files into the logbook, not the project, so it lives in File with the
-            // other things that bring files in (#346). The Project menu is at the height of a
-            // 768-pixel screen already; one more row there made its lower items scroll.
-            Button("Add Track Day to Logbook…") { editor?.requestTrackDay() }
-        }
         CommandGroup(after: .pasteboard) {
             // ⇧⌘A, as in Keynote, Pages and Freeform (#280).
             Button("Deselect All") { editor?.deselectAll() }
-                .keyboardShortcut("a", modifiers: [.command, .shift])
+                .keyboardShortcut("a", modifiers: [.command, .shift], when: live)
                 .disabled(editor?.hasSelection != true)
         }
         CommandMenu("Project") {
-            Button("Add Video…") { editor?.addVideo() }.keyboardShortcut("i", modifiers: [.command])
-            Button("Add Camera…") { editor?.addCamera() }.keyboardShortcut("i", modifiers: [.command, .shift])
-            Button("Add Data File…") { editor?.addData() }.keyboardShortcut("d", modifiers: [.command, .shift])
-            Divider()
-            // The project's own inspector is what shows with nothing selected, which nothing
-            // else in the app says; this is the way to it from anywhere (#74, #118).
-            Button("Show Project Details") { editor?.showProjectInspector() }
-                .keyboardShortcut("i", modifiers: [.command, .control])
-            Divider()
-            Menu("Add Display Object") {
-                ForEach(DisplayObject.templates, id: \.name) { template in
-                    Button(template.name) { editor?.addObject(template.kind) }
-                }
+            Group {
+                Button("Add Video…") { editor?.addVideo() }.keyboardShortcut("i", modifiers: [.command], when: live)
+                Button("Add Camera…") { editor?.addCamera() }.keyboardShortcut(
+                    "i", modifiers: [.command, .shift], when: live)
+                Button("Add Data File…") { editor?.addData() }.keyboardShortcut(
+                    "d", modifiers: [.command, .shift], when: live)
                 Divider()
-                Button("Image…") { editor?.addImage() }
-            }
-            Button("Delete Selected Object") { editor?.deleteSelectedObject() }.keyboardShortcut(.delete, modifiers: [])
+                // The project's own inspector is what shows with nothing selected, which nothing
+                // else in the app says; this is the way to it from anywhere (#74, #118).
+                Button("Show Project Details") { editor?.showProjectInspector() }
+                    .keyboardShortcut("i", modifiers: [.command, .control], when: live)
+                Divider()
+                Menu("Add Display Object") {
+                    ForEach(DisplayObject.templates, id: \.name) { template in
+                        Button(template.name) { editor?.addObject(template.kind) }
+                    }
+                    Divider()
+                    Button("Image…") { editor?.addImage() }
+                }
+                // A submenu's title is not dimmed by the group around it.
+                .disabled(editor == nil)
+                Button("Delete Selected Object") { editor?.deleteSelectedObject() }.keyboardShortcut(
+                    .delete, modifiers: [], when: live
+                )
                 .disabled(editor?.pictureTool != nil)
-            // Keynote's and Pages's keys for the same verbs (#90); ⌘G is Find Next elsewhere.
-            Button("Group") { editor?.groupSelection() }
-                .keyboardShortcut("g", modifiers: [.command, .option])
-                .disabled(editor?.canGroupSelection != true)
-            Button("Ungroup") { editor?.ungroupSelection() }
-                .keyboardShortcut("g", modifiers: [.command, .option, .shift])
-                .disabled(editor?.canUngroupSelection != true)
-            Button(editor?.selectionIsLocked == true ? "Unlock" : "Lock") { editor?.toggleLockSelection() }
-                .keyboardShortcut("l", modifiers: [.command])
-                .disabled(editor?.selectedObjectID == nil)
-            Divider()
-            Button("Copy Object Style") { editor?.copyStyle() }
-                .keyboardShortcut("c", modifiers: [.command, .option])
-                .disabled(editor?.selectedObject == nil)
-            Button("Paste Object Style") { editor?.pasteStyle() }
-                .keyboardShortcut("v", modifiers: [.command, .option])
-                .disabled(editor?.canPasteStyle != true)
-            Button("Import Object Style…") { editor?.importStyle() }
-            Button("Export Object Style…") { editor?.exportStyle() }.disabled(editor?.selectedObject == nil)
-            Divider()
-            Menu("Apply Template") {
-                ForEach(ProjectTemplate.builtIn, id: \.name) { template in
-                    Button(template.name) { editor?.apply(template) }
-                }
-                let user = TemplateLibrary.app.entries()
-                if !user.isEmpty { Divider() }
-                ForEach(user) { entry in
-                    Button(entry.name) { editor?.applyTemplate(at: entry.url) }
-                }
+                // Keynote's and Pages's keys for the same verbs (#90); ⌘G is Find Next elsewhere.
+                Button("Group") { editor?.groupSelection() }
+                    .keyboardShortcut("g", modifiers: [.command, .option], when: live)
+                    .disabled(editor?.canGroupSelection != true)
+                Button("Ungroup") { editor?.ungroupSelection() }
+                    .keyboardShortcut("g", modifiers: [.command, .option, .shift], when: live)
+                    .disabled(editor?.canUngroupSelection != true)
+                Button(editor?.selectionIsLocked == true ? "Unlock" : "Lock") { editor?.toggleLockSelection() }
+                    .keyboardShortcut("l", modifiers: [.command], when: live)
+                    .disabled(editor?.selectedObjectID == nil)
                 Divider()
-                Button("From File…") { editor?.importTemplate() }
-            }
-            Button("Save as Template…") { editor?.saveAsTemplate() }.disabled(editor == nil)
-            Divider()
-            Menu("Camera Layout") {
-                ForEach(LayoutPreset.allCases, id: \.self) { preset in
-                    Button(preset.displayName) { editor?.applyLayout(preset) }
+                Button("Copy Object Style") { editor?.copyStyle() }
+                    .keyboardShortcut("c", modifiers: [.command, .option], when: live)
+                    .disabled(editor?.selectedObject == nil)
+                Button("Paste Object Style") { editor?.pasteStyle() }
+                    .keyboardShortcut("v", modifiers: [.command, .option], when: live)
+                    .disabled(editor?.canPasteStyle != true)
+                Button("Import Object Style…") { editor?.importStyle() }
+                Button("Export Object Style…") { editor?.exportStyle() }.disabled(editor?.selectedObject == nil)
+                Divider()
+                Menu("Apply Template") {
+                    ForEach(ProjectTemplate.builtIn, id: \.name) { template in
+                        Button(template.name) { editor?.apply(template) }
+                    }
+                    let user = TemplateLibrary.app.entries()
+                    if !user.isEmpty { Divider() }
+                    ForEach(user) { entry in
+                        Button(entry.name) { editor?.applyTemplate(at: entry.url) }
+                    }
+                    Divider()
+                    Button("From File…") { editor?.importTemplate() }
                 }
+                // A submenu's title is not dimmed by the group around it.
+                .disabled(editor == nil)
+                Button("Save as Template…") { editor?.saveAsTemplate() }.disabled(editor == nil)
+                Divider()
+                Menu("Camera Layout") {
+                    ForEach(LayoutPreset.allCases, id: \.self) { preset in
+                        Button(preset.displayName) { editor?.applyLayout(preset) }
+                    }
+                }
+                // A submenu's title is not dimmed by the group around it.
+                .disabled(editor == nil)
+                Button("Add Segment at Playhead") { editor?.addSegmentAtPlayhead() }
+                    .keyboardShortcut("k", modifiers: [.command], when: live)
+                // Resolve's ⇧[ / ⇧], verified in docs/conventions.md. Trimming to a marker is the
+                // same command: ⇧↑/⇧↓ put the playhead on the marker first.
+                // Resolve's Split Clip is ⌘\\ (manual p. 889/942).
+                Button("Split at Playhead") { editor?.splitVideoAtPlayhead() }
+                    .keyboardShortcut("\\", modifiers: [.command], when: live)
+                    .disabled(editor?.canSplitAtPlayhead != true)
+                Button("Trim Start to Playhead") { editor?.trimStartToPlayhead() }
+                    .keyboardShortcut("[", modifiers: [.shift], when: live)
+                    .disabled(editor?.canTrimToPlayhead != true)
+                Button("Trim End to Playhead") { editor?.trimEndToPlayhead() }
+                    .keyboardShortcut("]", modifiers: [.shift], when: live)
+                    .disabled(editor?.canTrimToPlayhead != true)
+                Button("Delete Selected Segment") {
+                    if let id = editor?.selectedSegmentID { editor?.deleteSegment(id) }
+                }
+                .disabled(editor?.selectedSegmentID == nil)
+                Divider()
+                Button("Synchronize Data…") { editor?.showSyncWizard = true }.keyboardShortcut(
+                    "y", modifiers: [.command], when: live)
             }
-            Button("Add Segment at Playhead") { editor?.addSegmentAtPlayhead() }
-                .keyboardShortcut("k", modifiers: [.command])
-            // Resolve's ⇧[ / ⇧], verified in docs/conventions.md. Trimming to a marker is the
-            // same command: ⇧↑/⇧↓ put the playhead on the marker first.
-            // Resolve's Split Clip is ⌘\\ (manual p. 889/942).
-            Button("Split at Playhead") { editor?.splitVideoAtPlayhead() }
-                .keyboardShortcut("\\", modifiers: [.command])
-                .disabled(editor?.canSplitAtPlayhead != true)
-            Button("Trim Start to Playhead") { editor?.trimStartToPlayhead() }
-                .keyboardShortcut("[", modifiers: [.shift])
-                .disabled(editor?.canTrimToPlayhead != true)
-            Button("Trim End to Playhead") { editor?.trimEndToPlayhead() }
-                .keyboardShortcut("]", modifiers: [.shift])
-                .disabled(editor?.canTrimToPlayhead != true)
-            Button("Delete Selected Segment") {
-                if let id = editor?.selectedSegmentID { editor?.deleteSegment(id) }
-            }
-            .disabled(editor?.selectedSegmentID == nil)
-            Divider()
-            Button("Synchronize Data…") { editor?.showSyncWizard = true }.keyboardShortcut("y", modifiers: [.command])
+            .disabled(editor == nil)
             // ⌥⌘A: ⌘A and ⇧⌘A are Select All and Deselect All everywhere; with ⌥ it is free here
             // and in the Finder's sense unrelated. Opens on the selected data file (#200).
             Button("Map Attributes…") {
                 AttributeMappingWindow.open(openWindow, scope: AttributeMappingWindow.scope(for: editor))
             }
             .keyboardShortcut("a", modifiers: [.command, .option])
-            Button("Show Import Report…") {
-                AttributeMappingWindow.open(openWindow, scope: AttributeMappingWindow.scope(for: editor), tab: .report)
-            }
-            .disabled(editor?.project.dataInputs.isEmpty != false)
-            Button("Export Video…") { editor?.showExport = true }.keyboardShortcut("e", modifiers: [.command])
+            Group {
+                Button("Show Import Report…") {
+                    AttributeMappingWindow.open(
+                        openWindow, scope: AttributeMappingWindow.scope(for: editor), tab: .report)
+                }
+                .disabled(editor?.project.dataInputs.isEmpty != false)
+                Button("Export Video…") { editor?.showExport = true }.keyboardShortcut(
+                    "e", modifiers: [.command], when: live
+                )
                 .disabled(editor?.canExport == false)
-            // One lap, laid out for a phone, in one step (#151).
-            Button("Export Lap as Vertical Clip…") { editor?.requestLapClip() }
-                .keyboardShortcut("e", modifiers: [.command, .shift])
-                .disabled(
-                    editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
-                        || editor?.canExport == false)
-            // The session's debrief as one video: cards and the corners that cost the most (#327).
-            Button("Export Coaching Debrief…") { editor?.showDebrief = true }
-                .disabled(
-                    editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
-                        || editor?.canExport == false)
-            Divider()
-            // Two laps side by side, kept level by distance (#154).
-            Button("Compare Laps…") { editor?.showCompareLaps = true }
-                .disabled(editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
-            Button("Stop Comparing Laps") { editor?.stopComparingLaps() }
-                .disabled(editor?.project.lapComparison == nil)
-            // ⌃⌘C: where the time went, in a window beside the document (#321). ⌘C copies, ⌥⌘C
-            // copies an object's style; ⌃⌘ is the pattern Show Project Details (⌃⌘I) set.
-            Button("Coaching…") { CoachingWindow.open(openWindow) }
-                .keyboardShortcut("c", modifiers: [.command, .control])
-            Divider()
-            Button("Upload Video to YouTube…") {
-                if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
+                // One lap, laid out for a phone, in one step (#151).
+                Button("Export Lap as Vertical Clip…") { editor?.requestLapClip() }
+                    .keyboardShortcut("e", modifiers: [.command, .shift], when: live)
+                    .disabled(
+                        editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
+                            || editor?.canExport == false)
+                // The session's debrief as one video: cards and the corners that cost the most (#327).
+                Button("Export Coaching Debrief…") { editor?.showDebrief = true }
+                    .disabled(
+                        editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false
+                            || editor?.canExport == false)
+                Divider()
+                // Two laps side by side, kept level by distance (#154).
+                Button("Compare Laps…") { editor?.showCompareLaps = true }
+                    .disabled(
+                        editor?.project.videoInputs.isEmpty != false || editor?.project.dataInputs.isEmpty != false)
+                Button("Stop Comparing Laps") { editor?.stopComparingLaps() }
+                    .disabled(editor?.project.lapComparison == nil)
+                // ⌃⌘C: where the time went, in a window beside the document (#321). ⌘C copies, ⌥⌘C
+                // copies an object's style; ⌃⌘ is the pattern Show Project Details (⌃⌘I) set.
+                Button("Coaching…") { CoachingWindow.open(openWindow) }
+                    .keyboardShortcut("c", modifiers: [.command, .control], when: live)
+                Divider()
+                Button("Upload Video to YouTube…") {
+                    if let url = OpenPanels.chooseVideo() { editor?.uploadURL = url }
+                }
             }
+            .disabled(editor == nil)
         }
         CommandGroup(after: .toolbar) {
-            // Pages and Keynote put their inspector toggle here, with ⌥⌘I (#280).
-            Button(editor?.showInspector == false ? "Show Inspector" : "Hide Inspector") {
-                editor?.showInspector.toggle()
-            }
-            .keyboardShortcut("i", modifiers: [.command, .option])
-            .disabled(editor == nil)
-            Divider()
-            // ⇧C and ⇧T, as Final Cut Pro's Crop and Transform (#275, #276).
-            Button("Crop Picture") { editor?.beginCropping() }
-                .keyboardShortcut("c", modifiers: [.shift])
-                .disabled(editor?.canCropPicture != true)
-            Button("Frame Picture") { editor?.beginFraming() }
-                .keyboardShortcut("t", modifiers: [.shift])
-                .disabled(editor?.canFramePicture != true)
-            Divider()
-            Button("Zoom In Timeline") { editor?.zoomTimeline(by: 1.5) }.keyboardShortcut("=", modifiers: [.command])
-            Button("Zoom Out Timeline") { editor?.zoomTimeline(by: 1 / 1.5) }.keyboardShortcut(
-                "-", modifiers: [.command])
-            Button("Zoom to Fit") { editor?.fitTimeline() }.keyboardShortcut("z", modifiers: [.shift])
-            Toggle(
-                "Snapping",
-                isOn: Binding(get: { editor?.snappingEnabled ?? true }, set: { editor?.snappingEnabled = $0 }))
-            Divider()
-            // What the status line has said, all of it (#112).
-            Button("Show Activity") { editor?.showActivity = true }
-                .keyboardShortcut("l", modifiers: [.command, .option])
+            Group {
+                // Pages and Keynote put their inspector toggle here, with ⌥⌘I (#280).
+                Button(editor?.showInspector == false ? "Show Inspector" : "Hide Inspector") {
+                    editor?.showInspector.toggle()
+                }
+                .keyboardShortcut("i", modifiers: [.command, .option], when: live)
                 .disabled(editor == nil)
+                Divider()
+                // ⇧C and ⇧T, as Final Cut Pro's Crop and Transform (#275, #276).
+                Button("Crop Picture") { editor?.beginCropping() }
+                    .keyboardShortcut("c", modifiers: [.shift], when: live)
+                    .disabled(editor?.canCropPicture != true)
+                Button("Frame Picture") { editor?.beginFraming() }
+                    .keyboardShortcut("t", modifiers: [.shift], when: live)
+                    .disabled(editor?.canFramePicture != true)
+                Divider()
+                Button("Zoom In Timeline") { editor?.zoomTimeline(by: 1.5) }.keyboardShortcut(
+                    "=", modifiers: [.command], when: live)
+                Button("Zoom Out Timeline") { editor?.zoomTimeline(by: 1 / 1.5) }.keyboardShortcut(
+                    "-", modifiers: [.command], when: live)
+                Button("Zoom to Fit") { editor?.fitTimeline() }.keyboardShortcut("z", modifiers: [.shift], when: live)
+                Toggle(
+                    "Snapping",
+                    isOn: Binding(get: { editor?.snappingEnabled ?? true }, set: { editor?.snappingEnabled = $0 }))
+                Divider()
+                // What the status line has said, all of it (#112).
+                Button("Show Activity") { editor?.showActivity = true }
+                    .keyboardShortcut("l", modifiers: [.command, .option], when: live)
+                    .disabled(editor == nil)
+            }
+            .disabled(editor == nil)
         }
         // Keynote's Arrange menu and its keys (#277): ⇧⌘F and ⇧⌘B to the front and back, with ⌥
         // one step at a time.
@@ -311,68 +351,10 @@ struct EditorCommands: Commands {
                     .keyboardShortcut(
                         move == .forward || move == .toFront ? "f" : "b",
                         modifiers: move == .toFront || move == .toBack
-                            ? [.command, .shift] : [.command, .shift, .option]
+                            ? [.command, .shift] : [.command, .shift, .option], when: live
                     )
                     .disabled(editor?.canArrangeSelection(move) != true)
             }
-        }
-        CommandMenu("Marker") {
-            // M to drop one, ⌘M to drop and name it, ⇧↑/⇧↓ to walk them: the Resolve bindings
-            // recorded in docs/conventions.md, which Premiere shares.
-            Button("Add Marker") { editor?.addMarkerAtPlayhead() }
-                .keyboardShortcut("m", modifiers: [])
-            Button("Add and Name Marker…") { editor?.addAndNameMarker() }
-                .keyboardShortcut("m", modifiers: [.command])
-            Button("Rename Marker…") { editor?.renameSelectedMarker() }
-                .disabled(editor?.selectedMarkerID == nil)
-            Button("Delete Marker") { editor?.deleteSelectedMarker() }
-                .disabled(editor?.selectedMarkerID == nil)
-            Divider()
-            Button("Previous Marker") { editor?.goToPreviousMarker() }
-                .keyboardShortcut(.upArrow, modifiers: [.shift])
-            Button("Next Marker") { editor?.goToNextMarker() }
-                .keyboardShortcut(.downArrow, modifiers: [.shift])
-            Divider()
-            // Laps are the marks the data brings with it, so they sit beside the ones you place,
-            // on ⌥ rather than ⇧ to keep the two apart.
-            Button("Previous Lap") { editor?.goToPreviousLap() }
-                .keyboardShortcut(.upArrow, modifiers: [.option])
-                .disabled(editor?.canJumpByLap != true)
-            Button("Next Lap") { editor?.goToNextLap() }
-                .keyboardShortcut(.downArrow, modifiers: [.option])
-                .disabled(editor?.canJumpByLap != true)
-        }
-        CommandMenu("Playback") {
-            Button(editor?.isPlaying == true ? "Pause" : "Play") { editor?.togglePlayback() }.keyboardShortcut(
-                .space, modifiers: [])
-            // `,`/`.` rather than the arrows, which belong to the selected object: a menu key
-            // equivalent is matched before the key reaches the picture, so binding the arrows
-            // here would stop them ever nudging. See docs/conventions.md.
-            Button("Step Back") { editor?.step(by: -1) }.keyboardShortcut(",", modifiers: [])
-            Button("Step Forward") { editor?.step(by: 1) }.keyboardShortcut(".", modifiers: [])
-            Button("Go to Start") { editor?.seek(to: 0) }.keyboardShortcut(.home, modifiers: [])
-            Divider()
-            // J-K-L and I/O, the tape-deck keys every editor shares (#230, docs/conventions.md).
-            Button("Play Backward") { editor?.shuttle(-1) }.keyboardShortcut("j", modifiers: [])
-            Button("Stop") { editor?.shuttle(0) }.keyboardShortcut("k", modifiers: [])
-            Button("Play Forward") { editor?.shuttle(1) }.keyboardShortcut("l", modifiers: [])
-            Divider()
-            Button("Mark In") { editor?.markInAtPlayhead() }.keyboardShortcut("i", modifiers: [])
-            Button("Mark Out") { editor?.markOutAtPlayhead() }.keyboardShortcut("o", modifiers: [])
-            Button("Clear In and Out") { editor?.clearInOut() }.keyboardShortcut("x", modifiers: [.option])
-                .disabled(editor?.markIn == nil && editor?.markOut == nil)
-            Divider()
-            // Retimes (#443): a speed for In to Out, and Final Cut's ⇧H Hold at the playhead.
-            Menu("Change Speed of In to Out") {
-                ForEach(Retime.editorRates, id: \.self) { rate in
-                    Button(Retime.percent(rate)) { editor?.setSpeedOfInOut(rate) }
-                }
-                Divider()
-                Button("Normal Speed") { editor?.setSpeedOfInOut(1) }
-            }
-            .disabled(editor?.canRetimeInOut != true)
-            Button("Hold Frame") { editor?.holdFrameAtPlayhead() }.keyboardShortcut("h", modifiers: [.shift])
-                .disabled(editor == nil || editor?.duration ?? 0 <= 0)
         }
     }
 }
@@ -408,10 +390,10 @@ struct AttributeWindowCommands: Commands {
     }
 }
 
-extension Binding where Value == AttributeMappingWindow.Tab {
+extension Binding where Value: Equatable {
     /// A menu checkmark for one view: on when it is the one showing, and choosing it shows it.
-    func selecting(_ tab: AttributeMappingWindow.Tab) -> Binding<Bool> {
-        Binding<Bool>(get: { wrappedValue == tab }, set: { if $0 { wrappedValue = tab } })
+    func selecting(_ choice: Value) -> Binding<Bool> {
+        Binding<Bool>(get: { wrappedValue == choice }, set: { if $0 { wrappedValue = choice } })
     }
 }
 

@@ -178,7 +178,7 @@ struct LogbookWindow: View {
     @State private var search = ""
     @State private var selection: UUID?
     @State private var sortOrder = [KeyPathComparator(\LogbookEntry.date, order: .reverse)]
-    @State private var confirmRemoval: LogbookEntry?
+    @State var confirmRemoval: LogbookEntry?
     @State private var confirmDayRemoval: TrackDay?
     /// What the last export or import did, under the table (#350).
     @State var message: String?
@@ -186,7 +186,12 @@ struct LogbookWindow: View {
     @State var isDropTarget = false
     @Environment(\.openWindow) var openWindow
     @Bindable var model = LogbookModel.shared
-    private var active = ActiveEditor.shared
+    var active = ActiveEditor.shared
+    /// The toolbar's search field and the table of sessions have the keyboard: Edit ▸ Find
+    /// Sessions puts it in the one, and Session ▸ Remove from Logbook… takes ⌘⌫ only from the
+    /// other (#450).
+    @FocusState var searchFocused: Bool
+    @FocusState var sessionsFocused: Bool
 
     static func open(_ openWindow: OpenWindowAction) { openWindow(id: windowID) }
 
@@ -204,6 +209,8 @@ struct LogbookWindow: View {
             }
         }
         .overlay { if isDropTarget { dropHighlight } }
+        // The session, the view and the window's actions, for the menu bar (#450).
+        .focusedSceneValue(\.logbook, commandContext)
         .sheet(item: $model.trackDayRequest) { request in
             TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
         }
@@ -261,59 +268,9 @@ struct LogbookWindow: View {
         } detail: {
             content
                 .frame(minWidth: 460, minHeight: 420)
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        Picker("View", selection: $view) {
-                            ForEach(LogbookView.allCases) { Text($0.title).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .help(
-                            "The sessions; how the lap times and corners moved across visits to a circuit; "
-                                + "or a year on one page"
-                        )
-                        .accessibilityIdentifier("logbook.view")
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        newProjectMenu
-                            .help(newProjectHelp)
-                            .accessibilityLabel("New Project")
-                            .accessibilityIdentifier("logbook.newProject")
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("New Track Day…", systemImage: "calendar.badge.plus") {
-                            model.newDayRequested = true
-                        }
-                        .help("Begin a day: the date, the circuit, the car — before any file exists (⌥⌘N)")
-                        .accessibilityIdentifier("logbook.newTrackDay")
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Add Files…", systemImage: "doc.badge.plus", action: addFiles)
-                            .help(
-                                "Enter a day's telemetry files and camera clips: on the day chosen in the sidebar, "
-                                    + "else each on the day its date and circuit say"
-                            )
-                            .accessibilityIdentifier("logbook.addTrackDay")
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            Button("Export Logbook…") { exportLogbook(includingFiles: false) }
-                            Button("Export Logbook with Data Files…") { exportLogbook(includingFiles: true) }
-                            Divider()
-                            Button("Export Sessions as CSV…") { exportCSV(laps: false) }
-                            Button("Export Laps as CSV…") { exportCSV(laps: true) }
-                            Button("Export as Markdown…") { exportMarkdown() }
-                            Divider()
-                            Button("Import Logbook…") { importLogbook() }
-                        } label: {
-                            Label("Export or Import", systemImage: "square.and.arrow.up")
-                        }
-                        .accessibilityLabel("Export or Import")
-                        .help("Take the logbook with you as files, as CSV or Markdown, or read one in")
-                        .accessibilityIdentifier("logbook.transfer")
-                    }
-                }
+                .toolbar(id: "logbook") { logbookToolbar }
                 .searchable(text: $search, placement: .toolbar, prompt: "Circuit, car, driver, notes")
+                .searchFocused($searchFocused)
         }
     }
 
@@ -385,7 +342,9 @@ struct LogbookWindow: View {
                 } else {
                     LogbookTable(
                         entries: shown, bests: PersonalBests.badges(in: model.entries),
-                        selection: $selection, sortOrder: $sortOrder)
+                        selection: $selection, sortOrder: $sortOrder
+                    )
+                    .focused($sessionsFocused)
                 }
                 if let message {
                     Divider()
