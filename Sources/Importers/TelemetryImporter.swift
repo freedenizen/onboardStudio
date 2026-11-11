@@ -75,8 +75,17 @@ public protocol TelemetryImporter: Sendable {
 }
 
 extension TelemetryImporter {
-    /// Convenience: import and build a session in one step.
+    /// Convenience: import and build a session in one step. The file is read from disk only when
+    /// it has not been read lately or has changed since (#482); the session is built afresh with
+    /// `options` every time, so two readers with different settings share the reading and
+    /// nothing else.
     public func importSession(at url: URL, options: SessionBuilder.Options = .init()) throws -> TelemetrySession {
-        SessionBuilder.build(try importFile(at: url), options: options)
+        SessionBuilder.build(try parsedFile(at: url), options: options)
+    }
+
+    /// The file as this importer parses it, from the cache (`ParsedFileCache.current`, the shared
+    /// one unless the task has its own) when the file is as it was when it was last read.
+    public func parsedFile(at url: URL) throws -> RawTable {
+        try ParsedFileCache.current.table(at: url, importerID: Self.id) { try importFile(at: url) }
     }
 }
