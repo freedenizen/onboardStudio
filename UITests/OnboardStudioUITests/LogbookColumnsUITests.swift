@@ -30,7 +30,9 @@ final class LogbookColumnsUITests: OnboardStudioUITestCase {
                 format: "elementType == %d OR elementType == %d", XCUIElement.ElementType.tableRow.rawValue,
                 XCUIElement.ElementType.outlineRow.rawValue))
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: Self.timeout), "No sessions listed")
-        rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        // Near the row's leading edge: on CI's 1,024-point screen the table scrolls sideways, and the
+        // middle of a row lies outside the column it is in.
+        rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
         XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "No detail for the selected session")
 
         try expectTheToolbarToFollow("at the session's narrowest")
@@ -61,10 +63,14 @@ final class LogbookColumnsUITests: OnboardStudioUITestCase {
         let newProject = app.menuButtons["logbook.newProject"]
         XCTAssertTrue(newProject.exists, "No New Project in the toolbar")
         XCTAssertGreaterThan(newProject.frame.minX, line, "\(when): New Project is not over the session")
-        for list in ["logbook.newTrackDay", "logbook.addTrackDay"] {
-            let button = app.buttons[list]
-            XCTAssertTrue(button.exists, "No \(list) in the toolbar")
-            XCTAssertLessThan(button.frame.maxX, line, "\(when): \(list) is not over the list")
+        // A narrow window's toolbar puts what does not fit in its overflow menu; whatever of the
+        // list's buttons is shown is over the list.
+        let list = ["logbook.newTrackDay", "logbook.addTrackDay", "logbook.transfer", "logbook.view"].compactMap {
+            identifier in controls.first { $0.identifier == identifier }
+        }
+        XCTAssertFalse(list.isEmpty, "\(when): none of the list's controls is in the toolbar")
+        for control in list {
+            XCTAssertLessThan(control.frame.maxX, line, "\(when): \(control.identifier) is not over the list")
         }
     }
 
