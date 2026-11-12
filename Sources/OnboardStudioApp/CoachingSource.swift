@@ -67,6 +67,11 @@ enum CoachingSourceKind: Hashable {
     /// Keeps `plan` for the circuit, and in the project — undoably — when there is one; `false`
     /// when there is nowhere to keep it (#458).
     func savePlan(_ plan: NextSessionPlan) -> Bool
+    /// What Watch plays for `comparison`: this lap's corner, then the reference's when it has a
+    /// picture; empty when nothing shows the corner (#516).
+    func watchClips(
+        for comparison: CornerComparison, analysis: CoachingAnalysis, selection: CoachingSelection
+    ) async -> [WatchClip]
 }
 
 /// The front project, as the window has always read it.

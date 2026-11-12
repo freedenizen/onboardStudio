@@ -205,10 +205,12 @@ extension CoachingContent {
     private func walkthrough(selection: CoachingSelection, laps: [Lap]) -> some View {
         if let analysis, analysed == selection {
             CoachingWalkthroughView(
-                analysis: analysis, lapNumber: selection.lapNumber, units: units, others: otherProfiles, source: source
-            ) {
-                choices(selection: selection, laps: laps)
-            }
+                analysis: analysis, lapNumber: selection.lapNumber, units: units, others: otherProfiles, source: source,
+                watch: { [source] comparison in
+                    await source.watchClips(for: comparison, analysis: analysis, selection: selection)
+                },
+                change: { choices(selection: selection, laps: laps) }
+            )
             .id(selection)
         } else if isAnalysing {
             ProgressView("Reading the laps…").frame(maxWidth: .infinity, maxHeight: .infinity)

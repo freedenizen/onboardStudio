@@ -28,6 +28,8 @@ struct CoachingWalkthroughView<Change: View>: View {
     let source: any CoachingSource
     /// The lap, what it is compared with and how the two are lined up, in a popover.
     let change: () -> Change
+    /// What Watch plays for a corner (#516).
+    let watch: (CornerComparison) async -> [WatchClip]
 
     @State private var step: CoachingWalkthrough.Step = .lap
     /// The corners the driver means to try next time, by index: all of them to begin with.
@@ -39,7 +41,8 @@ struct CoachingWalkthroughView<Change: View>: View {
 
     init(
         analysis: CoachingAnalysis, lapNumber: Int, units: CoachingUnits, others: [LapProfile],
-        source: any CoachingSource, @ViewBuilder change: @escaping () -> Change
+        source: any CoachingSource, watch: @escaping (CornerComparison) async -> [WatchClip],
+        @ViewBuilder change: @escaping () -> Change
     ) {
         self.analysis = analysis
         self.lapNumber = lapNumber
@@ -47,6 +50,7 @@ struct CoachingWalkthroughView<Change: View>: View {
         self.others = others
         self.source = source
         self.change = change
+        self.watch = watch
         _chosen = State(initialValue: Set(analysis.top.map(\.corner.index)))
     }
 
@@ -135,6 +139,8 @@ struct CoachingWalkthroughView<Change: View>: View {
             }
             .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .leading, spacing: 16) {
+                CornerWatchView { await watch(opportunity.corner) }
+                    .id(opportunity.corner.index)
                 CornerLinesView(analysis: analysis, comparison: opportunity.corner, units: units, others: others)
                 PhaseLossBars(comparison: opportunity.corner, units: units)
             }
