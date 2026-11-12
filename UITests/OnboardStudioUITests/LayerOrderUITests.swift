@@ -44,7 +44,7 @@ final class LayerOrderUITests: OnboardStudioUITestCase {
         XCTAssertTrue(timer.waitForExistence(timeout: Self.timeout))
         let below = sidebarObject("Speedometer").coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1.2))
         timer.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            .press(forDuration: 0.5, thenDragTo: below, withVelocity: .slow, thenHoldForDuration: 0.3)
+            .click(forDuration: 0.5, thenDragTo: below, withVelocity: .slow, thenHoldForDuration: 0.3)
         XCTAssertTrue(isInFront("Speedometer", of: "Timer"), "The drag did not send the timer back")
         XCTAssertEqual(undoRedoTitles().undo, "Undo Change Layer Order")
     }

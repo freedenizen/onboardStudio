@@ -27,7 +27,7 @@ final class CroppingUITests: OnboardStudioUITestCase {
     func testDraggingAnEdgeAndTurningIsOneUndoStep() throws {
         openCropping()
         let edge = crop.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
-        edge.press(forDuration: 0.2, thenDragTo: crop.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
+        edge.click(forDuration: 0.2, thenDragTo: crop.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
         XCTAssertEqual(Double(top.value as? String ?? "") ?? 0, 20, accuracy: 3, "The top edge did not come in")
         app.buttons["Rotate Right"].firstMatch.click()
         XCTAssertEqual(rotation.value as? String, "90°")
