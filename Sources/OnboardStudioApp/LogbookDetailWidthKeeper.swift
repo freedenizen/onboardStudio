@@ -7,9 +7,10 @@ import SwiftUI
 /// SwiftUI's `HSplitView` has no autosave name and puts a pane back at its minimum width every
 /// time the pane returns, and the system inspector column does the same after its first showing
 /// (both measured). A divider of the app's own keeps the width but loses what the split view
-/// gives for nothing: the toolbar no longer follows the pane. So the split view stays, and this
-/// sits in the detail pane, finds the `NSSplitView` SwiftUI made, moves its divider to the kept
-/// width when the pane appears, and writes the width down when the divider is dragged.
+/// gives for nothing. So the split view stays — since #503 the three-column `NavigationSplitView`
+/// whose last column is the session — and this sits in that column, finds the `NSSplitView`
+/// SwiftUI made, moves its last divider to the kept width when the column appears, and writes the
+/// width down when the divider is dragged.
 struct LogbookDetailWidthKeeper: View {
     @AppStorage(LogbookDetailWidth.defaultsKey, store: UITestSupport.paneDefaults)
     private var kept = LogbookDetailWidth.range.lowerBound

@@ -196,81 +196,92 @@ struct LogbookWindow: View {
     static func open(_ openWindow: OpenWindowAction) { openWindow(id: windowID) }
 
     var body: some View {
-        // The session's detail is a pane of the window, as the editor's inspector is. Inside the
-        // detail column an `HSplitView` gave the table and the detail their minimum widths and left
-        // the rest of the column empty, so the detail never had the width it asked for (#448).
-        // The split view forgets where its divider was whenever the pane goes; the keeper in the
-        // pane puts it back (#483).
-        HSplitView {
-            browser.frame(minWidth: 640).layoutPriority(1)
-            if let entry = shownEntry {
-                detail(of: entry).frame(minWidth: 320, idealWidth: 320, maxWidth: 420)
-                    .background(LogbookDetailWidthKeeper())
+        browser
+            .overlay { if isDropTarget { dropHighlight } }
+            // The session, the view and the window's actions, for the menu bar (#450).
+            .focusedSceneValue(\.logbook, commandContext)
+            .sheet(item: $model.trackDayRequest) { request in
+                TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
             }
-        }
-        .overlay { if isDropTarget { dropHighlight } }
-        // The session, the view and the window's actions, for the menu bar (#450).
-        .focusedSceneValue(\.logbook, commandContext)
-        .sheet(item: $model.trackDayRequest) { request in
-            TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
-        }
-        .sheet(isPresented: $model.newDayRequested) {
-            NewTrackDaySheet(
-                knownCars: LogbookFilter.knownCars(in: model.entries, days: model.days),
-                knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days),
-                lastDay: model.days.first, create: create)
-        }
-        .onAppear { model.reload() }
-        .onChange(of: scope, initial: true) { model.choose(selectedDay) }
-        .onChange(of: model.days) { followTheChosenDay() }
-        .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
-            let day = selectedDay
-            Task { @MainActor in
-                let urls = await Self.urls(from: providers)
-                if !urls.isEmpty { model.trackDayRequest = TrackDayRequest(urls: urls, day: day) }
+            .sheet(isPresented: $model.newDayRequested) {
+                NewTrackDaySheet(
+                    knownCars: LogbookFilter.knownCars(in: model.entries, days: model.days),
+                    knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days),
+                    lastDay: model.days.first, create: create)
             }
-            return true
-        }
-        .confirmationDialog(
-            "Remove this track day from the logbook?",
-            isPresented: Binding(get: { confirmDayRemoval != nil }, set: { if !$0 { confirmDayRemoval = nil } }),
-            presenting: confirmDayRemoval
-        ) { day in
-            Button("Remove Track Day", role: .destructive) {
-                try? AppLogbook.shared.removeDay(id: day.id, andSessions: true)
-                model.reload()
-                if case .day(let id, _) = scope, id == day.id { scope = .all }
+            .onAppear { model.reload() }
+            .onChange(of: scope, initial: true) { model.choose(selectedDay) }
+            .onChange(of: model.days) { followTheChosenDay() }
+            .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
+                let day = selectedDay
+                Task { @MainActor in
+                    let urls = await Self.urls(from: providers)
+                    if !urls.isEmpty { model.trackDayRequest = TrackDayRequest(urls: urls, day: day) }
+                }
+                return true
             }
-        } message: { day in
-            let count = model.entries.filter { $0.trackDayID == day.id }.count
-            Text(
-                "\(day.label) and its \(count) session\(count == 1 ? "" : "s") are taken out of the logbook. "
-                    + "The files are not touched.")
-        }
-        .confirmationDialog(
-            "Remove this session from the logbook?",
-            isPresented: Binding(get: { confirmRemoval != nil }, set: { if !$0 { confirmRemoval = nil } }),
-            presenting: confirmRemoval
-        ) { entry in
-            Button("Remove from Logbook", role: .destructive) {
-                model.remove(entry)
-                if selection == entry.id { selection = nil }
+            .confirmationDialog(
+                "Remove this track day from the logbook?",
+                isPresented: Binding(get: { confirmDayRemoval != nil }, set: { if !$0 { confirmDayRemoval = nil } }),
+                presenting: confirmDayRemoval
+            ) { day in
+                Button("Remove Track Day", role: .destructive) {
+                    try? AppLogbook.shared.removeDay(id: day.id, andSessions: true)
+                    model.reload()
+                    if case .day(let id, _) = scope, id == day.id { scope = .all }
+                }
+            } message: { day in
+                let count = model.entries.filter { $0.trackDayID == day.id }.count
+                Text(
+                    "\(day.label) and its \(count) session\(count == 1 ? "" : "s") are taken out of the logbook. "
+                        + "The files are not touched.")
             }
-        } message: { entry in
-            Text("\(entry.title) is taken out of the logbook. The file itself is not touched.")
-        }
+            .confirmationDialog(
+                "Remove this session from the logbook?",
+                isPresented: Binding(get: { confirmRemoval != nil }, set: { if !$0 { confirmRemoval = nil } }),
+                presenting: confirmRemoval
+            ) { entry in
+                Button("Remove from Logbook", role: .destructive) {
+                    model.remove(entry)
+                    if selection == entry.id { selection = nil }
+                }
+            } message: { entry in
+                Text("\(entry.title) is taken out of the logbook. The file itself is not touched.")
+            }
     }
 
-    /// The sidebar and what it narrows: the sessions, their trends or the season.
+    /// Three columns, as Mail has (#503): the sidebar and what it narrows, the sessions — or their
+    /// trends, or the season — and the session chosen. The toolbar follows the columns, so the
+    /// list's buttons stay over the list and New Project over the session, however wide the
+    /// session is dragged. The session was a pane of an `HSplitView` beside a two-column split
+    /// view (#448), and the toolbar, laid out across the window, ran under its edge. The split view
+    /// does not keep the session's width; the keeper in the column puts it back (#483).
     private var browser: some View {
         NavigationSplitView {
             sidebar.navigationSplitViewColumnWidth(min: 170, ideal: 200, max: 280)
-        } detail: {
+        } content: {
             content
                 .frame(minWidth: 460, minHeight: 420)
+                .navigationSplitViewColumnWidth(min: 460, ideal: 660)
                 .toolbar(id: "logbook") { logbookToolbar }
                 .searchable(text: $search, placement: .toolbar, prompt: "Circuit, car, driver, notes")
                 .searchFocused($searchFocused)
+        } detail: {
+            Group {
+                if let entry = shownEntry {
+                    detail(of: entry)
+                } else {
+                    ContentUnavailableView(
+                        "No Session Selected", systemImage: "flag.checkered",
+                        description: Text("Choose a session to see its laps and conditions, and what to do with it."))
+                }
+            }
+            .navigationSplitViewColumnWidth(
+                min: LogbookDetailWidth.range.lowerBound, ideal: LogbookDetailWidth.range.lowerBound,
+                max: LogbookDetailWidth.range.upperBound
+            )
+            .background(LogbookDetailWidthKeeper())
+            .toolbar(id: "logbook.session") { sessionToolbar }
         }
     }
 
@@ -280,12 +291,12 @@ struct LogbookWindow: View {
         LogbookFilter.apply(model.entries, scope: scope, search: search).sorted(using: sortOrder)
     }
 
-    /// The session whose detail is on screen: the one selected, while the sessions are what the
-    /// window shows and it is one of them. A session the sidebar or the search has taken out of
-    /// the table has no detail and no buttons to press (#457). What New Project in the toolbar is
-    /// about, too (#449).
+    /// The session whose detail is on screen: the one selected, while it is one of the sessions
+    /// the sidebar and the search let through, on Trends and the Season too (#503). A session the
+    /// sidebar or the search has taken out of the table has no detail and no buttons to press
+    /// (#457). What New Project in the toolbar is about, too (#449).
     var shownEntry: LogbookEntry? {
-        guard view == .sessions, let entry = model.entries.first(where: { $0.id == selection }),
+        guard let entry = model.entries.first(where: { $0.id == selection }),
             LogbookFilter.matches(entry, scope: scope), LogbookFilter.matches(entry, search: search)
         else { return nil }
         return entry

@@ -26,8 +26,19 @@ extension LogbookWindow {
             importLogbook: importLogbook)
     }
 
-    /// The toolbar, customizable (#450): View ▸ Customize Toolbar… offers Icon and Text for the
-    /// buttons that are otherwise icons alone, and lets the user drop the ones they never use.
+    /// Over the session's column (#503): what is done with the session chosen.
+    @ToolbarContentBuilder var sessionToolbar: some CustomizableToolbarContent {
+        ToolbarItem(id: "newProject", placement: .primaryAction) {
+            newProjectMenu
+                .help(newProjectHelp)
+                .accessibilityLabel("New Project")
+                .accessibilityIdentifier("logbook.newProject")
+        }
+    }
+
+    /// Over the list's column, customizable (#450): View ▸ Customize Toolbar… offers Icon and Text
+    /// for the buttons that are otherwise icons alone, and lets the user drop the ones they never
+    /// use.
     @ToolbarContentBuilder var logbookToolbar: some CustomizableToolbarContent {
         ToolbarItem(id: "view", placement: .principal) {
             Picker("View", selection: $view) {
@@ -42,12 +53,6 @@ extension LogbookWindow {
             .accessibilityIdentifier("logbook.view")
         }
         .customizationBehavior(.disabled)
-        ToolbarItem(id: "newProject", placement: .primaryAction) {
-            newProjectMenu
-                .help(newProjectHelp)
-                .accessibilityLabel("New Project")
-                .accessibilityIdentifier("logbook.newProject")
-        }
         ToolbarItem(id: "newTrackDay", placement: .primaryAction) {
             Button("New Track Day…", systemImage: "calendar.badge.plus") {
                 model.newDayRequested = true
