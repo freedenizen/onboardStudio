@@ -336,7 +336,7 @@ struct LogbookWindow: View {
             }
         } else if view == .season {
             SeasonView(
-                entries: model.entries, plans: (active.editor?.trackLibrary ?? TrackLibrary()).all(),
+                entries: model.entries, plans: (active.editor?.trackLibrary ?? TrackLibrary.app).all(),
                 onOpen: show)
         } else if view == .trends {
             LogbookTrendsView(

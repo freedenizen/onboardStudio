@@ -57,6 +57,12 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     /// twice — and a definition should survive that.
     public var id: String { circuitID ?? Self.slug(name) }
 
+    /// Whether the definition says anything about the circuit's shape: a start/finish line,
+    /// sectors or corner names. One that only keeps a plan — made from the Logbook, or from a file
+    /// that brought its own laps — says nothing, and a new file at the circuit is set up as if
+    /// there were no definition: its start/finish is suggested from the trace (#458).
+    public var hasGeometry: Bool { startFinish != nil || sectors != SectorSpec() || !cornerLabels.isEmpty }
+
     /// Lowercased, accents folded, and runs of anything else collapsed to a single `-`, so the
     /// key is a safe file name and the same name always produces the same one.
     public static func slug(_ name: String) -> String {
@@ -130,6 +136,15 @@ public struct TrackLibrary: Sendable {
             .filter { $0.pathExtension == Self.fileExtension }
             .compactMap { try? Self.read(from: $0) }
             .sorted { $0.modified > $1.modified }
+    }
+
+    /// Keeps `plan` on the definition saved as `id`, or on `fresh()` when there is none — a circuit
+    /// planned for the first time. A definition that has the plan already is not written again.
+    public func remember(_ plan: NextSessionPlan, id: String, fresh: () -> TrackDefinition?) throws {
+        guard var definition = definition(id: id) ?? fresh(), definition.plan != plan else { return }
+        definition.plan = plan
+        definition.modified = Date()
+        try save(definition)
     }
 
     public func save(_ definition: TrackDefinition) throws {

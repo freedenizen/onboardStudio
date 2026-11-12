@@ -61,6 +61,10 @@ class OnboardStudioUITestCase: XCTestCase {
         // And an empty logbook, so a track day added by a test never reaches the real one (#346).
         app.launchEnvironment["ONBOARD_TEST_LOGBOOK_DIR"] =
             FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-logbook-\(UUID().uuidString)").path
+        // And no circuits: a plan a test makes never reaches the real ones, and theirs never
+        // change what a test sees (#458).
+        app.launchEnvironment["ONBOARD_TEST_TRACKS_DIR"] =
+            FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-tracks-\(UUID().uuidString)").path
         // And no measurement of the picture's motion left by an earlier run (#288).
         app.launchEnvironment["ONBOARD_TEST_MOTION_DIR"] =
             FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-motion-\(UUID().uuidString)").path
@@ -241,6 +245,19 @@ class OnboardStudioUITestCase: XCTestCase {
     // MARK: - Elements
 
     func sidebarInput(_ label: String) -> XCUIElement { app.staticTexts["input.\(label)"] }
+
+    /// The Coaching window's every-corner view: the window opens on the walkthrough (#458).
+    @MainActor
+    func showAllCorners(file: StaticString = #filePath, line: UInt = #line) {
+        let segment = app.radioButtons["All Corners"]
+        let button = app.buttons["All Corners"]
+        if segment.waitForExistence(timeout: Self.timeout * 2) {
+            segment.click()
+        } else {
+            XCTAssertTrue(button.exists, "No All Corners in the Coaching window", file: file, line: line)
+            button.click()
+        }
+    }
 
     /// The project windows, whatever they are called: a project made from a session is named
     /// after it, not "Untitled" (#481).

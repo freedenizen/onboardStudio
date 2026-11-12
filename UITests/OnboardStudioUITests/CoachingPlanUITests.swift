@@ -12,6 +12,7 @@ final class CoachingPlanUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout), "No fixture data")
 
         menu("Project", "Coaching…")
+        showAllCorners()
         let lapPicker = app.popUpButtons["coaching.lap"]
         XCTAssertTrue(lapPicker.waitForExistence(timeout: Self.timeout * 2), "The Coaching window did not open")
         choosePopUpItem("Lap 2 — 0:44.60", in: lapPicker)

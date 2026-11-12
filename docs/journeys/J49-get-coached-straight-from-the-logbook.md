@@ -7,10 +7,11 @@ project just to see where its laps lost time was a detour.*
    optimal lap, any other lap, and the logbook's other sessions at the circuit — the personal
    best here, the last visit), and *Line up by position*, as from a project. The choices are kept
    with the session, so the next Coach… on it starts where this one left off.
-2. The opportunities, the corner table and a corner's detail read as they do from a project.
-   What needs a picture or a project — Show Me moving a playhead, Compare in Video, the
-   next-session plan — is not there; in its place, **Make a Project** opens a project from the
-   session (its data file, its clips, the last template used) and the window follows it.
+2. The walkthrough (J57), the opportunities, the corner table and a corner's detail read as they
+   do from a project, and the walkthrough's plan is kept for the circuit with no project (#458).
+   What needs a picture or a project — Show Me moving a playhead, Compare in Video — is not
+   there; in its place, **Make a Project** opens a project from the session (its data file, its
+   clips, the last template used) and the window follows it.
 3. **File ▸ Export Coaching Sheet as PDF…** and **as Markdown…** write the sheet from the window
    as they do from a project; the window's footer says where it went.
 4. **Project ▸ Coaching…** (⌃⌘C) from an open project brings the window back to that project.

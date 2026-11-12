@@ -181,7 +181,7 @@ final class EditorModel {
     var pendingDetails: InputID?
 
     /// The track definitions kept between projects.
-    let trackLibrary = TrackLibrary()
+    let trackLibrary = TrackLibrary.app
 
     /// The data input whose start/finish line is being dragged about on the track map, if any.
     ///
@@ -205,7 +205,8 @@ final class EditorModel {
         // trace: the logger recorded where the line actually is, and no guess beats that (#71).
         if applyLapGeometry(of: session, to: id) { return }
         guard let match = CircuitCatalog.identify(session) else { return }
-        guard let definition = trackLibrary.definition(id: match.circuit.id) else {
+        // A definition that only keeps a plan says nothing of the circuit's shape (#458).
+        guard let definition = trackLibrary.definition(id: match.circuit.id), definition.hasGeometry else {
             updateInput(id, name: "Identify Circuit") {
                 guard case .data(var settings) = $0.kind else { return }
                 settings.circuitID = match.circuit.id

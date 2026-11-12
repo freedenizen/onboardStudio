@@ -89,7 +89,12 @@ project made last month renders — a project-wide rule, and the reason
 the Coaching window last made at that circuit, written whenever the plan in a project changes and
 the circuit is recognised (`EditorModel.rememberPlan`), and read — never applied — when a project
 at the same circuit opens the Coaching window, as "Last time at Sonoma you planned to try…". It
-rides along when a definition is exported and imported.
+rides along when a definition is exported and imported. The walkthrough's **Save Plan** keeps a
+plan for the circuit from the Logbook too, with no project (#458, `TrackLibrary.remember`): a
+circuit planned for the first time that way gets a definition holding the plan and nothing else.
+A definition with no start/finish, sectors or corner names (`TrackDefinition.hasGeometry` false —
+also what a file that brings its own laps leaves when its plan is remembered) is passed over when
+new data is set up, so the start/finish is still suggested from the trace, as with no definition.
 
 The inspector shows the match with its distance and its runner-up, says so when the match is not
 confident, and offers *Not This Circuit* and a search box. Nothing is insisted on.

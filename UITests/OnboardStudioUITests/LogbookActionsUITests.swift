@@ -26,6 +26,7 @@ final class LogbookActionsUITests: OnboardStudioUITestCase {
             .firstMatch
         XCTAssertTrue(choice.waitForExistence(timeout: Self.timeout), "No personal best to compare with")
         choice.click()
+        showAllCorners()
         let headline = app.staticTexts["coaching.headline"]
         XCTAssertTrue(headline.waitForExistence(timeout: Self.timeout * 2), "No coaching reading")
         // The day's circuit was typed, and the fixture names none: both visits are at the day's

@@ -877,7 +877,21 @@ the last visit first — and opens the window with that one as the reference; **
 Debrief…** (once the session has a clip) opens a project laid out for a debrief with the sheet up.
 
 **Project ▸ Coaching…** (⌃⌘C) opens a window beside the project that reads one lap against a
-reference and says where the time went. Choose the **Lap** (it starts on the lap at the playhead)
+reference and says where the time went.
+
+It opens on a **walkthrough** that takes you through the lap one step at a time. First the lap, in
+a sentence: how far behind it finished and against what (**Change…** chooses the lap, what it is
+compared with and how the two are lined up). Then its three biggest losses, one corner per step:
+what happened, the whole of what to try next time, the corner on the map with both lines, where
+the time went phase by phase, and **Try this next time**, on to begin with. Last, **Your Plan**:
+the corners you chose, as next session's experiments in the analysis's own words, which you can
+edit before **Save Plan**. **Next** (Return) and **Back** (⌘[) move between the steps. The plan is
+kept for the circuit, so it is there when you prepare to go back and on the Season page, and in the
+project when there is one, undoably; from the Logbook it needs no project, only a circuit the
+Logbook knows. **All Corners**, beside **Walkthrough** in the toolbar, shows the whole analysis at
+once, as described below, and the window opens next time on whichever you used last.
+
+In All Corners, choose the **Lap** (it starts on the lap at the playhead)
 and what it is **Compared with**: your **best lap**; the **fastest rolling lap** — the quickest
 lap-length stretch of the session starting anywhere, which the timing line often cuts in two and
 which is frequently quicker than any timed lap; the **optimal lap (spliced)** — the best sector of
@@ -891,7 +905,7 @@ follow the same line; when you drove a corner two different ways on purpose, tur
 position** and they are matched by where the car was instead (undoable, saved with the project).
 
 The headline says how far behind the lap finished. Below it the **top three opportunities** are
-cards: which turn, how much time and in which phase (braking, entry, apex or exit), what happened
+cards, their advice in full: which turn, how much time and in which phase (braking, entry, apex or exit), what happened
 ("Braked 22 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later", "Coasted
 0.49 s longer") and what to try next time, phrased as an experiment. A corner you drive
 differently every lap is told so, and asked for the same brake point first. **Show Me** puts the
@@ -906,7 +920,8 @@ side by side (brake point, peak braking, where the brakes came off, trail brakin
 minimum and exit speed, where the slowest point fell, throttle pick-up, full throttle, coasting,
 peak lateral G, time in corner) with where each reading came from, and the two lines through the
 corner drawn from GPS with the brake points and slowest points marked — a relative picture, since
-lap-to-lap spread is about a metre and absolute accuracy one to three. **Compare in Video** lays
+lap-to-lap spread is about a metre and absolute accuracy one to three. **Compare in Video**, beside
+the corner's name, lays
 the project out as Compare Laps does, with both laps' pictures, over that corner only: the
 playhead goes to the brake point and the export range is the corner, so one export is the clip.
 It is offered when the reference is a real lap with a camera; the rolling and spliced laps are

@@ -20,6 +20,7 @@ final class CoachingLogbookUITests: OnboardStudioUITestCase {
         expectStatus(containing: "in the logbook")
 
         menu("Project", "Coaching…")
+        showAllCorners()
         let reference = app.popUpButtons["coaching.reference"]
         XCTAssertTrue(reference.waitForExistence(timeout: Self.timeout * 2), "The Coaching window did not open")
         reference.click()

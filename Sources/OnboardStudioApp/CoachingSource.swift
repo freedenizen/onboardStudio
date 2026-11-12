@@ -60,6 +60,13 @@ enum CoachingSourceKind: Hashable {
     var message: String? { get set }
     func load() async
     func exportSheet(_ sheet: CoachingSheet, as format: CoachingSheetFormat)
+    /// The circuit a plan is kept for: its name, `nil` when the circuit is not known (#458).
+    var planCircuitName: String? { get }
+    /// What the circuit was left to try last time.
+    var circuitPlan: NextSessionPlan? { get }
+    /// Keeps `plan` for the circuit, and in the project — undoably — when there is one; `false`
+    /// when there is nowhere to keep it (#458).
+    func savePlan(_ plan: NextSessionPlan) -> Bool
 }
 
 /// The front project, as the window has always read it.

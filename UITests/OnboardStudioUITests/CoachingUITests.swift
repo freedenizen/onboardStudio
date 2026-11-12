@@ -12,6 +12,7 @@ final class CoachingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout), "No fixture data")
 
         menu("Project", "Coaching…")
+        showAllCorners()
         let table = app.descendants(matching: .any).matching(identifier: "coaching.table").firstMatch
         XCTAssertTrue(table.waitForExistence(timeout: Self.timeout * 2), "The Coaching window did not read the laps")
         let headline = app.staticTexts["coaching.headline"]

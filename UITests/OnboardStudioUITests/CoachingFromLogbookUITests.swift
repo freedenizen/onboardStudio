@@ -104,6 +104,7 @@ final class CoachingFromLogbookUITests: OnboardStudioUITestCase {
         let coach = app.buttons["logbook.coach"]
         XCTAssertTrue(coach.waitForExistence(timeout: Self.timeout), "No Coach… in the detail")
         coach.click()
+        showAllCorners()
     }
 
     /// New Project in the session's detail, waited for until its data file is in.
