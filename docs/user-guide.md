@@ -52,8 +52,9 @@ and, ideally, a data log.
 6. **Play** (space) and scrub the timeline to check that the gauges follow the picture. If they
    lead or lag, open **Sync** and nudge — the panel sits under the preview, so the picture stays
    visible and scrubbable while you work.
-7. **Export** (**⌘E**). Pick a preset (1080p, 4K, vertical…), a range (whole project, a time
-   span or a lap range) and press Export. **Upload to YouTube…** appears when it is done.
+7. **Export** (**⌘E**). Pick a range first (whole project, a time span, your best lap or any run
+   of laps), then a preset (1080p, 4K, vertical…), and press Export. **Upload to YouTube…** appears
+   when it is done.
 
 The **Getting Started** checklist in the inspector tracks these steps and offers the next one;
 **Help ▸ Show Getting Started** brings it back after you hide it.
@@ -410,7 +411,11 @@ rather than shorten when the detail is narrow (drag its left edge to widen it; i
 as you left it, whichever session you choose next and the next time the app opens). **New Project**
 starts a project with that session's data file and its clips, laid out with the template the last
 New Project used (Classic Dash to begin with); the arrow on the button offers every template, or a
-blank project. The toolbar's **New Project** menu does the same while a session is selected, under
+blank project. The project is called after the session, as the Logbook lists it — *Sonoma Raceway,
+Sep 22, 2026*, not *Untitled* — in its window, the Window menu and the name Save suggests, and a
+second one from the same session is numbered; once saved, it is called by its file. A project not
+made from a session takes its name from its Details when they give the track or the day. The
+toolbar's **New Project** menu does the same while a session is selected, under
 a heading that names the session, so the two never disagree; its **New Project Without a
 Session** starts an empty project instead. **Add to Current Project** adds the session to the
 project in front. **Remove from
@@ -988,8 +993,14 @@ replay.
 *Export* renders through the same pipeline as the preview, so what you see is what you get.
 Presets cover 720p to 4K and vertical video; codecs are H.264, HEVC, HEVC with alpha and ProRes
 4444 (the last two for transparent overlay-only output to composite elsewhere). *Background* can be
-the video, a key colour or transparent; *Range* exports the whole project, a time span or a range
-of laps. *360°* tags a full equirectangular frame as spherical video.
+the video, a key colour or transparent. *360°* tags a full equirectangular frame as spherical video.
+
+*Range*, the first thing in the sheet, exports the whole project, a time span, the range marked
+with I and O, or a run of laps. **Laps** starts on your best lap: the **From** and **To** menus list
+every lap with its time, the best one marked, so one lap is a single choice. Moving one end past the
+other brings the other with it. The file is named after the project: its file once it is saved,
+otherwise the name its window shows — for a project made from a Logbook session, the session, as
+in `Sonoma Raceway, Sep 22, 2026.mp4`.
 
 **Every lap, one file each** (in *Range*) writes each lap as its own video, into a folder you
 choose, named for the project and the lap: `Sonoma – Lap 7.mp4`. *Complete laps only* (on at first)

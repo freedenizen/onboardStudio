@@ -176,8 +176,7 @@ extension LogbookWindow {
 
     /// "Sonoma Raceway, Aug 23, 2026": a session in the few words a menu has room for.
     private func sessionName(_ entry: LogbookEntry) -> String {
-        guard let date = entry.date else { return entry.title }
-        return "\(entry.title), \(date.formatted(date: .abbreviated, time: .omitted))"
+        ProjectNaming.name(title: entry.title, date: entry.date)
     }
 
     // MARK: - Against another session (#397)

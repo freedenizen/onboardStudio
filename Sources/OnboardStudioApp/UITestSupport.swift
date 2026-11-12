@@ -173,6 +173,22 @@ enum UITestSupport {
     }
 }
 
+extension UITestSupport {
+    /// Saves the project in `editor`'s window as "Saved Track Day", in a folder of its own under
+    /// the temporary folder, as Save As would.
+    static func saveAsScratchFile(_ editor: EditorModel?) {
+        guard let window = editor?.window, let document = NSDocumentController.shared.document(for: window),
+            let type = document.fileType
+        else { return }
+        let folder = FileManager.default.temporaryDirectory.appending(
+            path: "onboard-uitests-saved-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let suffix = document.fileNameExtension(forType: type, saveOperation: .saveAsOperation) ?? "onboardproj"
+        let name = "Saved Track Day." + suffix
+        document.save(to: folder.appending(path: name), ofType: type, for: .saveAsOperation) { _ in }
+    }
+}
+
 /// The Testing menu: every item does what the matching open panel would, with a fixture file.
 struct UITestCommands: Commands {
     @FocusedValue(\.editor) private var focused
@@ -236,6 +252,9 @@ struct UITestCommands: Commands {
             Button("Add Fixture Image") {
                 if let url = UITestSupport.fixture("arrow.png") { editor?.addImage(at: url) }
             }
+            // What Save does, to a file of the tests' own in place of the save panel: a saved
+            // project is called by its file, whatever it was called before (#481).
+            Button("Save Project as Scratch File") { UITestSupport.saveAsScratchFile(editor) }
             Divider()
             Button("Open Fixture Project") {
                 guard let url = UITestSupport.scratchProject() else { return }

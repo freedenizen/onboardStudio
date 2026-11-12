@@ -102,7 +102,7 @@ struct VerticalClipSheet: View {
             failure = "The project has not finished loading."
             return
         }
-        let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
+        let base = editor.exportBaseName
         let clip = editor.project.verticalClip(from: request.start, to: request.end)
         let settings = clip.export.reconciled
         guard

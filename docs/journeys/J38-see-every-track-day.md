@@ -13,11 +13,13 @@ circuit, car or year, with the numbers a driver asks about, and a way from any r
    follows, the list's buttons over the list and **New Project** and the search over the session
    (#503). It stays beside **Trends** and the **Season**, and says **No Session Selected** when
    there is none.
-4. **Open as Project** starts a new project with the session's data file; **Add to Current
+4. **Open as Project** starts a new project with the session's data file, called after the
+   session — *Sonoma Raceway, Sep 22, 2026* — until it is saved (#481); **Add to Current
    Project** adds it to the project in front. **Show in Finder** and **Remove from Logbook…**
    (the file is not touched).
 5. **Add Track Day…** in the toolbar, or files and folders dropped on the window, enter more.
 
 Tests: `LogbookUITests.testTheLogbookListsSessionsAndAddsOneToTheProject`,
-`LogbookColumnsUITests.testTheToolbarFollowsTheColumnsAndTheStarLeads`. Model:
-`LogbookFilterTests`, `LogbookTests`.
+`LogbookColumnsUITests.testTheToolbarFollowsTheColumnsAndTheStarLeads`,
+`SessionProjectNameUITests.testASessionsProjectIsCalledAfterItUntilItIsSaved`. Model:
+`LogbookFilterTests`, `LogbookTests`, `ProjectNamingTests`.

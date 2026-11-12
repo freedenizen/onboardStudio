@@ -56,7 +56,7 @@ final class LogbookClipsUITests: OnboardStudioUITestCase {
 
         // New Project: the clip and the data file, laid out.
         pressSplitButton(sessionNewProject)
-        XCTAssertTrue(app.windows["Untitled"].waitForExistence(timeout: Self.timeout), "No new project")
+        XCTAssertTrue(projectWindows.firstMatch.waitForExistence(timeout: Self.timeout), "No new project")
         XCTAssertTrue(
             sidebarInput("test-3s").waitForExistence(timeout: Self.timeout * 2), "The clip is not a video input")
         let data = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'input.'"))
