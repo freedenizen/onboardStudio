@@ -43,6 +43,16 @@ enum UITestSupport {
         }
     }
 
+    /// `ONBOARD_TEST_TRACKS_DIR`: a scratch track library, so a test that plans a session never
+    /// writes a plan onto the real circuit, and none of the user's circuits change what a test
+    /// sees (#458). `nil` outside the UI tests.
+    static var tracksDirectory: URL? {
+        guard isActive else { return nil }
+        return ProcessInfo.processInfo.environment["ONBOARD_TEST_TRACKS_DIR"].map {
+            URL(fileURLWithPath: $0, isDirectory: true)
+        }
+    }
+
     /// `ONBOARD_TEST_LOGBOOK_DIR`: a scratch logbook, so a test never writes a track day into
     /// the real one. `nil` outside the UI tests.
     static var logbookDirectory: URL? {

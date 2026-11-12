@@ -73,19 +73,25 @@ struct UndoCommands: Commands {
     /// Windows that edit the front document without being it — the Coaching window — register
     /// here (`DocumentWindowTag`). Their own undo managers are empty; what the user means by Undo
     /// there is the document's last edit.
-    @ObservationIgnored private var documentWindows: Set<ObjectIdentifier> = []
+    /// Counted, not a set: when SwiftUI replaces the view holding a tag, the new tag registers the
+    /// window before the old one leaves it, and a set forgot the window then (#458).
+    @ObservationIgnored private var documentWindows: [ObjectIdentifier: Int] = [:]
 
     func register(_ window: NSWindow) {
-        documentWindows.insert(ObjectIdentifier(window))
+        documentWindows[ObjectIdentifier(window), default: 0] += 1
         scheduleRefresh()
     }
 
-    func unregister(_ window: NSWindow) { documentWindows.remove(ObjectIdentifier(window)) }
+    func unregister(_ window: NSWindow) {
+        let id = ObjectIdentifier(window)
+        guard let count = documentWindows[id] else { return }
+        documentWindows[id] = count > 1 ? count - 1 : nil
+    }
 
     /// The front document's undo manager when the key window is one that edits it from outside,
     /// else `nil` and the responder chain decides as usual.
     var documentUndoManagerForKeyWindow: UndoManager? {
-        guard let window = NSApp.keyWindow, documentWindows.contains(ObjectIdentifier(window)) else { return nil }
+        guard let window = NSApp.keyWindow, documentWindows[ObjectIdentifier(window)] != nil else { return nil }
         return ActiveEditor.shared.editor?.undoManager
     }
 

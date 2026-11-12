@@ -18,47 +18,24 @@ struct CornerDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Turn \(comparison.label)").font(.title3.weight(.semibold))
-                phases
+                // Compare in Video by the corner's name: below the readings it was out of sight (#458).
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Turn \(comparison.label)").font(.title3.weight(.semibold))
+                    Spacer()
+                    if let compareInVideo {
+                        Button("Compare in Video", action: compareInVideo)
+                            .help("Lay the project out with both laps' pictures over this corner")
+                            .accessibilityIdentifier("coaching.compareInVideo")
+                    }
+                }
+                PhaseLossBars(comparison: comparison, units: units)
                 CornerLinesView(analysis: analysis, comparison: comparison, units: units, others: others)
                 readings
-                if let compareInVideo {
-                    Button("Compare in Video", action: compareInVideo)
-                        .help("Lay the project out with both laps' pictures over this corner")
-                        .accessibilityIdentifier("coaching.compareInVideo")
-                }
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("coaching.detail")
-    }
-
-    /// Where the time went, phase by phase.
-    private var phases: some View {
-        let losses = CornerPhase.allCases.map { ($0, comparison.phaseLoss[$0] ?? 0) }
-        let scale = max(losses.map { abs($0.1) }.max() ?? 0, 0.01)
-        return VStack(alignment: .leading, spacing: 4) {
-            Text("Time lost by phase").font(.subheadline.weight(.semibold))
-            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 4) {
-                ForEach(losses, id: \.0) { phase, loss in
-                    GridRow {
-                        Text(phase.displayName).frame(width: 60, alignment: .leading)
-                        GeometryReader { geometry in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(loss > 0 ? Color.red : Color.green)
-                                .frame(width: max(2, geometry.size.width * abs(loss) / scale))
-                        }
-                        .frame(height: 10)
-                        Text((loss >= 0 ? "+" : "−") + format.seconds(abs(loss)))
-                            .monospacedDigit().frame(width: 64, alignment: .trailing)
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(
-                        "\(phase.displayName): \(format.seconds(abs(loss))) \(loss >= 0 ? "lost" : "gained")")
-                }
-            }
-        }
     }
 
     /// Both laps' readings, one row per measurement.
@@ -263,6 +240,41 @@ struct CornerLinesView: View {
                 context.fill(Path(ellipseIn: rect), with: shading)
             } else {
                 context.fill(Path(rect), with: shading)
+            }
+        }
+    }
+}
+
+/// Where a corner's time went, phase by phase: in the corner's detail and in its step of the
+/// walkthrough (#458).
+struct PhaseLossBars: View {
+    let comparison: CornerComparison
+    let units: CoachingUnits
+
+    private var format: CoachingNotes.Formatter { CoachingNotes.Formatter(units: units) }
+
+    var body: some View {
+        let losses = CornerPhase.allCases.map { ($0, comparison.phaseLoss[$0] ?? 0) }
+        let scale = max(losses.map { abs($0.1) }.max() ?? 0, 0.01)
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("Time lost by phase").font(.subheadline.weight(.semibold))
+            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 4) {
+                ForEach(losses, id: \.0) { phase, loss in
+                    GridRow {
+                        Text(phase.displayName).frame(width: 60, alignment: .leading)
+                        GeometryReader { geometry in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(loss > 0 ? Color.red : Color.green)
+                                .frame(width: max(2, geometry.size.width * abs(loss) / scale))
+                        }
+                        .frame(height: 10)
+                        Text((loss >= 0 ? "+" : "−") + format.seconds(abs(loss)))
+                            .monospacedDigit().frame(width: 64, alignment: .trailing)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        "\(phase.displayName): \(format.seconds(abs(loss))) \(loss >= 0 ? "lost" : "gained")")
+                }
             }
         }
     }

@@ -10,13 +10,17 @@ struct OpportunityCard: View {
     var body: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 6) {
-                Text(opportunity.note.headline).font(.headline)
+                // In full: cut to a line, what to try was the part that could not be read (#458).
+                Text(opportunity.note.headline).font(.headline).fixedSize(horizontal: false, vertical: true)
                 ForEach(opportunity.note.evidence, id: \.self) { line in
                     Label(line, systemImage: "circle.fill")
                         .labelStyle(EvidenceLabelStyle())
                         .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Text(opportunity.note.suggestion).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("coaching.suggestion.\(opportunity.rank)")
                 Spacer(minLength: 0)
                 Button("Show Me", action: showMe)
                     .accessibilityLabel("Show Me Turn \(opportunity.corner.label)")

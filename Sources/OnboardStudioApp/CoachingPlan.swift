@@ -51,20 +51,13 @@ extension EditorModel {
     /// Save Track Definition would make it.
     func rememberPlan(for input: Input) {
         guard let plan = project.plan, let match = circuit(for: input.id) else { return }
-        var definition: TrackDefinition
-        if let saved = trackLibrary.definition(id: match.circuit.id) {
-            definition = saved
-        } else {
-            guard case .data(let settings) = input.kind else { return }
-            definition = TrackDefinition(
+        try? trackLibrary.remember(plan, id: match.circuit.id) {
+            guard case .data(let settings) = input.kind else { return nil }
+            return TrackDefinition(
                 circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
                 longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
                 cornerLabels: settings.cornerLabels)
         }
-        guard definition.plan != plan else { return }
-        definition.plan = plan
-        definition.modified = Date()
-        try? trackLibrary.save(definition)
     }
 }
 

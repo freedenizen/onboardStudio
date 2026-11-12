@@ -6,6 +6,11 @@ import TelemetryKit
 
 // MARK: - The start/finish line, and track definitions as files
 
+extension TrackLibrary {
+    /// The app's circuits: the user's own, or the UI tests' scratch folder.
+    static var app: TrackLibrary { TrackLibrary(directory: UITestSupport.tracksDirectory) }
+}
+
 extension EditorModel {
     /// Uses the start/finish and sector gates a file carried, for a file just added that has no
     /// line of its own yet (#71). Returns whether it had any.

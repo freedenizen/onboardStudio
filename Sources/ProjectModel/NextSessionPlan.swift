@@ -55,11 +55,20 @@ public struct NextSessionPlan: Hashable, Codable, Sendable {
     public static func suggested(
         from analysis: CoachingAnalysis, lapNumber: Int, count: Int = suggestedCount, made: Date = Date()
     ) -> NextSessionPlan {
-        let experiments = analysis.opportunities.prefix(max(count, 0)).map { opportunity in
+        chosen(
+            Array(analysis.opportunities.prefix(max(count, 0))), from: analysis, lapNumber: lapNumber, made: made)
+    }
+
+    /// The opportunities the driver chose to try, in the order given, in the analysis's words: what
+    /// a guided debrief ends with (#458).
+    public static func chosen(
+        _ opportunities: [Opportunity], from analysis: CoachingAnalysis, lapNumber: Int, made: Date = Date()
+    ) -> NextSessionPlan {
+        let experiments = opportunities.map { opportunity in
             PlannedExperiment(cornerLabel: opportunity.corner.label, text: opportunity.note.suggestion)
         }
         return NextSessionPlan(
-            experiments: Array(experiments), fromLap: lapNumber, referencePhrase: analysis.referencePhrase, made: made)
+            experiments: experiments, fromLap: lapNumber, referencePhrase: analysis.referencePhrase, made: made)
     }
 
     /// "Turn 4: brake where lap 5 did… · Turn 7: …", for a status line or a card.

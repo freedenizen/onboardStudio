@@ -124,7 +124,7 @@ struct TrackDayImportSheet: View {
     private func place(onto day: TrackDay?) {
         let waiting = strays
         let logbook = AppLogbook.shared
-        let tracks = editor?.trackLibrary ?? TrackLibrary()
+        let tracks = editor?.trackLibrary ?? TrackLibrary.app
         phase = .placing
         Task {
             let placed = await Task.detached(priority: .userInitiated) {
@@ -160,7 +160,7 @@ struct TrackDayImportSheet: View {
         let urls = request.urls
         let day = request.day
         let logbook = AppLogbook.shared
-        let tracks = editor?.trackLibrary ?? TrackLibrary()
+        let tracks = editor?.trackLibrary ?? TrackLibrary.app
         let result = await Task.detached(priority: .userInitiated) {
             // A file that is not from the chosen day waits for the question, rather than going on
             // the day whatever it says (#456).

@@ -2,8 +2,10 @@
 *Source: #321, #322 — every coaching product surveyed ranks the corners by time lost and says what to
 change; the app showed sector deltas and left the rest to the driver.*
 
-1. **Project ▸ Coaching…** (⌃⌘C). The window opens on the lap at the playhead against the
-   session's best lap. The headline says how far behind it finished and how the two were lined up.
+1. **Project ▸ Coaching…** (⌃⌘C), then **All Corners** in the toolbar (the window opens on the
+   walkthrough, J57, until All Corners was used last). It reads the lap at the playhead against
+   the session's best lap. The headline says how far behind it finished and how the two were
+   lined up.
 2. Choose the **Lap** to read and what it is **Compared with**: the best lap, the fastest rolling
    lap, the optimal lap spliced from the best sectors, another lap, or a lap of another data file.
    **Line up by position** matches two laps of one session by where the car was instead of metre

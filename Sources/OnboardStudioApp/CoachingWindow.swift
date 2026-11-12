@@ -3,94 +3,6 @@ import ProjectModel
 import SwiftUI
 import TelemetryKit
 
-/// Where the time went (#321): one lap of the front project's data read against a reference —
-/// the best lap, the fastest rolling lap, the optimal lap spliced from the best sectors, another
-/// lap, or a lap of another data file — as the top opportunities with what to try, and every
-/// corner in a table. Selecting a corner, or Show Me, moves the playhead there.
-///
-/// A window beside the document rather than an inspector section: a corner table needs width,
-/// and the inspector is a column. It follows the front document the way the attribute window
-/// does, through `ActiveEditor`.
-struct CoachingWindow: View {
-    static let windowID = "coaching"
-
-    private var active = ActiveEditor.shared
-    private var target = CoachingTarget.shared
-    @Environment(\.openWindow) private var openWindow
-
-    /// The front project's coaching.
-    static func open(_ openWindow: OpenWindowAction) {
-        CoachingTarget.shared.showFrontProject()
-        openWindow(id: windowID)
-    }
-
-    /// A logbook session's coaching, with no project needed (#396).
-    static func open(_ openWindow: OpenWindowAction, entry: LogbookEntry) {
-        CoachingTarget.shared.show(entry)
-        openWindow(id: windowID)
-    }
-
-    var body: some View {
-        Group {
-            if case .logbook = target.kind, let source = target.logbookSource {
-                CoachingContent(source: source)
-                    .id(source.id)
-            } else if let editor = active.editor {
-                CoachingContent(source: ProjectCoachingSource(editor: editor))
-                    .id(ObjectIdentifier(editor))
-                    // The menu bar reaches this document from here too: Edit ▸ Undo names and takes
-                    // back the last edit, and the Project menu's items apply to it.
-                    .focusedSceneValue(\.editor, editor)
-                    .background(DocumentWindowTag())
-            } else {
-                ContentUnavailableView(
-                    "No Project Open", systemImage: "flag.checkered",
-                    description: Text(
-                        "Open a project with a data file and choose Project ▸ Coaching…, or select a session in "
-                            + "the Logbook and choose Coach…, to see where its laps lost time."))
-            }
-        }
-        .frame(minWidth: 880, minHeight: 480)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                // The same laps, raced round the circuit (#415).
-                Button("Replay", systemImage: "car.side") {
-                    if case .logbook = target.kind, let source = target.logbookSource {
-                        ReplayWindow.open(openWindow, entry: source.entry)
-                    } else {
-                        ReplayWindow.open(openWindow)
-                    }
-                }
-                .help("Race this session's laps round the circuit in 3D")
-                .accessibilityIdentifier("coaching.replay")
-            }
-        }
-    }
-}
-
-/// What the window reads for the front document: which input, lap and reference, resolved from
-/// the project's coaching settings with the defaults filled in.
-struct CoachingSelection: Hashable, Sendable {
-    var input: Input
-    var lapNumber: Int
-    var reference: CoachingSettings.Reference
-    var alignByPosition: Bool
-    /// A cheap fingerprint of the session, so a re-import re-reads the analysis.
-    var sessionStamp: Int
-
-    var settings: CoachingSettings {
-        CoachingSettings(
-            dataInputID: input.id, lap: lapNumber, reference: reference, alignByPosition: alignByPosition)
-    }
-
-    /// The analysis options the choices amount to.
-    var options: CoachingOptions {
-        var options = CoachingOptions()
-        if alignByPosition { options.alignment = .byPosition }
-        return options
-    }
-}
-
 struct CoachingContent: View {
     let source: any CoachingSource
 
@@ -106,6 +18,9 @@ struct CoachingContent: View {
     /// from the brake point Show Me chose to the turn-in it would choose.
     @State private var selectingForShowMe = false
     @State private var sortOrder = [KeyPathComparator(\CornerRow.timeLost, order: .reverse)]
+    /// The walkthrough or every corner, as the driver last left it (#458); under the UI tests, in
+    /// a store emptied at launch, so every test opens on the walkthrough.
+    @AppStorage("coaching.mode", store: UITestSupport.paneDefaults) private var mode = CoachingMode.walkthrough
 
     /// The app's units; a project saved before the region decided *Automatic* (#464) keeps the
     /// metric notes its video is rendered with, so the window and the picture agree.
@@ -195,23 +110,11 @@ struct CoachingContent: View {
                     "Coaching compares complete laps. Set a start/finish line in the data file's inspector, or check "
                         + "that the file has position and distance."))
         } else if let selection = selection(input: input, session: session) {
-            HSplitView {
-                VStack(spacing: 0) {
-                    choices(selection: selection, laps: laps)
-                    Divider()
-                    results(selection: selection, input: input, session: session)
-                }
-                .frame(minWidth: 560)
-                .layoutPriority(1)
-                if let analysis, analysed == selection, let corner = selectedCorner,
-                    let comparison = analysis.corners.first(where: { $0.index == corner })
-                {
-                    CornerDetailView(
-                        analysis: analysis, comparison: comparison, units: units, others: otherProfiles,
-                        compareInVideo: compareAction(
-                            for: comparison, analysis: analysis, selection: selection, session: session)
-                    )
-                    .frame(minWidth: 300, idealWidth: 340, maxWidth: 440)
+            Group {
+                if mode == .walkthrough {
+                    walkthrough(selection: selection, laps: laps)
+                } else {
+                    allCorners(selection: selection, laps: laps, input: input, session: session)
                 }
             }
             .task(id: selection) { await analyse(selection, session: session) }
@@ -287,6 +190,67 @@ struct CoachingContent: View {
         .padding()
     }
 
+    /// The laps a reference profile was cut from: one for a lap, several for a splice.
+    static func lapNumbers(in reference: LapProfile) -> [Int] { reference.pieces.map(\.lapNumber) }
+
+    static func lapTitle(_ lap: Lap) -> String {
+        "Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))"
+    }
+}
+
+/// The window's two faces, and the parts of All Corners (#458).
+extension CoachingContent {
+    /// The guided debrief: one step at a time, a fresh one for each lap and reference (#458).
+    @ViewBuilder
+    private func walkthrough(selection: CoachingSelection, laps: [Lap]) -> some View {
+        if let analysis, analysed == selection {
+            CoachingWalkthroughView(
+                analysis: analysis, lapNumber: selection.lapNumber, units: units, others: otherProfiles, source: source
+            ) {
+                choices(selection: selection, laps: laps)
+            }
+            .id(selection)
+        } else if isAnalysing {
+            ProgressView("Reading the laps…").frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            VStack(spacing: 0) {
+                choices(selection: selection, laps: laps)
+                Divider()
+                ContentUnavailableView(
+                    "Nothing to Compare", systemImage: "flag.checkered",
+                    description: Text(
+                        "This lap could not be read against \(referenceName(selection.reference)). The optimal lap "
+                            + "needs every sector timed once; a lap from another file needs that file to have loaded."))
+            }
+        }
+    }
+
+    /// Every corner at once: the cards, the plan, the table and a corner's detail.
+    @ViewBuilder
+    private func allCorners(
+        selection: CoachingSelection, laps: [Lap], input: Input, session: TelemetrySession
+    ) -> some View {
+        HSplitView {
+            VStack(spacing: 0) {
+                choices(selection: selection, laps: laps)
+                Divider()
+                results(selection: selection, input: input, session: session)
+            }
+            .frame(minWidth: 560)
+            .layoutPriority(1)
+            if let analysis, analysed == selection, let corner = selectedCorner,
+                let comparison = analysis.corners.first(where: { $0.index == corner })
+            {
+                CornerDetailView(
+                    analysis: analysis, comparison: comparison, units: units, others: otherProfiles,
+                    compareInVideo: compareAction(
+                        for: comparison, analysis: analysis, selection: selection, session: session)
+                )
+                .frame(minWidth: 300, idealWidth: 340, maxWidth: 440)
+            }
+        }
+    }
+
     @ViewBuilder
     private func results(selection: CoachingSelection, input: Input, session: TelemetrySession) -> some View {
         if let analysis, analysed == selection {
@@ -360,20 +324,6 @@ struct CoachingContent: View {
             }
         }
     }
-
-    /// The laps a reference profile was cut from: one for a lap, several for a splice.
-    static func lapNumbers(in reference: LapProfile) -> [Int] { reference.pieces.map(\.lapNumber) }
-
-    static func lapTitle(_ lap: Lap) -> String {
-        "Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))"
-    }
-}
-
-/// A lap of another data file, as a reference.
-struct OtherReference: Sendable {
-    let session: TelemetrySession
-    let label: String
-    let lap: Int
 }
 
 extension CoachingContent {

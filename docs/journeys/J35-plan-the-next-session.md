@@ -3,7 +3,8 @@
 and open the next one by asking how they went. The app found the opportunities and forgot them
 when the project closed.*
 
-1. **Project ▸ Coaching…**, choose the lap to read and what it is compared with.
+1. **Project ▸ Coaching…**, **All Corners**, choose the lap to read and what it is compared with.
+   (The walkthrough ends with the same plan made from the corners chosen on the way: J57.)
 2. Under the opportunities, **Next Session ▸ Make a Plan** writes up to three experiments, one per
    corner that cost the most, in the window's own words ("Turn 4: brake where your best lap did,
    12 m later, with the same pressure, and see whether the minimum speed comes up").
