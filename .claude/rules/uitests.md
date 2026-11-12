@@ -66,6 +66,9 @@ Local run ≈ 5 min for 13 tests.
   with the inspector at `minWidth: 280, idealWidth: 300, maxWidth: 460` and the editor pane at
   `minWidth: 700` + `layoutPriority(1)` (window minimum ≈ 980). Measure minimums with AppleScript
   `set size of window 1 to {500, 500}` then read `size`.
+- **Window frames live in the real preferences** (`NSWindow Frame logbook`, …): a test that
+  resizes a window narrows the next test's window and the Mac's own. Widen it back in an
+  `addTeardownBlock` (`LogbookColumnsUITests.widen(by:)`), which runs even when the test fails.
 - `UITestSupport.editorAppeared` activates the app, fits windows to the screen and remembers the
   last editor as a `FocusedValue` fallback (Sparkle's first-launch panel used to steal key window).
 - **"Timed out while enabling automation mode" / "Failed to activate application" means the

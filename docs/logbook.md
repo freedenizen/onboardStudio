@@ -410,7 +410,10 @@ out across the whole window, ran under its edge: at 420 points New Track Day sat
 The system inspector inside the content column was measured too: its toolbar did not follow its
 edge either, and it lost the kept width. The session's column stays beside Trends and the Season,
 with **No Session Selected** when there is none (a `NavigationSplitView` cannot hide its last
-column while the sidebar shows). Before #448 the detail was an `HSplitView` inside the detail
+column while the sidebar shows). The toolbar shows no title: in the narrowest window (989 points)
+the list's column is 460 wide, and "Logbook", the view picker and the list's buttons needed about
+560, so AppKit pushed Add Files and Export over the session's edge. The window keeps its title for
+the Window menu and Mission Control. Before #448 the detail was an `HSplitView` inside the detail
 column, which gave the table and the detail their minimum widths and left the rest of the column
 empty. The table's **PB** column comes first, as Mail's flags do: last, it was the first a narrow
 table scrolled out of view.

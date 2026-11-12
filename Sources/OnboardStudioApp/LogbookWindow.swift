@@ -283,6 +283,11 @@ struct LogbookWindow: View {
             .background(LogbookDetailWidthKeeper())
             .toolbar(id: "logbook.session") { sessionToolbar }
         }
+        // No "Logbook" in the toolbar: in the narrowest window (989 points) the list's column is 460
+        // wide, and the title, the view picker and the list's buttons needed about 560, so AppKit
+        // pushed Add Files and Export over the session's edge (#503). The window keeps its title
+        // for the Window menu and Mission Control; the sidebar and the view picker say where you are.
+        .toolbar(removing: .title)
     }
 
     // MARK: - Table and detail

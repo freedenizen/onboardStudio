@@ -42,6 +42,25 @@ final class LogbookColumnsUITests: OnboardStudioUITestCase {
         grab.click(forDuration: 0.3, thenDragTo: grab.withOffset(CGVector(dx: -300, dy: 0)))
         try expectTheToolbarToFollow("at the session's widest")
         try expectTheStarFirstAndInView("at the session's widest")
+
+        // In the narrowest window the list's column is at its minimum, and its toolbar still fits
+        // it: with the window's title in the toolbar, Add Files and Export spilled over the edge.
+        let wide = window.frame.width
+        addTeardownBlock { [self] in MainActor.assumeIsolated { widen(by: wide - window.frame.width) } }
+        widen(by: -900)
+        try expectTheToolbarToFollow("in the narrowest window")
+        try expectTheStarFirstAndInView("in the narrowest window")
+    }
+
+    /// Drags the window's bottom-right corner sideways; it stops at the window's minimum. The frame
+    /// is kept in the real preferences (`NSWindow Frame logbook`), so a narrowed window is widened
+    /// again when the test ends, or the next test — and the Mac's own Logbook — would open narrow.
+    @MainActor
+    private func widen(by points: CGFloat) {
+        guard abs(points) > 1, window.exists else { return }
+        let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(
+            CGVector(dx: -2, dy: -2))
+        corner.click(forDuration: 0.3, thenDragTo: corner.withOffset(CGVector(dx: points, dy: 0)))
     }
 
     /// No control in the toolbar runs across the session's edge; New Project is over the session
