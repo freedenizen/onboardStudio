@@ -59,3 +59,12 @@ cyclomatic_complexity:
 force_unwrapping: error
 force_cast: error
 force_try: error
+custom_rules:
+  # XCUICoordinate's touch calls pass on macOS 26 and do nothing to AppKit's drag handling on
+  # macOS 27, which CI runs (#509); the mouse calls work on both.
+  touch_press_in_ui_tests:
+    name: "Touch press in a UI test"
+    included: "UITests/.*\\.swift$"
+    regex: "\\.press\\(\\s*forDuration"
+    message: "Use click(forDuration:thenDragTo:), the mouse call: on macOS 27 a press does not drag (#509)"
+    severity: error

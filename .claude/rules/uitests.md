@@ -72,6 +72,24 @@ Local run ≈ 5 min for 13 tests.
   display is asleep** (displaysleep is 120 s; check `ioreg -c IOHIDSystem` `HIDIdleTime`). After a
   wake, 1Password's SSH agent also refuses signing until unlocked.
 
+## macOS 27, which CI runs and this Mac may not
+CI runs on the `xcode-27` image (macOS 27) since #507; a test that passes on macOS 26 can still
+fail there. Measured on #509:
+- **Drag with `click(forDuration:thenDragTo:)`**, the mouse call. `press(forDuration:thenDragTo:)`
+  is XCUICoordinate's touch call: it works on macOS 26, and on macOS 27 leaves `mouseDragged`
+  handlers, split-view dividers and List rows where they were. SwiftLint's
+  `touch_press_in_ui_tests` rule rejects `.press(` under UITests.
+- A toolbar menu's name is its `label` on macOS 26 and its `title` on macOS 27, with the label
+  empty. Read `label.isEmpty ? title : label`.
+- The status line and other selectable text read their old words until `SelectableText` (see
+  `appui.md`); a test that waits on a message that the screen already shows is that.
+- A row click leaves keyboard focus where it was: a test that types after clicking a row depends
+  on the app moving focus, as the Logbook does.
+- The xcresult of a failed shard holds a screen recording of each failed test — look at it
+  before reasoning about lag: `xcrun xcresulttool export attachments --path X.xcresult
+  --output-path out`, then the `Screen Recording` entries in `out/manifest.json`. A shard that
+  ran out of time leaves the bundle unfinished, and its recordings are among the files in `Data/`.
+
 ## SwiftUI notes
 - `CommandMenu("View")` creates a duplicate View menu — use `CommandGroup(after: .toolbar)`.
 - Help-menu actions needing the front window must live in the `Commands` struct that holds
