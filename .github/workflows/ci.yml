@@ -124,10 +124,7 @@ jobs:
       - name: Coverage report
         if: github.event_name != 'pull_request'
         run: |
-          PROFDATA=$(find .build -name 'default.profdata' | head -1)
-          BIN=$(find .build -name 'OnboardStudioPackageTests.xctest' -type d | head -1)/Contents/MacOS/OnboardStudioPackageTests
-          xcrun llvm-cov report "$BIN" -instr-profile "$PROFDATA" -ignore-filename-regex='(\.build|Tests)/' | tee coverage.txt
-          xcrun llvm-cov export "$BIN" -instr-profile "$PROFDATA" -format=lcov -ignore-filename-regex='(\.build|Tests)/' > coverage.lcov
+          Scripts/coverage-report.sh
           { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         if: github.event_name != 'pull_request'
