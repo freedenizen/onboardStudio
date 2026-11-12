@@ -392,6 +392,14 @@ day its date and circuit say; with it, every file goes on that day and the line 
 otherwise says so), `onboard logbook days` lists the days and `onboard logbook list`
 the sessions with their day.
 
+When the files are in, the sheet says how the day went at each circuit: the day's best lap
+against your last visit there (*1:42.31, 0.84 s quicker than your last visit (12 Oct) — a personal
+best*), or that this was your first visit. An older day added after newer ones is compared with
+the visit before it. **Show Trends** beside **Done** opens that circuit's Trends in the Logbook,
+the circuit chosen in the sidebar. After a first session somewhere, or files from several
+circuits at once, it is **Show Season** instead. Sessions that name no circuit are not counted as
+a visit anywhere, so they get no line.
+
 The window shows it all in three columns, as Mail does: a sidebar of track days (under their
 year when there is more than one, the year of the day you have chosen open;
 each is its date with the circuit beneath, so two days on one date read apart),
