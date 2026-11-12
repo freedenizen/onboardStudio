@@ -66,9 +66,9 @@ jobs:
         run: brew install xcodegen && Scripts/bundle-app.sh && test -d dist/OnboardStudio.app
       - name: Coverage report
         run: |
-          PROFDATA=$(find .build -name 'default.profdata' | head -1)
-          BIN=$(find .build -name 'OnboardStudioPackageTests.xctest' -type d | head -1)/Contents/MacOS/OnboardStudioPackageTests
-          xcrun llvm-cov report "$BIN" -instr-profile "$PROFDATA" -ignore-filename-regex='(\.build|Tests)/' | tee coverage.txt
+          # The same script as CI's push to main: Swift 6.4 builds an .xctest per test target, and
+          # looking for Swift 6.3's single bundle found nothing (#510, #519).
+          Scripts/coverage-report.sh
           { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   report:
