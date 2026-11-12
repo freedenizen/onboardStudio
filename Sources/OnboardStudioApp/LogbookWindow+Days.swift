@@ -48,6 +48,20 @@ extension LogbookWindow {
 
     /// The days were read again: the chosen day is still the chosen day when its circuit, and so
     /// its label, changed (#455) — the sidebar selects by the label, and lost the row.
+    /// Where an import's report sent the window (#459): the circuit chosen in the sidebar and its
+    /// Trends, or the Season.
+    func showRequestedView() {
+        guard let destination = model.requestedView else { return }
+        model.requestedView = nil
+        switch destination {
+        case .trends(let circuit, let title):
+            scope = .circuit(id: circuit, title: title)
+            view = .trends
+        case .season:
+            view = .season
+        }
+    }
+
     func followTheChosenDay() {
         if case .day(let id, let title) = scope, let day = model.days.first(where: { $0.id == id }),
             day.label != title

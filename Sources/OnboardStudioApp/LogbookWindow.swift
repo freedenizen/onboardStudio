@@ -20,6 +20,8 @@ import UniformTypeIdentifiers
     var trackDayRequest: TrackDayRequest?
     /// File ▸ New Track Day… asked for the sheet (#393).
     var newDayRequested = false
+    /// Show Trends or Show Season in an import's report (#459), for the window to go to.
+    var requestedView: ImportProgress.Destination?
     /// The day chosen in the sidebar, for the Testing menu and the ways in.
     private(set) var selectedDay: TrackDay?
     /// The years of the sidebar's Track Days that are folded open, once there is more than one.
@@ -212,6 +214,7 @@ struct LogbookWindow: View {
             .onAppear { model.reload() }
             .onChange(of: scope, initial: true) { model.choose(selectedDay) }
             .onChange(of: model.days) { followTheChosenDay() }
+            .onChange(of: model.requestedView, initial: true) { showRequestedView() }
             .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
                 let day = selectedDay
                 Task { @MainActor in

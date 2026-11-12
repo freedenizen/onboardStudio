@@ -33,7 +33,10 @@ struct TrackDayImportSheet: View {
     let editor: EditorModel?
     let request: TrackDayRequest
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openWindow) private var openWindow
     @State private var reports: [TrackDayImport.Report] = []
+    /// How the new days compare with the visits before them (#459), once the sessions are in.
+    @State private var progress = ImportProgress(circuits: [])
     @State private var current: String?
     @State private var phase = Phase.reading
 
@@ -52,7 +55,9 @@ struct TrackDayImportSheet: View {
             case .reading: ProgressView(current.map { "Reading \($0)…" } ?? "Looking for files…")
             case .asking: question
             case .placing: ProgressView("Adding…")
-            case .done: Text(summary).accessibilityIdentifier("trackday.summary")
+            case .done:
+                Text(summary).accessibilityIdentifier("trackday.summary")
+                progressLines
             }
             List(Array(reports.enumerated()), id: \.offset) { _, report in
                 Label(report.line, systemImage: symbol(for: report))
@@ -65,6 +70,11 @@ struct TrackDayImportSheet: View {
                     answers
                 } else {
                     Spacer()
+                    if phase == .done, let destination = progress.destination {
+                        Button(destination.buttonTitle) { show(destination) }
+                            .help(destination.help)
+                            .accessibilityIdentifier("trackday.showProgress")
+                    }
                     Button(phase == .done ? "Done" : "Close") { dismiss() }
                         .keyboardShortcut(.defaultAction)
                         .disabled(phase == .placing)
@@ -75,6 +85,31 @@ struct TrackDayImportSheet: View {
         .padding(20)
         .frame(width: 560)
         .task { await run() }
+    }
+
+    // MARK: - Progress (#459)
+
+    /// A line for each circuit the new sessions were driven at: the day's best against the visit
+    /// before it.
+    @ViewBuilder private var progressLines: some View {
+        ForEach(progress.circuits) { circuit in
+            Label {
+                Text(circuit.sentence)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("trackday.progress")
+            } icon: {
+                Image(systemName: circuit.isPersonalBest ? "trophy" : "flag.checkered")
+                    .foregroundStyle(circuit.isPersonalBest ? Color.orange : Color.secondary)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    /// The Logbook, brought forward, on the circuit's Trends or on the Season.
+    private func show(_ destination: ImportProgress.Destination) {
+        LogbookModel.shared.requestedView = destination
+        openWindow(id: LogbookWindow.windowID)
+        dismiss()
     }
 
     private func symbol(for report: TrackDayImport.Report) -> String {
@@ -181,6 +216,27 @@ struct TrackDayImportSheet: View {
         phase = .done
         let added = reports.filter(\.isAdded).count
         editor?.statusMessage = "Added \(added) session\(added == 1 ? "" : "s") to the logbook."
-        LogbookModel.shared.reload()
+        let model = LogbookModel.shared
+        model.reload()
+        let ids = reports.compactMap { report -> UUID? in
+            if case .added(let entry) = report.outcome { entry.id } else { nil }
+        }
+        progress = ImportProgress.make(added: Set(ids), in: model.entries)
+    }
+}
+
+extension ImportProgress.Destination {
+    var buttonTitle: String {
+        switch self {
+        case .trends: "Show Trends"
+        case .season: "Show Season"
+        }
+    }
+
+    var help: String {
+        switch self {
+        case .trends(_, let title): "Open the Logbook on \(title)'s lap times across visits"
+        case .season: "Open the Logbook on the season: days, circuits and personal bests"
+        }
     }
 }
