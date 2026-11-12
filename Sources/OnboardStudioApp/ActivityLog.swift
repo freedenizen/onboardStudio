@@ -74,11 +74,20 @@ struct ActivityLogView: View {
                         Text(entry.text).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                     }
                     .accessibilityElement(children: .combine)
+                    // Said in full: on macOS 27 the row left its selectable text out and read as
+                    // its time alone (#509).
+                    .accessibilityLabel(Self.spoken(entry))
                     .accessibilityIdentifier("activity.entry")
                 }
                 .listStyle(.inset)
             }
         }
         .frame(width: 440, height: 320)
+    }
+
+    /// What VoiceOver says for an entry: its time, whether it was a problem, and what was said.
+    static func spoken(_ entry: ActivityLog.Entry) -> String {
+        let time = entry.date.formatted(date: .omitted, time: .shortened)
+        return (entry.isProblem ? [time, "Problem", entry.text] : [time, entry.text]).joined(separator: ", ")
     }
 }

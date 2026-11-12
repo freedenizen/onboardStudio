@@ -219,7 +219,7 @@ struct StatusLineView: View {
         if editor.statusMessage != nil || editor.showActivity {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle").foregroundStyle(.secondary).accessibilityHidden(true)
-                Text(editor.statusMessage ?? "").font(.callout).lineLimit(2).textSelection(.enabled)
+                SelectableText(editor.statusMessage ?? "").font(.callout).lineLimit(2)
                     .help(editor.statusMessage ?? "")
                     .accessibilityIdentifier("status.message")
                 Spacer()

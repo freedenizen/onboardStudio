@@ -72,6 +72,13 @@ The rest of this file is what that means here, and the places this app has got i
   contrast. The timeline ruler did (#153).
 - A drawn `NSView` (the preview) is invisible to VoiceOver until it returns
   `accessibilityChildren`, and AppKit holds those weakly: keep the elements alive on the view.
+- On macOS 27 a `Text` with `.textSelection(.enabled)` goes on telling VoiceOver the words it was
+  first given after they change on screen: use `SelectableText` for selectable words that change.
+  A row combined with `.accessibilityElement(children: .combine)` leaves selectable text out, so
+  give the row its `.accessibilityLabel` (#509).
+- On macOS 27 a click on a SwiftUI `Table` row selects it without giving the table the keyboard,
+  so ⌘⌫ and the arrow keys go elsewhere. `TableClick(onRow:)` behind the table sets its focus on
+  a click; watching the selection misses a click on the row already selected (#509).
 - Text scales; nothing clips at the largest accessibility sizes that a Mac offers.
 
 ## Polish that makes it feel bought rather than built

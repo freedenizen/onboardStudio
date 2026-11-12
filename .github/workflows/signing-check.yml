@@ -6,7 +6,7 @@ permissions:
 jobs:
   check:
     name: Inspect signing secrets
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 10
     steps:
       - name: Import certificate and report identities (no secret values are printed)

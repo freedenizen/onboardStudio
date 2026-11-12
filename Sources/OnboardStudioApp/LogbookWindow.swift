@@ -345,6 +345,9 @@ struct LogbookWindow: View {
                         selection: $selection, sortOrder: $sortOrder
                     )
                     .focused($sessionsFocused)
+                    // A click on a session gives the sessions the keyboard, as it does by itself on
+                    // macOS 26 and not on macOS 27 (#509).
+                    .background(TableClick(onRow: { sessionsFocused = true }))
                 }
                 if let message {
                     Divider()

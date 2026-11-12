@@ -19,7 +19,7 @@ final class UndoUITests: OnboardStudioUITestCase {
         // Retried once: a drag that starts while the inspector is still settling can miss the thumb.
         for _ in 0..<2 where opacity.normalizedSliderPosition > before - 0.3 {
             let thumb = opacity.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5))
-            thumb.press(
+            thumb.click(
                 forDuration: 0.3, thenDragTo: opacity.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)),
                 withVelocity: .slow, thenHoldForDuration: 0.3)
         }

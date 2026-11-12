@@ -90,7 +90,7 @@ final class GroupLockUITests: OnboardStudioUITestCase {
             y: video.minY + (before.speedometer.minY + before.speedometer.height / 2) / 100 * video.height)
         let origin = preview.coordinate(withNormalizedOffset: .zero)
         let start = origin.withOffset(CGVector(dx: centre.x - area.minX, dy: centre.y - area.minY))
-        start.press(forDuration: 0.2, thenDragTo: start.withOffset(CGVector(dx: -video.width / 10, dy: 0)))
+        start.click(forDuration: 0.2, thenDragTo: start.withOffset(CGVector(dx: -video.width / 10, dy: 0)))
 
         // Both moved about a tenth of the frame to the left.
         let after = (speedometer: frame(of: "Speedometer"), timer: frame(of: "Timer"))

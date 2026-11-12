@@ -203,7 +203,7 @@ struct LogbookDetail: View {
                         }
                     }
                 }
-                Text(entry.file.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                SelectableText(entry.file.path).font(.caption).foregroundStyle(.secondary)
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)

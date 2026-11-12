@@ -54,7 +54,7 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
 
         // Its left edge, dragged 60 points to the left: wider, by no more than it was dragged.
         let grab = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        grab.press(forDuration: 0.3, thenDragTo: grab.withOffset(CGVector(dx: -60, dy: 0)))
+        grab.click(forDuration: 0.3, thenDragTo: grab.withOffset(CGVector(dx: -60, dy: 0)))
         let dragged = detailWidth
         XCTAssertGreaterThan(dragged, 335, "Dragging its edge did not widen it")
         XCTAssertLessThanOrEqual(dragged, 383, "It went further than it was dragged")
@@ -78,14 +78,14 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
 
         // Dragged as far as it goes it stops: at its widest, or sooner where the window is small.
         let far = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        far.press(forDuration: 0.3, thenDragTo: far.withOffset(CGVector(dx: -300, dy: 0)))
+        far.click(forDuration: 0.3, thenDragTo: far.withOffset(CGVector(dx: -300, dy: 0)))
         let widest = detailWidth
         XCTAssertGreaterThanOrEqual(widest, dragged - 1, "Dragging further left made it narrower")
         XCTAssertLessThanOrEqual(widest, 422, "It can be dragged past its widest")
 
         // Then a little narrower, to a width that is neither where it starts nor where it stops.
         let back = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        back.press(forDuration: 0.3, thenDragTo: back.withOffset(CGVector(dx: 20, dy: 0)))
+        back.click(forDuration: 0.3, thenDragTo: back.withOffset(CGVector(dx: 20, dy: 0)))
         let left = detailWidth
         XCTAssertEqual(left, widest - 20, accuracy: 4, "Dragging its edge right did not narrow it")
 

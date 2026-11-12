@@ -37,7 +37,7 @@ final class FramingUITests: OnboardStudioUITestCase {
     func testDraggingACornerAndDoneIsOneUndoStep() throws {
         openFraming()
         let corner = frame.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        corner.press(forDuration: 0.2, thenDragTo: frame.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.25)))
+        corner.click(forDuration: 0.2, thenDragTo: frame.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.25)))
         XCTAssertEqual(Double(zoomBox.value as? String ?? "") ?? 0, 2, accuracy: 0.15, "The corner did not zoom it")
         done.click()
         XCTAssertTrue(done.waitForNonExistence(timeout: Self.timeout))
