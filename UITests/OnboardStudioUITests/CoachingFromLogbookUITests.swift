@@ -7,7 +7,7 @@ final class CoachingFromLogbookUITests: OnboardStudioUITestCase {
     @MainActor
     func testASessionIsCoachedWithNoProjectOpen() throws {
         selectTheCoachingSession()
-        XCTAssertFalse(app.windows["Untitled"].exists, "Still no project")
+        XCTAssertEqual(projectWindows.count, 0, "Still no project")
         pressCoach()
 
         // The window reads the session: a headline, the corner table, Make a Project in place of the plan.
@@ -16,7 +16,7 @@ final class CoachingFromLogbookUITests: OnboardStudioUITestCase {
         expect(headline, toContain: "against your best lap")
         XCTAssertTrue(app.buttons["coaching.makeProject"].exists, "No Make a Project")
         XCTAssertFalse(app.buttons["coaching.makePlan"].exists, "A plan needs a project")
-        XCTAssertFalse(app.windows["Untitled"].exists, "Coaching opened no project")
+        XCTAssertEqual(projectWindows.count, 0, "Coaching opened no project")
 
         // A choice is kept on the entry: the fastest rolling lap, read again after a round trip.
         let reference = app.popUpButtons["coaching.reference"]
@@ -50,7 +50,7 @@ final class CoachingFromLogbookUITests: OnboardStudioUITestCase {
             "No plan: Coach… did not find the project open on the session")
         XCTAssertFalse(app.buttons["coaching.makeProject"].exists, "A project is offered beside the one open")
         XCTAssertFalse(app.buttons["coaching.useOpenProject"].exists)
-        XCTAssertFalse(app.windows["Untitled 2"].exists, "A second project")
+        XCTAssertEqual(projectWindows.count, 1, "A second project")
     }
 
     /// #462: a project made after the Coaching window opened on the session is followed, not
@@ -70,7 +70,7 @@ final class CoachingFromLogbookUITests: OnboardStudioUITestCase {
         use.click()
 
         XCTAssertTrue(app.buttons["coaching.makePlan"].waitForExistence(timeout: Self.timeout * 2), "No plan")
-        XCTAssertFalse(app.windows["Untitled 2"].exists, "A second project")
+        XCTAssertEqual(projectWindows.count, 1, "A second project")
     }
 
     /// The Logbook at launch, a day added, and the coaching fixture's session selected.
@@ -111,7 +111,7 @@ final class CoachingFromLogbookUITests: OnboardStudioUITestCase {
     private func newProjectFromTheSession() {
         XCTAssertTrue(sessionNewProject.waitForExistence(timeout: Self.timeout), "No New Project in the detail")
         pressSplitButton(sessionNewProject)
-        XCTAssertTrue(app.windows["Untitled"].waitForExistence(timeout: Self.timeout), "No new project")
+        XCTAssertTrue(projectWindows.firstMatch.waitForExistence(timeout: Self.timeout), "No new project")
         XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout * 2), "No data input")
     }
 }

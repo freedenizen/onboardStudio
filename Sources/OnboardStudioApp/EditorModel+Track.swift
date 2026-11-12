@@ -175,6 +175,27 @@ extension EditorModel {
             $0.kind = .data(settings)
         }
     }
+
+    /// The corners this data input's reference lap has, for naming them.
+    func corners(for id: InputID) -> [Corner] {
+        guard let session = sessions[id], let reference = Sectors.referenceLap(in: session) else { return [] }
+        return CornerDetector.corners(of: reference, in: session)
+    }
+
+    /// Names the `index`-th corner of `id`'s lap, padding the list out as needed so a label can
+    /// be set on any corner without filling in the ones before it.
+    func setCornerLabel(_ label: String, at index: Int, for id: InputID) {
+        updateInput(id, name: "Name Corner") {
+            guard case .data(var settings) = $0.kind, index >= 0 else { return }
+            var labels = settings.cornerLabels
+            while labels.count <= index { labels.append("") }
+            labels[index] = label.trimmingCharacters(in: .whitespaces)
+            // Trailing blanks carry no meaning and would grow the file for nothing.
+            while let last = labels.last, last.isEmpty { labels.removeLast() }
+            settings.cornerLabels = labels
+            $0.kind = .data(settings)
+        }
+    }
 }
 
 /// What a cached map projection was built for. The sample count stands in for the session: a

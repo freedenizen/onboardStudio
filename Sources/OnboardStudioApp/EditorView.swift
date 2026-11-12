@@ -82,6 +82,7 @@ struct EditorView: View {
         } message: {
             Text(editor.errorMessage ?? "")
         }
+        .background(DocumentNamer(name: editor.untitledName, editor: editor))
         .onAppear {
             editor.undoManager = undoManager
             // The attribute window is its own scene, so `@FocusedValue` cannot reach this editor
@@ -114,6 +115,8 @@ struct EditorView: View {
     static func openFromLogbook(into editor: EditorModel, openWindow: OpenWindowAction) {
         guard let request = PendingLogbookOpen.shared.request, editor.project.inputs.isEmpty else { return }
         PendingLogbookOpen.shared.request = nil
+        // Called as the Logbook lists the session until it is saved, not "Untitled" (#481).
+        editor.sessionName = ProjectNaming.name(title: request.entry.title, date: request.entry.date)
         if let template = request.template, editor.project.displayObjects.isEmpty { editor.apply(template) }
         if !request.clips.isEmpty { editor.addVideos(at: request.clips) }
         if let url = request.entry.resolveFile() { editor.addData(at: url) }

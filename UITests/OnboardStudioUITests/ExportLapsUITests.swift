@@ -19,8 +19,11 @@ final class ExportLapsUITests: OnboardStudioUITestCase {
         // no partial lap to let in.)
         let all = promised
 
+        // Named after the project, as its window is, not "Onboard Studio Export" (#467).
+        let project = projectWindows.firstMatch.title
+        XCTAssertFalse(project.isEmpty, "The project window has no title")
         let folder = Self.exportDirectory
-        let expected = all.map { folder.appending(path: "Onboard Studio Export – Lap \($0).mp4") }
+        let expected = all.map { folder.appending(path: "\(project) – Lap \($0).mp4") }
         for url in expected { try? FileManager.default.removeItem(at: url) }
         app.buttons["export.start"].click()
         XCTAssertTrue(app.buttons["export.reveal"].waitForExistence(timeout: 90), "The export did not finish")

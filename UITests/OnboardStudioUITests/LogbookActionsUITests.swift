@@ -49,7 +49,7 @@ final class LogbookActionsUITests: OnboardStudioUITestCase {
         }
         XCTAssertTrue(found, "No session with a clip offers a debrief")
         debrief.click()
-        XCTAssertTrue(app.windows["Untitled"].waitForExistence(timeout: Self.timeout), "No project")
+        XCTAssertTrue(projectWindows.firstMatch.waitForExistence(timeout: Self.timeout), "No project")
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "debrief.corners").firstMatch.waitForExistence(
                 timeout: Self.timeout * 3), "No debrief sheet")

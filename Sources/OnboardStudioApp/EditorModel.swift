@@ -16,6 +16,11 @@ final class EditorModel {
     let document: ProjectDocument
     var fileURL: URL?
     var undoManager: UndoManager?
+    /// The session this project was made from, as the Logbook lists it: what the project is
+    /// called until it is saved (#481).
+    var sessionName: String?
+    /// The window this project is edited in, for the name its document has (`DocumentNamer`).
+    @ObservationIgnored weak var window: NSWindow?
 
     /// The object the inspector shows. Setting it — even to the object already there — means
     /// "just this one" and drops the rest of a multiple selection; `selectObject(_:extending:)`
@@ -251,27 +256,6 @@ final class EditorModel {
             statusMessage = "Saved the start/finish and sectors for \(definition.name)."
         } catch {
             statusMessage = "Could not save the track: \(error.localizedDescription)"
-        }
-    }
-
-    /// The corners this data input's reference lap has, for naming them.
-    func corners(for id: InputID) -> [Corner] {
-        guard let session = sessions[id], let reference = Sectors.referenceLap(in: session) else { return [] }
-        return CornerDetector.corners(of: reference, in: session)
-    }
-
-    /// Names the `index`-th corner of `id`'s lap, padding the list out as needed so a label can
-    /// be set on any corner without filling in the ones before it.
-    func setCornerLabel(_ label: String, at index: Int, for id: InputID) {
-        updateInput(id, name: "Name Corner") {
-            guard case .data(var settings) = $0.kind, index >= 0 else { return }
-            var labels = settings.cornerLabels
-            while labels.count <= index { labels.append("") }
-            labels[index] = label.trimmingCharacters(in: .whitespaces)
-            // Trailing blanks carry no meaning and would grow the file for nothing.
-            while let last = labels.last, last.isEmpty { labels.removeLast() }
-            settings.cornerLabels = labels
-            $0.kind = .data(settings)
         }
     }
 

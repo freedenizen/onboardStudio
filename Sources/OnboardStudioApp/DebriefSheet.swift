@@ -143,7 +143,7 @@ struct DebriefSheet: View {
             failure = "The project has not finished loading."
             return
         }
-        let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
+        let base = editor.exportBaseName
         let settings = editor.project.export.reconciled
         guard
             let url = OpenPanels.chooseExportDestination(

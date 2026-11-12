@@ -8,12 +8,12 @@ struct ExportSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Preferences.defaultExportPreset.key) private var defaultPreset = Preferences.defaultExportPreset.unset
     @State private var preset = "project"
-    @State private var settings = ExportSettings()
+    @State var settings = ExportSettings()
     @State private var rangeMode = "whole"
     @State private var spanStart = 0.0
     @State private var spanEnd = 0.0
-    @State private var firstLap = 1
-    @State private var lastLap = 1
+    @State var firstLap = 1
+    @State var lastLap = 1
     @State private var keyColor = Color.blue
     @State private var progress: ExportProgress?
     @State private var exportTask: Task<Void, Never>?
@@ -35,6 +35,50 @@ struct ExportSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Export Video").font(.title2)
             Form {
+                // What to export first: what a driver most often wants is one lap, and the format
+                // is the same from one export to the next (#467).
+                Section("Range") {
+                    Picker("Export", selection: $rangeMode) {
+                        Text("Whole project").tag("whole")
+                        Text("Time span").tag("span")
+                        if let range = editor.inOutRange {
+                            Text(
+                                "In to out (\(TimeParsing.lapTimeString(range.lowerBound)) – "
+                                    + "\(TimeParsing.lapTimeString(range.upperBound)))"
+                            )
+                            .tag("inout")
+                        }
+                        Text("Laps").tag("laps").disabled(lapCount == 0)
+                        Text("Every lap, one file each").tag("eachLap").disabled(lapCount == 0)
+                        Text("Every corner, one file each").tag("eachCorner").disabled(lapCount == 0)
+                    }
+                    .accessibilityIdentifier("export.range")
+                    if rangeMode == "eachLap" { eachLapOptions }
+                    if rangeMode == "eachCorner" { eachCornerOptions }
+                    if rangeMode == "span" {
+                        HStack {
+                            TextField("From (s)", value: $spanStart, format: .number.precision(.fractionLength(0...2)))
+                            TextField("To (s)", value: $spanEnd, format: .number.precision(.fractionLength(0...2)))
+                            Button("Use Playhead as Start") { spanStart = editor.currentTime }
+                        }
+                    }
+                    if rangeMode == "laps" {
+                        // Every lap with its time, the best marked, in place of two steppers that
+                        // began at lap 1 — usually the out-lap — and showed no times (#467). The
+                        // range never runs backwards: each end moves the other past it.
+                        Picker("From", selection: $firstLap) { lapChoices }
+                            .onChange(of: firstLap) { _, first in if lastLap < first { lastLap = first } }
+                            .accessibilityIdentifier("export.firstLap")
+                        Picker("To", selection: $lastLap) { lapChoices }
+                            .onChange(of: lastLap) { _, last in if firstLap > last { firstLap = last } }
+                            .accessibilityIdentifier("export.lastLap")
+                        if let range = resolvedRange {
+                            let from = TimeParsing.lapTimeString(range.lowerBound)
+                            let to = TimeParsing.lapTimeString(range.upperBound)
+                            Text("\(from) – \(to)").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 Section("Format") {
                     Picker("Preset", selection: $preset) {
                         let size = "\(editor.project.settings.outputWidth) × \(editor.project.settings.outputHeight)"
@@ -42,6 +86,7 @@ struct ExportSheet: View {
                         ForEach(ExportSettings.namedPresets, id: \.key) { Text($0.name).tag($0.key) }
                         Text("Custom").tag("custom")
                     }
+                    .accessibilityIdentifier("export.preset")
                     .onChange(of: preset) { _, key in applyPreset(key) }
                     HStack {
                         TextField("Width", value: custom(\.width), format: .number)
@@ -98,46 +143,6 @@ struct ExportSheet: View {
                     if case .keyColor = settings.background {
                         ColorPicker("Key colour", selection: $keyColor, supportsOpacity: false)
                             .onChange(of: keyColor) { _, c in settings.background = .keyColor(RGBAColor(c)) }
-                    }
-                }
-                Section("Range") {
-                    Picker("Export", selection: $rangeMode) {
-                        Text("Whole project").tag("whole")
-                        Text("Time span").tag("span")
-                        if let range = editor.inOutRange {
-                            Text(
-                                "In to out (\(TimeParsing.lapTimeString(range.lowerBound)) – "
-                                    + "\(TimeParsing.lapTimeString(range.upperBound)))"
-                            )
-                            .tag("inout")
-                        }
-                        Text("Laps").tag("laps").disabled(lapCount == 0)
-                        Text("Every lap, one file each").tag("eachLap").disabled(lapCount == 0)
-                        Text("Every corner, one file each").tag("eachCorner").disabled(lapCount == 0)
-                    }
-                    if rangeMode == "eachLap" { eachLapOptions }
-                    if rangeMode == "eachCorner" { eachCornerOptions }
-                    if rangeMode == "span" {
-                        HStack {
-                            TextField("From (s)", value: $spanStart, format: .number.precision(.fractionLength(0...2)))
-                            TextField("To (s)", value: $spanEnd, format: .number.precision(.fractionLength(0...2)))
-                            Button("Use Playhead as Start") { spanStart = editor.currentTime }
-                        }
-                    }
-                    if rangeMode == "laps" {
-                        HStack {
-                            Stepper(
-                                "First lap: \(firstLap)", value: $firstLap,
-                                in: lapNumbers.lowerBound...lapNumbers.upperBound)
-                            Stepper(
-                                "Last lap: \(lastLap)", value: $lastLap,
-                                in: lapNumbers.lowerBound...lapNumbers.upperBound)
-                        }
-                        if let range = resolvedRange {
-                            let from = TimeParsing.lapTimeString(range.lowerBound)
-                            let to = TimeParsing.lapTimeString(range.upperBound)
-                            Text("\(from) – \(to)").font(.caption).foregroundStyle(.secondary)
-                        }
                     }
                 }
             }
@@ -219,10 +224,7 @@ extension ExportSheet {
         // A range marked with I and O is what the user means to export, as in any editor (#230).
         if editor.inOutRange != nil { rangeMode = "inout" }
         if case .keyColor(let c) = settings.background { keyColor = Color(c) }
-        if lapCount > 0 {
-            firstLap = min(max(firstLap, lapNumbers.lowerBound), lapNumbers.upperBound)
-            lastLap = min(max(lastLap, firstLap), lapNumbers.upperBound)
-        }
+        if lapCount > 0 { startLapRange() }
     }
 
     func applyPreset(_ key: String) {
@@ -320,7 +322,7 @@ extension ExportSheet {
                 cornerFiles.map { BatchFile(title: $0.title, range: $0.range, retimes: $0.retimes) }, noun: "corner")
         }
         let settings = finalSettings
-        let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
+        let base = editor.exportBaseName
         guard
             let destination = OpenPanels.chooseExportDestination(
                 suggestedName: base + "." + settings.fileExtension, fileExtension: settings.fileExtension)
@@ -445,7 +447,7 @@ extension ExportSheet {
             return
         }
         guard let folder = OpenPanels.chooseExportFolder() else { return }
-        let base = editor.fileURL?.deletingPathExtension().lastPathComponent ?? "Onboard Studio Export"
+        let base = editor.exportBaseName
         failure = nil
         finishedURL = nil
         progress = ExportProgress(fraction: 0, framesWritten: 0, currentTime: 0)

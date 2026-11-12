@@ -9,7 +9,7 @@ final class LogbookLaunchUITests: OnboardStudioUITestCase {
         launch(logbook: true)
         let logbook = app.windows["Logbook"]
         XCTAssertTrue(logbook.waitForExistence(timeout: Self.timeout), "No Logbook window at launch")
-        XCTAssertFalse(app.windows["Untitled"].exists, "No project until the user asks for one")
+        XCTAssertEqual(projectWindows.count, 0, "No project until the user asks for one")
         XCTAssertFalse(app.sheets.firstMatch.exists || app.dialogs.firstMatch.exists, "No Open panel at launch")
         XCTAssertTrue(app.buttons["logbook.empty.newTrackDay"].exists, "An empty logbook offers New Track Day…")
         let newProject = app.menuButtons["logbook.newProject"]
@@ -70,20 +70,21 @@ final class LogbookLaunchUITests: OnboardStudioUITestCase {
         newProject.click()
         let items = newProject.menus.menuItems
         XCTAssertTrue(items["New Project Without a Session"].waitForExistence(timeout: Self.timeout))
-        XCTAssertTrue(
-            items.matching(NSPredicate(format: "title BEGINSWITH 'From '")).firstMatch.exists,
-            "The menu does not say which session the project is from")
+        let heading = items.matching(NSPredicate(format: "title BEGINSWITH 'From '")).firstMatch
+        XCTAssertTrue(heading.exists, "The menu does not say which session the project is from")
+        // The project is called what the heading calls the session, not "Untitled" (#481).
+        let name = String(heading.title.dropFirst("From ".count))
         XCTAssertFalse(items["From a Template"].exists, "The templates are the session's while it is selected")
         items["Blank Project"].click()
-        let project = app.windows["Untitled"]
-        XCTAssertTrue(project.waitForExistence(timeout: Self.timeout), "No project from the session")
+        let project = app.windows[name]
+        XCTAssertTrue(project.waitForExistence(timeout: Self.timeout), "No project called “\(name)”")
         let inputs = project.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'input.'"))
         XCTAssertTrue(inputs.firstMatch.waitForExistence(timeout: Self.timeout * 2), "The session's file is not in it")
 
-        // And without the session: a project with nothing in it.
+        // And without the session: a project with nothing in it, and so Untitled.
         menu("Window", "Logbook")
         toolbarMenu("logbook.newProject", "New Project Without a Session")
-        let empty = app.windows["Untitled 2"]
+        let empty = app.windows["Untitled"]
         XCTAssertTrue(empty.waitForExistence(timeout: Self.timeout), "No second project")
         XCTAssertTrue(empty.staticTexts["welcome.title"].waitForExistence(timeout: Self.timeout), "It is not empty")
     }

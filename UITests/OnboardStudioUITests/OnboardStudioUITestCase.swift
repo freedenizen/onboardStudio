@@ -241,6 +241,10 @@ class OnboardStudioUITestCase: XCTestCase {
     // MARK: - Elements
 
     func sidebarInput(_ label: String) -> XCUIElement { app.staticTexts["input.\(label)"] }
+
+    /// The project windows, whatever they are called: a project made from a session is named
+    /// after it, not "Untitled" (#481).
+    var projectWindows: XCUIElementQuery { app.windows.containing(.button, identifier: "toolbar.addVideo") }
     func sidebarObject(_ label: String) -> XCUIElement { app.staticTexts["object.\(label)"] }
 
     /// New Project in a session's detail in the Logbook. It is a split button (#448), which the
