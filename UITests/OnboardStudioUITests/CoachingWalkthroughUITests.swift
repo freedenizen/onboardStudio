@@ -32,6 +32,11 @@ final class CoachingWalkthroughUITests: OnboardStudioUITestCase {
         // The slow lap loses time in two corners: one step each, what to try in full.
         next.click()
         let first = try cornerStep(number: 1, of: 2)
+        // Watch says when nothing shows the corner: the project has no video (#516).
+        XCTAssertTrue(
+            app.staticTexts["coaching.walkthrough.noVideo"].waitForExistence(timeout: Self.timeout),
+            "The corner does not say there is no video of it")
+        XCTAssertFalse(app.buttons["coaching.walkthrough.watch"].exists, "Watch with nothing to play")
         let tryIt = app.checkBoxes["coaching.walkthrough.try"]
         XCTAssertTrue(tryIt.exists, "No Try this next time")
         XCTAssertEqual(tryIt.value as? Int, 1, "A corner is not chosen to try to begin with")
@@ -100,6 +105,18 @@ final class CoachingWalkthroughUITests: OnboardStudioUITestCase {
         XCTAssertTrue(step.waitForExistence(timeout: Self.timeout * 2), "The window did not open on the walkthrough")
         expect(step, toRead: "The Lap")
         XCTAssertEqual(projectWindows.count, 0, "Coaching opened a project")
+        // The slow lap, which has corners to go through.
+        app.buttons["coaching.walkthrough.change"].click()
+        let lapPicker = app.popUpButtons["coaching.lap"]
+        XCTAssertTrue(lapPicker.waitForExistence(timeout: Self.timeout), "No lap to choose under Change…")
+        choosePopUpItem("Lap 2 — 0:44.60", in: lapPicker)
+        app.typeKey(.escape, modifierFlags: [])
+        expect(app.staticTexts["coaching.walkthrough.headline"], toContain: "Lap 2")
+        next.click()
+        // The fixture day has no clip of this session: nothing to watch, and it says so (#516).
+        XCTAssertTrue(
+            app.staticTexts["coaching.walkthrough.noVideo"].waitForExistence(timeout: Self.timeout),
+            "A corner from the Logbook does not say there is no video of it")
         for _ in 0..<6 where next.exists { next.click() }
         expect(step, toRead: "Your Plan")
         // The fixture's circuit is not one the logbook knows: it says so rather than pretending.

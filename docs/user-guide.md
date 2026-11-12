@@ -882,8 +882,13 @@ reference and says where the time went.
 It opens on a **walkthrough** that takes you through the lap one step at a time. First the lap, in
 a sentence: how far behind it finished and against what (**Change…** chooses the lap, what it is
 compared with and how the two are lined up). Then its three biggest losses, one corner per step:
-what happened, the whole of what to try next time, the corner on the map with both lines, where
-the time went phase by phase, and **Try this next time**, on to begin with. Last, **Your Plan**:
+what happened, the whole of what to try next time, **Watch**, the corner on the map with both
+lines, where the time went phase by phase, and **Try this next time**, on to begin with. **Watch**
+plays the corner in the window, from a moment before the brakes go on to a moment after the exit:
+this lap's, then the same corner on the lap it is compared with, when that lap was filmed too (not
+the spliced optimal lap, nor a lap from another session in the Logbook). From a project it plays
+the project's own picture, overlays and all; from the Logbook, the clips of the session's day,
+lined up by the camera's clock and the logger's. When no video covers the corner it says so. Last, **Your Plan**:
 the corners you chose, as next session's experiments in the analysis's own words, which you can
 edit before **Save Plan**. **Next** (Return) and **Back** (⌘[) move between the steps. The plan is
 kept for the circuit, so it is there when you prepare to go back and on the Season page, and in the
