@@ -59,9 +59,10 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
         XCTAssertGreaterThan(dragged, 335, "Dragging its edge did not widen it")
         XCTAssertLessThanOrEqual(dragged, 383, "It went further than it was dragged")
 
-        // Trends has no detail; back on the sessions it is as wide as it was left.
+        // Trends keeps the session beside it, as wide as it was left, and so do the sessions after.
         choose("Trends")
-        XCTAssertTrue(detail.waitForNonExistence(timeout: Self.timeout))
+        XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "The session went when Trends came")
+        XCTAssertEqual(detailWidth, dragged, accuracy: 1, "Trends changed the width")
         choose("Sessions")
         XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout))
         XCTAssertEqual(detailWidth, dragged, accuracy: 1, "A visit to Trends lost the width")

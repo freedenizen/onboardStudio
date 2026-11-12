@@ -94,13 +94,19 @@ final class LogbookMenuUITests: OnboardStudioUITestCase {
     func testTheKeysSwitchViewsFindAndRemove() throws {
         selectASession()
 
-        // ⌘2 shows Trends, which has no session detail; ⌘1 brings the sessions back, and the detail.
+        // ⌘2 shows Trends and ⌘3 the Season in place of the sessions, with the session chosen still
+        // beside them (#503); ⌘1 brings the sessions back.
+        let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch
         app.typeKey("2", modifierFlags: .command)
-        XCTAssertTrue(detail.waitForNonExistence(timeout: Self.timeout), "⌘2 did not leave the sessions")
+        XCTAssertTrue(table.waitForNonExistence(timeout: Self.timeout), "⌘2 did not leave the sessions")
+        XCTAssertTrue(detail.exists, "The session went when Trends came")
         app.typeKey("3", modifierFlags: .command)
-        XCTAssertFalse(detail.exists)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["logbook.season"].waitForExistence(timeout: Self.timeout),
+            "⌘3 did not show the Season")
         app.typeKey("1", modifierFlags: .command)
-        XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "⌘1 did not bring the sessions back")
+        XCTAssertTrue(table.waitForExistence(timeout: Self.timeout), "⌘1 did not bring the sessions back")
+        XCTAssertTrue(detail.exists)
 
         // ⌘F puts the keyboard in the search field.
         app.typeKey("f", modifierFlags: .command)

@@ -15,6 +15,23 @@ struct LogbookTable: View {
 
     var body: some View {
         Table(entries, selection: $selection, sortOrder: $sortOrder) {
+            // First, as Mail's flags are: a personal best stays in view however narrow the
+            // table is; last, it was the first column a narrow table scrolled away (#503).
+            TableColumn("PB") { entry in
+                switch bests[entry.id] {
+                case .current:
+                    Image(systemName: "star.fill").foregroundStyle(.yellow)
+                        .accessibilityLabel("Personal best")
+                        .help("Your personal best at this circuit, overall or in this car")
+                case .former:
+                    Image(systemName: "star").foregroundStyle(.secondary)
+                        .accessibilityLabel("Former personal best")
+                        .help("A personal best at this circuit when it was driven, since beaten")
+                case nil:
+                    EmptyView()
+                }
+            }
+            .width(min: 28, ideal: 32)
             TableColumn("Date", value: \.date, comparator: OptionalDateComparator()) { entry in
                 Text(entry.date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—")
             }
@@ -36,21 +53,6 @@ struct LogbookTable: View {
             }
             .width(min: 70, ideal: 80)
             TableColumn("Conditions", value: \.conditions.summary).width(min: 90, ideal: 140)
-            TableColumn("PB") { entry in
-                switch bests[entry.id] {
-                case .current:
-                    Image(systemName: "star.fill").foregroundStyle(.yellow)
-                        .accessibilityLabel("Personal best")
-                        .help("Your personal best at this circuit, overall or in this car")
-                case .former:
-                    Image(systemName: "star").foregroundStyle(.secondary)
-                        .accessibilityLabel("Former personal best")
-                        .help("A personal best at this circuit when it was driven, since beaten")
-                case nil:
-                    EmptyView()
-                }
-            }
-            .width(min: 28, ideal: 32)
         }
         .accessibilityIdentifier("logbook.table")
     }

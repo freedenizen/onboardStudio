@@ -73,9 +73,10 @@ do it on the command line. Under UI tests the app's logbook is a scratch folder
 ## The window (#347)
 
 `LogbookWindow` (`Sources/OnboardStudioApp/LogbookWindow.swift`), Window ▸ Logbook, ⌃⌘L — a
-`Window` scene like Attributes and Coaching, not a document: a `NavigationSplitView` whose sidebar
-is the scopes `LogbookFilter` computes (all, circuits by most sessions, cars, years) and whose
-detail is an `HSplitView` of a sortable `Table` and `LogbookDetail`. `LogbookFilter`
+`Window` scene like Attributes and Coaching, not a document: a three-column `NavigationSplitView`
+whose sidebar is the scopes `LogbookFilter` computes (all, circuits by most sessions, cars, years),
+whose content is a sortable `Table` (or Trends, or the Season) and whose detail is `LogbookDetail`
+(#503). `LogbookFilter`
 (`ProjectModel/LogbookFilter.swift`) does the choosing — scope and a case-insensitive any-word
 search over circuit, car, driver, notes, tags and file name — so it is tested without a view.
 `LogbookModel.shared` holds the entries and re-reads them after any write. **Open as Project**
@@ -94,17 +95,18 @@ with it, and of two items on one key a dimmed one listed first blocks the other 
 `NSMenu.performKeyEquivalent`). That is why the editor's menus (`EditorCommands`,
 `TimelineCommands`) give up their keys with no project in front, why ⌃⌘C is Coaching… in a
 project and Coach… in the Logbook, and why ⌘⌫ removes a session only while the table has the
-keyboard. The toolbar is customizable (`.toolbar(id: "logbook")`).
+keyboard. The toolbar is customizable (`.toolbar(id: "logbook")` over the list, `"logbook.session"` over the session).
 
-The detail keeps the width it was dragged to (#483). SwiftUI's `HSplitView` has no autosave name
-and puts a pane back at its minimum width every time it returns — after a visit to Trends, after
-the selection is lost and made again, at the next launch — and the system inspector column
-(`.inspector`) opens at its ideal width once and at its minimum after that; around the whole
-`NavigationSplitView` it also raised an AppKit update-constraints exception when its edge was
-dragged. A divider of the app's own was tried and kept the width, with a stray hairline in the
-detail's foot to show for it. So the split view stays as it is, and
-`LogbookDetailWidthKeeper` — a zero-size view in the detail pane — finds the `NSSplitView` SwiftUI
-made, sets its divider from the kept width when the pane appears, and writes the width down when
+The detail keeps the width it was dragged to (#483). SwiftUI's `HSplitView`, where the detail
+was until #503, has no autosave name and puts a pane back at its minimum width every time it
+returns — after a visit to Trends, after the selection is lost and made again, at the next launch
+— and the system inspector column (`.inspector`) opens at its ideal width once and at its minimum
+after that; around the whole `NavigationSplitView` it also raised an AppKit update-constraints
+exception when its edge was dragged. A divider of the app's own was tried and kept the width, with
+a stray hairline in the detail's foot to show for it. So the split view stays as it is, and
+`LogbookDetailWidthKeeper` — a zero-size view in the detail column — finds the `NSSplitView`
+SwiftUI made, sets its last divider from the kept width when the column appears, and writes the
+width down when
 `NSSplitView.didResizeSubviewsNotification` says a divider was dragged (a window resize does not
 count). The width is the preference `logbook.detailWidth`; `LogbookDetailWidth.fitted` holds it
 to 320–420 and shows it narrower, without forgetting it, in a window too narrow to leave the
@@ -399,11 +401,22 @@ with the Coaching Debrief template and `then: .debrief`, so the new editor puts 
 up once it appears. It is disabled until the session has a clip on its day, with the help text
 saying why.
 
-The detail is a pane of the window's own `HSplitView`, beside the `NavigationSplitView`, as the
-editor's inspector is (#448). Inside the detail column, at the default window size, a split view
-gave the table and the detail their minimum widths and left the rest of the column empty, whatever
-their ideal widths and layout priorities said, so the buttons had 248 points between them. In a
-wider window the table took the extra width and the detail stayed at its minimum, never its ideal.
+The window is a three-column `NavigationSplitView`, as Mail is (#503): the sidebar, the content
+(the sessions, Trends or the Season) and the session chosen, with its column widths. The toolbar
+follows the columns — each column's `.toolbar` items sit over that column — so the list's buttons
+stay over the list and **New Project** over the session however wide it is dragged. Before, the
+detail was a pane of an `HSplitView` beside a two-column split view (#448), and the toolbar, laid
+out across the whole window, ran under its edge: at 420 points New Track Day sat half over each.
+The system inspector inside the content column was measured too: its toolbar did not follow its
+edge either, and it lost the kept width. The session's column stays beside Trends and the Season,
+with **No Session Selected** when there is none (a `NavigationSplitView` cannot hide its last
+column while the sidebar shows). The toolbar shows no title: in the narrowest window (989 points)
+the list's column is 460 wide, and "Logbook", the view picker and the list's buttons needed about
+560, so AppKit pushed Add Files and Export over the session's edge. The window keeps its title for
+the Window menu and Mission Control. Before #448 the detail was an `HSplitView` inside the detail
+column, which gave the table and the detail their minimum widths and left the rest of the column
+empty. The table's **PB** column comes first, as Mail's flags do: last, it was the first a narrow
+table scrolled out of view.
 The buttons are in `FlowLayout` rows in a `safeAreaInset` under the scrolling detail: one that does
 not fit starts another row, and none of them scrolls out of view. **New Project** is one `Menu`
 with a `primaryAction` — a split button — in place of a button and an icon-only menu beside it.

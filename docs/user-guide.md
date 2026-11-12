@@ -391,14 +391,19 @@ day its date and circuit say; with it, every file goes on that day and the line 
 otherwise says so), `onboard logbook days` lists the days and `onboard logbook list`
 the sessions with their day.
 
-The window shows it all: a sidebar of track days (under their year when there is more than one,
-the year of the day you have chosen open;
+The window shows it all in three columns, as Mail does: a sidebar of track days (under their
+year when there is more than one, the year of the day you have chosen open;
 each is its date with the circuit beneath, so two days on one date read apart),
-circuits (ending with **No circuit** when some sessions name none), cars and years with how many sessions each, a table of sessions (date, circuit, car,
-laps, best, optimal and fastest rolling lap) sortable by any column and narrowed by the search
-field, and, for the selected session, its numbers, every lap with the best marked, the notes, the
-projects made from it and where the file is. A search that finds nothing says so, and the detail
-is of a session in the table: choose another day, or search it away, and the detail goes with it.
+circuits (ending with **No circuit** when some sessions name none), cars and years with how many
+sessions each; a table of sessions (a personal-best star, date, circuit, car, laps, best, optimal
+and fastest rolling lap) sortable by any column and narrowed by the search field; and, for the
+selected session, its numbers, every lap with the best marked, the notes, the projects made from
+it and where the file is. The session stays beside **Trends** and the **Season** too, and the
+column says **No Session Selected** when none is. A search that finds nothing says so, and the
+detail is of a session the sidebar and the search let through: choose another day, or search it
+away, and the detail goes with it. The toolbar follows the columns: the view, **New Track Day**,
+**Add Files** and **Export or Import** over the sessions, **New Project** and the search field
+over the session, however wide you drag it.
 What can be done with the session stays at the foot of
 its detail, in view however many laps are listed above, and the buttons move onto another row
 rather than shorten when the detail is narrow (drag its left edge to widen it; it stays as wide
@@ -457,7 +462,8 @@ driver are filled from what the logbook knows. A saved project is listed on its 
 **Projects**, every video exported from it under **Exports**, both as links. A data file you have
 moved is found again through whichever side still knows where it is, once, when the project opens.
 
-The **PB** column marks every session that set a personal best at its circuit when it was driven,
+The **PB** column, the table's first so a narrow table keeps it in view, marks every session that
+set a personal best at its circuit when it was driven,
 overall or in its car: a filled yellow star on the session that holds it now, a hollow star on one
 that has since been beaten, so a run of improving sessions reads as progress and one star still
 says which is the best. A selected session's **Personal best here** says the best at that
