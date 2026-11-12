@@ -155,7 +155,7 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         // SwiftUI's list keeps its selection when empty space is clicked; AppKit's clears it, and
         // that is what a Mac user expects of a list.
-        .background(EmptyRowClick { editor.deselectAll() })
+        .background(TableClick(onEmpty: { editor.deselectAll() }))
     }
 
     /// What a row stands for, so the list can select it.
@@ -249,59 +249,6 @@ struct SidebarView: View {
         case .sectorPanel: "chart.bar.doc.horizontal"
         case .cornerCallout: "text.bubble"
         case .steeringWheel: "steeringwheel"
-        }
-    }
-}
-
-/// Calls `action` when a click in the table behind it lands on no row (#280). A local event
-/// monitor, so the click itself still goes where it was going.
-struct EmptyRowClick: NSViewRepresentable {
-    let action: () -> Void
-
-    func makeNSView(context: Context) -> MonitorView {
-        let view = MonitorView()
-        view.action = action
-        return view
-    }
-
-    func updateNSView(_ view: MonitorView, context: Context) { view.action = action }
-
-    final class MonitorView: NSView {
-        var action: (() -> Void)?
-        private var monitor: Any?
-
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            if let monitor { NSEvent.removeMonitor(monitor) }
-            monitor = nil
-            guard window != nil else { return }
-            monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
-                self?.handle(event)
-                return event
-            }
-        }
-
-        /// Only clicks inside this view, which lies behind the sidebar's list and has its frame,
-        /// and only those that land on no row of the table there.
-        private func handle(_ event: NSEvent) {
-            guard let window, event.window === window,
-                convert(bounds, to: nil).contains(event.locationInWindow),
-                let hit = window.contentView?.hitTest(event.locationInWindow),
-                let table = Self.table(containing: hit)
-            else { return }
-            if table.row(at: table.convert(event.locationInWindow, from: nil)) == -1 { action?() }
-        }
-
-        /// The table the click is in: an ancestor, or the document of an enclosing scroll view
-        /// (the empty space below the last row belongs to the scroll view, not the table).
-        private static func table(containing view: NSView) -> NSTableView? {
-            var current: NSView? = view
-            while let candidate = current {
-                if let table = candidate as? NSTableView { return table }
-                if let scroll = candidate as? NSScrollView { return scroll.documentView as? NSTableView }
-                current = candidate.superview
-            }
-            return nil
         }
     }
 }

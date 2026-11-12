@@ -223,12 +223,6 @@ struct LogbookWindow: View {
         .onAppear { model.reload() }
         .onChange(of: scope, initial: true) { model.choose(selectedDay) }
         .onChange(of: model.days) { followTheChosenDay() }
-        // A session chosen has the keyboard, so ⌘⌫ and the arrow keys act on the sessions. A click
-        // on a row does that by itself on macOS 26; on macOS 27 it leaves the keyboard where it
-        // was, in the search field or nowhere (#509). Typing a search never changes the selection.
-        .onChange(of: selection) { _, chosen in
-            if chosen != nil { sessionsFocused = true }
-        }
         .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
             let day = selectedDay
             Task { @MainActor in
@@ -351,6 +345,9 @@ struct LogbookWindow: View {
                         selection: $selection, sortOrder: $sortOrder
                     )
                     .focused($sessionsFocused)
+                    // A click on a session gives the sessions the keyboard, as it does by itself on
+                    // macOS 26 and not on macOS 27 (#509).
+                    .background(TableClick(onRow: { sessionsFocused = true }))
                 }
                 if let message {
                     Divider()
