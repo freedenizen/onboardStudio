@@ -136,7 +136,8 @@ not which way the car crosses it, and the two perpendiculars fit equally, so any
 accepted rather than a guess being invented.
 
 A `Finish` gate is the end of a point-to-point course, so a file that carries one is timed in runs
-from its `Start` to its `Finish` (#552). There a line with no heading takes the direction the car
+from its `Start` to its `Finish` (#552) — unless its start gate is labelled as the finish too
+(`Start / Finish`), which says the course is a circuit whatever else the file lists. There a line with no heading takes the direction the car
 first crossed it in: a hill climb's drive back down would otherwise cross the finish and then the
 start, and be taken for a run of its own. `Tests/Fixtures/runs.d/autocross.vbo` is synthetic: three runs
 of an autocross, one a DNF (`Scripts/make-runs-fixture.py`).
