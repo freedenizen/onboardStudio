@@ -106,6 +106,7 @@ extension EditorModel {
             settings.sectors = definition.sectors
             settings.cornerLabels = definition.cornerLabels
             settings.turnNames = definition.turnNames
+            settings.configuration = definition.configuration
             $0.kind = .data(settings)
         }
         try? trackLibrary.save(definition)
@@ -121,7 +122,8 @@ extension EditorModel {
         guard case .data(let settings) = project.input(id)?.kind else { return nil }
         if let match = circuit(for: id) {
             return TrackDefinition(
-                circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
+                circuitID: match.circuit.id, configuration: settings.configuration, name: match.circuit.name,
+                latitude: match.circuit.latitude,
                 longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
                 cornerLabels: settings.cornerLabels, turnNames: settings.turnNames)
         }
@@ -203,6 +205,53 @@ extension EditorModel {
             if !settings.turnNames.isEmpty { settings.cornerLabels = [] }
             $0.kind = .data(settings)
         }
+    }
+
+    /// Which of the circuit's configurations `id` drove (#549); `nil` for the unnamed one.
+    func configuration(for id: InputID) -> String? {
+        guard case .data(let settings) = project.input(id)?.kind else { return nil }
+        return settings.configuration
+    }
+
+    /// What `id`'s circuit and configuration are kept under in the track library; `nil` when the
+    /// circuit is not one the catalogue knows.
+    func trackKey(for id: InputID) -> String? {
+        circuit(for: id).map { CircuitKey.make($0.circuit.id, configuration: configuration(for: id)) }
+    }
+
+    /// Files `id` under one of its circuit's configurations, or the unnamed one for a blank name.
+    ///
+    /// The configuration's saved start/finish, sectors and turn names come with it, in the same
+    /// step of Undo: choosing one is the driver asking for this project to change, as importing a
+    /// definition is — unlike opening a saved project, which never applies anything.
+    func setConfiguration(_ name: String, for id: InputID) {
+        let cleaned = CircuitKey.cleaned(name)
+        let configuration = cleaned.isEmpty ? nil : cleaned
+        guard configuration != self.configuration(for: id) else { return }
+        let saved = circuit(for: id).flatMap {
+            trackLibrary.definition(id: CircuitKey.make($0.circuit.id, configuration: configuration))
+        }
+        updateInput(id, name: "Change Configuration") {
+            guard case .data(var settings) = $0.kind else { return }
+            settings.configuration = configuration
+            if let saved, saved.hasGeometry {
+                if let line = saved.startFinish { settings.lapLine = line }
+                settings.sectors = saved.sectors
+                settings.cornerLabels = saved.cornerLabels
+                settings.turnNames = saved.turnNames
+            }
+            $0.kind = .data(settings)
+        }
+        if let saved, saved.hasGeometry {
+            statusMessage = "Used the saved start/finish, sectors and turn names for \(saved.title)."
+        }
+    }
+
+    /// The configurations named at `id`'s circuit, in the library and the logbook.
+    func knownConfigurations(for id: InputID) -> [String] {
+        guard let match = circuit(for: id) else { return [] }
+        return LogbookFilter.configurations(
+            at: match.circuit.id, in: AppLogbook.shared.entries(), definitions: trackLibrary.all())
     }
 
     /// What each corner of `id`'s reference lap is called, and why (#548).

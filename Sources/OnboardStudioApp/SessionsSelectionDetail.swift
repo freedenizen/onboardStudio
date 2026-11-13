@@ -85,7 +85,9 @@ struct SessionsSelectionDetail: View {
 
     /// "23 Aug 2026, 10:15 · Sonoma · Miata".
     static func line(_ entry: LogbookEntry) -> String {
-        var parts = [entry.date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "No date", entry.title]
+        var parts = [
+            entry.date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "No date", entry.circuitTitle,
+        ]
         if !entry.car.isEmpty { parts.append(entry.car) }
         return parts.joined(separator: " · ")
     }

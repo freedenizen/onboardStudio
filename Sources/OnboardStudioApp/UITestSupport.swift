@@ -114,7 +114,7 @@ enum UITestSupport {
         // The first visit is on a day at its circuit already: the second joins it there, as it
         // did when both were filed by their date alone.
         if let known, let day = known.trackDayID.flatMap({ logbook.day(id: $0) }),
-            day.circuitKey == LogbookFilter.circuitKey(of: known)
+            day.circuitKey == LogbookFilter.baseCircuitKey(of: known)
         {
             return day
         }

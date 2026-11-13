@@ -34,7 +34,7 @@ extension EditorModel {
 
     /// The plan the circuit remembers from last time, when it is not the one in this project.
     func previousPlan(for input: Input) -> NextSessionPlan? {
-        guard let match = circuit(for: input.id), let plan = trackLibrary.definition(id: match.circuit.id)?.plan,
+        guard let key = trackKey(for: input.id), let plan = trackLibrary.definition(id: key)?.plan,
             !plan.experiments.isEmpty, plan != project.plan
         else { return nil }
         return plan
@@ -43,7 +43,10 @@ extension EditorModel {
     /// Where the plan is kept besides the project: the circuit's name, or `nil` when none is
     /// recognised.
     func planCircuitName(for input: Input) -> String? {
-        circuit(for: input.id).map { trackLibrary.definition(id: $0.circuit.id)?.name ?? $0.circuit.name }
+        circuit(for: input.id).map { match in
+            let name = trackLibrary.definition(id: match.circuit.id)?.name ?? match.circuit.name
+            return CircuitKey.title(name, configuration: configuration(for: input.id))
+        }
     }
 
     /// Writes the project's plan onto the circuit's track definition, so the next project here
@@ -51,10 +54,11 @@ extension EditorModel {
     /// Save Track Definition would make it.
     func rememberPlan(for input: Input) {
         guard let plan = project.plan, let match = circuit(for: input.id) else { return }
-        try? trackLibrary.remember(plan, id: match.circuit.id) {
+        try? trackLibrary.remember(plan, id: trackKey(for: input.id) ?? match.circuit.id) {
             guard case .data(let settings) = input.kind else { return nil }
             return TrackDefinition(
-                circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
+                circuitID: match.circuit.id, configuration: settings.configuration, name: match.circuit.name,
+                latitude: match.circuit.latitude,
                 longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
                 cornerLabels: settings.cornerLabels, turnNames: settings.turnNames)
         }

@@ -18,6 +18,9 @@ import UniformTypeIdentifiers
     private(set) var hasLoaded = false
     /// The plan kept for each circuit (#330), by its catalogue id: what its card shows (#460).
     var plans: [String: NextSessionPlan] = [:]
+    /// Every track definition kept, read with the plans: the configurations named at each circuit
+    /// (#549).
+    var trackDefinitions: [TrackDefinition] = []
     /// What the driver is aiming for at each circuit (#461).
     var goals: [Goal] = []
     /// New Track Day Here… on a circuit's card: the circuit the sheet begins with (#460).
@@ -66,7 +69,9 @@ import UniformTypeIdentifiers
     /// The entry's session, read once off the main thread.
     func session(for entry: LogbookEntry) async -> TelemetrySession? {
         if let cached = sessions[entry.id] { return cached }
-        let loaded = await Task.detached(priority: .userInitiated) { LogbookReferences.load(entry) }.value
+        let tracks = TrackLibrary.app
+        let loaded = await Task.detached(priority: .userInitiated) { LogbookReferences.load(entry, tracks: tracks) }
+            .value
         if let loaded { sessions[entry.id] = loaded }
         return loaded
     }
@@ -405,6 +410,8 @@ struct LogbookWindow: View {
             remove: { remove([entry.id]) },
             save: { model.save($0, undo: undoManager) },
             knownCars: model.knownCars,
+            knownConfigurations: LogbookFilter.configurations(
+                at: LogbookFilter.baseCircuitKey(of: entry), in: model.entries, definitions: model.trackDefinitions),
             personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
             visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))
         )

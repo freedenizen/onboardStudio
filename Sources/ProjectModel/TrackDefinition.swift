@@ -12,6 +12,9 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     /// Wikidata circuit id (`Q112563`) when the venue is in the bundled list, `nil` when it is
     /// not — a club circuit, a car park, an airfield.
     public var circuitID: String?
+    /// Which of the circuit's configurations this is (#549): "Club Course". `nil` for the circuit's
+    /// unnamed configuration, which is every definition saved before configurations existed.
+    public var configuration: String?
     /// What to call it. Seeded from the circuit list or from the file, and editable, because the
     /// driver's name for a place beats a database's.
     public var name: String
@@ -36,6 +39,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
 
     public init(
         circuitID: String? = nil,
+        configuration: String? = nil,
         name: String,
         latitude: Double,
         longitude: Double,
@@ -47,6 +51,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         plan: NextSessionPlan? = nil
     ) {
         self.circuitID = circuitID
+        self.configuration = configuration.map(CircuitKey.cleaned).flatMap { $0.isEmpty ? nil : $0 }
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
@@ -61,7 +66,13 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     /// What the definition is filed under: the Wikidata id where there is one, otherwise a slug
     /// of the name. The id is preferred because circuits get renamed by sponsors — Laguna Seca
     /// twice — and a definition should survive that.
-    public var id: String { circuitID ?? Self.slug(name) }
+    ///
+    /// A configuration is filed beside its circuit (`CircuitKey`), so the unnamed configuration —
+    /// every definition saved before #549 — keeps the file it always had.
+    /// "Sonoma Raceway — Club Course" (#549).
+    public var title: String { CircuitKey.title(name, configuration: configuration) }
+
+    public var id: String { CircuitKey.make(circuitID ?? Self.slug(name), configuration: configuration) }
 
     /// Whether the definition says anything about the circuit's shape: a start/finish line,
     /// sectors or corner names. One that only keeps a plan — made from the Logbook, or from a file
@@ -90,12 +101,14 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case circuitID, name, latitude, longitude, startFinish, sectors, cornerLabels, turnNames, modified, plan
+        case circuitID, configuration, name, latitude, longitude, startFinish, sectors, cornerLabels, turnNames,
+            modified, plan
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         circuitID = try c.decodeIfPresent(String.self, forKey: .circuitID)
+        configuration = try c.decodeIfPresent(String.self, forKey: .configuration)
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? "Track"
         latitude = try c.decodeIfPresent(Double.self, forKey: .latitude) ?? 0
         longitude = try c.decodeIfPresent(Double.self, forKey: .longitude) ?? 0
@@ -154,6 +167,11 @@ public struct TrackLibrary: Sendable {
         definition.plan = plan
         definition.modified = Date()
         try save(definition)
+    }
+
+    /// Every configuration kept for the circuit `circuitID` (#549), the unnamed one included.
+    public func configurations(of circuitID: String) -> [TrackDefinition] {
+        all().filter { $0.circuitID == circuitID }
     }
 
     /// Takes the plan off the circuit's definition (#460): its last experiment removed on the

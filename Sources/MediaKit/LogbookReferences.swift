@@ -33,7 +33,7 @@ public enum LogbookReferences {
 
     /// "Sonoma, 23 Aug 2026, lap 4": how the reading names the reference.
     public static func phrase(for entry: LogbookEntry, lap: Int?) -> String {
-        var parts = [entry.title]
+        var parts = [entry.circuitTitle]
         if let date = entry.date { parts.append(date.formatted(date: .abbreviated, time: .omitted)) }
         if let lap = lap ?? entry.bestLapNumber { parts.append("lap \(lap)") }
         return parts.joined(separator: ", ")
@@ -41,10 +41,19 @@ public enum LogbookReferences {
 
     /// The entry's session, read with the importer that read it first; `nil` when its file is
     /// gone or unreadable.
-    public static func load(_ entry: LogbookEntry) -> TelemetrySession? {
+    ///
+    /// With `tracks`, the session has the turn names its configuration keeps (#549), so its
+    /// corners are read and coached by their names as they were when it was entered.
+    public static func load(_ entry: LogbookEntry, tracks: TrackLibrary? = nil) -> TelemetrySession? {
         guard let url = entry.resolveFile() else { return nil }
         var settings = DataInputSettings()
         settings.importerID = entry.file.importerID
+        if let tracks, entry.circuitID != nil,
+            let definition = tracks.definition(id: LogbookFilter.circuitKey(of: entry))
+        {
+            settings.turnNames = definition.turnNames
+            settings.cornerLabels = definition.cornerLabels
+        }
         return try? ProjectCompiler.importData(at: url, settings: settings)
     }
 

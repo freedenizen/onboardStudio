@@ -6,28 +6,32 @@ import TelemetryKit
 
 extension LogbookModel {
     func reloadPlans() {
+        trackDefinitions = TrackLibrary.app.all()
         plans = Dictionary(
-            TrackLibrary.app.all().compactMap { definition in definition.plan.map { (definition.id, $0) } },
+            trackDefinitions.compactMap { definition in definition.plan.map { (definition.id, $0) } },
             uniquingKeysWith: { first, _ in first })
     }
 
     /// A plan is kept on the circuit's track definition, so only for a circuit the catalogue knows.
-    static func canPlan(_ circuitKey: String) -> Bool { CircuitCatalog.circuit(id: circuitKey) != nil }
+    static func canPlan(_ circuitKey: String) -> Bool {
+        CircuitCatalog.circuit(id: CircuitKey.base(of: circuitKey)) != nil
+    }
 
     /// Writes the circuit's plan — none takes it away — as one step of the Logbook window's Undo.
     func savePlan(_ plan: NextSessionPlan?, for circuitKey: String, name: String, undo: UndoManager?) {
-        guard let circuit = CircuitCatalog.circuit(id: circuitKey) else { return }
+        guard let circuit = CircuitCatalog.circuit(id: CircuitKey.base(of: circuitKey)) else { return }
+        let configuration = CircuitKey.configuration(of: circuitKey)
         let before = plans[circuitKey]
         let kept = plan.flatMap { $0.experiments.isEmpty ? nil : $0 }
         guard kept != before else { return }
         if let kept {
-            try? TrackLibrary.app.remember(kept, id: circuit.id) {
+            try? TrackLibrary.app.remember(kept, id: circuitKey) {
                 TrackDefinition(
-                    circuitID: circuit.id, name: circuit.name, latitude: circuit.latitude,
-                    longitude: circuit.longitude)
+                    circuitID: circuit.id, configuration: configuration, name: circuit.name,
+                    latitude: circuit.latitude, longitude: circuit.longitude)
             }
         } else {
-            try? TrackLibrary.app.forgetPlan(id: circuit.id)
+            try? TrackLibrary.app.forgetPlan(id: circuitKey)
         }
         reloadPlans()
         undo?.registerUndo(withTarget: self) { model in
@@ -67,7 +71,8 @@ extension LogbookWindow {
             title: title, brief: brief, plan: model.plans[key], canPlan: LogbookModel.canPlan(key),
             showsNewDay: showsNewDay,
             newDay: {
-                model.newDayCircuit = key
+                // A day is at the circuit; which configuration each session drove is the session's.
+                model.newDayCircuit = CircuitKey.base(of: key)
                 model.newDayRequested = true
             },
             makePlan: lastVisitSession(at: key).map { entry in { coach(entry) } },

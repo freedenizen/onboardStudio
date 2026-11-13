@@ -37,7 +37,16 @@ public enum LogbookFilter {
     /// the file's name, so every file from an unrecognised place became a circuit of its own in
     /// the sidebar — `track`, `activity`, `generic` — and two files that happened to be named
     /// alike were taken for two visits to one place.
+    ///
+    /// A session on one of the circuit's named configurations (#549) is keyed by both, so its
+    /// laps, bests, goals and plan are that configuration's; one on the unnamed configuration —
+    /// every session added before configurations existed — keeps the circuit's own key.
     public static func circuitKey(of entry: LogbookEntry) -> String {
+        CircuitKey.make(baseCircuitKey(of: entry), configuration: entry.configuration)
+    }
+
+    /// The circuit's key whatever configuration was driven: what a track day is at.
+    public static func baseCircuitKey(of entry: LogbookEntry) -> String {
         if let id = entry.circuitID { return id }
         let name = entry.trackName?.trimmingCharacters(in: .whitespaces) ?? ""
         return name
@@ -49,7 +58,7 @@ public enum LogbookFilter {
         var counts: [String: (title: String, count: Int)] = [:]
         for entry in entries {
             let key = circuitKey(of: entry)
-            counts[key, default: (key.isEmpty ? LogbookScope.noCircuit : entry.title, 0)].count += 1
+            counts[key, default: (key.isEmpty ? LogbookScope.noCircuit : entry.circuitTitle, 0)].count += 1
         }
         return
             counts.map { Group(scope: .circuit(id: $0.key, title: $0.value.title), count: $0.value.count) }
@@ -153,7 +162,7 @@ public enum LogbookFilter {
         let words = search.split(separator: " ").map { $0.lowercased() }
         guard !words.isEmpty else { return true }
         let fields = [
-            entry.title, entry.car, entry.driver, entry.notes, entry.tags.joined(separator: " "),
+            entry.circuitTitle, entry.car, entry.driver, entry.notes, entry.tags.joined(separator: " "),
             URL(fileURLWithPath: entry.file.path).lastPathComponent, entry.trackName ?? "",
         ]
         let haystack = fields.joined(separator: " ").lowercased()

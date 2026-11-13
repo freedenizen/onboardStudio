@@ -207,11 +207,16 @@ final class EditorModel {
         // trace: the logger recorded where the line actually is, and no guess beats that (#71).
         if applyLapGeometry(of: session, to: id) { return }
         guard let match = CircuitCatalog.identify(session) else { return }
+        // Which configuration it drove, from where its turns are (#549); the unnamed one if unclear.
+        let configuration = ConfigurationMatch.configuration(
+            of: session, among: trackLibrary.configurations(of: match.circuit.id))
+        let key = CircuitKey.make(match.circuit.id, configuration: configuration)
         // A definition that only keeps a plan says nothing of the circuit's shape (#458).
-        guard let definition = trackLibrary.definition(id: match.circuit.id), definition.hasGeometry else {
+        guard let definition = trackLibrary.definition(id: key), definition.hasGeometry else {
             updateInput(id, name: "Identify Circuit") {
                 guard case .data(var settings) = $0.kind else { return }
                 settings.circuitID = match.circuit.id
+                settings.configuration = configuration
                 $0.kind = .data(settings)
             }
             // A file that brought no laps of its own would otherwise open with nothing to time
@@ -228,13 +233,15 @@ final class EditorModel {
         updateInput(id, name: "Apply Track Definition") {
             guard case .data(var settings) = $0.kind else { return }
             settings.circuitID = match.circuit.id
+            settings.configuration = configuration
             if let line = definition.startFinish { settings.lapLine = line }
             settings.sectors = definition.sectors
             settings.cornerLabels = definition.cornerLabels
             settings.turnNames = definition.turnNames
             $0.kind = .data(settings)
         }
-        statusMessage = "Recognised \(definition.name) and used your saved start/finish and sectors."
+        let place = CircuitKey.title(definition.name, configuration: configuration)
+        statusMessage = "Recognised \(place) and used your saved start/finish and sectors."
     }
 
     /// The circuit a data input is at: what the project recorded, else what the file looks like.
@@ -252,12 +259,13 @@ final class EditorModel {
     func saveTrackDefinition(for id: InputID) {
         guard case .data(let settings) = project.input(id)?.kind, let match = circuit(for: id) else { return }
         let definition = TrackDefinition(
-            circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
+            circuitID: match.circuit.id, configuration: settings.configuration, name: match.circuit.name,
+            latitude: match.circuit.latitude,
             longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
             cornerLabels: settings.cornerLabels, turnNames: settings.turnNames)
         do {
             try trackLibrary.save(definition)
-            statusMessage = "Saved the start/finish and sectors for \(definition.name)."
+            statusMessage = "Saved the start/finish, sectors and turn names for \(definition.title)."
         } catch {
             statusMessage = "Could not save the track: \(error.localizedDescription)"
         }
@@ -376,7 +384,7 @@ extension EditorModel {
 
     func forgetTrackDefinition(for id: InputID) {
         guard let match = circuit(for: id) else { return }
-        try? trackLibrary.remove(id: match.circuit.id)
+        try? trackLibrary.remove(id: trackKey(for: id) ?? match.circuit.id)
         statusMessage = "Forgot the saved settings for \(match.circuit.name)."
     }
 

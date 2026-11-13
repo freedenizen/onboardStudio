@@ -9,8 +9,8 @@ extension ProjectCoachingSource {
 
     var circuitPlan: NextSessionPlan? {
         guard let editor else { return nil }
-        guard let input, let match = editor.circuit(for: input.id) else { return editor.project.plan }
-        return editor.trackLibrary.definition(id: match.circuit.id)?.plan ?? editor.project.plan
+        guard let input, let key = editor.trackKey(for: input.id) else { return editor.project.plan }
+        return editor.trackLibrary.definition(id: key)?.plan ?? editor.project.plan
     }
 
     func savePlan(_ plan: NextSessionPlan) -> Bool {

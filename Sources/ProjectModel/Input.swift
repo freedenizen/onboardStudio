@@ -253,6 +253,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// names the corners and `cornerLabels` is not read; a project saved before has none, and
     /// keeps the names its list gave.
     public var turnNames: [TurnName]
+    /// Which of the circuit's configurations the file drove (#549): "Club Course"; `nil` for the
+    /// circuit's unnamed configuration, which is every file added before configurations existed.
+    /// Which saved start/finish, sectors, turn names and plan belong to it.
+    public var configuration: String?
     /// Seconds of the data file to keep, in its own time. Applied before laps are detected, so a
     /// trimmed-away out-lap is not counted and does not compete for the best lap.
     public var trim: TrimRange
@@ -306,7 +310,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case importerID, roleOverrides, unitOverrides, attributeMappings
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID
-        case cornerLabels, turnNames, trim
+        case cornerLabels, turnNames, configuration, trim
         case logbookEntryID, legacyFirstLap
     }
 
@@ -335,6 +339,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         cornerLabels = try c.decodeIfPresent([String].self, forKey: .cornerLabels) ?? []
         // Absent before names were pinned (#548): the list above names the corners, as it did.
         turnNames = try c.decodeIfPresent([TurnName].self, forKey: .turnNames) ?? []
+        configuration = try c.decodeIfPresent(String.self, forKey: .configuration)
         // Absent in projects saved before data could be trimmed; no trim is the right reading.
         trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
         logbookEntryID = try c.decodeIfPresent(UUID.self, forKey: .logbookEntryID)
