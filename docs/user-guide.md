@@ -1044,7 +1044,7 @@ the corners you chose, as next session's experiments in the analysis's own words
 edit before **Save Plan**. **Next** (Return) and **Back** (⌘[) move between the steps. The plan is
 kept for the circuit, so it is there when you prepare to go back and on the Season page, and in the
 project when there is one, undoably; from the Logbook it needs no project, only a circuit the
-Logbook knows. **All Corners**, beside **Walkthrough** in the toolbar, shows the whole analysis at
+Logbook knows, and it is a step of the Logbook window's Edit ▸ Undo. **All Corners**, beside **Walkthrough** in the toolbar, shows the whole analysis at
 once, as described below, and the window opens next time on whichever you used last.
 
 ### All corners
@@ -1295,7 +1295,8 @@ can be changed right there, **Add Experiment** adds one and the minus removes on
 yet, **Start a Plan** begins one from **Where the Last Visit Lost Time** — the corners where your
 last visit's best session was slowest against your best lap, with how much and whether you braked
 earlier or were slower at the apex — and **Make a Plan in Coaching…** opens Coaching on that session
-to write one from its laps. Each change is one step of Edit ▸ Undo.
+to write one from its laps; the plan saved there is on the card at once. Each change, the one made
+in Coaching too, is one step of the Logbook's Edit ▸ Undo.
 
 **New Track Day Here…** begins the next day at the circuit, and that day shows the same card until
 its first session arrives. A plan is kept with a circuit the catalogue knows; for a circuit named by
