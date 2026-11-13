@@ -147,7 +147,8 @@ public struct TimerRenderer: OverlayDrawing {
             parts.append(label)
         } else {
             switch params.mode {
-            case .currentLap: parts.append("LAP")
+            // A run of a point-to-point course says so (#552); the driving between has no lap.
+            case .currentLap: parts.append(sample?.lapTiming.currentLap?.kind == .run ? "RUN" : "LAP")
             case .lastLap: parts.append("LAST")
             case .bestLap: parts.append("BEST")
             case .session: parts.append("TIME")

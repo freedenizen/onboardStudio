@@ -54,7 +54,7 @@ public struct LapCounterRenderer: OverlayDrawing {
         }
         let sample = context.sample(at: time)
         var text = sample?.lapTiming.currentLap.map { String($0.number + params.numberOffset) } ?? "-"
-        if params.showTotal, let laps = context.sampler?.session.laps, let last = laps.last {
+        if params.showTotal, let laps = context.sampler?.session.laps.listed, let last = laps.last {
             text += " / \(last.number + params.numberOffset)"
         }
         let padding = rect.height * 0.12

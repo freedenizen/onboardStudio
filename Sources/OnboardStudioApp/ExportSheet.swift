@@ -48,8 +48,9 @@ struct ExportSheet: View {
                             )
                             .tag("inout")
                         }
-                        Text("Laps").tag("laps").disabled(lapCount == 0)
-                        Text("Every lap, one file each").tag("eachLap").disabled(lapCount == 0)
+                        Text(areRuns ? "Runs" : "Laps").tag("laps").disabled(lapCount == 0)
+                        Text(areRuns ? "Every run, one file each" : "Every lap, one file each").tag("eachLap")
+                            .disabled(lapCount == 0)
                         Text("Every corner, one file each").tag("eachCorner").disabled(lapCount == 0)
                     }
                     .accessibilityIdentifier("export.range")
@@ -307,15 +308,11 @@ extension ExportSheet {
     var lapSession: TelemetrySession? {
         editor.project.dataInputs.lazy.compactMap { editor.sessions[$0.id] }.first { !$0.laps.isEmpty }
     }
-    var lapCount: Int { lapSession?.laps.count ?? 0 }
-    var lapNumbers: ClosedRange<Int> {
-        let numbers = lapSession?.laps.map(\.number) ?? []
-        return (numbers.min() ?? 0)...(numbers.max() ?? 0)
-    }
 
     func start() {
         if rangeMode == "eachLap" {
-            return startBatch(lapExports.map { BatchFile(title: "Lap \($0.lap)", range: $0.range) }, noun: "lap")
+            return startBatch(
+                lapExports.map { BatchFile(title: $0.title, range: $0.range) }, noun: areRuns ? "run" : "lap")
         }
         if rangeMode == "eachCorner" {
             return startBatch(
@@ -378,21 +375,27 @@ extension ExportSheet {
 
 extension ExportSheet {
     @ViewBuilder var eachLapOptions: some View {
-        Toggle("Complete laps only", isOn: $completeLapsOnly)
+        Toggle(areRuns ? "Finished runs only" : "Complete laps only", isOn: $completeLapsOnly)
             .accessibilityIdentifier("export.completeLapsOnly")
-            .help("Leave out the out-lap and the in-lap, which do not start or end at the line")
-        Toggle("Skip slow laps", isOn: $skipSlowLaps)
+            .help(
+                areRuns
+                    ? "Leave out the runs that did not reach the finish"
+                    : "Leave out the out-lap and the in-lap, which do not start or end at the line")
+        Toggle(areRuns ? "Skip slow runs" : "Skip slow laps", isOn: $skipSlowLaps)
             .accessibilityIdentifier("export.skipSlowLaps")
-            .help("Leave out cool-down and traffic laps: those slower than the best lap by more than this")
+            .help(
+                areRuns
+                    ? "Leave out the runs slower than the best run by more than this"
+                    : "Leave out cool-down and traffic laps: those slower than the best lap by more than this")
         if skipSlowLaps {
             Stepper("Slower than the best by more than \(slowLapPercent) %", value: $slowLapPercent, in: 1...50)
         }
         let laps = lapExports
         Text(
             laps.isEmpty
-                ? "No laps match; nothing would be written."
+                ? "No \(areRuns ? "runs" : "laps") match; nothing would be written."
                 : "Writes \(laps.count) \(laps.count == 1 ? "file" : "files"): "
-                    + laps.map { "Lap \($0.lap)" }.joined(separator: ", ") + "."
+                    + laps.map(\.title).joined(separator: ", ") + "."
         )
         .font(.caption).foregroundStyle(.secondary)
         .accessibilityIdentifier("export.lapFiles")

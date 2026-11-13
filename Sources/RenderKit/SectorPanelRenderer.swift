@@ -91,7 +91,7 @@ public struct SectorPanelRenderer: OverlayDrawing {
     func held(_ status: SectorStatus, analysis: SectorAnalysis, at inputTime: Double, session: TelemetrySession)
         -> SectorStatus?
     {
-        guard params.holdPreviousSeconds > 0, let lap = session.laps.lap(containing: inputTime),
+        guard params.holdPreviousSeconds > 0, let lap = session.laps.lap(containing: inputTime), lap.isListed,
             inputTime - lap.start < params.holdPreviousSeconds,
             let previous = analysis.laps.last(where: { $0.lapNumber < status.lapNumber }),
             previous.times.allSatisfy({ $0 != nil })
