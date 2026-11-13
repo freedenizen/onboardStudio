@@ -18,7 +18,7 @@ struct SolidOverlay: OverlayDrawing {
     }
 }
 
-@Suite("FrameCompositor")
+@Suite("FrameCompositor", .gpu)
 struct FrameCompositorTests {
     func plan(videoLayers: [VideoLayer] = [], overlays: [any OverlayDrawing] = []) -> RenderPlan {
         RenderPlan(outputWidth: 64, outputHeight: 32, frameRate: 30, videoLayers: videoLayers, overlays: overlays)

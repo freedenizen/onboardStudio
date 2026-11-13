@@ -51,7 +51,7 @@ enum SyntheticSession {
     }()
 }
 
-@Suite("Renderer goldens")
+@Suite("Renderer goldens", .gpu)
 struct RendererGoldenTests {
     let size = CGSize(width: 400, height: 400)
 
@@ -132,7 +132,7 @@ struct RendererGoldenTests {
     }
 }
 
-@Suite("Renderer behaviour")
+@Suite("Renderer behaviour", .gpu)
 struct RendererBehaviourTests {
     @Test func gaugeAngleMapsRange() {
         let context = ObjectContext(
@@ -205,7 +205,7 @@ struct RendererBehaviourTests {
     }
 }
 
-@Suite("Track map extras")
+@Suite("Track map extras", .gpu)
 struct TrackMapExtrasTests {
     static let size = CGSize(width: 400, height: 400)
 
@@ -314,7 +314,7 @@ struct TrackMapExtrasTests {
     }
 }
 
-@Suite("Indicator and timing panel")
+@Suite("Indicator and timing panel", .gpu)
 struct IndicatorPanelTests {
     static let size = CGSize(width: 400, height: 400)
 

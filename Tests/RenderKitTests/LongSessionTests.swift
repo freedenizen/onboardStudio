@@ -10,7 +10,7 @@ import Testing
 
 /// A two-hour session at 20 Hz (144,001 samples per channel, 60 laps) drives every data object
 /// for frames spread across the whole session; memory must stay flat and frames stay quick.
-@Suite("Two-hour session", .serialized)
+@Suite("Two-hour session", .serialized, .gpu)
 struct LongSessionTests {
     static let hours = 2.0
     static let rate = 20.0

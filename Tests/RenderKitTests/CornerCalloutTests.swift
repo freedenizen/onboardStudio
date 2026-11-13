@@ -7,7 +7,7 @@ import Testing
 
 @testable import RenderKit
 
-@Suite("Corner callout")
+@Suite("Corner callout", .gpu)
 struct CornerCalloutTests {
     /// The coaching fixture's session (four laps: fast, slow, fast, fast), as the planner hands it over.
     static let session = CoachingTrackSession.session

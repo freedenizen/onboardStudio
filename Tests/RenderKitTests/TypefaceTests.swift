@@ -8,7 +8,7 @@ import Testing
 @testable import RenderKit
 @testable import TelemetryKit
 
-@Suite("Chosen fonts (#118)")
+@Suite("Chosen fonts (#118)", .gpu)
 struct TypefaceTests {
     static let futura = Typeface(family: "Futura", face: "Condensed ExtraBold")
     static let missing = Typeface(family: "No Such Family", face: "Bold")
@@ -147,7 +147,7 @@ struct TypefaceTests {
     }
 }
 
-@Suite("Details in text (#74)")
+@Suite("Details in text (#74)", .gpu)
 struct DetailTextRenderTests {
     @Test func aTextObjectIsDrawnWithTheProjectsDetailsFilledIn() throws {
         var project = Project()

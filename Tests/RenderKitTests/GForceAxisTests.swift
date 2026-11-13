@@ -10,7 +10,7 @@ import Testing
 /// The G-force plot used to read `lateralG`/`longitudinalG` and nothing else, so a logger that
 /// reports a left turn as positive — ISO 8855 vehicle axes, which RaceChrono follows — drew every
 /// corner mirrored. Each axis now takes its channel and its sign from the object.
-@Suite("G-force axes")
+@Suite("G-force axes", .gpu)
 struct GForceAxisTests {
     let size = CGSize(width: 400, height: 400)
 

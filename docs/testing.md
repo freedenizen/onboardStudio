@@ -23,6 +23,10 @@ swift test --filter "RaceChrono"            # tests whose name matches
   golden that fails only on a runner (#447) leaves something to look at. A test can hand
   `assertMatches` a closure that renders the frame again; it is asked only after a rejection,
   and the failure then also says whether the second render matched.
+  Every RenderKit suite that draws through Core Image carries `.gpu`
+  (`Tests/RenderKitTests/GPUGate.swift`), the same gate for the compositor: goldens drawn while
+  dozens of suites started at once came back about 1.5 % off on CI now and then (#447).
+  `ONBOARD_GPU_TEST_DEADLINE=<seconds>` shortens its watchdog.
 - **MediaKit**: real AVFoundation round-trips on `Tests/Fixtures/test-3s.mp4`: probe, build a
   composition, export, then decode a frame of the *output* and check the overlay is there. When
   `ffprobe` is installed the output is cross-checked with it; otherwise that test is skipped.

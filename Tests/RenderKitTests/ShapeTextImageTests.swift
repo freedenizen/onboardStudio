@@ -7,7 +7,7 @@ import Testing
 @testable import RenderKit
 @testable import TelemetryKit
 
-@Suite("Shape, text and image renderers")
+@Suite("Shape, text and image renderers", .gpu)
 struct ShapeTextImageTests {
     let size = CGSize(width: 400, height: 400)
 
@@ -125,7 +125,7 @@ struct ShapeTextImageTests {
     }
 }
 
-@Suite("Track projection performance")
+@Suite("Track projection performance", .gpu)
 struct TrackProjectionPerformanceTests {
     /// A 20-minute session at 100 Hz (120k points) must project in well under a second; a
     /// quadratic implementation took minutes on real RaceChrono exports.
