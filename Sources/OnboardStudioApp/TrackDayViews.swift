@@ -212,6 +212,8 @@ struct NewTrackDaySheet: View {
     /// The circuit names typed into the logbook before (#455).
     var knownCircuits: [String] = []
     let lastDay: TrackDay?
+    /// The circuit to begin with: New Track Day Here… on a circuit's card (#460).
+    var circuitKey: String?
     let create: (TrackDay) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var date = Date()
@@ -275,6 +277,10 @@ struct NewTrackDaySheet: View {
         .onAppear {
             car = lastDay?.car ?? ""
             driver = lastDay?.driver ?? ""
+            if let circuitKey {
+                circuit = CircuitCatalog.circuit(id: circuitKey)
+                if circuit == nil { typedName = circuitKey }
+            }
         }
     }
 

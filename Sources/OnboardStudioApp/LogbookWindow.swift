@@ -16,6 +16,10 @@ import UniformTypeIdentifiers
     private(set) var cars: [Car] = []
     /// `reload` has read the logbook at least once.
     private(set) var hasLoaded = false
+    /// The plan kept for each circuit (#330), by its catalogue id: what its card shows (#460).
+    var plans: [String: NextSessionPlan] = [:]
+    /// New Track Day Here… on a circuit's card: the circuit the sheet begins with (#460).
+    var newDayCircuit: String?
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
     private var sessions: [UUID: TelemetrySession] = [:]
     /// Files on their way into the logbook, shown by the window's sheet (#393).
@@ -74,6 +78,7 @@ import UniformTypeIdentifiers
         // A name put right on a day or a session leaves the garage with it, unless it has notes (#490).
         try? logbook.tidyGarage(entries: entries, days: days)
         cars = logbook.cars()
+        reloadPlans()
         hasLoaded = true
     }
 
@@ -214,12 +219,15 @@ struct LogbookWindow: View {
                 TrackDayImportSheet(editor: active.editor, request: request, undo: undoManager)
                     .onDisappear { model.reload() }
             }
-            .sheet(isPresented: $model.newDayRequested) {
-                NewTrackDaySheet(
-                    knownCars: model.knownCars,
-                    knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days),
-                    lastDay: model.days.first, create: create)
-            }
+            .sheet(
+                isPresented: $model.newDayRequested, onDismiss: { model.newDayCircuit = nil },
+                content: {
+                    NewTrackDaySheet(
+                        knownCars: model.knownCars,
+                        knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days),
+                        lastDay: model.days.first, circuitKey: model.newDayCircuit, create: create)
+                }
+            )
             .modifier(carSheets)
             .onAppear {
                 model.reload()
@@ -352,6 +360,7 @@ struct LogbookWindow: View {
                     Divider()
                 }
                 carHeader
+                circuitCard
                 lapReadingOffer
                 if shown.isEmpty, isSearching {
                     // Not an empty striped table (#457).

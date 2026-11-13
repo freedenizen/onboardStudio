@@ -447,6 +447,20 @@ selects several sessions; its right-click menu, the Session menu and the detail 
 selection act on all of them, and rows dragged onto a day in the sidebar
 (`LogbookSessionDrag`, a type declared in the app's Info.plist) are moved there.
 
+## Before going back (#460)
+
+A circuit chosen in the sidebar has a card above its sessions (`CircuitCard`), from
+`CircuitBrief.make(entries:circuitKey:)`: the visits (track days), the personal best, the last
+visit (its day, best lap and sessions), and the corners to work on — `LogbookTrends.cornerComparison`
+reads the latest day's best session against the personal best's, and the three corners slower by
+more than 0.05 s are listed with the braking point and apex speed differences. The plan is the
+circuit's `NextSessionPlan` on its track definition, as the Coaching window keeps it (#330, #458);
+the card edits it through `LogbookModel.savePlan`, one step of the Logbook window's Undo each, and
+`TrackLibrary.forgetPlan` takes it away with its last experiment. `CircuitBrief.startingPlan`
+begins one from the corners to work on. Only a catalogue circuit has a track definition, so a
+circuit typed by hand shows the card without a plan. An empty day at a circuit shows the card too,
+and New Track Day Here… opens the sheet with the circuit chosen (`LogbookModel.newDayCircuit`).
+
 ## On the command line (#398)
 
 `onboard logbook new-day` (`--date`, `--circuit` as a catalogue search or id, else kept as typed,

@@ -147,6 +147,14 @@ public struct TrackLibrary: Sendable {
         try save(definition)
     }
 
+    /// Takes the plan off the circuit's definition (#460): its last experiment removed on the
+    /// Logbook's circuit card. The definition stays, with whatever else it holds.
+    public func forgetPlan(id: String) throws {
+        guard var definition = definition(id: id), definition.plan != nil else { return }
+        definition.plan = nil
+        try save(definition)
+    }
+
     public func save(_ definition: TrackDefinition) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var stamped = definition

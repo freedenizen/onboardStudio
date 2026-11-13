@@ -429,6 +429,18 @@ away, and the detail goes with it. The toolbar follows the columns: the view, **
 **Add Files** and **Export or Import** over the sessions, **New Project** and the search field
 over the session, however wide you drag it.
 
+**Before you go back to a circuit,** choose it under **Circuits** in the sidebar. Its card above
+its sessions says how many visits you have made, your personal best there (when, and in what car)
+and how your last visit went against it. Under **Plan for Next Time** is the plan you made in the
+Coaching window for that circuit — each line can be changed right there, **Add Experiment** adds
+one and the minus removes one. With no plan yet, **Start a Plan** begins one from **Where the Last
+Visit Lost Time** — the corners where your last visit's best session was slowest against your best
+lap, with how much and whether you braked earlier or were slower at the apex — and **Make a Plan in
+Coaching…** opens Coaching on that session to write one from its laps. Each change is one step of
+Edit ▸ Undo. **New Track Day Here…** begins the next day at the circuit, and that day shows the same
+card until its first session arrives. A plan is kept with a circuit the catalogue knows; for a
+circuit named by hand the card says so.
+
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
 sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
 worth keeping. **Rename…** changes the name on every day and session at once; type another car's
@@ -985,7 +997,8 @@ the minus removes one, **Start Over** rewrites the plan from the current opportu
 saved with the project and, when the circuit is recognised, remembered for the circuit in its
 track definition — so the next project at the same circuit opens the Coaching window with **Last
 time at Sonoma you planned to try…** and **Use It Again**. Every step is one undo (*Undo Make
-Plan*, *Undo Edit Plan*, *Undo Remove Experiment*).
+Plan*, *Undo Edit Plan*, *Undo Remove Experiment*). The circuit's card in the Logbook shows the
+plan again before you go back, and changes it too.
 
 **On paper.** While the Coaching window is in front with a lap read, **File ▸ Export Coaching
 Sheet as PDF…** writes the debrief on one page — the track and the day, the headline, the circuit
