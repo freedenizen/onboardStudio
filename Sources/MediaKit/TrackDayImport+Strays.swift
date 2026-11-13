@@ -197,7 +197,11 @@ extension TrackDayImport {
                 entry.trackDayID = day.id
                 if entry.conditions.isEmpty { entry.conditions = day.conditions }
             } else {
-                try logbook.assignDay(to: &entry)
+                let found = try logbook.assignDay(to: &entry)
+                // A day that says what was driven says it for a session that joins it later (#489),
+                // rather than the car of whichever session at the circuit came before, or none.
+                if batch.car == nil, !found.car.isEmpty { entry.car = found.car }
+                if batch.driver == nil, reading.fileDriver == nil, !found.driver.isEmpty { entry.driver = found.driver }
             }
             try logbook.save(entry)
             return Filed(outcome: .added(entry), tookDayCircuit: tookDayCircuit)

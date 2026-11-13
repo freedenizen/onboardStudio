@@ -76,10 +76,16 @@ public enum LogbookFilter {
         .map(\.key)
     }
 
-    /// The sidebar's cars, most sessions first; the sessions with no car last, if any.
-    public static func cars(in entries: [LogbookEntry]) -> [Group] {
+    /// The sidebar's cars, most sessions first; the sessions with no car last, if any. A car of
+    /// the `garage` that no session names is listed too, with none (#490), so a name left behind
+    /// by a correction can be found and taken out.
+    public static func cars(in entries: [LogbookEntry], garage: [Car] = []) -> [Group] {
         var counts: [String: Int] = [:]
         for entry in entries { counts[entry.car.trimmingCharacters(in: .whitespaces), default: 0] += 1 }
+        for car in garage where !counts.keys.contains(where: { Garage.same($0, car.name) }) {
+            let name = car.name.trimmingCharacters(in: .whitespaces)
+            if !name.isEmpty { counts[name] = 0 }
+        }
         return
             counts.map { Group(scope: .car($0.key), count: $0.value) }
             .sorted { lhs, rhs in
@@ -93,17 +99,22 @@ public enum LogbookFilter {
     /// a Car field offers. One list for the sheet that begins a day and the field that corrects a
     /// session — the sheet used to prefill the last day's car and offer the sessions' beside it,
     /// and the two could disagree.
-    public static func knownCars(in entries: [LogbookEntry], days: [TrackDay]) -> [String] {
+    /// The `garage`'s cars that nothing names yet come after them (#490).
+    public static func knownCars(in entries: [LogbookEntry], days: [TrackDay], garage: [Car] = []) -> [String] {
         var counts: [String: Int] = [:]
         for name in entries.map(\.car) + days.map(\.car) {
             let car = name.trimmingCharacters(in: .whitespaces)
             if !car.isEmpty { counts[car, default: 0] += 1 }
         }
-        return counts.sorted { lhs, rhs in
+        let named = counts.sorted { lhs, rhs in
             lhs.value != rhs.value
                 ? lhs.value > rhs.value : lhs.key.localizedStandardCompare(rhs.key) == .orderedAscending
         }
         .map(\.key)
+        let unnamed = garage.map { $0.name.trimmingCharacters(in: .whitespaces) }
+            .filter { name in !name.isEmpty && !named.contains { Garage.same($0, name) } }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        return named + unnamed
     }
 
     /// The sidebar's years, newest first; undated sessions are not a year.

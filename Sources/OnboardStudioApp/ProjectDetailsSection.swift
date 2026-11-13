@@ -13,7 +13,7 @@ struct ProjectDetailsSection: View {
     var body: some View {
         Section("Details") {
             field("Track", \.track)
-            field("Car", \.car)
+            carRow
             field("Driver", \.driver)
             field("Event", \.event)
             field("Session", \.session)
@@ -46,6 +46,29 @@ struct ProjectDetailsSection: View {
             Text("Show any of these in a Text object by typing its name in braces: {track} · {date}.")
                 .font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    /// The project's car, with the logbook's cars to choose from (#490): the garage the Logbook
+    /// keeps, so a project names a car the way its sessions do.
+    var carRow: some View {
+        let cars = LogbookModel.shared.knownCars.filter { $0 != details.car }
+        return HStack {
+            field("Car", \.car)
+            if !cars.isEmpty {
+                Menu {
+                    ForEach(cars, id: \.self) { car in
+                        Button(car) { editor.setDetail("Change Car") { $0.car = car } }
+                    }
+                } label: {
+                    Label("Cars in the Logbook", systemImage: "car")
+                }
+                .labelStyle(.iconOnly).fixedSize()
+                .accessibilityLabel("Cars in the Logbook")
+                .help("A car from the logbook's garage")
+                .accessibilityIdentifier("details.car.known")
+            }
+        }
+        .task { LogbookModel.shared.loadIfNeeded() }
     }
 
     func field(_ title: String, _ keyPath: WritableKeyPath<ProjectDetails, String>) -> some View {
