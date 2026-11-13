@@ -1226,11 +1226,13 @@ chart. Click a point to open that session.
 
 Below the charts, corner by corner, the best lap of your latest track day against the best of the
 track day before and against your personal best — brake point, minimum speed and time in the
-corner. A line above the table names the laps it reads, and a comparison's columns appear only when
-there is one to make: none against the personal best when the latest day set it. Sessions entered
-before corners were kept offer **Read Their Corners**, as do sessions whose corners were measured
-before a correction to how the app measures them (#438), so a fixed reading reaches sessions
-already in the logbook.
+corner. Minimum speed is in the app's speed unit, and brake points are in feet when that is mph
+and in metres otherwise, as Coaching gives them; the line under the table names both. A line
+above the table names the laps it reads, and a comparison's columns appear only when there is one
+to make: none against the personal best when the latest day set it. Sessions entered before
+corners were kept offer **Read Their Corners**, as do sessions whose corners were measured before
+a correction to how the app measures them (#438), so a fixed reading reaches sessions already in
+the logbook.
 
 ### Car against car
 
