@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 3
+// ci-shard: 5
 /// J49: a logbook session is coached with no project open — the window reads its file, offers
 /// the references, keeps the choices on the entry, and exports the sheet (#396).
 final class CoachingFromLogbookUITests: OnboardStudioUITestCase {

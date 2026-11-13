@@ -51,7 +51,7 @@ swift run onboard bench --export --codec hevc --seconds 60
   **Force-pushing a feature branch is fine and is how you rebase one.** Rebase locally and
   `git push --force-with-lease`; never `gh pr update-branch --rebase`, which re-creates the
   commits on GitHub's side **unsigned** and fails the required `Verify commit signatures` check.
-  `UI tests` is reported by an aggregating job that fans out to `UI tests (build)` and four
+  `UI tests` is reported by an aggregating job that fans out to `UI tests (build)` and five
   `UI tests (shard N)` jobs; only the aggregate name is required, so the shards can be rebalanced
   freely. A new XCUITest class names its shard in a `// ci-shard: N` line above its
   declaration — `Scripts/check-ui-test-shards.sh` (run by Lint (fast) and the pre-commit hook)

@@ -322,6 +322,12 @@ class OnboardStudioUITestCase: XCTestCase {
             file: file, line: line)
     }
 
+    func text(of element: XCUIElement) -> String {
+        (element.value as? String) ?? element.label
+    }
+}
+
+extension OnboardStudioUITestCase {
     /// Scrolls until `element` can be clicked (forms in sheets and the inspector are longer than
     /// their window).
     ///
@@ -331,7 +337,15 @@ class OnboardStudioUITestCase: XCTestCase {
     /// with no frame to compare against, so `isHittable` is the only honest test.
     func reveal(_ element: XCUIElement) {
         let sheet = app.sheets.firstMatch
-        let nearest = (sheet.exists ? sheet : app.windows.firstMatch).scrollViews.firstMatch
+        let container = sheet.exists ? sheet : app.windows.firstMatch
+        // The scroll view the element lies across, the tallest if several do. The window's first is
+        // the editor's sidebar, and scrolling it never brought an inspector control into view: on
+        // CI's 768-point screen a pop-up stayed below the window's edge and the click missed (#528).
+        let midX = element.frame.midX
+        let nearest =
+            container.scrollViews.allElementsBoundByIndex
+            .filter { $0.frame.minX <= midX && midX <= $0.frame.maxX }
+            .max { $0.frame.height < $1.frame.height } ?? container.scrollViews.firstMatch
         if nearest.exists {
             var attempts = 0
             while attempts < 8, !nearest.frame.contains(element.frame) {
@@ -351,9 +365,5 @@ class OnboardStudioUITestCase: XCTestCase {
                 scrollView.scroll(byDeltaX: 0, deltaY: 80)
             }
         }
-    }
-
-    func text(of element: XCUIElement) -> String {
-        (element.value as? String) ?? element.label
     }
 }

@@ -76,27 +76,24 @@ import UniformTypeIdentifiers
     }
 
     /// Writes an edited day — its car, driver, conditions, notes, clips — and shows it. A change
-    /// of car or driver goes to the sessions that took them from the day (#453).
-    func saveDay(_ day: TrackDay) {
-        _ = try? AppLogbook.shared.updateDay(day)
-        note(car: day.car)
-        reload()
-    }
-
-    /// A car named for the first time joins the garage, wherever it was typed.
-    func note(car: String) { try? AppLogbook.shared.addToGarage(car) }
-
-    func remove(_ entry: LogbookEntry) {
-        try? AppLogbook.shared.remove(id: entry.id)
-        reload()
+    /// of car or driver goes to the sessions that took them from the day (#453). One step of Undo
+    /// in the Logbook window, named for the field (#454).
+    func saveDay(_ day: TrackDay, undo: UndoManager? = nil) {
+        let name = days.first { $0.id == day.id }.map { LogbookEditName.of($0, day) } ?? "Change Track Day"
+        edit(name, undo: undo) { logbook in
+            try logbook.updateDay(day)
+            try logbook.addToGarage(day.car)
+        }
     }
 
     /// Writes an edited entry — its car and driver (#453), its conditions and notes (#348) — and
-    /// shows it.
-    func save(_ entry: LogbookEntry) {
-        try? AppLogbook.shared.save(entry)
-        note(car: entry.car)
-        reload()
+    /// shows it; with the Logbook window's undo manager, as a step of its Undo (#454).
+    func save(_ entry: LogbookEntry, undo: UndoManager? = nil) {
+        let name = entries.first { $0.id == entry.id }.map { LogbookEditName.of($0, entry) } ?? "Change Session"
+        edit(name, undo: undo) { logbook in
+            try logbook.save(entry)
+            try logbook.addToGarage(entry.car)
+        }
     }
 
     // MARK: - Into a project
@@ -178,13 +175,13 @@ struct LogbookWindow: View {
     }
     @State var scope: LogbookScope = .all
     @State private var search = ""
-    @State private var selection: UUID?
+    /// The sessions selected: several at once, to correct a mistaken import in one go (#454).
+    @State var selection: Set<UUID> = []
     @State private var sortOrder = [KeyPathComparator(\LogbookEntry.date, order: .reverse)]
-    @State var confirmRemoval: LogbookEntry?
-    @State private var confirmDayRemoval: TrackDay?
-    /// The car header's Rename… and Remove from Garage… (#490).
+    /// The car header's Rename… (#490).
     @State var renamingCar: CarRename?
-    @State var confirmCarRemoval: String?
+    /// The window's, for the Logbook's edits to be steps of Edit ▸ Undo (#454).
+    @Environment(\.undoManager) var undoManager
     /// What the last export or import did, under the table (#350).
     @State var message: String?
     /// Files are being dragged over the window (#468).
@@ -206,7 +203,8 @@ struct LogbookWindow: View {
             // The session, the view and the window's actions, for the menu bar (#450).
             .focusedSceneValue(\.logbook, commandContext)
             .sheet(item: $model.trackDayRequest) { request in
-                TrackDayImportSheet(editor: active.editor, request: request).onDisappear { model.reload() }
+                TrackDayImportSheet(editor: active.editor, request: request, undo: undoManager)
+                    .onDisappear { model.reload() }
             }
             .sheet(isPresented: $model.newDayRequested) {
                 NewTrackDaySheet(
@@ -227,34 +225,6 @@ struct LogbookWindow: View {
                     if !urls.isEmpty { model.trackDayRequest = TrackDayRequest(urls: urls, day: day) }
                 }
                 return true
-            }
-            .confirmationDialog(
-                "Remove this track day from the logbook?",
-                isPresented: Binding(get: { confirmDayRemoval != nil }, set: { if !$0 { confirmDayRemoval = nil } }),
-                presenting: confirmDayRemoval
-            ) { day in
-                Button("Remove Track Day", role: .destructive) {
-                    try? AppLogbook.shared.removeDay(id: day.id, andSessions: true)
-                    model.reload()
-                    if case .day(let id, _) = scope, id == day.id { scope = .all }
-                }
-            } message: { day in
-                let count = model.entries.filter { $0.trackDayID == day.id }.count
-                Text(
-                    "\(day.label) and its \(count) session\(count == 1 ? "" : "s") are taken out of the logbook. "
-                        + "The files are not touched.")
-            }
-            .confirmationDialog(
-                "Remove this session from the logbook?",
-                isPresented: Binding(get: { confirmRemoval != nil }, set: { if !$0 { confirmRemoval = nil } }),
-                presenting: confirmRemoval
-            ) { entry in
-                Button("Remove from Logbook", role: .destructive) {
-                    model.remove(entry)
-                    if selection == entry.id { selection = nil }
-                }
-            } message: { entry in
-                Text("\(entry.title) is taken out of the logbook. The file itself is not touched.")
             }
     }
 
@@ -278,6 +248,8 @@ struct LogbookWindow: View {
             Group {
                 if let entry = shownEntry {
                     detail(of: entry)
+                } else if selectedEntries.count > 1 {
+                    selectionDetail
                 } else {
                     ContentUnavailableView(
                         "No Session Selected", systemImage: "flag.checkered",
@@ -309,7 +281,7 @@ struct LogbookWindow: View {
     /// sidebar or the search has taken out of the table has no detail and no buttons to press
     /// (#457). What New Project in the toolbar is about, too (#449).
     var shownEntry: LogbookEntry? {
-        guard let entry = model.entries.first(where: { $0.id == selection }),
+        guard selection.count == 1, let entry = model.entries.first(where: { selection.contains($0.id) }),
             LogbookFilter.matches(entry, scope: scope), LogbookFilter.matches(entry, search: search)
         else { return nil }
         return entry
@@ -324,7 +296,7 @@ struct LogbookWindow: View {
             if !LogbookFilter.matches(entry, scope: scope) { scope = .all }
             if !LogbookFilter.matches(entry, search: search) { search = "" }
         }
-        selection = id
+        selection = [id]
         view = .sessions
     }
 
@@ -355,7 +327,8 @@ struct LogbookWindow: View {
                 if let day = selectedDay {
                     TrackDayHeader(
                         day: day, sessions: model.entries.filter { $0.trackDayID == day.id },
-                        save: { model.saveDay($0) }, addSessions: addFiles, remove: { confirmDayRemoval = day },
+                        save: { model.saveDay($0, undo: undoManager) }, addSessions: addFiles,
+                        remove: { removeDay(day) },
                         knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days))
                     Divider()
                 }
@@ -370,7 +343,7 @@ struct LogbookWindow: View {
                     LogbookTable(
                         entries: shown, bests: PersonalBests.badges(in: model.entries),
                         selection: $selection, sortOrder: $sortOrder
-                    )
+                    ) { ids in sessionMenu(for: ids) }
                     .focused($sessionsFocused)
                     // A click on a session gives the sessions the keyboard, as it does by itself on
                     // macOS 26 and not on macOS 27 (#509).
@@ -398,8 +371,8 @@ struct LogbookWindow: View {
             },
             replay: { ReplayWindow.open(openWindow, entry: entry) },
             addToProject: { addToCurrentProject(entry) },
-            remove: { confirmRemoval = entry },
-            save: { model.save($0) },
+            remove: { remove([entry.id]) },
+            save: { model.save($0, undo: undoManager) },
             knownCars: model.knownCars,
             personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
             visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))

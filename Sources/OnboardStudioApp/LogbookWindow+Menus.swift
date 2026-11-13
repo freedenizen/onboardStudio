@@ -8,7 +8,8 @@ extension LogbookWindow {
     var commandContext: LogbookCommandContext {
         let entry = shownEntry
         return LogbookCommandContext(
-            session: entry, view: $view, sessionsHaveFocus: sessionsFocused, hasProject: active.editor != nil,
+            session: entry, selected: selectedEntries, days: model.days, view: $view,
+            sessionsHaveFocus: sessionsFocused, hasProject: active.editor != nil,
             hasClips: entry.map { !model.clips(of: $0).isEmpty } ?? false,
             comparisons: entry.map { comparisons(for: $0) } ?? [],
             newProject: { newProject(fromSession: $0, template: $1) },
@@ -17,7 +18,9 @@ extension LogbookWindow {
             replay: { ReplayWindow.open(openWindow, entry: $0) },
             compare: { compare($0, with: $1) },
             debrief: { model.openAsProject($0, template: ProjectTemplate.coachingDebrief, then: .debrief) },
-            remove: { confirmRemoval = $0 },
+            remove: { remove($0.map(\.id)) },
+            move: { move($0.map(\.id), to: $1) },
+            moveToOwnDays: { moveToOwnDays($0.map(\.id)) },
             findSessions: { searchFocused = true },
             addFiles: addFiles,
             exportLogbook: { exportLogbook(includingFiles: $0) },

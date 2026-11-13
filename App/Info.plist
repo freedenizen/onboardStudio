@@ -136,6 +136,16 @@
 				</array>
 			</dict>
 		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Onboard Studio Logbook Session</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.freedenizen.onboardstudio.logbook-session</string>
+		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>

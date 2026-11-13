@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 5
 /// #149 and #192: a file that imports badly explains itself, in the window that has room to.
 final class ImportReportUITests: OnboardStudioUITestCase {
     /// Adds the noisy fixture, opens the attribute window and points it at that input.

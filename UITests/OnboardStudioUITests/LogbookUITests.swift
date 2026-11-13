@@ -124,7 +124,7 @@ final class LogbookUITests: OnboardStudioUITestCase {
             ("logbook.open", "New Project"), ("logbook.addToProject", "Add to Current Project"),
             ("logbook.coach", "Coach…"), ("logbook.replay", "Replay…"), ("logbook.compareWith", "Compare With"),
             ("logbook.debrief", "Export Coaching Debrief…"), ("logbook.showInFinder", "Show in Finder"),
-            ("logbook.remove", "Remove from Logbook…"),
+            ("logbook.remove", "Remove from Logbook"),
         ]
         for (identifier, title) in actions {
             let control = app.descendants(matching: .any).matching(identifier: identifier).firstMatch

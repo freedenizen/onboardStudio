@@ -124,7 +124,7 @@ final class TrimUITests: OnboardStudioUITestCase {
     }
 }
 
-// ci-shard: 3
+// ci-shard: 5
 /// #51: the data file shows where its laps are, and the playhead can jump between them.
 final class LapUITests: OnboardStudioUITestCase {
     @MainActor

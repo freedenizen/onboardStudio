@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 5
 /// J20: lock a finished object, and group objects that belong together (#90).
 final class GroupLockUITests: OnboardStudioUITestCase {
     @MainActor

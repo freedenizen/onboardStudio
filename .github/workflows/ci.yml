@@ -226,7 +226,7 @@ jobs:
 
   # Sharded across runners rather than parallelised on one: parallel macOS UI test workers run
   # several copies of the app on a single screen, fighting over the key window and the menu bar.
-  # Shards are balanced by measured per-class time (see #100, #435, #493): about 20 minutes of
+  # Shards are balanced by measured per-class time (see #100, #435, #493, #526): about 20 minutes of
   # tests each on a slow runner, 17 on an ordinary one. Runners differ by as much as 45 %, so a
   # shard needs that much room under the limit below: three shards of 26 were stopped by it
   # with every test passed. Move a class with its `// ci-shard: N` line when one shard runs long,
@@ -254,6 +254,8 @@ jobs:
             shard: 3
           - name: shard 4
             shard: 4
+          - name: shard 5
+            shard: 5
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode

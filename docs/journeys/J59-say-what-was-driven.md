@@ -17,8 +17,8 @@ was put right everywhere else.*
    should have been.
 5. A car typed by mistake and put right on the day or the session leaves the garage with it. A car
    with notes stays when nothing names it any more — one that was sold, or borrowed for a day — and
-   is listed with no sessions, saying so; **Remove from Garage…** takes it out, after asking. A car
-   that is driven cannot be removed.
+   is listed with no sessions, saying so; **Remove from Garage** takes it out, and **Edit ▸ Undo**
+   brings it back. A car that is driven cannot be removed.
 6. In a project, **Details ▸ Car** offers the same cars from the menu beside the field.
 
 Tests: `GarageUITests.testAFirstImportAsksForTheCarAndTheGarageShowsIt`,

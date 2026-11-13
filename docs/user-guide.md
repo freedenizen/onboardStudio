@@ -426,7 +426,7 @@ worth keeping. **Rename…** changes the name on every day and session at once; 
 name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
 added to the garage the first time its name is typed anywhere, and a name put right on the day or
 the session leaves it again. A car with notes stays when nothing names it any more: it is listed
-with no sessions, says so, and **Remove from Garage…** takes it out. A car still named on a day or
+with no sessions, says so, and **Remove from Garage** takes it out. A car still named on a day or
 a session cannot be removed. A project's **Details ▸ Car** offers the garage's
 cars from the menu beside the field.
 What can be done with the session stays at the foot of
@@ -443,16 +443,29 @@ toolbar's **New Project** menu does the same while a session is selected, under
 a heading that names the session, so the two never disagree; its **New Project Without a
 Session** starts an empty project instead. **Add to Current Project** adds the session to the
 project in front. **Remove from
-Logbook…** takes a session out, and the trash button in a day's header takes the day and its
+Logbook** takes a session out, and the trash button in a day's header takes the day and its
 sessions out; no file is touched.
+
+Everything you change in the Logbook can be taken back: **Edit ▸ Undo** names what it will undo —
+*Undo Remove 3 Sessions*, *Undo Move Session*, *Undo Change Car*, *Undo Add Files* — and **Redo**
+does it again. So nothing asks before it removes: a session, a day or a car taken out by mistake is
+one ⌘Z away. Shift- or ⌘-click selects several sessions at once; the detail column then says how
+many, where and when, and gives all of them a **Car**, moves them with **Move to Day**, or takes
+them out with **Remove … Sessions**. Right-click a session, or several, for the same things and
+for what is done with one session. **Move to Day** lists the day the session's own date and
+circuit say (made if there is none), then the days at its circuit, then the others; the session
+takes its new day's car and driver when it had its old day's, and the clips that are its picture go
+with it. Dragging sessions from the table onto a day in the sidebar moves them too. Right-click a
+day in the sidebar to remove it, or a car to rename or remove it.
 
 Everything the Logbook does is in the menu bar too, with keys for the common things. The
 **Session** menu, between View and Project, acts on the session whose detail is on show, as the
 buttons at the foot of the detail do: **New Project from Session** (⇧⌘N, with the template the
 last New Project used) or **New Project from Session with Template**, **Add to Current Project**,
 **Coach…** (⌃⌘C), **Replay…**, **Compare With**, **Export Coaching Debrief…**, **Show in Finder**
-(⇧⌘R) and **Remove from Logbook…** (⌘⌫ while the table of sessions has the keyboard; in a text
-field ⌘⌫ deletes to the start of the line, as it does everywhere). **View** switches between
+(⇧⌘R), **Move to Day** and **Remove from Logbook** (⌘⌫ while the table of sessions has the
+keyboard; in a text field ⌘⌫ deletes to the start of the line, as it does everywhere). With several
+sessions selected, Move to Day and Remove act on all of them. **View** switches between
 **Sessions**, **Trends** and **Season** with ⌘1, ⌘2 and ⌘3, shows and hides the sidebar (⌃⌘S) and
 the toolbar, and **Customize Toolbar…** sets the toolbar to show its buttons' names under their
 icons, or leaves out the ones you never use. **Edit ▸ Find Sessions** (⌘F) puts the keyboard in

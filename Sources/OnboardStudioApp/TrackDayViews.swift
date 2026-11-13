@@ -6,7 +6,8 @@ import TelemetryKit
 
 /// A track day above its sessions (#393): where and when, the car and driver, its conditions
 /// and notes, and the ways to fill it. Edits go straight to the day's file, as a session's
-/// conditions do — library files, not a document, so they are not undoable.
+/// conditions do — library files, not a document — and each is a step of the Logbook window's
+/// Undo (#454).
 struct TrackDayHeader: View {
     let day: TrackDay
     /// The day's sessions, newest first, for the clips to be assigned to (#394).
@@ -40,9 +41,12 @@ struct TrackDayHeader: View {
                 Button("Add Files…", systemImage: "doc.badge.plus", action: addSessions)
                     .help("Enter the day's telemetry files and camera clips, or the folders holding them")
                     .accessibilityIdentifier("trackday.header.addSessions")
-                Button("Remove Track Day…", systemImage: "trash", role: .destructive, action: remove)
+                Button("Remove Track Day", systemImage: "trash", role: .destructive, action: remove)
                     .labelStyle(.iconOnly)
-                    .help("Take the day and its sessions out of the logbook; no file is touched")
+                    .help(
+                        "Take the day and its sessions out of the logbook; no file is touched, and Edit ▸ Undo "
+                            + "brings them back"
+                    )
                     .accessibilityIdentifier("trackday.header.remove")
             }
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
@@ -298,6 +302,11 @@ struct TrackDaySidebarSection: View {
     /// own the years all started shut, and the day being worked on lost its row in the sidebar
     /// the moment a file from another year arrived.
     @Binding var openYears: Set<Int>
+    /// Sessions dragged from the table onto a day (#454).
+    var moveSessions: ([UUID], TrackDay) -> Void = { _, _ in }
+    var remove: (TrackDay) -> Void = { _ in }
+    /// The day sessions are being dragged over, drawn as the place they will go.
+    @State private var target: UUID?
 
     var body: some View {
         Section("Track Days") {
@@ -350,6 +359,21 @@ struct TrackDaySidebarSection: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(group.scope.title)
         .accessibilityIdentifier("logbook.day.\(group.scope.title)")
+        .contextMenu {
+            if let day = day(of: group) { Button("Remove Track Day") { remove(day) } }
+        }
+        // Sessions dropped on the day are moved to it (#454).
+        .dropDestination(for: LogbookSessionDrag.self) { items, _ in
+            guard let day = day(of: group), !items.isEmpty else { return false }
+            moveSessions(items.map(\.id), day)
+            return true
+        } isTargeted: { over in
+            let id = day(of: group)?.id
+            if over { target = id } else if target == id { target = nil }
+        }
+        .listRowBackground(
+            day(of: group)?.id == target && target != nil
+                ? RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.25)) : nil)
     }
 
     private func day(of group: LogbookFilter.Group) -> TrackDay? {

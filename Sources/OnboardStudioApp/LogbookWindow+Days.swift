@@ -19,9 +19,10 @@ extension LogbookWindow {
     }
 
     func create(_ day: TrackDay) {
-        try? AppLogbook.shared.saveDay(day)
-        model.note(car: day.car)
-        model.reload()
+        model.edit("New Track Day", undo: undoManager) { logbook in
+            try logbook.saveDay(day)
+            try logbook.addToGarage(day.car)
+        }
         scope = .day(id: day.id, title: day.label)
         view = .sessions
     }
@@ -63,10 +64,13 @@ extension LogbookWindow {
     }
 
     func followTheChosenDay() {
-        if case .day(let id, let title) = scope, let day = model.days.first(where: { $0.id == id }),
-            day.label != title
-        {
-            scope = .day(id: id, title: day.label)
+        if case .day(let id, let title) = scope {
+            if let day = model.days.first(where: { $0.id == id }) {
+                if day.label != title { scope = .day(id: id, title: day.label) }
+            } else {
+                // Taken out — by Undo of New Track Day, say (#454).
+                scope = .all
+            }
         }
         model.choose(selectedDay)
     }
@@ -102,7 +106,8 @@ extension LogbookWindow {
             if !model.days.isEmpty {
                 TrackDaySidebarSection(
                     groups: LogbookFilter.days(in: model.entries, days: model.days), days: model.days,
-                    openYears: Bindable(model).openYears)
+                    openYears: Bindable(model).openYears, moveSessions: { move($0, to: $1) },
+                    remove: { removeDay($0) })
             }
             let circuits = LogbookFilter.circuits(in: model.entries)
             if !circuits.isEmpty {
@@ -117,6 +122,7 @@ extension LogbookWindow {
                 Section("Cars") {
                     ForEach(cars, id: \.scope) { group in
                         Label(group.scope.title, systemImage: "car").badge(group.count).tag(group.scope)
+                            .contextMenu { carMenu(group) }
                     }
                 }
             }
@@ -130,6 +136,15 @@ extension LogbookWindow {
             }
         }
         .accessibilityIdentifier("logbook.sidebar")
+    }
+
+    /// A car's right-click menu in the sidebar: the car header's corrections (#490, #454).
+    @ViewBuilder private func carMenu(_ group: LogbookFilter.Group) -> some View {
+        if case .car(let car) = group.scope, !car.isEmpty {
+            Button("Rename…") { renamingCar = CarRename(name: car) }
+            Button("Remove from Garage") { removeCar(car) }
+                .disabled(!Garage.summary(of: car, entries: model.entries, days: model.days).isUnused)
+        }
     }
 
     /// A new project laid out with `template` (#395), as File ▸ New from Template does.

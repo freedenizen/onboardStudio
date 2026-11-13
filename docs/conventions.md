@@ -206,9 +206,9 @@ Finder on 2026-11-11:
 - **⇧⌘R — Session ▸ Show in Finder**, as Music's "Show where a song file is located". Unrelated to
   ⌃⌘R, which opens the Replay window from the Window menu; Session ▸ Replay… has no key, because
   two menu items on one key do not work.
-- **⌘⌫ — Session ▸ Remove from Logbook…**, as the Finder's Move to Trash and Photos' delete from the
+- **⌘⌫ — Session ▸ Remove from Logbook**, as the Finder's Move to Trash and Photos' delete from the
   library. Only while the table of sessions has the keyboard: in a text field ⌘⌫ deletes to the
-  start of the line. It still asks first, because a removal cannot be undone yet (#454).
+  start of the line. It does not ask first: like Move to Trash, Edit ▸ Undo takes it back (#454).
 - **⌃⌘C — Session ▸ Coach…**, the key of Project ▸ Coaching…: the same verb, held by whichever
   window is in front.
 - **⌃⌘S — View ▸ Show/Hide Sidebar**, the system's own (`SidebarCommands`).

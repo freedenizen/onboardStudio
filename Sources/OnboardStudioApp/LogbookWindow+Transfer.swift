@@ -60,8 +60,11 @@ extension LogbookWindow {
         let inner = folder.appending(path: "Logbook")
         let source = FileManager.default.fileExists(atPath: inner.path) ? inner : folder
         do {
+            // One step of Undo, as an import of files is (#454).
+            let before = AppLogbook.shared.snapshot()
             let summary = try LogbookTransfer.import(from: source, into: AppLogbook.shared)
             model.reload()
+            model.record("Import Logbook Export", since: before, undo: undoManager)
             message =
                 "\(summary.added) sessions added, \(summary.updated) updated, \(summary.skipped) already here."
         } catch {

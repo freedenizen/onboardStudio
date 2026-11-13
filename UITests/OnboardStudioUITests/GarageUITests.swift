@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 5
 /// J59: say what was driven, and keep the garage (#489, #490). A first import asks for the car in
 /// its report; the car is then a row of the Logbook's sidebar, with its notes and the corrections
 /// its name may need.
@@ -87,7 +87,8 @@ final class GarageUITests: OnboardStudioUITestCase {
     }
 
     /// A misspelling put right on the session leaves the garage with it. A car with notes stays
-    /// when nothing names it any more, listed with no sessions, until it is removed.
+    /// when nothing names it any more, listed with no sessions, until it is removed — which Edit ▸
+    /// Undo takes back.
     @MainActor
     func testACarNothingNamesIsTidiedOrRemoved() throws {
         launch(logbook: true)
@@ -122,12 +123,13 @@ final class GarageUITests: OnboardStudioUITestCase {
         expect(notes, toRead: "Borrowed for a day")
         let remove = app.buttons["car.header.remove"]
         XCTAssertTrue(remove.isEnabled)
+        // No question: Edit ▸ Undo brings it back, notes and all (#454).
         remove.click()
-        // By its label: the subscript found two elements here on the first run, the label one.
-        let confirm = app.buttons.matching(NSPredicate(format: "label == 'Remove from Garage'")).firstMatch
-        XCTAssertTrue(confirm.waitForExistence(timeout: Self.timeout), "No question before the removal")
-        confirm.click()
         XCTAssertTrue(loan.waitForNonExistence(timeout: Self.timeout), "The car is still listed")
         XCTAssertTrue(sidebar.staticTexts["Test Car"].exists)
+        menu("Edit", "Undo Remove from Garage")
+        XCTAssertTrue(loan.waitForExistence(timeout: Self.timeout), "Undo did not bring the car back")
+        loan.click()
+        expect(notes, toRead: "Borrowed for a day")
     }
 }
