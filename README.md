@@ -23,6 +23,17 @@ from your camera, driven by the data your logger recorded.
 
 ## Features
 
+**Your track days**
+- A logbook of every track day: begin the day, then add the logger's files and the camera's clips
+  in any order, a whole folder at once. Laps are timed, circuits recognised, and each clip finds
+  its session by the camera's clock.
+- Says how the day went against your last visit the moment the files are in. Cars, days and
+  sessions are put right in place, and every change can be undone.
+- Personal bests, Trends at each circuit, car against car, and a season summary as a PDF or a card
+  to post.
+- Before going back to a circuit, its card has your plan for next time, where the last visit lost
+  time, and the goals you set there.
+
 **Sync and data**
 - Syncs data to video automatically, from the clocks in the files or, when there are none, by
   matching the picture's motion to the speed in the log; a manual panel nudges by frames.
@@ -49,9 +60,11 @@ from your camera, driven by the data your logger recorded.
 
 **Laps, coaching and export**
 - Compare two laps side by side, kept level corner by corner, from one session or two.
-- Coaching: the corners that cost the most against your best lap, the fastest rolling lap, the
-  optimal lap spliced from your best sectors or another driver's lap — what happened in which
-  phase, what to try, and how consistent you were ([coaching](docs/coaching.md)).
+- Coaching, straight from the logbook: a walkthrough of the corners that cost the most against
+  your best lap, the fastest rolling lap, the optimal lap spliced from your best sectors, your last
+  visit or another driver's lap — what happened in which phase, what to try, a plan for next time,
+  and the corner played back on video ([coaching](docs/coaching.md)).
+- Replay: your laps and your past sessions raced against each other in 3D on the circuit.
 - Export up to 4K, every lap as its own file, a vertical clip for phones, or the overlays alone on
   a transparent background for Final Cut or Premiere; upload straight to YouTube.
 
@@ -83,10 +96,14 @@ through **Onboard Studio ▸ Check for Updates…**
 
 ## Getting started
 
-**Help ▸ Open the Sample Project** opens a project with video, data and overlays already set up.
-The [User Guide](docs/user-guide.md) then takes you from your own files to an exported video in
-about five minutes, and its [troubleshooting](docs/user-guide.md#9-troubleshooting) section covers
-the usual surprises.
+Onboard Studio opens on the **Logbook**. **New Track Day…**, add the day's logger files and camera
+clips, then choose a session: **New Project** makes a video of it, **Coach…** says where the time
+went. The Logbook's **Getting Started** ticks these off as you go, and **Help ▸ Open the Sample
+Project** opens a project with video, data and overlays already set up.
+
+The [User Guide](docs/user-guide.md) follows a track day round: bringing it in, making the video,
+being coached, seeing your progress and preparing for the next visit. Its
+[troubleshooting](docs/user-guide.md#9-troubleshooting) section covers the usual surprises.
 
 ## For developers
 
