@@ -130,6 +130,11 @@ public enum ProjectCompiler {
                 loaded.problems[input.id] = Diagnostics.failedToLoad(url, error)
             }
         }
+        // The driver's traffic marks (#571) go onto the session after it is imported, so marking a
+        // corner re-reads no file: everything that reads the session for coaching sees them.
+        for id in Array(loaded.sessions.keys) {
+            loaded.sessions[id]?.traffic = project.coaching?.traffic(for: id) ?? []
+        }
         for request in RenderPlanner.mapBackgroundRequests(for: project, sessions: loaded.sessions) {
             if let cached = previous?.mapBackgrounds[request] {
                 loaded.mapBackgrounds[request] = cached

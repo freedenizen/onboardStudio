@@ -62,6 +62,27 @@ struct CornerCalloutTests {
         #expect(imperial.evidence.contains { $0.contains(" ft ") })
     }
 
+    @Test func aCornerMarkedAsTrafficSaysSoAndNothingMore() throws {
+        var session = Self.session
+        let plain = try #require(CoachingTrack.make(session: session, reference: .sessionBest))
+        let lap = session.laps[1]
+        let analysis = try #require(plain.analyses[lap.number])
+        let times = analysis.sessionTimes(of: analysis.corners[0])
+        session.traffic = [TrafficSpan(start: times.lowerBound, end: times.upperBound)]
+        let track = try #require(CoachingTrack.make(session: session, reference: .sessionBest))
+        let read = try #require(track.analyses[lap.number])
+        let card = try #require(
+            CornerCalloutRenderer.card(
+                for: read.corners[0], analysis: read, params: CornerCalloutParams(), units: .metric))
+        #expect(card.headline == "Turn 1: held up by traffic")
+        #expect(card.evidence.isEmpty)
+        #expect(card.suggestion == nil)
+        #expect(card.timeLost == 0)
+        var strict = CornerCalloutParams()
+        strict.onlyOpportunities = true
+        #expect(CornerCalloutRenderer.card(for: read.corners[0], analysis: read, params: strict, units: .metric) == nil)
+    }
+
     @Test func linesFitTheCardAndWrap() throws {
         let style: (TextDrawing.Style) -> TextDrawing.Style = { $0 }
         let narrow = CGRect(x: 0, y: 0, width: 160, height: 300)

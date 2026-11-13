@@ -43,6 +43,10 @@ public struct TelemetrySession: Sendable {
     /// common. Empty until the driver sets them — no open source publishes corner numbering
     /// (`docs/tracks-and-sectors.md`), so like sector geometry it is drawn, never fetched.
     public var cornerLabels: [String] = []
+    /// Stretches the driver marked as held up by traffic or a flag (#571), in session time. Not
+    /// read from the file: whoever reads the session for coaching puts the marks the project or
+    /// the logbook keeps here first, so every reading of it leaves the same corners out.
+    public var traffic: [TrafficSpan] = []
     /// The unit a channel was *recorded* in, for every role the builder converted to its canonical
     /// unit. `channels[.speed].unit` is always m/s by the time anyone reads it, so this is the
     /// only record of whether the file said mph or kph — which is what *Automatic* in the speed
