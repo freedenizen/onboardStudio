@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 2
+// ci-shard: 5
 /// J26, J27 and J28: steady a shaky video (#262, #263, #264). The fixture video has no motion record and CI has
 /// no Gyroflow, so this drives what each choice says when what it needs is missing.
 final class StabilisationUITests: OnboardStudioUITestCase {

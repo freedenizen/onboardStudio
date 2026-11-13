@@ -14,7 +14,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-shards=4
+shards=5
 
 # "Class shard" for every XCUITest class; shard is "-" when the class has no ci-shard line. The
 # shared base class OnboardStudioUITestCase does not end in UITests and holds no tests.

@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 5
 /// J59: say what was driven, and keep the garage (#489, #490). A first import asks for the car in
 /// its report; the car is then a row of the Logbook's sidebar, with its notes and the corrections
 /// its name may need.
