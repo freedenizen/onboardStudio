@@ -1,3 +1,4 @@
+import MediaKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -76,6 +77,9 @@ extension LogbookWindow {
                 model.newDayRequested = true
             },
             makePlan: lastVisitSession(at: key).map { entry in { coach(entry) } },
+            nameTurns: namingSource(at: key).map { entry in
+                { model.turnNaming = TurnNamingRequest(key: key, title: title, entry: entry) }
+            },
             savePlan: { model.savePlan($0, for: key, name: $1, undo: undoManager) },
             goals: model.goals(at: key).map { GoalProgress.make($0, entries: model.entries) },
             speed: LogbookWindow.speedUnit, corners: cornerLabels(at: key), cars: carsDriven(at: key),
@@ -90,5 +94,83 @@ extension LogbookWindow {
         let calendar = Calendar.current
         guard let latest = here.compactMap({ $0.date.map(calendar.startOfDay) }).max() else { return nil }
         return here.filter { $0.date.map(calendar.startOfDay) == latest }.min { ($0.bestLap ?? 0) < ($1.bestLap ?? 0) }
+    }
+}
+
+// MARK: - Naming the turns (#550)
+
+extension LogbookWindow {
+    /// The session whose best lap the turns at `key` are named on: the personal best there, the
+    /// cleanest lap the logbook has of the circuit. `nil` for a circuit named by hand, as a plan is.
+    func namingSource(at key: String) -> LogbookEntry? {
+        guard LogbookModel.canPlan(key), let best = PersonalBests.best(in: model.entries, circuitKey: key) else {
+            return nil
+        }
+        return model.entries.first { $0.id == best.entryID }
+    }
+
+    func turnNamingSheet(_ request: TurnNamingRequest) -> some View {
+        let definition = TrackLibrary.app.definition(id: request.key)
+        return TurnNamingSheet(
+            request: request, load: { await model.session(for: request.entry) },
+            pinned: definition?.turnNames ?? [], legacy: definition?.cornerLabels ?? [],
+            save: { model.saveTurnNames($0, for: request.key, undo: undoManager) })
+    }
+}
+
+extension LogbookModel {
+    /// Keeps `names` as the turn names of the circuit and configuration keyed `key`, as one step of
+    /// the Logbook window's Undo, and reads the corners of the sessions there again by them (#550).
+    func saveTurnNames(_ names: [TurnName], for key: String, undo: UndoManager?) {
+        guard let circuit = CircuitCatalog.circuit(id: CircuitKey.base(of: key)) else { return }
+        let library = TrackLibrary.app
+        let before = library.definition(id: key)
+        var definition =
+            before
+            ?? TrackDefinition(
+                circuitID: circuit.id, configuration: CircuitKey.configuration(of: key), name: circuit.name,
+                latitude: circuit.latitude, longitude: circuit.longitude)
+        guard definition.turnNames != names else { return }
+        definition.turnNames = names
+        // The pinned names are read from now on; the list from before would only mislead (#548).
+        if !names.isEmpty { definition.cornerLabels = [] }
+        try? library.save(definition)
+        afterTurnNamesChanged(at: key)
+        undo?.registerUndo(withTarget: self) { model in
+            MainActor.assumeIsolated { model.restoreTurnNames(before, for: key, names: names, undo: undo) }
+        }
+        undo?.setActionName("Name Turns")
+    }
+
+    /// Undo of `saveTurnNames`: the definition as it was, or none, and Redo back to `names`.
+    private func restoreTurnNames(_ before: TrackDefinition?, for key: String, names: [TurnName], undo: UndoManager?) {
+        let library = TrackLibrary.app
+        if let before { try? library.save(before) } else { try? library.remove(id: key) }
+        afterTurnNamesChanged(at: key)
+        undo?.registerUndo(withTarget: self) { model in
+            MainActor.assumeIsolated { model.saveTurnNames(names, for: key, undo: undo) }
+        }
+        undo?.setActionName("Name Turns")
+    }
+
+    /// The sessions at `key` read their corners again with the circuit's names, off the main
+    /// thread, so Trends, goals and the card call the turns what the driver just called them.
+    private func afterTurnNamesChanged(at key: String) {
+        reloadPlans()
+        let ids = entries.filter { LogbookFilter.circuitKey(of: $0) == key }.map(\.id)
+        for id in ids { sessions[id] = nil }
+        let logbook = AppLogbook.shared
+        let tracks = TrackLibrary.app
+        Task {
+            await Task.detached(priority: .utility) {
+                for id in ids {
+                    guard var entry = logbook.entry(id: id), let session = LogbookReferences.load(entry, tracks: tracks)
+                    else { continue }
+                    entry.readCorners(of: session)
+                    try? logbook.save(entry)
+                }
+            }.value
+            reload()
+        }
     }
 }
