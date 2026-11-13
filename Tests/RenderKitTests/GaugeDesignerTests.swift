@@ -23,7 +23,7 @@ extension SyntheticSession {
 
 /// Goldens for the M7 designer options and objects. Each configuration exercises a different
 /// code path; the images are reviewed by eye when (re)generated with `UPDATE_GOLDENS=1`.
-@Suite("Gauge designer goldens")
+@Suite("Gauge designer goldens", .gpu)
 struct GaugeDesignerGoldenTests {
     let size = CGSize(width: 400, height: 400)
 
@@ -304,7 +304,7 @@ extension GoldenImage {
     }
 }
 
-@Suite("Designer behaviour")
+@Suite("Designer behaviour", .gpu)
 struct DesignerBehaviourTests {
     func context(
         session: TelemetrySession = SyntheticSession.withDistance, speedUnit: SpeedDisplayUnit = UnitResolver.lastResort

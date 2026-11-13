@@ -22,7 +22,7 @@ enum QuadSource {
     }
 }
 
-@Suite("VideoTransform")
+@Suite("VideoTransform", .gpu)
 struct VideoTransformTests {
     func render(_ transform: VideoTransform, width: Int = 64, height: Int = 32) throws -> CVPixelBuffer {
         let plan = RenderPlan(
@@ -103,7 +103,7 @@ struct VideoTransformTests {
     }
 }
 
-@Suite("Source orientation")
+@Suite("Source orientation", .gpu)
 struct SourceOrientationTests {
     @Test func sourceTransformIsAppliedBeforeUserTransform() throws {
         // A 180° display matrix: left/right halves swap and the top row moves to the bottom.

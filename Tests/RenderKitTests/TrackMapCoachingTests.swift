@@ -7,7 +7,7 @@ import Testing
 
 @testable import RenderKit
 
-@Suite("Track map coaching options")
+@Suite("Track map coaching options", .gpu)
 struct TrackMapCoachingTests {
     static let session = CoachingTrackSession.session
     static let size = CGSize(width: 300, height: 300)

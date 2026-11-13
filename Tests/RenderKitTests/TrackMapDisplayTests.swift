@@ -72,7 +72,7 @@ enum SectorMapSession {
     }()
 }
 
-@Suite("Track map display options")
+@Suite("Track map display options", .gpu)
 struct TrackMapDisplayTests {
     let size = CGSize(width: 300, height: 300)
 

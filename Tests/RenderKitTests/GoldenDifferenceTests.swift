@@ -7,7 +7,7 @@ import Testing
 
 /// What a rejected golden reports (#447): how much differs, by how much, and where — the part a
 /// percentage alone never said.
-@Suite("What a rejected golden reports")
+@Suite("What a rejected golden reports", .gpu)
 struct GoldenDifferenceTests {
     /// A black frame with one filled rectangle.
     func buffer(with rect: CGRect, gray: Double = 1) throws -> CVPixelBuffer {

@@ -58,7 +58,7 @@ enum SectorSession {
     }()
 }
 
-@Suite("Sector panel")
+@Suite("Sector panel", .gpu)
 struct SectorPanelTests {
     let frame = UnitRect(x: 0.05, y: 0.35, width: 0.9, height: 0.3)
 

@@ -7,7 +7,7 @@ import Testing
 
 @testable import RenderKit
 
-@Suite("Stabilisation (#262)")
+@Suite("Stabilisation (#262)", .gpu)
 struct StabilisationTests {
     /// 120 frames a second: a slow steady turn about y with an 8 Hz shake about x on top.
     static func shakyTurn(seconds: Double = 4) -> CameraOrientationTrack {

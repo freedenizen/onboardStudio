@@ -41,7 +41,7 @@ enum LensSources {
     }
 }
 
-@Suite("Lens unwrap")
+@Suite("Lens unwrap", .gpu)
 struct LensUnwrapTests {
     /// Renders the unwrap through a Metal-backed context when available and through the software
     /// renderer, so both kernel backends are covered.

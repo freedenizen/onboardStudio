@@ -7,7 +7,7 @@ import Testing
 @testable import RenderKit
 @testable import TelemetryKit
 
-@Suite("Stat card (#151)")
+@Suite("Stat card (#151)", .gpu)
 struct StatCardTests {
     func card(_ params: StatCardParams) -> StatCardRenderer {
         let context = ObjectContext(
