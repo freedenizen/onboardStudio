@@ -1213,6 +1213,8 @@ logbook has nothing to offer.
 
 ### Trends
 
+![Trends for one circuit: the best, optimal and rolling lap of every session from March to October with two goals as dashed lines, the spread of each session's flying laps, and the latest day's best lap against the day before, corner by corner](images/trends.png)
+
 **Trends** (with a circuit chosen in the sidebar) answers whether you are getting quicker: a chart
 of the best, optimal and fastest rolling lap of every session with a sentence on how far the best
 moved from your first day there to your last, narrowed to one car when you have more than one there;
@@ -1239,6 +1241,8 @@ or leaves faster.
 
 ### The season
 
+![The Season for 2026: track days, sessions, laps and distance, the best at each circuit, every circuit's best lap by visit, the most improved and most costly corner, a goal reached, and the plan still open](images/season.png)
+
 **Season** sums a year up — pick the year and, with more than one car, the car: track days,
 sessions, laps and kilometres; personal bests set; the best at each circuit with its date, car and
 visits (track days), starred when it was new; a chart of every circuit's best of each track day; the
@@ -1252,6 +1256,8 @@ Before you go back to a circuit, choose it under **Circuits** in the Logbook's s
 above its sessions, gathers what to take with you.
 
 ### The circuit's card
+
+![A circuit's card in the Logbook: six visits and the personal best, how the last visit went, a plan for next time with an experiment for each of two corners, a lap-time goal still to reach and one reached, and New Track Day Here](images/circuit-card.png)
 
 The card says how many visits you have made, your personal best there (when, and in what car) and
 how your last visit went against it. Under **Plan for Next Time** is the plan you made in the
