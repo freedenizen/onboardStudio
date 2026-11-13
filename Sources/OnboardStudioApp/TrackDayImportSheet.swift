@@ -43,6 +43,8 @@ struct TrackDayImportSheet: View {
     @State private var reports: [TrackDayImport.Report] = []
     /// How the new days compare with the visits before them (#459), once the sessions are in.
     @State private var progress = ImportProgress(circuits: [])
+    /// The goals the new sessions reached or brought closer (#461).
+    @State private var goalNews: [GoalNews] = []
     /// The days the new sessions went on with no car (#489), and the car the report gives them.
     @State private var carlessDays: [TrackDay] = []
     @State private var car = ""
@@ -68,6 +70,7 @@ struct TrackDayImportSheet: View {
             case .done:
                 Text(summary).accessibilityIdentifier("trackday.summary")
                 progressLines
+                goalLines
                 if !carlessDays.isEmpty {
                     ImportCarField(
                         days: carlessDays, knownCars: LogbookModel.shared.knownCars, car: $car, carSet: carSet,
@@ -109,6 +112,21 @@ struct TrackDayImportSheet: View {
 
     /// A line for each circuit the new sessions were driven at: the day's best against the visit
     /// before it.
+    /// A line for each goal the new sessions reached or brought closer.
+    @ViewBuilder private var goalLines: some View {
+        ForEach(goalNews) { news in
+            Label {
+                Text(news.sentence)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("trackday.goal")
+            } icon: {
+                Image(systemName: news.reached ? "checkmark.seal.fill" : "target")
+                    .foregroundStyle(news.reached ? Color.green : Color.secondary)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
     @ViewBuilder private var progressLines: some View {
         ForEach(progress.circuits) { circuit in
             Label {
@@ -243,6 +261,8 @@ struct TrackDayImportSheet: View {
         }
         if let before { model.record("Add Files", since: before, undo: undo) }
         progress = ImportProgress.make(added: Set(ids), in: model.entries)
+        goalNews = GoalNews.make(
+            goals: model.goals, added: Set(ids), in: model.entries, speed: LogbookWindow.speedUnit)
         carlessDays = Garage.daysWithoutCar(added: Set(ids), entries: model.entries, days: model.days)
     }
 

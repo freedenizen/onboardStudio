@@ -18,7 +18,8 @@ extension LogbookWindow {
         do {
             let destination = folder.appending(path: "Logbook")
             let summary = try LogbookTransfer.export(
-                exported, days: model.days, cars: model.cars, to: destination, includingFiles: includingFiles)
+                exported, days: model.days, cars: model.cars, goals: model.goals, to: destination,
+                includingFiles: includingFiles)
             let files = includingFiles ? ", \(summary.filesCopied) data files copied" : ""
             message = "Wrote \(summary.written) sessions to \(destination.lastPathComponent)\(files)."
         } catch {

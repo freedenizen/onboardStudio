@@ -17,6 +17,13 @@ struct CircuitCard: View {
     let makePlan: (() -> Void)?
     /// The plan as changed, and the name of the change for Edit ▸ Undo.
     let savePlan: (NextSessionPlan?, String) -> Void
+    /// The goals at the circuit and how far each has come (#461), and what setting one offers.
+    var goals: [GoalProgress] = []
+    var speed: SpeedDisplayUnit = .kph
+    var corners: [String] = []
+    var cars: [String] = []
+    var addGoal: (Goal) -> Void = { _ in }
+    var removeGoal: (Goal) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -40,6 +47,11 @@ struct CircuitCard: View {
                     .accessibilityIdentifier("circuit.card.lastVisit")
             }
             planSection
+            if !brief.isEmpty {
+                CircuitGoalsSection(
+                    progress: goals, speed: speed, circuitKey: brief.circuitKey, corners: corners, cars: cars,
+                    best: brief.personalBest?.seconds, add: addGoal, remove: removeGoal)
+            }
             if !brief.cornersToWorkOn.isEmpty { cornersSection }
         }
         .padding()

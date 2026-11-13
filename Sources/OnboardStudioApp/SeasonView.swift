@@ -11,6 +11,8 @@ import UniformTypeIdentifiers
 struct SeasonView: View {
     let entries: [LogbookEntry]
     let plans: [TrackDefinition]
+    /// The goals set (#461): those reached in the year are listed on its page.
+    var goals: [Goal] = []
     let onOpen: (UUID) -> Void
     @State private var year: Int = 0
     @State private var car = ""
@@ -26,7 +28,8 @@ struct SeasonView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
-                SeasonPage(summary: summary, entries: entries, forPrint: false, onOpen: onOpen)
+                SeasonPage(
+                    summary: summary, entries: entries, forPrint: false, goalsReached: goalsReached, onOpen: onOpen)
                 if let message { Text(message).font(.callout).foregroundStyle(.secondary) }
             }
             .padding()
@@ -34,6 +37,28 @@ struct SeasonView: View {
         }
         .onAppear { if year == 0 { year = years.first ?? Calendar.current.component(.year, from: Date()) } }
         .accessibilityIdentifier("logbook.season")
+    }
+
+    /// "1:40.00 lap at Stadium, reached on 12 Oct 2026", for the goals first met in the year.
+    private var goalsReached: [String] {
+        let titles = Dictionary(
+            LogbookFilter.circuits(in: entries).compactMap { group -> (String, String)? in
+                guard case .circuit(let id, let title) = group.scope else { return nil }
+                return (id, title)
+            }, uniquingKeysWith: { first, _ in first })
+        let calendar = Calendar.current
+        return goals.map { GoalProgress.make($0, entries: entries) }
+            .filter { progress in
+                guard let day = progress.reachedOn, calendar.component(.year, from: day) == year else { return false }
+                return car.isEmpty || progress.goal.car.isEmpty || progress.goal.car == car
+            }
+            .sorted { ($0.reachedOn ?? .distantPast) < ($1.reachedOn ?? .distantPast) }
+            .map { progress in
+                let title = CircuitGoalsSection.heading(progress.goal, speed: LogbookWindow.speedUnit)
+                let place = titles[progress.goal.circuitKey] ?? progress.goal.circuitKey
+                let day = progress.reachedOn?.formatted(date: .abbreviated, time: .omitted) ?? ""
+                return "\(title) at \(place), reached on \(day)"
+            }
     }
 
     private var header: some View {
@@ -64,7 +89,7 @@ struct SeasonView: View {
                 title: "Export Season", suggestedName: "\(summary.title) season", type: .pdf, fileExtension: "pdf")
         else { return }
         do {
-            try SeasonExport.writePDF(summary, entries: entries, to: url)
+            try SeasonExport.writePDF(summary, entries: entries, goalsReached: goalsReached, to: url)
             message = "Wrote \(url.lastPathComponent)."
         } catch {
             message = "Could not write the PDF: \(error.localizedDescription)"
@@ -91,6 +116,8 @@ struct SeasonPage: View {
     let summary: SeasonSummary
     let entries: [LogbookEntry]
     let forPrint: Bool
+    /// The goals first reached in the year (#461), a line each.
+    var goalsReached: [String] = []
     var onOpen: (UUID) -> Void = { _ in }
 
     private var ink: Color { forPrint ? .black : .primary }
@@ -114,6 +141,7 @@ struct SeasonPage: View {
                     .foregroundStyle(dim)
             }
             movements
+            if !goalsReached.isEmpty { goals }
             if !summary.openPlans.isEmpty { plans }
         }
         .foregroundStyle(ink)
@@ -210,6 +238,17 @@ struct SeasonPage: View {
         .font(body10)
     }
 
+    private var goals: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("Goals reached").font(heading)
+            ForEach(goalsReached, id: \.self) { line in
+                Label(line, systemImage: "checkmark.seal.fill").font(body10)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("logbook.season.goals")
+    }
+
     private var plans: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text("Still planned").font(heading)
@@ -237,8 +276,10 @@ enum SeasonExport {
     }
 
     @MainActor
-    static func writePDF(_ summary: SeasonSummary, entries: [LogbookEntry], to url: URL) throws {
-        let page = SeasonPage(summary: summary, entries: entries, forPrint: true)
+    static func writePDF(
+        _ summary: SeasonSummary, entries: [LogbookEntry], goalsReached: [String] = [], to url: URL
+    ) throws {
+        let page = SeasonPage(summary: summary, entries: entries, forPrint: true, goalsReached: goalsReached)
             .padding(36)
             .frame(width: pageSize.width, height: pageSize.height, alignment: .topLeading)
             .background(Color.white)
