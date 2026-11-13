@@ -94,6 +94,23 @@ TEST_RUNNER_ONBOARD_SCREENSHOT_TIME=687.3 Scripts/screenshots.sh
 The project is never saved. The published pictures show the Sonoma session with the owner's
 permission; retake them only from footage you may publish.
 
+The circuit card, Trends and Season pictures (`circuit-card.png`, `trends.png`, `season.png`, #542)
+need a season of visits that no real logbook should give away, so their logbook is invented.
+`Scripts/make-screenshot-logbook.py <folder>` writes fourteen RaceChrono CSV v3 sessions: an invented
+loop beside Thunderhill Raceway Park driven by a lap simulation, getting quicker from March to
+October, and one visit to Laguna Seca. To retake the pictures:
+
+1. Import the sessions into a scratch home, never the app's logbook:
+   `onboard logbook add <folder> --car Miata --logbook <home>/Library/Application\ Support/OnboardStudio/Logbook`.
+2. Copy `dist/OnboardStudio.app`, give the copy its own bundle identifier, re-sign it ad hoc with
+   the original entitlements, set its `speedUnit` to `kph` (the other pictures show km/h), and
+   open it with `--env CFFIXED_USER_HOME=<home>`, which moves Application Support (logbook and
+   tracks) but not the preferences — hence the separate bundle identifier.
+3. On Thunderhill's card: **Make a Plan in Coaching…**, walk to **Your Plan**, **Save Plan**
+   (relaunch until #543 is fixed); **Add Goal…** with 1:10.50 and 1:12.50.
+4. Take the middle column of the Sessions view with the circuit chosen, then Trends and Season,
+   at full density.
+
 ## 2. Headless checks with the CLI
 
 The `onboard` tool exercises the same libraries the app uses, without the GUI:
