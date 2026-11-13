@@ -342,6 +342,7 @@ final class EditorModel {
                     applyPendingTrackDefinition()
                     applyPendingDetails()
                     enterPendingInLogbook()
+                    syncRunsToLogbook()
                     relinkThroughLogbook()
                     bindEmptyChannels()
                 } else {

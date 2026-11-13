@@ -148,8 +148,8 @@ enum CoachingSourceKind: Hashable {
     /// A stand-in for the input a project would have: its id is the entry's, so settings saved
     /// on the entry name it.
     var input: Input? {
-        var settings = DataInputSettings()
-        settings.importerID = entry.file.importerID
+        // Read as the logbook reads it, in runs when it is timed in runs (#552).
+        var settings = entry.readingSettings
         settings.logbookEntryID = entry.id
         return Input(
             id: InputID(entry.id), label: entry.title, source: MediaReference(path: entry.file.path),

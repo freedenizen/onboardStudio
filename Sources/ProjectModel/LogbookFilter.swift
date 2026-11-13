@@ -38,6 +38,15 @@ public enum LogbookFilter {
     /// the sidebar — `track`, `activity`, `generic` — and two files that happened to be named
     /// alike were taken for two visits to one place.
     public static func circuitKey(of entry: LogbookEntry) -> String {
+        // A course is kept apart from the other courses at its venue (#552): an autocross
+        // personal best on one layout says nothing about the next.
+        if let course = entry.course { return RunCourse.key(course.id) }
+        return venueKey(of: entry)
+    }
+
+    /// Where the entry was driven, whatever course: the circuit id, else its track name; empty when
+    /// it names neither. What a track day's circuit is compared with.
+    public static func venueKey(of entry: LogbookEntry) -> String {
         if let id = entry.circuitID { return id }
         let name = entry.trackName?.trimmingCharacters(in: .whitespaces) ?? ""
         return name

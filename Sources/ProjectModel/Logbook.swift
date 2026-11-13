@@ -89,6 +89,13 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// What the Coaching window last read of this session with no project (#396): the lap, the
     /// reference, the alignment. Its `dataInputID` is the entry's own id.
     public var coaching: CoachingSettings?
+    /// The start and finish its file is timed in runs between (#552); `nil` for a circuit's laps.
+    public var runLines: RunLines?
+    /// The course the runs were driven on (#552), which its personal bests and Trends are kept for.
+    public var course: CourseTag?
+    /// The best run's path, every few metres, to tell whether another session's runs were on the
+    /// same course. Empty for laps.
+    public var coursePath: [CoursePoint] = []
     public var added: Date
     public var modified: Date
 
@@ -132,8 +139,34 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
 
     public var completeLapCount: Int { laps.filter(\.isComplete).count }
 
+    /// Whether its file is timed in runs of a point-to-point course (#552) rather than laps.
+    public var isRuns: Bool { runLines != nil }
+
+    /// How to read its file again: with the importer that read it first, and in runs between its
+    /// lines when it is timed in runs, so a reference, a personal best or a re-reading of its laps
+    /// sees the same laps the logbook lists.
+    public var readingSettings: DataInputSettings {
+        var settings = DataInputSettings()
+        settings.importerID = file.importerID
+        settings.lapLine = runLines?.start
+        settings.runFinishLine = runLines?.finish
+        return settings
+    }
+
     /// "Sonoma", else the file's track name, else the file's name.
+    /// "Lot 4 – Course of 12 Oct 2026" for runs (#552), the circuit's name for laps.
     public var title: String {
+        guard let course else { return venueTitle }
+        // A car park nobody named is its course.
+        guard circuitID != nil || !(trackName ?? "").trimmingCharacters(in: .whitespaces).isEmpty else {
+            return course.name
+        }
+        return venueTitle + " – " + course.name
+    }
+
+    /// Where it was driven, without the course: the circuit, the track name the file gives, or the
+    /// file's own name.
+    public var venueTitle: String {
         if let circuitID, let circuit = CircuitCatalog.circuit(id: circuitID) { return circuit.name }
         if let trackName, !trackName.isEmpty { return trackName }
         return URL(fileURLWithPath: file.path).deletingPathExtension().lastPathComponent
@@ -172,6 +205,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
         case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
+        case runLines, course, coursePath
     }
 
     public init(from decoder: any Decoder) throws {
@@ -203,6 +237,10 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
         durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
         coaching = try? c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
+        // Absent before runs (#552): every such session was read as laps.
+        runLines = try c.decodeIfPresent(RunLines.self, forKey: .runLines)
+        course = try c.decodeIfPresent(CourseTag.self, forKey: .course)
+        coursePath = try c.decodeIfPresent([CoursePoint].self, forKey: .coursePath) ?? []
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }
