@@ -7,6 +7,8 @@ struct ProjectInspector: View {
     @Bindable var editor: EditorModel
 
     var body: some View {
+        // First, where a new project's next step is in view (#451); it was last, below the fold.
+        GettingStartedSection(editor: editor)
         Section("Output") {
             Picker("Size", selection: sizeBinding) {
                 ForEach(sizeOptions, id: \.self) { option in
@@ -26,7 +28,6 @@ struct ProjectInspector: View {
         OverlayOpacitySection(editor: editor)
         ProjectFontSection(editor: editor)
         CameraFramingSection(editor: editor)
-        GettingStartedSection(editor: editor)
         Section {
             Text(
                 "Select an input or a display object to edit it. Drag objects on the preview to move them; "

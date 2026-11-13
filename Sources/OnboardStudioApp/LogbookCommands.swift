@@ -28,6 +28,9 @@ struct LogbookCommandContext {
     var move: ([LogbookEntry], TrackDay) -> Void
     var moveToOwnDays: ([LogbookEntry]) -> Void
     var findSessions: () -> Void
+    /// Help ▸ Take the Tour and Show Getting Started, the Logbook's own (#452).
+    var takeTour: () -> Void
+    var showGettingStarted: () -> Void
     var addFiles: () -> Void
     var exportLogbook: (_ includingFiles: Bool) -> Void
     var exportCSV: (_ laps: Bool) -> Void

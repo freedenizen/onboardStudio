@@ -14,6 +14,7 @@ struct OnboardStudioApp: App {
         LaunchOptions.registerDefaults()
         // Under UI tests the compile reads the scratch logbook the tests fill, never the user's.
         ProjectCompiler.logbookDirectory = UITestSupport.logbookDirectory
+        UITestSupport.resetGettingStarted()
     }
 
     var body: some Scene {
@@ -137,6 +138,8 @@ extension UTType {
 /// nothing with it, which would leave Space, Delete and ⌃⌘C dead in the window that is in front.
 struct EditorCommands: Commands {
     @FocusedValue(\.editor) private var editor
+    /// The Logbook in front, for the Help menu's tour and checklist (#452).
+    @FocusedValue(\.logbook) private var logbook
     @Environment(\.openWindow) private var openWindow
 
     /// A project is in front: its items are live and hold their keys.
@@ -151,8 +154,16 @@ struct EditorCommands: Commands {
             Button("Project File Format") { HelpLinks.open(.projectFormat) }
             Divider()
             Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
-            Button("Take the Tour") { editor?.tourStep = 0 }.disabled(editor == nil)
-            Button("Show Getting Started") { UserDefaults.standard.set(true, for: Preferences.showGettingStarted) }
+            // The tour of the window in front: the Logbook's has its own (#452).
+            Button("Take the Tour") {
+                if let logbook { logbook.takeTour() } else { editor?.tourStep = 0 }
+            }
+            .disabled(editor == nil && logbook == nil)
+            Button("Show Getting Started") {
+                UserDefaults.standard.set(true, for: Preferences.showGettingStarted)
+                UserDefaults.standard.set(true, for: Preferences.showLogbookGettingStarted)
+                logbook?.showGettingStarted()
+            }
             Divider()
             Button("Open the Sample Project") { SampleProject.open() }.disabled(!SampleProject.isAvailable)
             Divider()

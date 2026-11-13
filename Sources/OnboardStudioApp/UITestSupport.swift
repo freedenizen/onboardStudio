@@ -64,6 +64,19 @@ enum UITestSupport {
 
     static func fixture(_ name: String) -> URL? { fixtures?.appending(path: name) }
 
+    /// Getting Started, in a project and in the Logbook, as on a first launch for every test, and
+    /// nothing of the Logbook's checklist remembered (#451, #452). A launch argument cannot do it: it
+    /// overrides what the app writes, so Hide could not hide anything under test.
+    static func resetGettingStarted() {
+        guard isActive else { return }
+        for key in [
+            Preferences.showGettingStarted.key, Preferences.showLogbookGettingStarted.key,
+            Preferences.logbookCoached.key, Preferences.logbookSawProgress.key,
+        ] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
     /// The coaching fixture one row shorter under its own name, entered straight into the logbook
     /// as `car` — a second visit to the same place in another car (#354).
     @MainActor

@@ -105,12 +105,19 @@ public enum Preferences {
     public static let logbookAutoAdd = Preference(key: "logbookAutoAdd", unset: true)
     public static let tourSeen = Preference(key: "tourSeen", unset: false)
     public static let showGettingStarted = Preference(key: "showGettingStarted", unset: true)
+    /// The Logbook's own tour and checklist (#452), where the app opens.
+    public static let logbookTourSeen = Preference(key: "logbookTourSeen", unset: false)
+    public static let showLogbookGettingStarted = Preference(key: "showLogbookGettingStarted", unset: true)
+    /// Steps of the Logbook's checklist that leave nothing in the logbook to read them from.
+    public static let logbookCoached = Preference(key: "logbookCoached", unset: false)
+    public static let logbookSawProgress = Preference(key: "logbookSawProgress", unset: false)
 
     /// All of them, for the test that no two share a key.
     public static let allKeys: [String] = [
         defaultExportPreset.key, speedUnit.key, attributeMappings.key, nudgeStepPixels.key, ffmpegPath.key,
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
+        logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
     ]
 }
 

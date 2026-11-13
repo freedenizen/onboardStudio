@@ -147,7 +147,8 @@ extension EditorModel {
                 detail: "Start from a template, then drag objects around the preview and tune them in the inspector.",
                 action: .applyTemplate),
             GettingStartedStep(
-                title: "Export", done: false, detail: "Render the video, then upload it to YouTube.", action: .export),
+                title: "Export", done: hasExported, detail: "Render the video, then upload it to YouTube.",
+                action: .export),
         ]
     }
 }

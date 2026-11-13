@@ -74,6 +74,8 @@ final class EditorModel {
     var snappingEnabled = true
     /// The first-run tour's current step, `nil` when it is not showing.
     var tourStep: Int?
+    /// A video was exported from the project while it was open: Getting Started's last step (#451).
+    var hasExported = false
     var errorMessage: String? {
         didSet { if let errorMessage { activity.record(errorMessage, isProblem: true) } }
     }

@@ -39,7 +39,7 @@ class OnboardStudioUITestCase: XCTestCase {
         app.launchArguments = [
             "-ApplePersistenceIgnoreState", restoresState ? "NO" : "YES",
             "-NSShowAppCentricOpenPanelInsteadOfUntitledFile", "NO",
-            "-tourSeen", tourSeen ? "YES" : "NO", "-uiTesting", "YES", "-showGettingStarted", "YES",
+            "-uiTesting", "YES",
             // Sparkle's first-launch "Check for updates automatically?" prompt would take key status.
             "-SUEnableAutomaticChecks", "NO", "-SUHasLaunchedBefore", "YES",
             // Most journeys start on a blank project; the launch tests ask for the Logbook (#395).
@@ -50,7 +50,8 @@ class OnboardStudioUITestCase: XCTestCase {
             // without its layout: the Logbook remembers the last template chosen (#394, #449).
             "-logbook.projectTemplate", "Classic Dash",
         ]
-        app.launchArguments += extraArguments
+        // The test's own arguments last, so that they override these.
+        app.launchArguments += Self.firstRunArguments(tourSeen: tourSeen) + extraArguments
         app.launchEnvironment["ONBOARD_FIXTURES"] = Self.fixtures.path
         app.launchEnvironment["ONBOARD_TEST_EXPORT_DIR"] = Self.exportDirectory.path
         app.launchEnvironment.merge(environment) { _, new in new }
@@ -365,5 +366,14 @@ extension OnboardStudioUITestCase {
                 scrollView.scroll(byDeltaX: 0, deltaY: 80)
             }
         }
+    }
+}
+
+extension OnboardStudioUITestCase {
+    /// Each window's tour seen unless asked for (#452). Getting Started is not pinned here: the app
+    /// resets it under test (`UITestSupport.resetGettingStarted`), so that Hide can be tested.
+    static func firstRunArguments(tourSeen: Bool) -> [String] {
+        let seen = tourSeen ? "YES" : "NO"
+        return ["-tourSeen", seen, "-logbookTourSeen", seen]
     }
 }

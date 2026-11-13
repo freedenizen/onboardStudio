@@ -351,6 +351,7 @@ extension ExportSheet {
                     progress = update
                 }
                 finishedURL = destination
+                editor.hasExported = true
                 editor.recordExportInLogbook(destination)
             } catch is CancellationError {
                 failure = "Export cancelled."
@@ -475,6 +476,7 @@ extension ExportSheet {
                 }
                 batchLabel = nil
                 finishedURL = folder
+                editor.hasExported = true
                 let count = laps.count == 1 ? "1 \(noun)" : "\(laps.count) \(noun)s"
                 editor.statusMessage = "Exported \(count) to \(folder.lastPathComponent)."
             } catch is CancellationError {
