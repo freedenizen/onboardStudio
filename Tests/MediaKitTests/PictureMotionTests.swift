@@ -8,7 +8,7 @@ import Testing
 
 @testable import MediaKit
 
-@Suite("Steadying from the picture (#264)", .serialized)
+@Suite("Steadying from the picture (#264)", .serialized, .media)
 struct PictureMotionTests {
     /// A textured picture of `size`, moved `shift` pixels across in Core Image's axes.
     static func frame(shift: Double, size: CGSize) throws -> CIImage {
@@ -108,7 +108,7 @@ struct PictureMotionTests {
 }
 
 /// Measurements are kept apart for the UI tests, so none finds a video already measured (#288).
-@Suite struct PictureMotionCacheTests {
+@Suite(.media) struct PictureMotionCacheTests {
     @Test func theUITestsFolderIsUsedWhenGiven() {
         let folder = PictureMotion.cacheFolder(environment: ["ONBOARD_TEST_MOTION_DIR": "/tmp/motion-test"])
         #expect(folder.path == "/tmp/motion-test")

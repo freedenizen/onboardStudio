@@ -7,7 +7,7 @@ import Testing
 
 @testable import MediaKit
 
-@Suite("Coaching debrief (#327)", .serialized)
+@Suite("Coaching debrief (#327)", .serialized, .media)
 struct DebriefTests {
     static let settings: ExportSettings = {
         var s = ExportSettings(width: 320, height: 180)

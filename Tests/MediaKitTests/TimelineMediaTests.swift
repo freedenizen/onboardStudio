@@ -6,7 +6,7 @@ import Testing
 @testable import ProjectModel
 @testable import RenderKit
 
-@Suite("Timeline media", .serialized)
+@Suite("Timeline media", .serialized, .media)
 struct TimelineMediaTests {
     /// Two cameras: A full screen, then at 1.5 s A hidden and B in the top-left quarter.
     func project() throws -> Project {
@@ -118,7 +118,7 @@ struct TimelineMediaTests {
     }
 }
 
-@Suite("Clip sequences", .serialized)
+@Suite("Clip sequences", .serialized, .media)
 struct ClipSequenceTests {
     static var rotated: URL {
         get throws {
@@ -192,7 +192,7 @@ extension MediaFixtures {
     }
 }
 
-@Suite("Clip trims, gaps and orientation", .serialized)
+@Suite("Clip trims, gaps and orientation", .serialized, .media)
 struct ClipEditingTests {
     @Test func perClipTrimAndGapShapeTheSequence() async throws {
         let clip = try MediaFixtures.video
@@ -277,7 +277,7 @@ struct ClipEditingTests {
     }
 }
 
-@Suite("Clip speed", .serialized)
+@Suite("Clip speed", .serialized, .media)
 struct ClipSpeedTests {
     @Test func aFastClipTakesLessOfTheSequence() async throws {
         let clip = try MediaFixtures.video

@@ -7,7 +7,7 @@ import Testing
 @testable import RenderKit
 @testable import TelemetryKit
 
-@Suite("Export options", .serialized)
+@Suite("Export options", .serialized, .media)
 struct ExportOptionsTests {
     /// A 3 s video with a synthetic data input whose laps are 0.5–1.5 s and 1.5–2.5 s in data
     /// time, offset so data time 0 is project time 0.25.
@@ -145,7 +145,7 @@ struct ExportOptionsTests {
     }
 }
 
-@Suite("Spherical metadata", .serialized)
+@Suite("Spherical metadata", .serialized, .media)
 struct SphericalMetadataTests {
     func export(spherical: Bool, name: String) async throws -> URL {
         let output = MediaFixtures.temporaryOutput(name)
@@ -200,7 +200,7 @@ struct SphericalMetadataTests {
     }
 }
 
-@Suite("Spherical fuzzing")
+@Suite("Spherical fuzzing", .media)
 struct SphericalFuzzTests {
     @Test func mutatedContainersNeverCrashTheReaderOrInjector() throws {
         let seed = try Data(contentsOf: try MediaFixtures.video)
@@ -229,7 +229,7 @@ struct SphericalFuzzTests {
     }
 }
 
-@Suite("Nothing left beside an export (#248)")
+@Suite("Nothing left beside an export (#248)", .media)
 struct ExportLeftoverTests {
     @Test func theNetworkPassCopyIsRemovedAndNothingElse() throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
