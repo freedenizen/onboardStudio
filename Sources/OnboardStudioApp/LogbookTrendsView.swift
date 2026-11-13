@@ -11,6 +11,8 @@ struct LogbookTrendsView: View {
     let entries: [LogbookEntry]
     let circuitKey: String?
     let circuitTitle: String
+    /// The goals set at the circuit (#461), drawn as dashed lines on the charts.
+    var goals: [Goal] = []
     let onOpen: (UUID) -> Void
     @State private var car = ""
     @State private var readingCorners = false
@@ -102,6 +104,11 @@ struct LogbookTrendsView: View {
             let layout = layout
             Chart {
                 dayRules(layout)
+                ForEach(lapGoals, id: \.id) { goal in
+                    RuleMark(y: .value("Goal", goal.target.value))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                        .foregroundStyle(.secondary)
+                }
                 ForEach(rows(in: layout)) { row in
                     LineMark(x: .value("Session", row.position), y: .value("Seconds", row.seconds))
                         .foregroundStyle(by: .value("Lap", row.kind))
@@ -135,6 +142,10 @@ struct LogbookTrendsView: View {
             .accessibilityValue(LogbookTrends.summary(of: points))
             .accessibilityIdentifier("logbook.trends.chart")
             Text("Click a point to open that session.").font(.caption).foregroundStyle(.secondary)
+            if !lapGoals.isEmpty {
+                Text(goalCaption(lapGoals)).font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("logbook.trends.goal")
+            }
         }
     }
 
@@ -337,6 +348,11 @@ extension LogbookTrendsView {
                         )
                         .foregroundStyle(Color.accentColor.opacity(0.7))
                     }
+                    ForEach(spreadGoals, id: \.id) { goal in
+                        RuleMark(y: .value("Goal", goal.target.value))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .chartXScale(domain: layout.domain)
                 .chartXAxis { dayAxis(layout) }
@@ -358,6 +374,9 @@ extension LogbookTrendsView {
                     .joined(separator: ", "))
                 Text("Lower is steadier: the standard deviation of the laps within ten percent of the best.")
                     .font(.caption).foregroundStyle(.secondary)
+                if !spreadGoals.isEmpty {
+                    Text(goalCaption(spreadGoals)).font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -387,4 +406,40 @@ extension LogbookTrendsView {
         if comparison.previous == nil { text += " The next track day here is compared with this one." }
         return text
     }
+}
+
+// MARK: - Goals on the charts (#461)
+
+extension LogbookTrendsView {
+    /// The circuit's goals of one kind, in the car the chart is narrowed to or in any car.
+    private func goals(_ matches: (Goal.Target) -> Bool) -> [Goal] {
+        goals.filter { goal in
+            goal.circuitKey == circuitKey && matches(goal.target)
+                && (goal.car.isEmpty || car.isEmpty || goal.car.caseInsensitiveCompare(car) == .orderedSame)
+        }
+    }
+
+    var lapGoals: [Goal] {
+        goals {
+            if case .lapTime = $0 { true } else { false }
+        }
+    }
+
+    var spreadGoals: [Goal] {
+        goals {
+            if case .consistency = $0 { true } else { false }
+        }
+    }
+
+    /// "The dashed line is your goal: a 1:40.00 lap in the Miata."
+    func goalCaption(_ goals: [Goal]) -> String {
+        let titles = goals.map { CircuitGoalsSection.heading($0, speed: .kph).lowercasedFirst }
+        let plural = goals.count == 1 ? "line is your goal" : "lines are your goals"
+        return "The dashed \(plural): \(titles.joined(separator: "; "))."
+    }
+}
+
+extension String {
+    /// The string with its first letter lower case.
+    fileprivate var lowercasedFirst: String { prefix(1).lowercased() + dropFirst() }
 }

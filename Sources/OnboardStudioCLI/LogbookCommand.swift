@@ -229,7 +229,8 @@ struct LogbookCommand: AsyncParsableCommand {
                 print("Wrote \(entries.count) sessions to \(url.path)")
             default:
                 let summary = try LogbookTransfer.export(
-                    entries, days: book.days(), cars: book.cars(), to: url, includingFiles: withFiles)
+                    entries, days: book.days(), cars: book.cars(), goals: book.goals(), to: url,
+                    includingFiles: withFiles)
                 let files = withFiles ? ", \(summary.filesCopied) data files copied" : ""
                 print("Wrote \(summary.written) sessions to \(url.path)\(files)")
             }

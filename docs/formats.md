@@ -297,7 +297,10 @@ every key optional, #348), `projects` and `exports` (`[{ path, name }]`, #349), 
 An exported logbook (#350) is a folder of these files plus `garage.json` and, when asked, `Files/`
 with each session's data file as `<hash prefix>-<original name>`; the written entries' `file.path`
 is then relative to the folder. Only `file` is required to read one. `garage.json` in the
-same folder is `[{ id, name, notes }]`. Design in [logbook.md](logbook.md).
+same folder is `[{ id, name, notes }]`, and `goals.json` (#461) is `[{ id, circuitKey, target, car,
+by, set }]`, `target` being one of `lapTime { seconds }`, `consistency { seconds }`,
+`cornerTime { label, seconds }` or `cornerSpeed { label, metersPerSecond }`; an import adds the
+goals the logbook does not have, by id. Design in [logbook.md](logbook.md).
 
 An entry written since v0.34.0 also carries `trackDayID` (the day it belongs to, below) and
 `durationSeconds` (first sample to last), both optional on the way in.

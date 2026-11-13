@@ -18,6 +18,8 @@ import UniformTypeIdentifiers
     private(set) var hasLoaded = false
     /// The plan kept for each circuit (#330), by its catalogue id: what its card shows (#460).
     var plans: [String: NextSessionPlan] = [:]
+    /// What the driver is aiming for at each circuit (#461).
+    var goals: [Goal] = []
     /// New Track Day Here… on a circuit's card: the circuit the sheet begins with (#460).
     var newDayCircuit: String?
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
@@ -79,6 +81,7 @@ import UniformTypeIdentifiers
         try? logbook.tidyGarage(entries: entries, days: days)
         cars = logbook.cars()
         reloadPlans()
+        goals = logbook.goals()
         hasLoaded = true
     }
 
@@ -344,11 +347,11 @@ struct LogbookWindow: View {
         } else if view == .season {
             SeasonView(
                 entries: model.entries, plans: (active.editor?.trackLibrary ?? TrackLibrary.app).all(),
-                onOpen: show)
+                goals: model.goals, onOpen: show)
         } else if view == .trends {
             LogbookTrendsView(
                 entries: model.entries, circuitKey: trendsCircuit?.id, circuitTitle: trendsCircuit?.title ?? "",
-                onOpen: show)
+                goals: model.goals, onOpen: show)
         } else {
             VStack(spacing: 0) {
                 if let day = selectedDay {

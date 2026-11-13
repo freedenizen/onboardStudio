@@ -25,7 +25,7 @@ public enum LogbookTransfer {
     /// is complete. A day's clips are written by path alone: the videos are not copied.
     @discardableResult
     public static func export(
-        _ entries: [LogbookEntry], days: [TrackDay] = [], cars: [Car] = [], to folder: URL,
+        _ entries: [LogbookEntry], days: [TrackDay] = [], cars: [Car] = [], goals: [Goal] = [], to folder: URL,
         includingFiles: Bool = false
     ) throws -> Summary {
         var summary = Summary()
@@ -56,6 +56,10 @@ public enum LogbookTransfer {
         }
         if !cars.isEmpty {
             try Logbook.encoder.encode(cars).write(to: folder.appending(path: Logbook.garageFileName), options: .atomic)
+        }
+        // The goals (#461), beside the garage.
+        if !goals.isEmpty {
+            try Logbook.encoder.encode(goals).write(to: folder.appending(path: Logbook.goalsFileName), options: .atomic)
         }
         return summary
     }
@@ -107,6 +111,15 @@ public enum LogbookTransfer {
                 mine.append(car)
             }
             try logbook.saveCars(mine)
+        }
+        // Goals arrive by id: one the logbook has stays as it is.
+        let goals = folder.appending(path: Logbook.goalsFileName)
+        if let data = try? Data(contentsOf: goals),
+            let arriving = try? Logbook.decoder.decode([Goal].self, from: data)
+        {
+            let mine = logbook.goals()
+            let new = arriving.filter { goal in !mine.contains { $0.id == goal.id } }
+            if !new.isEmpty { try logbook.saveGoals(mine + new) }
         }
         try logbook.ensureDays()
         return summary
