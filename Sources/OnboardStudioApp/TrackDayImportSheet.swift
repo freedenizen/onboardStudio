@@ -32,6 +32,12 @@ struct TrackDayImportSheet: View {
     /// with no project open.
     let editor: EditorModel?
     let request: TrackDayRequest
+    /// The Logbook window's, when the sheet is on it: the files added are one step of its Undo,
+    /// and the car set in the report another (#454). From a project's window, `nil` — the project's
+    /// undo manager is the document's.
+    var undo: UndoManager?
+    /// The logbook before the files went in.
+    @State private var before: LogbookChange.Snapshot?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openWindow) private var openWindow
     @State private var reports: [TrackDayImport.Report] = []
@@ -205,6 +211,7 @@ struct TrackDayImportSheet: View {
     }
 
     private func run() async {
+        if undo != nil { before = AppLogbook.shared.snapshot() }
         let urls = request.urls
         let day = request.day
         let logbook = AppLogbook.shared
@@ -234,6 +241,7 @@ struct TrackDayImportSheet: View {
         let ids = reports.compactMap { report -> UUID? in
             if case .added(let entry) = report.outcome { entry.id } else { nil }
         }
+        if let before { model.record("Add Files", since: before, undo: undo) }
         progress = ImportProgress.make(added: Set(ids), in: model.entries)
         carlessDays = Garage.daysWithoutCar(added: Set(ids), entries: model.entries, days: model.days)
     }
@@ -243,7 +251,7 @@ struct TrackDayImportSheet: View {
     private func setCar() {
         let name = car.trimmingCharacters(in: .whitespaces)
         guard carSet == nil, !name.isEmpty, !carlessDays.isEmpty else { return }
-        LogbookModel.shared.setCar(name, onDays: carlessDays.map(\.id))
+        LogbookModel.shared.setCar(name, onDays: carlessDays.map(\.id), undo: undo)
         carSet = name
     }
 }

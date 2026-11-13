@@ -25,7 +25,7 @@ struct CarHeader: View {
                 Button("Rename…", systemImage: "pencil", action: rename)
                     .help("Rename the car on every day and session; another car's name makes the two one car")
                     .accessibilityIdentifier("car.header.rename")
-                Button("Remove from Garage…", systemImage: "trash", role: .destructive, action: remove)
+                Button("Remove from Garage", systemImage: "trash", role: .destructive, action: remove)
                     .labelStyle(.iconOnly)
                     .disabled(!summary.isUnused)
                     .help(
@@ -144,14 +144,13 @@ struct CarRenameSheet: View {
     }
 }
 
-/// The car header's Rename… sheet and the question before Remove from Garage… (#490).
+/// The car header's Rename… sheet (#490); the rename is a step of Edit ▸ Undo (#454).
 struct CarSheets: ViewModifier {
     @Binding var renaming: CarRename?
-    @Binding var removing: String?
     let model: LogbookModel
+    let undo: UndoManager?
     /// The car's name after a rename, for the sidebar to follow it.
     let renamed: (String) -> Void
-    let removed: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -159,19 +158,7 @@ struct CarSheets: ViewModifier {
                 CarRenameSheet(
                     name: car.name, summary: Garage.summary(of: car.name, entries: model.entries, days: model.days),
                     knownCars: model.knownCars
-                ) { renamed(model.renameCar(car.name, to: $0)) }
-            }
-            .confirmationDialog(
-                "Remove “\(removing ?? "")” from the garage?",
-                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
-                presenting: removing
-            ) { car in
-                Button("Remove from Garage", role: .destructive) {
-                    model.removeCar(car)
-                    removed()
-                }
-            } message: { _ in
-                Text("No day or session names it. Its notes are removed with it.")
+                ) { renamed(model.renameCar(car.name, to: $0, undo: undo)) }
             }
     }
 }

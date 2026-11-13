@@ -82,6 +82,10 @@ targets:
             UTTypeConformsTo: [public.json]
             UTTypeTagSpecification:
               public.filename-extension: [onboardtrack]
+          # A session dragged from the Logbook's table onto a day in its sidebar (#454); never a file.
+          - UTTypeIdentifier: com.freedenizen.onboardstudio.logbook-session
+            UTTypeDescription: Onboard Studio Logbook Session
+            UTTypeConformsTo: [public.data]
         # Documents written by OverlayGen, this app's former name. Declared as imported types so
         # projects, templates and styles saved before the rename still open; new files are written
         # with the exported types above.

@@ -130,7 +130,8 @@ enum CoachingSourceKind: Hashable {
 }
 
 /// One logbook session, read in on demand (#396): its choices are kept on the entry, a library
-/// file, so they are not undoable — as a session's conditions are not.
+/// file, so they are not undoable — the Logbook's Undo is its own window's (#454), and the
+/// Coaching window has none of its own for a session.
 @MainActor @Observable final class LogbookCoachingSource: CoachingSource {
     var entry: LogbookEntry
     private(set) var session: TelemetrySession?

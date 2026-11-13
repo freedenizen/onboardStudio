@@ -16,7 +16,12 @@ final class LogbookMenuUITests: OnboardStudioUITestCase {
     /// Something only a session's detail has.
     private var detail: XCUIElement { app.staticTexts["logbook.detail.laps"] }
 
-    private var removeConfirmation: XCUIElement { app.windows.buttons["Remove from Logbook"] }
+    /// Waits until the table lists `count` sessions.
+    @MainActor
+    private func expectRows(_ count: Int, _ message: String) {
+        let listed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == %d", count), object: rows)
+        XCTAssertEqual(XCTWaiter().wait(for: [listed], timeout: Self.timeout), .completed, "\(message): \(rows.count)")
+    }
 
     /// The Logbook at launch, the fixture day added and its first session selected.
     @MainActor
@@ -81,18 +86,20 @@ final class LogbookMenuUITests: OnboardStudioUITestCase {
         app.typeKey("w", modifierFlags: .command)
         XCTAssertTrue(coaching.waitForNonExistence(timeout: Self.timeout))
 
-        // Session ▸ Remove from Logbook… asks first, and Cancel keeps the session.
+        // Session ▸ Remove from Logbook takes the session out with no question, and Edit ▸ Undo,
+        // named for it, brings it back (#454).
         menu("Window", "Logbook")
-        menu("Session", "Remove from Logbook…")
-        XCTAssertTrue(removeConfirmation.waitForExistence(timeout: Self.timeout), "No confirmation")
-        app.windows.buttons["Cancel"].click()
-        XCTAssertTrue(removeConfirmation.waitForNonExistence(timeout: Self.timeout))
-        XCTAssertTrue(detail.exists, "Cancel removed the session")
+        let count = rows.count
+        menu("Session", "Remove from Logbook")
+        expectRows(count - 1, "Remove from Logbook removed nothing")
+        menu("Edit", "Undo Remove Session")
+        expectRows(count, "Undo did not bring the session back")
     }
 
     @MainActor
     func testTheKeysSwitchViewsFindAndRemove() throws {
         selectASession()
+        let count = rows.count
 
         // ⌘2 shows Trends and ⌘3 the Season in place of the sessions, with the session chosen still
         // beside them (#503); ⌘1 brings the sessions back.
@@ -122,13 +129,13 @@ final class LogbookMenuUITests: OnboardStudioUITestCase {
         // ⌘⌫ in the search field deletes the text, as in any text field, and removes nothing.
         app.typeKey(.delete, modifierFlags: .command)
         XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "⌘⌫ did not clear the search")
-        XCTAssertFalse(removeConfirmation.exists, "⌘⌫ in the search field asked to remove the session")
+        expectRows(count, "⌘⌫ in the search field removed a session")
 
-        // With the sessions in hand, ⌘⌫ asks to remove the selected one.
+        // With the sessions in hand, ⌘⌫ removes the selected one, and ⌘Z brings it back (#454).
         rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
         app.typeKey(.delete, modifierFlags: .command)
-        XCTAssertTrue(removeConfirmation.waitForExistence(timeout: Self.timeout), "⌘⌫ did not ask to remove")
-        app.windows.buttons["Cancel"].click()
-        XCTAssertTrue(removeConfirmation.waitForNonExistence(timeout: Self.timeout))
+        expectRows(count - 1, "⌘⌫ did not remove the session")
+        app.typeKey("z", modifierFlags: .command)
+        expectRows(count, "⌘Z did not bring it back")
     }
 }

@@ -302,8 +302,8 @@ year of the day chosen (`openYears`, #485), so the selected row is never folded 
 a second year arrives; choosing one narrows the table and puts `TrackDayHeader` above
 it — title, date and count, car and driver as fields committed on Return or losing focus, the
 `ConditionsEditor` (now over either an entry or a day) folded under *Conditions and Notes*, the
-empty-day line, **Add Files…** and **Remove Track Day…** (a confirmation; the sessions go
-with it, the files stay).
+empty-day line, **Add Files…** and **Remove Track Day** (the sessions go with it, the files stay;
+undoable, so no confirmation since #454).
 
 A session that names no circuit has none (#455). `LogbookFilter.circuitKey(of:)` used to fall back
 to the file's name, so every unrecognised file was a circuit of its own in the sidebar and two
@@ -426,6 +426,26 @@ table scrolled out of view.
 The buttons are in `FlowLayout` rows in a `safeAreaInset` under the scrolling detail: one that does
 not fit starts another row, and none of them scrolls out of view. **New Project** is one `Menu`
 with a `primaryAction` — a split button — in place of a button and an icon-only menu beside it.
+
+## Corrections and Undo (#454)
+
+Logbook files are not a document, so there was no undo: a removal asked first and could not be
+taken back, and a mistaken import was put right one session at a time. Every edit made in the
+Logbook window now goes through `LogbookModel.edit(_:undo:_:)`, which reads the logbook before and
+after and records the difference as a `LogbookChange`: each session and day it touched, and the
+garage, before and after. Undo writes back the `before` of exactly those (`Logbook.apply`, with
+their own modification dates) and nothing else, so what the Coaching window or an import wrote
+since is left alone; Redo writes the `after`. The names come from what changed
+(`LogbookEditName`: *Change Car*, *Change Circuit*, *Assign Clip*, *Remove 3 Sessions*). The undo
+manager is the Logbook window's: an import from a project's window is not recorded, since on the
+document's undo manager it would mark the project edited.
+
+`Logbook.move(_:toDay:)` puts sessions on another day with the clips that are their picture; a
+session that had its old day's car, driver or typed circuit takes the new day's, and what it says
+of itself stays. `moveToOwnDays` puts each on the day its own date and circuit say. The table
+selects several sessions; its right-click menu, the Session menu and the detail column of a
+selection act on all of them, and rows dragged onto a day in the sidebar
+(`LogbookSessionDrag`, a type declared in the app's Info.plist) are moved there.
 
 ## On the command line (#398)
 

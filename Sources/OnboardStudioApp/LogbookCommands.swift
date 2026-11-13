@@ -6,8 +6,11 @@ import SwiftUI
 /// detail is on show, the window's view, and the window's own actions — so a menu command does to a
 /// session exactly what the button at the foot of its detail does.
 struct LogbookCommandContext {
-    /// The session whose detail is on show; `nil` when none is.
+    /// The session whose detail is on show; `nil` when none is, or several are selected.
     var session: LogbookEntry?
+    /// Every session selected (#454): what Move to Day and Remove act on.
+    var selected: [LogbookEntry]
+    var days: [TrackDay]
     var view: Binding<LogbookWindow.LogbookView>
     /// Whether the table of sessions has the keyboard: ⌘⌫ removes a session only then, and
     /// deletes to the start of the line in a text field as it does everywhere else.
@@ -21,7 +24,9 @@ struct LogbookCommandContext {
     var replay: (LogbookEntry) -> Void
     var compare: (LogbookEntry, LogbookEntry) -> Void
     var debrief: (LogbookEntry) -> Void
-    var remove: (LogbookEntry) -> Void
+    var remove: ([LogbookEntry]) -> Void
+    var move: ([LogbookEntry], TrackDay) -> Void
+    var moveToOwnDays: ([LogbookEntry]) -> Void
     var findSessions: () -> Void
     var addFiles: () -> Void
     var exportLogbook: (_ includingFiles: Bool) -> Void
@@ -152,12 +157,22 @@ private struct SessionMenuItems: View {
         .keyboardShortcut("r", modifiers: [.command, .shift])
         .disabled(session == nil)
         Divider()
+        // On every session selected (#454).
+        MoveToDayMenu(
+            entries: selected, days: logbook?.days ?? [], move: { logbook?.move(selected, $0) },
+            moveToOwnDays: { logbook?.moveToOwnDays(selected) }
+        )
+        .disabled(selected.isEmpty)
+        Divider()
         // ⌘⌫, as the Finder moves to the Trash and Photos deletes; only while the sessions have the
-        // keyboard, so it still deletes to the start of a line while a note is being typed.
-        Button("Remove from Logbook…") { act { logbook?.remove($0) } }
+        // keyboard, so it still deletes to the start of a line while a note is being typed. No
+        // question first: Edit ▸ Undo brings them back (#454).
+        Button(LogbookWindow.removeTitle(max(selected.count, 1))) { logbook?.remove(selected) }
             .keyboardShortcut(.delete, modifiers: .command, when: logbook?.sessionsHaveFocus == true)
-            .disabled(session == nil)
+            .disabled(selected.isEmpty)
     }
+
+    private var selected: [LogbookEntry] { logbook?.selected ?? [] }
 
     private func act(_ body: (LogbookEntry) -> Void) {
         if let session { body(session) }
