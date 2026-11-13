@@ -1,38 +1,79 @@
 # Onboard Studio User Guide
 
-Onboard Studio turns a lap video and the data recorded with it into a video with gauges, a track
-map, lap timing and anything else you want drawn on top. This guide walks through a first
-project and then explains every part of the window. It assumes nothing beyond having a video
-and, ideally, a data log.
+Onboard Studio keeps a logbook of your track days, turns a lap video and the data recorded with it
+into a video with gauges, a track map, lap timing and anything else you want drawn on top, and
+then says where the time went and whether you are getting quicker. This guide follows a track day
+round, from the files to the next visit:
 
-## 1. Your first overlay in five minutes
+| | What you do | Chapter |
+| --- | --- | --- |
+| 1 | Open the app and find your way | [Getting started](#1-getting-started) |
+| 2 | Put a day's sessions, videos and car in the Logbook, in any order, and put mistakes right | [Your track days: the Logbook](#2-your-track-days-the-logbook) |
+| 3 | Make a video with overlays | [Making a video](#3-making-a-video) |
+| 4 | Find out where the time went, and what to try next time | [Being coached](#4-being-coached) |
+| 5 | See whether you are getting quicker | [Your progress](#5-your-progress) |
+| 6 | Before going back to a circuit: the plan and your goals | [Before you go back](#6-before-you-go-back) |
+| 7 | The next day: bring it in, see how it went, make the new videos | [Coming back](#7-coming-back) |
+
+[Command line](#8-command-line) and [Troubleshooting](#9-troubleshooting) close the guide. It
+assumes nothing beyond having a video and, ideally, a data log.
+
+## 1. Getting started
 
 ![The Logbook at launch: track days in the sidebar, a day's sessions in the table with its header above, the selected session's laps with what can be done with it underneath, and the New Project menu in the toolbar](images/logbook.png)
 
-1. **Launch Onboard Studio.** The **Logbook** opens: every track day you have driven, with its
-   sessions and clips, and the way into the work. **New Track Day…** begins a day (the date, the
-   circuit, the car); **Add Files…** or a drop puts the day's logger files and camera clips on it;
-   select a session and **New Project** — the button in its detail, or the menu in the toolbar,
-   which names the session it will use — opens a project with its data, its clips and gauges
-   already laid out; the rest of this guide from step 5 applies. To start from files instead,
-   the toolbar's **New Project** menu offers a **Blank Project**, a project **from a template**
-   (gauges already laid out, which attach themselves to the video and data files you add next),
-   **Open Project…** and the sample project. While a session is selected that menu's projects
-   are made from the session, and **New Project Without a Session** is the empty one.
-   **File ▸ Open Recent** has your recent projects.
-   The first time, the Logbook shows a three-step tour of its sidebar, its sessions and the
-   session's detail (**Help ▸ Take the Tour** repeats it while the Logbook is in front). While no
-   session is chosen, the detail column holds the Logbook's **Getting Started**: add a track day's
-   files, say what was driven, make a video of a session, be coached through a lap, see how you
-   are getting on — each ticked as you do it, with a button that does or shows it.
-   Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a blank project
-   instead; **Window ▸ Logbook** (⌃⌘L) brings it back. A new project opens with a welcome panel
-   and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be
-   dropped anywhere in the window. A folder is not taken apart there — the status line says so:
-   drop the files inside it, or enter the folder in the Logbook, which is what takes a day's
-   folder whole. (**Help ▸ Open the Sample Project** opens a short clip with a
-   synthetic log if you just want to poke around.)
-2. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
+**Launch Onboard Studio** and the **Logbook** opens: every track day you have driven, with its
+sessions and clips, and the way into everything else. It is three columns, as Mail is — track
+days, circuits and cars on the left, a day's sessions in the middle, the chosen session on the
+right.
+
+The first time, the Logbook shows a three-step tour of its sidebar, its sessions and the session's
+detail (**Help ▸ Take the Tour** repeats it while the Logbook is in front). While no session is
+chosen, the detail column holds the Logbook's **Getting Started**: add a track day's files, say
+what was driven, make a video of a session, be coached through a lap, see how you are getting on —
+each ticked as you do it, with a button that does or shows it.
+
+Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a blank project instead;
+**Window ▸ Logbook** (⌃⌘L) brings it back. **Help ▸ Open the Sample Project** opens a short clip
+with a synthetic log if you just want to poke around.
+
+### From a track day to a video
+
+1. **Begin the day.** **New Track Day…** in the toolbar (⌥⌘N): the date, the circuit, the car.
+   ([Starting a day](#starting-a-day))
+2. **Add its files.** **Add Files…**, or drop the logger's files and the camera's clips on the
+   Logbook — a whole day's folder too. Each session is read, its laps timed and its circuit
+   recognised, and each clip is matched to the session it filmed by the camera's clock. The sheet
+   says what happened to every file, and how the day went against your last visit.
+   ([Adding a day's files](#adding-a-days-files))
+3. **Say what was driven** if the sheet asks: on a first import there is no car to take it from.
+4. **Choose a session** in the table. Its detail lists its laps with the best marked, its clips,
+   and at its foot what can be done with it.
+5. **New Project** — the button at the foot of the detail, or the toolbar's menu, which names the
+   session it will use — opens a project with the session's data, its clips and gauges already
+   laid out, the data lined up with the video by the clocks in the files when they have them.
+   ([Making a video](#3-making-a-video))
+6. **Play** (Space) and scrub the timeline to check that the gauges follow the picture; if they
+   lead or lag, open **Sync** and nudge.
+7. **Export** (**⌘E**). Pick a range — your best lap is one choice — and a preset (1080p, 4K,
+   vertical…), and press Export. **Upload to YouTube…** appears when it is done.
+
+Then **Coach…** on the same session says where the time went ([Being coached](#4-being-coached)).
+
+### Starting from files instead
+
+The Logbook toolbar's **New Project** menu offers a **Blank Project**, a project **from a
+template** (gauges already laid out, which attach themselves to the video and data files you add
+next), **Open Project…** and the sample project. While a session is selected that menu's projects
+are made from the session, and **New Project Without a Session** is the empty one. **File ▸ Open
+Recent** has your recent projects. A new project opens with a welcome panel and, the first time, a
+three-step tour (**Help ▸ Take the Tour** repeats it). Files can be dropped anywhere in the window.
+A folder is not taken apart there — the status line says so: drop the files inside it, or enter
+the folder in the Logbook, which is what takes a day's folder whole. A data file added to a project
+goes into the Logbook as well ([Projects and the Logbook](#projects-and-the-logbook)). Then,
+in the project:
+
+1. **Add the video** (the big button, **⌘I**, or drop it in). If the file is the first chapter of
    a GoPro recording (`GX010037.MP4`, `GX020037.MP4`, …) Onboard Studio joins the following chapters
    so they play as one continuous video. Add a second recording the same way and it gets its own
    lane, starting where the previous video ends, with the pause between the two recordings kept
@@ -40,24 +81,24 @@ and, ideally, a data log.
    its own bar and its own row in the sidebar, so you can move, trim and rename it on its own. A
    file that is already in the project is not added twice. For a second camera to show picture-in-picture use **Project ▸ Add
    Camera…** (**⇧⌘I**), which opens a new lane.
-3. **Add the data.** Either **Add Data File…** (**⇧⌘D**) with a RaceChrono export, GPX, FIT, CSV
+2. **Add the data.** Either **Add Data File…** (**⇧⌘D**) with a RaceChrono export, GPX, FIT, CSV
    or similar, or, for a GoPro clip, select the video and press **Use Embedded GPS** to use the
    GPS, accelerometer and gyro the camera recorded. A DJI or Garmin log next to the clip appears as
    **Use Sidecar Data**.
-4. **Line the data up with the video.** When the log has a clock (RaceChrono, GPX, FIT, DJI…)
+3. **Line the data up with the video.** When the log has a clock (RaceChrono, GPX, FIT, DJI…)
    this happens automatically the moment the file is added; the status line says which clock was
    used. If the camera's clock is wrong — a GoPro with no GPS fix whose clock was never set
    reads days off — the clocks put the video outside the log, so Onboard Studio says how far
    apart they are and syncs by motion instead. Otherwise select the data input and press **Auto-Sync by Motion** (matches the video's
    sound and motion against the log's speed) or **Synchronize with Video…** for the manual panel.
-5. **Add gauges.** **Project ▸ Apply Template ▸ Classic Dash** gives a speedometer, tachometer,
+4. **Add gauges.** **Project ▸ Apply Template ▸ Classic Dash** gives a speedometer, tachometer,
    track map, g-force plot and lap timer at once; **Add Object** adds them one by one. Drag objects
    on the preview to move them, drag the handles to resize, and tune them in the inspector on the
    right.
-6. **Play** (space) and scrub the timeline to check that the gauges follow the picture. If they
+5. **Play** (space) and scrub the timeline to check that the gauges follow the picture. If they
    lead or lag, open **Sync** and nudge — the panel sits under the preview, so the picture stays
    visible and scrubbable while you work.
-7. **Export** (**⌘E**). Pick a range first (whole project, a time span, your best lap or any run
+6. **Export** (**⌘E**). Pick a range first (whole project, a time span, your best lap or any run
    of laps), then a preset (1080p, 4K, vertical…), and press Export. **Upload to YouTube…** appears
    when it is done.
 
@@ -68,7 +109,226 @@ inspector. Export is ticked once a video has been exported from the project. The
 and the checklist, in projects and in the Logbook; **Help ▸ Show Getting Started** brings them
 back.
 
-## 2. The window
+## 2. Your track days: the Logbook
+
+The app keeps a **logbook** of your track days and the sessions driven on them — which file, where
+and when it was driven, the car, every lap's time, the best, optimal and fastest rolling lap —
+separately from any project, in one small file per day and per session beside the saved tracks,
+and never uploaded. The car, the sessions and the videos can go in in whatever order suits you,
+and everything in it can be put right afterwards.
+
+### The window
+
+The window shows it all in three columns, as Mail does: a sidebar of track days (under their year
+when there is more than one, the year of the day you have chosen open; each is its date with the
+circuit beneath, so two days on one date read apart), circuits (ending with **No circuit** when
+some sessions name none), cars and years with how many sessions each; a table of sessions (a
+personal-best star, date, circuit, car, laps, best, optimal and fastest rolling lap) sortable by any
+column and narrowed by the search field; and, for the selected session, its numbers, every lap with
+the best marked, the notes, the projects made from it and where the file is.
+
+The session stays beside **Trends** and the **Season** too, and the column says **No Session
+Selected** when none is. A search that finds nothing says so, and the detail is of a session the
+sidebar and the search let through: choose another day, or search it away, and the detail goes with
+it. The toolbar follows the columns: the view, **New Track Day**, **Add Files** and **Export or
+Import** over the sessions, **New Project** and the search field over the session, however wide you
+drag it.
+
+### Starting a day
+
+A day begins before its files do. **New Track Day…** in the toolbar (or **File ▸ New Track Day…**,
+⌥⌘N): the date, the circuit (search the catalogue, or keep a name as typed), the car, the driver,
+the weather and the surface, and notes. **Create** puts the day under **Track Days** in the sidebar
+and shows it above an empty table, with the car and driver as fields in its header and
+**Conditions and Notes** folded under it. A day can stay empty until its files come.
+
+The header's **Circuit** row says where the day was driven, and it can be set or corrected after
+the day exists: search the catalogue, pick a name you typed before, or keep what you type. A session
+whose trace is recognised nowhere and whose file names no track has no circuit: such sessions are
+gathered in the sidebar under **No circuit** rather than each under a circuit named after its file,
+and have no personal best or Trends until their day is named. Naming the day names every session on
+it that had none; a session that says where it was keeps its own. A session with no circuit that is
+added to a named day, or lands on one by its date, takes that day's.
+
+### Adding a day's files
+
+**Add Files…**, or drop the logger's files and camera clips on the window — while they are over it
+the window is outlined and says where they will go — and each goes on that day with its car, driver
+and conditions to begin with; the sheet says what happened to each file in plain words. A file that
+carries no date goes on the day its file is dated, not the day you added it.
+
+A file that is not from that day is not put on it unasked. If a file is dated another day, or was
+recorded at another circuit than the day's, the sheet adds the files that could be the day's and
+then stops: it says how many are not from the day and lists each with what is different. **Put on
+Their Own Days** files each where its own date and circuit say, as **Add Files…** does when no day
+is chosen; **Add to This Day** puts them on the day you chose anyway, which is the answer when a
+logger's or a camera's clock was wrong; **Leave Them Out** adds none of them. A file with no date of
+its own goes on the day, and one in which no circuit was recognised takes the day's — its line says
+so. A day whose circuit you typed, rather than chose from the catalogue, is compared by date alone.
+
+The circuit is recognised, the date read from the file, and a file already in the logbook is
+skipped, whatever it is called now. So is a session the logbook already has from another file:
+RaceChrono exports one session as CSV v2, CSV v3 and `.rcz`, and a folder holding more than one of
+them is still one session — the sheet's line names the file the logbook has it from. A video this
+app exported from one of the sessions is left out, and the sheet says so: it is the finished
+overlay, not a recording.
+
+**Add Files…** with no day chosen (or **File ▸ Add Files to Logbook…**) takes a whole day's folders
+at once: each file goes on the day its date and circuit say, made if need be, and the sheet's line
+says which. Files added with no day chosen take the car of an earlier session at the same circuit,
+or the car of the day they go on when it names one.
+
+### What the import says
+
+When the files are in, the sheet says how the day went at each circuit: the day's best lap against
+your last visit there (*1:42.31, 0.84 s quicker than your last visit (12 Oct) — a personal best*),
+or that this was your first visit. An older day added after newer ones is compared with the visit
+before it. It says too which of your [goals](#goals) the new sessions reached, or how much closer
+they came. **Show Trends** beside **Done** opens that circuit's Trends in the Logbook, the circuit
+chosen in the sidebar. After a first session somewhere, or files from several circuits at once, it
+is **Show Season** instead. Sessions that name no circuit are not counted as a visit anywhere, so
+they get no line.
+
+On a first import there is no earlier session and no day's car to take a car from, so the sheet
+says no car is set for the new day (or *the 3 new days*) and asks what was driven: type it, or pick
+one the logbook knows from the menu beside the field, and **Set Car** puts it on those days and
+their sessions. A car typed there and not set is set when you close the sheet.
+
+### The day's clips
+
+The camera's clips live on the day too. Each recording added — GoPro chapters joined — is listed
+under **Clips** in the day's header with when it started and how long it ran, and is matched to the
+session it is the picture of by the camera's clock (a GoPro's GPS clock, else the file's date)
+against the log's; a clip that overlaps no session says so, and the pop-up beside it lets you say
+whose it is. A clip with GPS in it and no session of its own is entered as a session as well. A
+session's detail lists its clips under **Video**, and they go into a New Project with it.
+
+### Conditions and notes
+
+Under **Conditions** in the detail, note the weather, the surface (dry, damp, wet, drying, greasy),
+the air temperature, the tyres and the setup, and anything else under **Notes**: pickers and the
+temperature are kept as soon as set, text on Return or when you leave the field; the table's
+Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and the search
+finds it. Nothing is required.
+
+### The garage: your cars
+
+The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
+sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
+worth keeping. **Rename…** changes the name on every day and session at once; type another car's
+name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
+added to the garage the first time its name is typed anywhere, and a name put right on the day or
+the session leaves it again. A car with notes stays when nothing names it any more: it is listed
+with no sessions, says so, and **Remove from Garage** takes it out. A car still named on a day or a
+session cannot be removed. A project's **Details ▸ Car** offers the garage's cars from the menu
+beside the field.
+
+### Putting mistakes right
+
+The day's car and driver are its sessions' too: change one in the header and every session that
+took it from the day changes with it, so a typo is corrected once. A session driven in something
+else has **Car** and **Driver** fields of its own in its detail, with the cars the logbook already
+knows a click away, and keeps what you put there whatever the day says later. A day's circuit is
+corrected in its header's **Circuit** row ([Starting a day](#starting-a-day)), a car's name with
+**Rename…** in the [garage](#the-garage-your-cars).
+
+Everything you change in the Logbook can be taken back: **Edit ▸ Undo** names what it will undo —
+*Undo Remove 3 Sessions*, *Undo Move Session*, *Undo Change Car*, *Undo Add Files* — and **Redo**
+does it again. So nothing asks before it removes: a session, a day or a car taken out by mistake is
+one ⌘Z away. **Remove from Logbook** takes a session out, and the trash button in a day's header
+takes the day and its sessions out; no file is touched.
+
+Shift- or ⌘-click selects several sessions at once; the detail column then says how many, where and
+when, and gives all of them a **Car**, moves them with **Move to Day**, or takes them out with
+**Remove … Sessions**. Right-click a session, or several, for the same things and for what is done
+with one session. **Move to Day** lists the day the session's own date and circuit say (made if
+there is none), then the days at its circuit, then the others; the session takes its new day's car
+and driver when it had its old day's, and the clips that are its picture go with it. Dragging
+sessions from the table onto a day in the sidebar moves them too. Right-click a day in the sidebar
+to remove it, or a car to rename or remove it.
+
+A session's laps are written into the logbook when it is added, so a session added by a build
+before a correction to how laps are read keeps the laps it was read with. When some of the sessions
+in the table are such sessions, a line above the table says how many and offers **Read Them Again**
+(**Read It Again** for one): the files are read once more, and the laps, the best, optimal and
+fastest rolling lap and the best lap's corners become what the app reads now. The car, the driver,
+the conditions, the notes and the day are left as they are. The first such correction is to a
+RaceChrono session's first lap: read from a CSV it was called partial, and read from an `.rcz`
+archive it ran from the start of the log, out-lap and all — so a best lap can change, and the count
+of complete laps can go up by one. A session whose file is not where the logbook has it is named in
+the line and left as it was; it is offered again once the file is back.
+
+### What you can do with a session
+
+What can be done with the session stays at the foot of its detail, in view however many laps are
+listed above, and the buttons move onto another row rather than shorten when the detail is narrow
+(drag its left edge to widen it; it stays as wide as you left it, whichever session you choose next
+and the next time the app opens).
+
+- **New Project** starts a project with that session's data file and its clips, laid out with the
+  template the last New Project used (Classic Dash to begin with); the arrow on the button offers
+  every template, or a blank project. The project is called after the session, as the Logbook lists
+  it — *Sonoma Raceway, Sep 22, 2026*, not *Untitled* — in its window, the Window menu and the name
+  Save suggests, and a second one from the same session is numbered; once saved, it is called by
+  its file. A project not made from a session takes its name from its Details when they give the
+  track or the day. The toolbar's **New Project** menu does the same while a session is selected,
+  under a heading that names the session, so the two never disagree; its **New Project Without a
+  Session** starts an empty project instead.
+- **Add to Current Project** adds the session to the project in front.
+- **Coach…**, **Compare With ▸** and **Export Coaching Debrief…** read the session's laps and say
+  where the time went ([Being coached](#4-being-coached)); **Replay…** races its laps in 3D
+  ([Replay](#replay-your-laps-in-3d)).
+- **Show in Finder** shows its file; **Remove from Logbook** takes it out
+  ([Putting mistakes right](#putting-mistakes-right)).
+
+### Projects and the Logbook
+
+A data file added to a project goes into the logbook as well (Settings ▸ Logbook turns this off):
+the status bar says so, the same file is never entered twice, nor the same session from another
+export of it, and the project's blank car and driver are filled from what the logbook knows. A
+saved project is listed on its sessions under **Projects**, every video exported from it under
+**Exports**, both as links. A data file you have moved is found again through whichever side still
+knows where it is, once, when the project opens.
+
+### The menu bar and the keyboard
+
+Everything the Logbook does is in the menu bar too, with keys for the common things. The
+**Session** menu, between View and Project, acts on the session whose detail is on show, as the
+buttons at the foot of the detail do: **New Project from Session** (⇧⌘N, with the template the last
+New Project used) or **New Project from Session with Template**, **Add to Current Project**,
+**Coach…** (⌃⌘C), **Replay…**, **Compare With**, **Export Coaching Debrief…**, **Show in Finder**
+(⇧⌘R), **Move to Day** and **Remove from Logbook** (⌘⌫ while the table of sessions has the keyboard;
+in a text field ⌘⌫ deletes to the start of the line, as it does everywhere). With several sessions
+selected, Move to Day and Remove act on all of them.
+
+**View** switches between **Sessions**, **Trends** and **Season** with ⌘1, ⌘2 and ⌘3, shows and
+hides the sidebar (⌃⌘S) and the toolbar, and **Customize Toolbar…** sets the toolbar to show its
+buttons' names under their icons, or leaves out the ones you never use. **Edit ▸ Find Sessions**
+(⌘F) puts the keyboard in the search field. **File ▸ Add Files to Logbook…** does what **Add
+Files…** does, from any window: on the day chosen in the sidebar, else each file on its own day.
+With no project in front, the project's own menus — Project, Arrange, Marker, Playback — are dimmed
+and their keys are left alone, so Space, Delete and the letters do nothing unexpected in the
+Logbook. **Help ▸ Keyboard Shortcuts** lists the Logbook's keys with the rest.
+
+### Taking the logbook with you
+
+The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
+folder of one file per session (narrow the table first to export only a circuit, a car or a year),
+**…with Data Files** copies the data files in beside them, **Export Sessions as CSV…** and **Export
+Laps as CSV…** for a spreadsheet, **Export Logbook as Markdown…** for a coach; **Import Logbook
+Export…** reads such a folder back, skipping what is already here and updating what is newer. The
+same commands are in the File menu while the Logbook is in front. The command line has them too
+([Command line](#8-command-line)).
+
+## 3. Making a video
+
+A project is one video in the making: its videos, its data files, the overlays drawn over them and
+how it exports. The quickest way to one is **New Project** on a session in the Logbook, which
+brings the session's data and clips and lays them out with the template the last New Project used
+([What you can do with a session](#what-you-can-do-with-a-session)); [Starting from files
+instead](#starting-from-files-instead) covers the rest. This chapter is the editor that opens.
+
+### The editor window
 
 ![The editor: inputs and display objects on the left, the preview in the middle with the transport and timeline below it, and the project inspector on the right](images/editor.jpg)
 
@@ -97,8 +357,8 @@ back.
   plays them too, and is longer by what they add. In the inspector, ↑ and ↓ raise
   and lower the number field you are in (⇧↑ and ⇧↓ select text there, as they do in any field).
 - **Transport and timeline (below the preview)**: play, step, scrub. The timeline has a time
-  ruler (click or drag it to scrub), a marker lane (§6a), a lane with one bar per video, a lane
-  with one bar per data file showing where its laps fall (§6c), and the segment strip (§6).
+  ruler (click or drag it to scrub), a marker lane ([Markers](#markers)), a lane with one bar per video, a lane
+  with one bar per data file showing where its laps fall ([Laps](#laps)), and the segment strip ([The timeline](#the-timeline)).
   Drag a video bar to move it, drag its left or right edge to trim it (the head trim keeps the
   picture where it was), click it to select the video. A click anywhere in the video or data lanes
 also puts the playhead where you clicked, as in any editor. The magnet button (N) snaps drags to other
@@ -129,7 +389,7 @@ also puts the playhead where you clicked, as in any editor. The magnet button (N
 - **VoiceOver**: every control is named, and each object on the preview is an element of its own
   that VoiceOver can select and move with its actions (Move Left, Right, Up, Down).
 
-## 3. Videos
+### Videos
 
 **Trim, sync and speed** live in the input's *Synchronization* section: *start position in file*
 skips into the recording, *offset in project* delays the video on the project timeline, and *play
@@ -186,7 +446,7 @@ Two settings shape the picture, and they answer different questions:
 
 **Multiple cameras.** Add each camera as its own video input, line them up in the video lane (or
 with the sync fields), then arrange them with **Layout** (picture-in-picture, split, quad) and
-switch between them over time with timeline segments (§6).
+switch between them over time with timeline segments ([The timeline](#the-timeline)).
 
 ### Stabilisation
 
@@ -247,7 +507,7 @@ recording's frames and length, so the sync you set still holds. If a copy goes m
 recording is shown again until you choose **Stabilise Again**. Gyroflow runs as a separate program:
 it is licensed under the GPL, and is not part of Onboard Studio.
 
-## 4. Data
+### Data
 
 Every data input shows its format, channels and laps. Its *Attributes* section says what is
 mapped and how the import went, in a line, and **Map Attributes…** opens the window where a
@@ -266,7 +526,7 @@ Supported files: RaceChrono (CSV v2/v3 and `.rcz` archives), RaceRender CSV, GPX
 NMEA, Racelogic VBO, DJI SRT, GoPro GPMF (inside the video) and generic CSV/TSV from most logging
 apps. Details and column names are in [formats.md](formats.md).
 
-### Attributes: what your channels mean
+#### Attributes: what your channels mean
 
 ![The Attributes window: each attribute with the column it is read from, the unit it is read in and the unit it shows, for all projects, this project or one data file](images/attributes.png)
 
@@ -302,7 +562,7 @@ everything that has not been pinned and leaves what you did pin alone. A change 
 once, in projects that are already open too. A column you point an attribute at is still listed
 under its own name as well, so an object's channel picker offers both *Brake pressure (front)*
 and `brake_pressure_front (CAN bus)`, and objects already using the raw channel keep drawing. A single object can differ
-again — see *Units* under [Objects](#5-objects).
+again — see [Units on an object](#units-on-an-object).
 
 **From the keyboard.** The window is built to be used without the mouse. **⌘F** goes to the filter
 field in the toolbar. Type part of an attribute's name, or of the column it comes from, and only
@@ -318,7 +578,7 @@ The window remembers which level it was showing, which view, and whether every a
 listed, between launches. Without a project open it still edits *All projects*: there are no
 columns to choose from then, but you can type a column's name.
 
-### What the import read
+#### What the import read
 
 The attribute window's **Import** tab (⌘2, or **Project ▸ Show Import Report…**) says what became
 of every column of the file, in the attribute table's own words: which ones
@@ -350,236 +610,7 @@ filled in, so you set a venue up once rather than once a session. Opening a proj
 earlier never applies them: a project renders the way you left it, whatever the app has learned
 since.
 
-### The logbook: every track day in one place
-
-The app keeps a **logbook** of your track days and the sessions driven on them — which file,
-where and when it was driven, the car, every lap's time, the best, optimal and fastest rolling
-lap — separately from any project, in one small file per day and per session beside the saved
-tracks, and never uploaded.
-
-A day begins before its files do. **Window ▸ Logbook**, then **New Track Day…** in the toolbar
-(or **File ▸ New Track Day…**, ⌥⌘N): the date, the circuit (search the catalogue, or keep a name
-as typed), the car, the driver, the weather and the surface, and notes. **Create** puts the day under
-**Track Days** in the sidebar and shows it above an empty table, with the car and driver as fields
-in its header and **Conditions and Notes** folded under it. The day's car and driver are its
-sessions' too: change one in the header and every session that took it from the day changes with
-it, so a typo is corrected once. A session driven in something else has **Car** and **Driver**
-fields of its own in its detail, with the cars the logbook already knows a click away, and keeps
-what you put there whatever the day says later.
-
-The header's **Circuit** row says where the day was driven, and it can be set or corrected after
-the day exists: search the catalogue, pick a name you typed before, or keep what you type. A
-session whose trace is recognised nowhere and whose file names no track has no circuit: such
-sessions are gathered in the sidebar under **No circuit** rather than each under a circuit named
-after its file, and have no personal best or Trends until their day is named. Naming the day
-names every session on it that had none; a session that says where it was keeps its own. A
-session with no circuit that is added to a named day, or lands on one by its date, takes that
-day's. A file that carries no date goes on the day its file is dated, not the day you added it. **Add Files…**, or drop the logger's
-files and camera clips on the window — while they are over it the window is outlined and says
-where they will go — and each goes on that day with its car, driver and
-conditions to begin with; the sheet says what happened to each file in plain words. A file that
-is not from that day is not put on it unasked. If a file is dated another day, or was recorded at
-another circuit than the day's, the sheet adds the files that could be the day's and then stops:
-it says how many are not from the day and lists each with what is different. **Put on Their Own
-Days** files each where its own date and circuit say, as **Add Files…** does when no day is
-chosen; **Add to This Day** puts them on the day you chose anyway, which is the answer when a
-logger's or a camera's clock was wrong; **Leave Them Out** adds none of them. A file with no date
-of its own goes on the day, and one in which no circuit was recognised takes the day's — its line
-says so. A day whose circuit you typed, rather than chose from the catalogue, is compared by date
-alone. A video this
-app exported from one of the sessions is left out, and the sheet says so: it is the finished
-overlay, not a recording. The circuit is
-recognised, the date read from the file, and a file already in the logbook is skipped, whatever
-it is called now. So is a session the logbook already has from another file: RaceChrono exports
-one session as CSV v2, CSV v3 and `.rcz`, and a folder holding more than one of them is still one
-session — the sheet's line names the file the logbook has it from. **Add Files…** with no day chosen (or **File ▸ Add Files to Logbook…**)
-takes a whole day's folders at once: each file goes on the day its date and circuit say, made if
-need be, and the sheet's line says which. From the command line, `onboard logbook new-day --date
-2026-08-23 --circuit Sonoma --car Miata` begins a day, `onboard logbook add <files or folders>
---day <id or date>` puts files on it (`--car`, `--driver`; without `--day`, each file goes on the
-day its date and circuit say; with it, every file goes on that day and the line of one dated
-otherwise says so), `onboard logbook days` lists the days and `onboard logbook list`
-the sessions with their day.
-
-When the files are in, the sheet says how the day went at each circuit: the day's best lap
-against your last visit there (*1:42.31, 0.84 s quicker than your last visit (12 Oct) — a personal
-best*), or that this was your first visit. An older day added after newer ones is compared with
-the visit before it. **Show Trends** beside **Done** opens that circuit's Trends in the Logbook,
-the circuit chosen in the sidebar. After a first session somewhere, or files from several
-circuits at once, it is **Show Season** instead. Sessions that name no circuit are not counted as
-a visit anywhere, so they get no line.
-
-Files added with no day chosen take the car of an earlier session at the same circuit, or the car
-of the day they go on when it names one. On a first import there is neither, so the sheet says no
-car is set for the new day (or *the 3 new days*) and asks what was driven: type it, or pick one the
-logbook knows from the menu beside the field, and **Set Car** puts it on those days and their
-sessions. A car typed there and not set is set when you close the sheet.
-
-The window shows it all in three columns, as Mail does: a sidebar of track days (under their
-year when there is more than one, the year of the day you have chosen open;
-each is its date with the circuit beneath, so two days on one date read apart),
-circuits (ending with **No circuit** when some sessions name none), cars and years with how many
-sessions each; a table of sessions (a personal-best star, date, circuit, car, laps, best, optimal
-and fastest rolling lap) sortable by any column and narrowed by the search field; and, for the
-selected session, its numbers, every lap with the best marked, the notes, the projects made from
-it and where the file is. The session stays beside **Trends** and the **Season** too, and the
-column says **No Session Selected** when none is. A search that finds nothing says so, and the
-detail is of a session the sidebar and the search let through: choose another day, or search it
-away, and the detail goes with it. The toolbar follows the columns: the view, **New Track Day**,
-**Add Files** and **Export or Import** over the sessions, **New Project** and the search field
-over the session, however wide you drag it.
-
-**Before you go back to a circuit,** choose it under **Circuits** in the sidebar. Its card above
-its sessions says how many visits you have made, your personal best there (when, and in what car)
-and how your last visit went against it. Under **Plan for Next Time** is the plan you made in the
-Coaching window for that circuit — each line can be changed right there, **Add Experiment** adds
-one and the minus removes one. With no plan yet, **Start a Plan** begins one from **Where the Last
-Visit Lost Time** — the corners where your last visit's best session was slowest against your best
-lap, with how much and whether you braked earlier or were slower at the apex — and **Make a Plan in
-Coaching…** opens Coaching on that session to write one from its laps. Each change is one step of
-Edit ▸ Undo. **New Track Day Here…** begins the next day at the circuit, and that day shows the same
-card until its first session arrives. A plan is kept with a circuit the catalogue knows; for a
-circuit named by hand the card says so.
-
-**Goals** are on the same card. **Add Goal…** sets what you are aiming for at the circuit: a **lap
-time**, **consistency** (your flying laps within so many seconds of each other in one session), or
-**a corner** — the time through it, or the speed at its apex, on a session's best lap — in any car
-or one, and by a date if you like. Each goal says how far there is to go (*Best 1:42.31 — 2.31 s
-to go*) or the day it was reached; the minus removes it, and Edit ▸ Undo brings it back. A
-lap-time goal is drawn as a dashed line on the circuit's **Trends** chart, a consistency goal on
-its consistency chart. When you add a day's files, the report says which goals the new sessions
-reached, or how much closer they came. The **Season** lists the goals reached that year, on the
-page and in its PDF.
-
-The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
-sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
-worth keeping. **Rename…** changes the name on every day and session at once; type another car's
-name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
-added to the garage the first time its name is typed anywhere, and a name put right on the day or
-the session leaves it again. A car with notes stays when nothing names it any more: it is listed
-with no sessions, says so, and **Remove from Garage** takes it out. A car still named on a day or
-a session cannot be removed. A project's **Details ▸ Car** offers the garage's
-cars from the menu beside the field.
-What can be done with the session stays at the foot of
-its detail, in view however many laps are listed above, and the buttons move onto another row
-rather than shorten when the detail is narrow (drag its left edge to widen it; it stays as wide
-as you left it, whichever session you choose next and the next time the app opens). **New Project**
-starts a project with that session's data file and its clips, laid out with the template the last
-New Project used (Classic Dash to begin with); the arrow on the button offers every template, or a
-blank project. The project is called after the session, as the Logbook lists it — *Sonoma Raceway,
-Sep 22, 2026*, not *Untitled* — in its window, the Window menu and the name Save suggests, and a
-second one from the same session is numbered; once saved, it is called by its file. A project not
-made from a session takes its name from its Details when they give the track or the day. The
-toolbar's **New Project** menu does the same while a session is selected, under
-a heading that names the session, so the two never disagree; its **New Project Without a
-Session** starts an empty project instead. **Add to Current Project** adds the session to the
-project in front. **Remove from
-Logbook** takes a session out, and the trash button in a day's header takes the day and its
-sessions out; no file is touched.
-
-Everything you change in the Logbook can be taken back: **Edit ▸ Undo** names what it will undo —
-*Undo Remove 3 Sessions*, *Undo Move Session*, *Undo Change Car*, *Undo Add Files* — and **Redo**
-does it again. So nothing asks before it removes: a session, a day or a car taken out by mistake is
-one ⌘Z away. Shift- or ⌘-click selects several sessions at once; the detail column then says how
-many, where and when, and gives all of them a **Car**, moves them with **Move to Day**, or takes
-them out with **Remove … Sessions**. Right-click a session, or several, for the same things and
-for what is done with one session. **Move to Day** lists the day the session's own date and
-circuit say (made if there is none), then the days at its circuit, then the others; the session
-takes its new day's car and driver when it had its old day's, and the clips that are its picture go
-with it. Dragging sessions from the table onto a day in the sidebar moves them too. Right-click a
-day in the sidebar to remove it, or a car to rename or remove it.
-
-Everything the Logbook does is in the menu bar too, with keys for the common things. The
-**Session** menu, between View and Project, acts on the session whose detail is on show, as the
-buttons at the foot of the detail do: **New Project from Session** (⇧⌘N, with the template the
-last New Project used) or **New Project from Session with Template**, **Add to Current Project**,
-**Coach…** (⌃⌘C), **Replay…**, **Compare With**, **Export Coaching Debrief…**, **Show in Finder**
-(⇧⌘R), **Move to Day** and **Remove from Logbook** (⌘⌫ while the table of sessions has the
-keyboard; in a text field ⌘⌫ deletes to the start of the line, as it does everywhere). With several
-sessions selected, Move to Day and Remove act on all of them. **View** switches between
-**Sessions**, **Trends** and **Season** with ⌘1, ⌘2 and ⌘3, shows and hides the sidebar (⌃⌘S) and
-the toolbar, and **Customize Toolbar…** sets the toolbar to show its buttons' names under their
-icons, or leaves out the ones you never use. **Edit ▸ Find Sessions** (⌘F) puts the keyboard in
-the search field. **File ▸ Add Files to Logbook…** does what **Add Files…** does, from any
-window: on the day chosen in the sidebar, else each file on its own day. With no project in
-front, the project's own menus — Project, Arrange, Marker, Playback — are dimmed and their keys
-are left alone, so Space, Delete and the letters do nothing unexpected in the Logbook. Help ▸
-Keyboard Shortcuts lists the Logbook's keys with the rest.
-
-A session's laps are written into the logbook when it is added, so a session added by a build
-before a correction to how laps are read keeps the laps it was read with. When some of the
-sessions in the table are such sessions, a line above the table says how many and offers **Read
-Them Again** (**Read It Again** for one): the files are read once more, and the laps, the best,
-optimal and fastest rolling lap and the best lap's corners become what the app reads now. The
-car, the driver, the conditions, the notes and the day are left as they are. The first such
-correction is to a RaceChrono session's first lap: read from a CSV it was called partial, and
-read from an `.rcz` archive it ran from the start of the log, out-lap and all — so a best lap can
-change, and the count of complete laps can go up by one. A session whose file is not where the
-logbook has it is named in the line and left as it was; it is offered again once the file is back.
-
-The camera's clips live on the day too. Each recording added — GoPro chapters joined — is listed
-under **Clips** in the day's header with when it started and how long it ran, and is matched to
-the session it is the picture of by the camera's clock (a GoPro's GPS clock, else the file's
-date) against the log's; a clip that overlaps no session says so, and the pop-up beside it lets
-you say whose it is. A clip with GPS in it and no session of its own is entered as a session as
-well. A session's detail lists its clips under **Video**, and they go into a New Project with it. Under **Conditions** in the detail, note the weather, the surface (dry, damp, wet, drying,
-greasy), the air temperature, the tyres and the setup, and anything else under **Notes**: pickers
-and the temperature are kept as soon as set, text on Return or when you leave the field; the
-table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and
-the search finds it. Nothing is required.
-
-A data file added to a project goes into the logbook as well (Settings ▸ Logbook turns this off):
-the status bar says so, the same file is never entered twice, nor the same session from another
-export of it, and the project's blank car and
-driver are filled from what the logbook knows. A saved project is listed on its sessions under
-**Projects**, every video exported from it under **Exports**, both as links. A data file you have
-moved is found again through whichever side still knows where it is, once, when the project opens.
-
-The **PB** column, the table's first so a narrow table keeps it in view, marks every session that
-set a personal best at its circuit when it was driven,
-overall or in its car: a filled yellow star on the session that holds it now, a hollow star on one
-that has since been beaten, so a run of improving sessions reads as progress and one star still
-says which is the best. A selected session's **Personal best here** says the best at that
-circuit, when, in what, and how many visits you have had — track days, however many sessions
-each. In a project, a Text object or Title
-Card can show `{pb}`, `{pbDate}`, `{pbCar}`, `{trackDays}` (how many track days) and `{visits}`
-(how many sessions) for the circuit its data is at — **Insert Detail ▸ From the Logbook** offers
-them — (in the project's car when the logbook has one there), and a Timer's *Delta* or *Projected lap* can
-**Compare with ▸ Personal best (logbook)** — the gap to your personal best lap at the same
-distance, that session read on demand, the session best when the logbook has nothing to offer.
-
-**Trends** (the toolbar's view switch, with a circuit chosen in the sidebar) answers whether you
-are getting quicker: a chart of the best, optimal and fastest rolling lap of every session with a
-sentence on how far the best moved from your first day there to your last, narrowed to one car
-when you have more than one there; each session's spread of flying laps as consistency. Both
-charts space the sessions evenly in the order you drove them, grouped by track day with the date
-under each day and a dashed line between days, so six sessions in one day read as clearly as
-visits months apart; and corner by corner, the best lap of your latest track day against the
-best of the track day before and against your personal best — brake point, minimum speed and time
-in the corner. A line above the table names the laps it reads, and a comparison's columns appear
-only when there is one to make: none against the personal best when the latest day set it. Click a point to open that session. Sessions entered before corners were kept offer
-**Read Their Corners**, as do sessions whose corners were measured before a correction to how the
-app measures them (#438), so a fixed reading reaches sessions already in the logbook. With two cars at the circuit, **Car against car** at the foot of Trends
-reads each car's best lap against the other's: which is quicker and by how much, both speed traces
-over distance, and a sentence per corner naming the car — where one brakes later, carries more
-speed through the apex or leaves faster.
-
-**Season** (the third view) sums a year up — pick the year and, with more than one car, the car:
-track days, sessions, laps and kilometres; personal bests set; the best at each circuit with its
-date, car and visits (track days), starred when it was new; a chart of every circuit's best of
-each track day; the most improved and the most costly corner against the track day before; and the plans still open at the
-circuits you visited. **Export as PDF…** for paper, **Export Card…** for a 1080 × 1920 picture to
-post.
-
-The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a
-folder of one file per session (narrow the table first to export only a circuit, a car or a year),
-**…with Data Files** copies the data files in beside them, **Export Sessions as CSV…** and
-**Export Laps as CSV…** for a spreadsheet, **Export Logbook as Markdown…** for a coach; **Import
-Logbook Export…** reads such a folder back, skipping what is already here and updating what is newer.
-The same commands are in the File menu while the Logbook is in front.
-From the command line: `onboard logbook export <folder|.csv|.md>` and `onboard logbook import`.
-
-## 5. Objects
+### Overlays
 
 ![A tachometer selected on the preview with handles around it, its label, position, size and scale in the inspector](images/inspector-gauge.jpg)
 
@@ -603,7 +634,7 @@ it: a crop of `12` %, a smoothing of `1.5` s, a lens yaw of `-90` °. Type a val
 or Tab to set it — anything past the end of the slider stops at that end — or press ↑ and ↓ in the
 box to step it. Typing a value is one step to undo, as a drag of the slider is.
 
-### Graphs: what is coming, and one channel against another
+#### Graphs: what is coming, and one channel against another
 
 A graph against **Time** or **Distance** shows the current moment in the **middle** of its window,
 marked by a line, so the braking point you are about to reach is on the right while the corner you
@@ -623,7 +654,7 @@ Switching a bar between **Horizontal** and **Vertical** turns its frame with it,
 so a long thin bar becomes a tall thin one rather than a stub in a wide box; a frame you had
 already shaped for the new direction is left as it is.
 
-### Stat card and the Social template
+#### Stat card and the Social template
 
 A **Stat Card** (Add Object ▸ Stat Card) puts the session's headline numbers on one card, for a clip
 you share: a title — `{track} · {date}` at first, filled from the project's details — then the best
@@ -644,7 +675,7 @@ sheet shows the stretch it will export; **Export…** writes `<project> – Lap 
 and codec. The project itself is left exactly as it was. When it finishes, **Reveal in Finder** or
 **Upload to YouTube…** from the same sheet.
 
-### In front and behind
+#### In front and behind
 
 The sidebar lists objects front first: the one at the top is drawn over everything below it.
 Select objects and choose **Arrange ▸ Bring Forward** (⌥⇧⌘F) or **Send Backward** (⌥⇧⌘B) to move
@@ -652,7 +683,7 @@ them one place, or **Bring to Front** (⇧⌘F) and **Send to Back** (⇧⌘B) t
 the same commands are on each object's right-click menu. Or drag a row up or down the sidebar. A
 group moves as one, and each change is one step of Undo.
 
-### Locking and grouping
+#### Locking and grouping
 
 A finished object can be **locked** (**Project ▸ Lock**, ⌘L, the padlock beside it in the
 sidebar, or *Locked* in its inspector): it still draws and still edits in the inspector, but a
@@ -672,7 +703,7 @@ Copy/paste a style between objects (**Project ▸ Copy Object Style**) or save i
 `.onboardstyle` file. Save a whole layout as a template to reuse it on the next session (see
 *Your own templates* below).
 
-### Your own templates
+#### Your own templates
 
 **Project ▸ Save as Template…** saves the layout — objects, fonts, segments, output size and
 export settings, but not the videos, data files or the project's details — under a name, with a
@@ -687,7 +718,7 @@ one of yours to **Rename…**, **Duplicate**, **Show in Finder**, **Export…** 
 you, and so does double-clicking an `.onboardtemplate` file in the Finder; it keeps the file's
 name. **Project ▸ Apply Template** puts any template's layout onto the project you are in.
 
-### See-through overlays
+#### See-through overlays
 
 Every colour in the inspectors has an opacity, every object has its own **Opacity**, and the
 project inspector's **Overlay opacity** fades all gauges, maps and readouts together. For the look
@@ -711,7 +742,7 @@ The bars and graph read the **Brake** and **Throttle** attributes; if your logge
 brake pressure, point the Brake attribute at that column in **Attributes**, or pick the channel
 and range in the bar's inspector.
 
-### Deltas to your best lap
+#### Deltas to your best lap
 
 No script or pre-processing is needed for delta readouts. Whenever the data has laps, Onboard Studio
 adds two channels that any object can use (bars, graphs, text, gauges, indicator lights, scripts):
@@ -730,7 +761,7 @@ green while it is on course to beat it and red while it is not. On the best lap 
 lap's time throughout, and as a lap finishes it arrives at that lap's own time. The same number
 against the session's best lap is the **`projectedLap`** channel, for a graph or a digital readout.
 
-### Indicator lights and your logger
+#### Indicator lights and your logger
 
 Every logger names its ABS / stability / brake channels differently (a RaceChrono CAN export may
 put them in `analog_1` / `analog_2`, an AiM or MoTeC file in `ABS Active` or `DSC`, a switch in
@@ -744,7 +775,7 @@ condition can be ≥, ≤, = or ≠.
 
 The timing panel's headings, lap numbers and comparison lap (best or previous) are settings too.
 
-### Project details and title cards
+#### Project details and title cards
 
 The project inspector's **Details** say what the project is of: **Track**, **Car**, **Driver**,
 **Event**, **Session** and **Date**, plus any detail of your own — *Add Detail…* and call it
@@ -757,11 +788,11 @@ Any **Text** object shows a detail by naming it in braces — `{track} · {date}
 {tyres}` — and **Insert Detail** in its inspector adds one without typing, each item saying what
 it stands for now. **Add Object ▸ Title Card** starts with `{track} · {date}`. A detail with
 nothing entered stays in its braces, so a title card asks for what is missing rather than
-quietly leaving a gap. `{pb}`, `{pbDate}`, `{pbCar}`, `{trackDays}` and `{visits}` come from the logbook (§4), and
+quietly leaving a gap. `{pb}`, `{pbDate}`, `{pbCar}`, `{trackDays}` and `{visits}` come from the logbook ([Personal bests](#personal-bests)), and
 Insert Detail lists them under **From the Logbook**. Details belong to the project, not to templates: a template with a title
 card picks up each project's own track and day.
 
-### Fonts
+#### Fonts
 
 Every object that draws text has a **Font** section in its inspector: a font, a typeface within it
 (*Bold*, *Condensed Medium*, …) and, for objects without a size of their own, a **Text size** from
@@ -779,7 +810,7 @@ A project opened on a Mac without its font says so under the pop-up and draws th
 built-in fonts rather than a substitute, until the font is installed. Copy and paste a style
 (**Project ▸ Copy Object Style**) and the font goes with it.
 
-### Units on an object
+#### Units on an object
 
 An object shows its channel in whatever the attribute's *Shows* unit says, and a **Unit** picker
 on the object overrides it for that one object — a second brake bar in psi beside one in bar, an
@@ -812,7 +843,7 @@ before any file is known. A dial whose scale you have set yourself is left as yo
 is one in a project saved earlier: there the scale is still the 0–160 it was saved with, and
 **Maximum** and the ticks in the inspector are where to change it.
 
-## 6. Timeline segments
+### The timeline
 
 A segment starts at a project time and changes any object's visibility, position, size or opacity
 from then on; anything not changed is inherited from the previous segment. Use them for camera
@@ -820,7 +851,7 @@ switches, hiding gauges during a pit stop, or moving a map when the picture-in-p
 **Add Segment at Playhead** (**⌘K**) creates one; drag its left edge to move it (later segments
 follow); the inspector shows which properties the segment overrides.
 
-### 6a. Markers
+#### Markers
 
 A marker is a named point — or a stretch — worth coming back to: a braking reference, an
 incident, the start of a sector.
@@ -835,7 +866,7 @@ incident, the start of a sector.
   marker along with it. With nothing selected it belongs to the timeline and stays at that
   timecode. The inspector says which kind you have.
 
-### 6b. Splitting and trimming
+#### Splitting and trimming
 
 Select a video on the timeline and **⌘\** cuts it at the playhead (**Project ▸ Split at
 Playhead**). You get two independent halves that can be trimmed, moved and re-synced separately,
@@ -868,7 +899,7 @@ There is no separate "split at marker" or "trim to marker": jump to the marker w
 **⇧↓**, which puts the playhead on it, then split or trim. That is how Resolve works too, and one
 command cannot disagree with another about where the cut goes.
 
-### 6c. Laps
+#### Laps
 
 Each data file gets a bar on the timeline with a divider at every lap, numbered where there is
 room. The laps come from the file's own timing, so re-syncing the data slides its laps along with
@@ -883,7 +914,7 @@ does. The bar ends there too: a log that runs on after the camera stopped, or on
 longer recording, shows the part of the file that the picture covers, with its laps under the
 times on the ruler.
 
-### 6d. Sectors
+#### Sectors
 
 A lap split into parts tells you *where* the time went, not just how much. Select the data file
 and open **Sectors** in the inspector:
@@ -929,153 +960,7 @@ Everything in the layout is an ordinary object you can move, restyle or add to. 
 Timer's *Compare with* ▸ **Compared lap** measures against it. **Undo** restores the layout you
 had; **Project ▸ Stop Comparing Laps** removes the compared lap and keeps the rest.
 
-### Coaching: where the time went
-
-A session in the **Logbook** is coached without a project: select it and **Coach…**. The window
-reads its file and offers the same lap and reference choices (the logbook's other sessions at the
-circuit among them), keeps the choices with the session, and writes the coaching sheet from
-**File ▸ Export Coaching Sheet**; what needs a picture or a plan is replaced by **Make a
-Project**, which opens a project from the session and brings the window to it. With a project on
-the session already open, **Coach…** reads that project instead — the plan, **Show Me** on the
-picture and **Compare in Video** are there, and the project comes forward behind the window — and
-a Coaching window that was already reading the session offers **Use the Open Project** in place of
-Make a Project; neither makes a second project of the same session. Beside **Coach…**,
-**Compare With ▸** lists the logbook's other sessions at the circuit — the personal best here and
-the last visit first — and opens the window with that one as the reference; **Export Coaching
-Debrief…** (once the session has a clip) opens a project laid out for a debrief with the sheet up.
-
-**Project ▸ Coaching…** (⌃⌘C) opens a window beside the project that reads one lap against a
-reference and says where the time went.
-
-It opens on a **walkthrough** that takes you through the lap one step at a time. First the lap, in
-a sentence: how far behind it finished and against what (**Change…** chooses the lap, what it is
-compared with and how the two are lined up). Then its three biggest losses, one corner per step:
-what happened, the whole of what to try next time, **Watch**, the corner on the map with both
-lines, where the time went phase by phase, and **Try this next time**, on to begin with. **Watch**
-plays the corner in the window, from a moment before the brakes go on to a moment after the exit:
-this lap's, then the same corner on the lap it is compared with, when that lap was filmed too (not
-the spliced optimal lap, nor a lap from another session in the Logbook). From a project it plays
-the project's own picture, overlays and all; from the Logbook, the clips of the session's day,
-lined up by the camera's clock and the logger's. When no video covers the corner it says so. Last, **Your Plan**:
-the corners you chose, as next session's experiments in the analysis's own words, which you can
-edit before **Save Plan**. **Next** (Return) and **Back** (⌘[) move between the steps. The plan is
-kept for the circuit, so it is there when you prepare to go back and on the Season page, and in the
-project when there is one, undoably; from the Logbook it needs no project, only a circuit the
-Logbook knows. **All Corners**, beside **Walkthrough** in the toolbar, shows the whole analysis at
-once, as described below, and the window opens next time on whichever you used last.
-
-In All Corners, choose the **Lap** (it starts on the lap at the playhead)
-and what it is **Compared with**: your **best lap**; the **fastest rolling lap** — the quickest
-lap-length stretch of the session starting anywhere, which the timing line often cuts in two and
-which is frequently quicker than any timed lap; the **optimal lap (spliced)** — the best sector of
-each lap joined into one, the lap you have already shown you can do; **another lap**; or a lap of
-**another data file** in the project, which is how you compare with a friend's or an instructor's
-session (the two lines are matched by position, so a different line through a corner still meets
-the same corner); or, when the logbook has other sessions at this circuit, a **Logbook** session —
-**Personal best here**, **Last visit**, or any by date and car — read in on demand without adding
-its file to the project. Two laps of one session are matched metre for metre, which is right when they
-follow the same line; when you drove a corner two different ways on purpose, turn on **Line up by
-position** and they are matched by where the car was instead (undoable, saved with the project).
-
-The headline says how far behind the lap finished. Below it the **top three opportunities** are
-cards, their advice in full: which turn, how much time and in which phase (braking, entry, apex or exit), what happened
-("Braked 22 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later", "Coasted
-0.49 s longer") and what to try next time, phrased as an experiment. A corner you drive
-differently every lap is told so, and asked for the same brake point first. **Show Me** puts the
-playhead where that corner's braking began on the lap being read, so the preview shows it.
-
-Every corner is in the table below, sortable by any column: time lost, the phase, and how the
-brake point, minimum speed and where it fell, exit speed and throttle pick-up compare with the
-reference, plus whether the corner is consistent across your flying laps (the spread of brake
-points in brackets). Selecting a row moves the playhead to that corner's turn-in and opens the
-corner's **detail** beside the table: the time lost in each phase as bars, both laps' readings
-side by side (brake point, peak braking, where the brakes came off, trail braking, entry and
-minimum and exit speed, where the slowest point fell, throttle pick-up, full throttle, coasting,
-peak lateral G, time in corner) with where each reading came from, and the two lines through the
-corner drawn from GPS with the brake points and slowest points marked — a relative picture, since
-lap-to-lap spread is about a metre and absolute accuracy one to three. **Compare in Video**, beside
-the corner's name, lays
-the project out as Compare Laps does, with both laps' pictures, over that corner only: the
-playhead goes to the brake point and the export range is the corner, so one export is the clip.
-It is offered when the reference is a real lap with a camera; the rolling and spliced laps are
-data only.
-
-**Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
-time, one per corner that cost the most, in the window's own words; edit any line to say it your
-way (Return or leaving the field keeps it), **Add Experiment** adds a line for the lap as a whole,
-the minus removes one, **Start Over** rewrites the plan from the current opportunities. The plan is
-saved with the project and, when the circuit is recognised, remembered for the circuit in its
-track definition — so the next project at the same circuit opens the Coaching window with **Last
-time at Sonoma you planned to try…** and **Use It Again**. Every step is one undo (*Undo Make
-Plan*, *Undo Edit Plan*, *Undo Remove Experiment*). The circuit's card in the Logbook shows the
-plan again before you go back, and changes it too.
-
-**On paper.** While the Coaching window is in front with a lap read, **File ▸ Export Coaching
-Sheet as PDF…** writes the debrief on one page — the track and the day, the headline, the circuit
-with every corner numbered, the top opportunities with their evidence and what to try, every
-corner's numbers, and the next-session plan — black on white, for printing or handing to an
-instructor; **File ▸ Export Coaching Sheet as Markdown…** writes the same as text for a message or
-a notes app. Files are named for the track and the lap (`Sonoma – Lap 2 coaching sheet.pdf`).
-`onboard coach … --markdown` prints the Markdown from the command line.
-
-When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
-points are read from the speed trace and the window says so. Notes are in mph and feet when the
-app's speed unit is mph — chosen in Settings, or your region's when Settings say *Automatic* — and
-in km/h and metres otherwise. The lap and reference you chose are saved with the
-project; changing them is undoable. The method, its thresholds and the research behind it are in
-[coaching.md](coaching.md); `onboard coach` does the same from the command line (§8).
-
-**In the video.** Add a **Corner Callout** object (toolbar ▸ Add Object ▸ Corner Callout) and the
-rendered lap carries its own debrief: as the car approaches each corner the card appears with that
-corner's headline ("Turn 4: 0.31 s lost on entry"), the evidence and what to try, stays through
-the corner and a moment after, and is blank on the straights. It reads the lap being driven
-against the reference chosen in Project ▸ Coaching… (your best lap until you choose one), so a
-rendered session comments on every lap, not only the one the window shows. The inspector sets how
-early it appears and how long it stays, whether to show the evidence and the suggestion, whether to
-keep quiet on corners where no time was lost, and the colours. Notes follow the object's speed unit.
-
-The **Track Map** has a Coaching section too, all off until you turn them on: the **reference
-lap's line** drawn dashed beside the outline, so a different line through a corner shows; the lap
-being driven **coloured by time gained and lost** against the reference (red where the gap grew,
-green where it closed, the plain outline where it held); **brake points and slowest points** as a
-circle and a square for both laps; **Follow the corner in play**, which frames the map on the
-corner from its brake point to its exit and shows the whole circuit on the straights; and **Every
-lap's line, the quickest brighter**, which draws every other complete lap of the session faintly
-under the outline with the quickest of them at full strength — the spread of lines through each
-corner, and the one that worked, seen rather than inferred. They read the same reference as the
-callout. The Coaching window's corner detail draws the other laps' lines through the corner too.
-
-A lap-axis **Graph** can draw the coaching reference as its ghost instead of the session's best
-lap (Ghost ▸ Coaching reference): the fastest rolling lap, the spliced optimal lap or another
-driver's lap behind the live trace. A channel the reference does not carry draws no ghost.
-
-**Compare Laps** can put the **fastest rolling lap** or the **optimal lap (spliced)** beside a lap
-as a picture: choose it where the compared lap is chosen, or press Compare in Video in the Coaching
-window with that reference. The picture is cut from the laps it came from, kept level with the lap
-playing, so it jumps at each join; its readouts show the lap it is in at that moment. This is the
-lap you have already driven in pieces, watched as one.
-
-### Replay: your laps in 3D
-
-![The Replay window: the circuit as a road over its elevation, three laps as coloured lines with a car each, the standings and the scrubber below, the lap list on the left](images/replay.jpg)
-
-Select a session in the **Logbook** and **Replay…** (or **Window ▸ Replay**, ⌃⌘R, for the
-project in front; or **Replay** in the Coaching window's toolbar). The circuit is drawn as a road
-with kerbs over the elevation your logger recorded, from the session's own GPS — nothing comes
-from a map, and a logger without altitude gets a flat road. The session's three quickest laps
-start together, each painted on the tarmac in its own colour with a car and its name; the list
-on the left offers every complete lap and, under their own headings, the logbook's other
-sessions at the circuit — tick one and its lap joins the race.
-
-**Play** (Space) and the cars go. The standings at the bottom left give each car's place and gap
-to the leader; click a car to follow it. The HUD reads the followed car's speed, lap time and
-gap; the map at the top right shows where everyone is. The cameras in the toolbar: **Chase**
-behind the car, **Trackside** from a post beside the track, **Above** straight down, **In Car**,
-and **Free** (drag to orbit, scroll or pinch to zoom; keys 1–5). **Go to Turn ▸** jumps to just
-before a corner, the scrubber and ← → step through the lap, **Speed** slows or quickens the
-replay.
-
-## 7. Export and share
+### Exporting and sharing
 
 ![The Export Video sheet: preset, size and frame rate, codec, video bitrate, audio, 360° tag and background](images/export.jpg)
 
@@ -1115,6 +1000,156 @@ for a new Every Corner export; one saved without them plays at speed. The sheet'
 the files says what they will do. On the command line, add `--slow-braking 0.5` and
 `--hold-reference 1` to `--corners`.
 
+A **coaching debrief** — the corners that cost the most, as one short video between a title card
+and a card of what to try next time — is under [A debrief to watch](#a-debrief-to-watch).
+
+**Upload to YouTube** signs in with a short code and uploads with automatic resume; it needs a
+one-time Google API setup described in [youtube.md](youtube.md).
+
+## 4. Being coached
+
+The **Coaching** window reads one lap against a reference and says where the time went: the corners
+that cost the most, what happened in which phase, and what to try next time. Open it on a session
+in the Logbook with **Coach…** (⌃⌘C), with no project needed, or beside a project with **Project ▸
+Coaching…** (⌃⌘C).
+
+### From the Logbook
+
+A session in the **Logbook** is coached without a project: select it and **Coach…**. The window
+reads its file and offers the same lap and reference choices (the logbook's other sessions at the
+circuit among them), keeps the choices with the session, and writes the coaching sheet from
+**File ▸ Export Coaching Sheet**; what needs a picture or a plan is replaced by **Make a
+Project**, which opens a project from the session and brings the window to it. With a project on
+the session already open, **Coach…** reads that project instead — the plan, **Show Me** on the
+picture and **Compare in Video** are there, and the project comes forward behind the window — and
+a Coaching window that was already reading the session offers **Use the Open Project** in place of
+Make a Project; neither makes a second project of the same session. Beside **Coach…**,
+**Compare With ▸** lists the logbook's other sessions at the circuit — the personal best here and
+the last visit first — and opens the window with that one as the reference; **Export Coaching
+Debrief…** (once the session has a clip) opens a project laid out for a debrief with the sheet up.
+
+### The walkthrough
+
+The window opens on a **walkthrough** that takes you through the lap one step at a time. First the lap, in
+a sentence: how far behind it finished and against what (**Change…** chooses the lap, what it is
+compared with and how the two are lined up). Then its three biggest losses, one corner per step:
+what happened, the whole of what to try next time, **Watch**, the corner on the map with both
+lines, where the time went phase by phase, and **Try this next time**, on to begin with. **Watch**
+plays the corner in the window, from a moment before the brakes go on to a moment after the exit:
+this lap's, then the same corner on the lap it is compared with, when that lap was filmed too (not
+the spliced optimal lap, nor a lap from another session in the Logbook). From a project it plays
+the project's own picture, overlays and all; from the Logbook, the clips of the session's day,
+lined up by the camera's clock and the logger's. When no video covers the corner it says so. Last, **Your Plan**:
+the corners you chose, as next session's experiments in the analysis's own words, which you can
+edit before **Save Plan**. **Next** (Return) and **Back** (⌘[) move between the steps. The plan is
+kept for the circuit, so it is there when you prepare to go back and on the Season page, and in the
+project when there is one, undoably; from the Logbook it needs no project, only a circuit the
+Logbook knows. **All Corners**, beside **Walkthrough** in the toolbar, shows the whole analysis at
+once, as described below, and the window opens next time on whichever you used last.
+
+### All corners
+
+In All Corners, choose the **Lap** (it starts on the lap at the playhead)
+and what it is **Compared with**: your **best lap**; the **fastest rolling lap** — the quickest
+lap-length stretch of the session starting anywhere, which the timing line often cuts in two and
+which is frequently quicker than any timed lap; the **optimal lap (spliced)** — the best sector of
+each lap joined into one, the lap you have already shown you can do; **another lap**; or a lap of
+**another data file** in the project, which is how you compare with a friend's or an instructor's
+session (the two lines are matched by position, so a different line through a corner still meets
+the same corner); or, when the logbook has other sessions at this circuit, a **Logbook** session —
+**Personal best here**, **Last visit**, or any by date and car — read in on demand without adding
+its file to the project. Two laps of one session are matched metre for metre, which is right when they
+follow the same line; when you drove a corner two different ways on purpose, turn on **Line up by
+position** and they are matched by where the car was instead (undoable, saved with the project).
+
+The headline says how far behind the lap finished. Below it the **top three opportunities** are
+cards, their advice in full: which turn, how much time and in which phase (braking, entry, apex or exit), what happened
+("Braked 22 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later", "Coasted
+0.49 s longer") and what to try next time, phrased as an experiment. A corner you drive
+differently every lap is told so, and asked for the same brake point first. **Show Me** puts the
+playhead where that corner's braking began on the lap being read, so the preview shows it.
+
+Every corner is in the table below, sortable by any column: time lost, the phase, and how the
+brake point, minimum speed and where it fell, exit speed and throttle pick-up compare with the
+reference, plus whether the corner is consistent across your flying laps (the spread of brake
+points in brackets). Selecting a row moves the playhead to that corner's turn-in and opens the
+corner's **detail** beside the table: the time lost in each phase as bars, both laps' readings
+side by side (brake point, peak braking, where the brakes came off, trail braking, entry and
+minimum and exit speed, where the slowest point fell, throttle pick-up, full throttle, coasting,
+peak lateral G, time in corner) with where each reading came from, and the two lines through the
+corner drawn from GPS with the brake points and slowest points marked — a relative picture, since
+lap-to-lap spread is about a metre and absolute accuracy one to three. **Compare in Video**, beside
+the corner's name, lays
+the project out as Compare Laps does, with both laps' pictures, over that corner only: the
+playhead goes to the brake point and the export range is the corner, so one export is the clip.
+It is offered when the reference is a real lap with a camera; the rolling and spliced laps are
+data only.
+
+### A plan for next session
+
+**Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
+time, one per corner that cost the most, in the window's own words; edit any line to say it your
+way (Return or leaving the field keeps it), **Add Experiment** adds a line for the lap as a whole,
+the minus removes one, **Start Over** rewrites the plan from the current opportunities. The plan is
+saved with the project and, when the circuit is recognised, remembered for the circuit in its
+track definition — so the next project at the same circuit opens the Coaching window with **Last
+time at Sonoma you planned to try…** and **Use It Again**. Every step is one undo (*Undo Make
+Plan*, *Undo Edit Plan*, *Undo Remove Experiment*). The circuit's card in the Logbook shows the
+plan again before you go back, and changes it too.
+
+### On paper
+
+**On paper.** While the Coaching window is in front with a lap read, **File ▸ Export Coaching
+Sheet as PDF…** writes the debrief on one page — the track and the day, the headline, the circuit
+with every corner numbered, the top opportunities with their evidence and what to try, every
+corner's numbers, and the next-session plan — black on white, for printing or handing to an
+instructor; **File ▸ Export Coaching Sheet as Markdown…** writes the same as text for a message or
+a notes app. Files are named for the track and the lap (`Sonoma – Lap 2 coaching sheet.pdf`).
+`onboard coach … --markdown` prints the Markdown from the command line.
+
+### What the analysis reads
+
+When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
+points are read from the speed trace and the window says so. Notes are in mph and feet when the
+app's speed unit is mph — chosen in Settings, or your region's when Settings say *Automatic* — and
+in km/h and metres otherwise. The lap and reference you chose are saved with the
+project; changing them is undoable. The method, its thresholds and the research behind it are in
+[coaching.md](coaching.md); `onboard coach` does the same from the command line ([Command line](#8-command-line)).
+
+### In the video
+
+**In the video.** Add a **Corner Callout** object (toolbar ▸ Add Object ▸ Corner Callout) and the
+rendered lap carries its own debrief: as the car approaches each corner the card appears with that
+corner's headline ("Turn 4: 0.31 s lost on entry"), the evidence and what to try, stays through
+the corner and a moment after, and is blank on the straights. It reads the lap being driven
+against the reference chosen in Project ▸ Coaching… (your best lap until you choose one), so a
+rendered session comments on every lap, not only the one the window shows. The inspector sets how
+early it appears and how long it stays, whether to show the evidence and the suggestion, whether to
+keep quiet on corners where no time was lost, and the colours. Notes follow the object's speed unit.
+
+The **Track Map** has a Coaching section too, all off until you turn them on: the **reference
+lap's line** drawn dashed beside the outline, so a different line through a corner shows; the lap
+being driven **coloured by time gained and lost** against the reference (red where the gap grew,
+green where it closed, the plain outline where it held); **brake points and slowest points** as a
+circle and a square for both laps; **Follow the corner in play**, which frames the map on the
+corner from its brake point to its exit and shows the whole circuit on the straights; and **Every
+lap's line, the quickest brighter**, which draws every other complete lap of the session faintly
+under the outline with the quickest of them at full strength — the spread of lines through each
+corner, and the one that worked, seen rather than inferred. They read the same reference as the
+callout. The Coaching window's corner detail draws the other laps' lines through the corner too.
+
+A lap-axis **Graph** can draw the coaching reference as its ghost instead of the session's best
+lap (Ghost ▸ Coaching reference): the fastest rolling lap, the spliced optimal lap or another
+driver's lap behind the live trace. A channel the reference does not carry draws no ghost.
+
+**Compare Laps** can put the **fastest rolling lap** or the **optimal lap (spliced)** beside a lap
+as a picture: choose it where the compared lap is chosen, or press Compare in Video in the Coaching
+window with that reference. The picture is cut from the laps it came from, kept level with the lap
+playing, so it jumps at each join; its readouts show the lap it is in at that moment. This is the
+lap you have already driven in pieces, watched as one.
+
+### A debrief to watch
+
 **Export Coaching Debrief…** (Project menu) writes the session as one short video to watch
 before the next one: a title card with the track, the day, the best lap, the optimal lap and the
 fastest rolling lap; then the corners of the coaching lap that cost the most against the reference
@@ -1131,14 +1166,147 @@ plan on the closing card; the cards stay up as long as the words take and the cl
 comes down while the voice speaks. The project itself is not changed. From the command line:
 `onboard render --project X --out debrief.mp4 --debrief` (`--narrate` for the voice).
 
-**Upload to YouTube** signs in with a short code and uploads with automatic resume; it needs a
-one-time Google API setup described in [youtube.md](youtube.md).
+For a clip of every corner instead, slowed through the braking zone and holding the sight picture
+where the reference braked, use **Every corner, one file each** in the export sheet
+([Exporting and sharing](#exporting-and-sharing)).
+
+### Replay: your laps in 3D
+
+![The Replay window: the circuit as a road over its elevation, three laps as coloured lines with a car each, the standings and the scrubber below, the lap list on the left](images/replay.jpg)
+
+Select a session in the **Logbook** and **Replay…** (or **Window ▸ Replay**, ⌃⌘R, for the
+project in front; or **Replay** in the Coaching window's toolbar). The circuit is drawn as a road
+with kerbs over the elevation your logger recorded, from the session's own GPS — nothing comes
+from a map, and a logger without altitude gets a flat road. The session's three quickest laps
+start together, each painted on the tarmac in its own colour with a car and its name; the list
+on the left offers every complete lap and, under their own headings, the logbook's other
+sessions at the circuit — tick one and its lap joins the race.
+
+**Play** (Space) and the cars go. The standings at the bottom left give each car's place and gap
+to the leader; click a car to follow it. The HUD reads the followed car's speed, lap time and
+gap; the map at the top right shows where everyone is. The cameras in the toolbar: **Chase**
+behind the car, **Trackside** from a post beside the track, **Above** straight down, **In Car**,
+and **Free** (drag to orbit, scroll or pinch to zoom; keys 1–5). **Go to Turn ▸** jumps to just
+before a corner, the scrubber and ← → step through the lap, **Speed** slows or quickens the
+replay.
+
+## 5. Your progress
+
+Every session in the Logbook counts towards these; nothing has to be set up. They are views of the
+Logbook: **View ▸ Sessions**, **Trends** and **Season** (⌘1, ⌘2, ⌘3), or the switch in its toolbar.
+
+### Personal bests
+
+The **PB** column, the table's first so a narrow table keeps it in view, marks every session that
+set a personal best at its circuit when it was driven, overall or in its car: a filled yellow star
+on the session that holds it now, a hollow star on one that has since been beaten, so a run of
+improving sessions reads as progress and one star still says which is the best. A selected
+session's **Personal best here** says the best at that circuit, when, in what, and how many visits
+you have had — track days, however many sessions each.
+
+In a project, a Text object or Title Card can show `{pb}`, `{pbDate}`, `{pbCar}`, `{trackDays}`
+(how many track days) and `{visits}` (how many sessions) for the circuit its data is at — **Insert
+Detail ▸ From the Logbook** offers them — (in the project's car when the logbook has one there), and
+a Timer's *Delta* or *Projected lap* can **Compare with ▸ Personal best (logbook)** — the gap to
+your personal best lap at the same distance, that session read on demand, the session best when the
+logbook has nothing to offer.
+
+### Trends
+
+**Trends** (with a circuit chosen in the sidebar) answers whether you are getting quicker: a chart
+of the best, optimal and fastest rolling lap of every session with a sentence on how far the best
+moved from your first day there to your last, narrowed to one car when you have more than one there;
+each session's spread of flying laps as consistency. Both charts space the sessions evenly in the
+order you drove them, grouped by track day with the date under each day and a dashed line between
+days, so six sessions in one day read as clearly as visits months apart. A lap-time
+[goal](#goals) is drawn as a dashed line on the lap chart, a consistency goal on the consistency
+chart. Click a point to open that session.
+
+Below the charts, corner by corner, the best lap of your latest track day against the best of the
+track day before and against your personal best — brake point, minimum speed and time in the
+corner. A line above the table names the laps it reads, and a comparison's columns appear only when
+there is one to make: none against the personal best when the latest day set it. Sessions entered
+before corners were kept offer **Read Their Corners**, as do sessions whose corners were measured
+before a correction to how the app measures them (#438), so a fixed reading reaches sessions
+already in the logbook.
+
+### Car against car
+
+With two cars at the circuit, **Car against car** at the foot of Trends reads each car's best lap
+against the other's: which is quicker and by how much, both speed traces over distance, and a
+sentence per corner naming the car — where one brakes later, carries more speed through the apex
+or leaves faster.
+
+### The season
+
+**Season** sums a year up — pick the year and, with more than one car, the car: track days,
+sessions, laps and kilometres; personal bests set; the best at each circuit with its date, car and
+visits (track days), starred when it was new; a chart of every circuit's best of each track day; the
+most improved and the most costly corner against the track day before; the goals reached that year;
+and the plans still open at the circuits you visited. **Export as PDF…** for paper (the goals
+reached are in it too), **Export Card…** for a 1080 × 1920 picture to post.
+
+## 6. Before you go back
+
+Before you go back to a circuit, choose it under **Circuits** in the Logbook's sidebar. Its card,
+above its sessions, gathers what to take with you.
+
+### The circuit's card
+
+The card says how many visits you have made, your personal best there (when, and in what car) and
+how your last visit went against it. Under **Plan for Next Time** is the plan you made in the
+Coaching window for that circuit ([A plan for next session](#a-plan-for-next-session)) — each line
+can be changed right there, **Add Experiment** adds one and the minus removes one. With no plan
+yet, **Start a Plan** begins one from **Where the Last Visit Lost Time** — the corners where your
+last visit's best session was slowest against your best lap, with how much and whether you braked
+earlier or were slower at the apex — and **Make a Plan in Coaching…** opens Coaching on that session
+to write one from its laps. Each change is one step of Edit ▸ Undo.
+
+**New Track Day Here…** begins the next day at the circuit, and that day shows the same card until
+its first session arrives. A plan is kept with a circuit the catalogue knows; for a circuit named by
+hand the card says so.
+
+### Goals
+
+**Goals** are on the same card. **Add Goal…** sets what you are aiming for at the circuit: a **lap
+time**, **consistency** (your flying laps within so many seconds of each other in one session), or
+**a corner** — the time through it, or the speed at its apex, on a session's best lap — in any car
+or one, and by a date if you like. Each goal says how far there is to go (*Best 1:42.31 — 2.31 s to
+go*) or the day it was reached; the minus removes it, and Edit ▸ Undo brings it back.
+
+A goal is followed wherever the circuit's laps are: a lap-time goal is a dashed line on the
+circuit's **Trends** chart and a consistency goal on its consistency chart; when you add a day's
+files, the report says which goals the new sessions reached, or how much closer they came; and the
+**Season** lists the goals reached that year, on the page and in its PDF.
+
+## 7. Coming back
+
+Back from the next day, the same steps close the loop:
+
+1. **Begin the day** with **New Track Day Here…** on the circuit's card, which names the circuit for
+   you — or skip it, and **Add Files…** with no day chosen puts each file on the day its date and
+   circuit say, with the car of your last session there.
+2. **Add the day's files.** The sheet says how the day went against your last visit — *0.84 s
+   quicker than your last visit (12 Oct) — a personal best* — and which goals the new sessions
+   reached or how much closer they came ([What the import says](#what-the-import-says)).
+3. **Show Trends**, beside Done, opens the circuit's Trends with the new day on it: its best,
+   optimal and rolling lap among the others and, corner by corner, its best lap against the day
+   before and your personal best — so the corners in your plan can be checked
+   ([Trends](#trends)).
+4. **Coach…** the new session, or **Compare With ▸** to read it against the last visit or your
+   personal best there. The walkthrough's **Your Plan** becomes the plan for the visit after
+   ([Being coached](#4-being-coached)).
+5. **New Project** lays the session out with the template you used last time; export the best lap,
+   every lap, every corner or a debrief ([Making a video](#3-making-a-video)).
+
+At the end of the year, the **Season** sums it up ([The season](#the-season)).
 
 ## 8. Command line
 
 `onboard` does the same work without the app: `probe` inspects a data file, `coach` reads one
 lap against another and says where the time went, `render` exports a project, `sync` finds the
-data/video offset from motion, `upload` sends a file to YouTube and `bench` measures speed. See
+data/video offset from motion, `logbook` keeps the logbook of track days, `upload` sends a file to
+YouTube and `bench` measures speed. See
 [testing.md](testing.md).
 
 `onboard coach session.csv` reads the quickest lap that is not the best against the best lap:
@@ -1151,6 +1319,13 @@ timed lap), `--reference optimal` with the best sectors spliced together, `--ref
 another lap; `--units imperial` writes the notes in mph and feet; `--json` prints everything as
 data. A project works too: `onboard coach my.onboardproj` reads its first data input, with the
 sectors and corner names the project has. The method is in [coaching.md](coaching.md).
+
+**The logbook.** `onboard logbook new-day --date 2026-08-23 --circuit Sonoma --car Miata` begins a
+day, `onboard logbook add <files or folders> --day <id or date>` puts files on it (`--car`,
+`--driver`; without `--day`, each file goes on the day its date and circuit say; with it, every
+file goes on that day and the line of one dated otherwise says so), `onboard logbook days` lists
+the days and `onboard logbook list` the sessions with their day. `onboard logbook export
+<folder|.csv|.md>` and `onboard logbook import` take it with you.
 
 ## 9. Troubleshooting
 
@@ -1190,3 +1365,16 @@ sectors and corner names the project has. The method is in [coaching.md](coachin
   **Relink…**.
 - **An export is slow.** `onboard bench --export` reports the speed; on Apple silicon 4K HEVC
   runs at about twice real time. Large scripted objects and 4K map backgrounds cost the most.
+- **A session went on the wrong day.** Select it (or several) and choose **Session ▸ Move to Day**,
+  or drag it onto the day in the Logbook's sidebar; ⌘Z puts it back. A camera or logger with its
+  clock wrong is the usual cause: **Add to This Day** in the import sheet puts such files on the day
+  you chose.
+- **One car is spelt two ways.** Choose either under **Cars** in the sidebar, **Rename…**, and type
+  the other's name: they become one car, with both cars' notes.
+- **A clip is on no session.** Its row under **Clips** in the day's header says it overlaps none;
+  the pop-up beside it says whose it is.
+- **A session has no personal best or Trends.** It names no circuit and is listed under **No
+  circuit** in the sidebar: name its day's circuit in the day's header.
+- **A line above the sessions offers Read Them Again.** Those sessions were added before a
+  correction to how laps are read and keep the laps they were read with; Read Them Again reads
+  their files afresh and leaves the car, driver, conditions and notes alone.
