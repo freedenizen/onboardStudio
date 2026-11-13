@@ -4,8 +4,8 @@ circuit, car or year, with the numbers a driver asks about, and a way from any r
 
 1. **Window ▸ Logbook** (⌃⌘L): three columns, as in Mail. The sidebar lists **All Sessions**,
    then the circuits, cars and years the logbook knows, each with how many sessions; the table
-   shows the personal-best star first, then date, circuit, car, laps, best, optimal and fastest
-   rolling lap, sortable by any column.
+   shows the personal-best star first, then date and time, circuit, car, laps, best, optimal and
+   fastest rolling lap, sortable by any column.
 2. Type in the search field to narrow by circuit, car, driver, notes, tags or file name; pick a
    circuit, car or year in the sidebar to narrow to it.
 3. Select a session: the third column shows its numbers, every lap with the best marked, the

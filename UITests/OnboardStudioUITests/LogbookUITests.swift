@@ -26,6 +26,15 @@ final class LogbookUITests: OnboardStudioUITestCase {
         XCTAssertEqual(XCTWaiter().wait(for: [listed], timeout: Self.timeout), .completed, "No sessions listed")
         let total = rows.count
 
+        // A session's date carries its time, so a day's sessions read apart (#564): a year, then a
+        // time of day. A lap time ("1:23.456") has no year.
+        let dateAndTime = NSPredicate(
+            format: "label MATCHES %@ OR value MATCHES %@", #".*\d{4}.*\d{1,2}[:.]\d{2}.*"#,
+            #".*\d{4}.*\d{1,2}[:.]\d{2}.*"#)
+        XCTAssertTrue(
+            rows.element(boundBy: 0).descendants(matching: .staticText).matching(dateAndTime).firstMatch.exists,
+            "The session's date has no time")
+
         // A search narrows the table; clearing it brings everything back.
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: Self.timeout), "No search field")

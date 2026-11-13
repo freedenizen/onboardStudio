@@ -123,9 +123,9 @@ The window shows it all in three columns, as Mail does: a sidebar of track days 
 when there is more than one, the year of the day you have chosen open; each is its date with the
 circuit beneath, so two days on one date read apart), circuits (ending with **No circuit** when
 some sessions name none), cars and years with how many sessions each; a table of sessions (a
-personal-best star, date, circuit, car, laps, best, optimal and fastest rolling lap) sortable by any
-column and narrowed by the search field; and, for the selected session, its numbers, every lap with
-the best marked, the notes, the projects made from it and where the file is.
+personal-best star, the date and time it was driven, circuit, car, laps, best, optimal and fastest
+rolling lap) sortable by any column and narrowed by the search field; and, for the selected session,
+its numbers, every lap with the best marked, the notes, the projects made from it and where the file is.
 
 The session stays beside **Trends** and the **Season** too, and the column says **No Session
 Selected** when none is. A search that finds nothing says so, and the detail is of a session the
