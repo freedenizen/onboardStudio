@@ -83,65 +83,62 @@ struct DataInputInspector: View {
         }
         trackSection
         Section("Laps") {
-            Toggle(
-                "Detect laps from a start/finish line",
-                isOn: Binding(
-                    get: { settings.lapLine != nil },
-                    set: { on in
-                        update(on ? "Enable Lap Detection" : "Use File Laps") {
-                            $0.lapLine = on ? (currentPositionLine ?? LapLineSpec(latitude: 0, longitude: 0)) : nil
-                        }
-                    }))
-            Button("Suggest a Start/Finish from the Data") { editor.suggestStartFinish(for: input.id) }
-                .accessibilityIdentifier("data.suggestStartFinish")
-                .disabled(session == nil)
-            if let line = settings.lapLine {
-                Toggle("Place it on the track map", isOn: placingOnMap)
-                    .accessibilityIdentifier("data.placeStartFinish")
-                Text(
-                    "Drag the yellow line to move it, or either end to turn it. The stub shows which way the "
-                        + "car crosses. Needs a track map object on screen."
-                )
-                .font(.caption).foregroundStyle(.secondary)
-                Button("Use Current Preview Position as Start/Finish") {
-                    if let here = currentPositionLine {
-                        update("Set Start/Finish") {
-                            $0.lapLine = LapLineSpec(
-                                latitude: here.latitude, longitude: here.longitude, headingDegrees: here.headingDegrees,
-                                halfWidthMeters: line.halfWidthMeters,
-                                headingToleranceDegrees: line.headingToleranceDegrees,
-                                ignoreFirstCrossings: line.ignoreFirstCrossings)
-                        }
-                    }
-                }
-                .disabled(!hasPosition)
-                NumberField("Latitude", value: lineField(\.latitude), fractionDigits: 0...6, step: 0.0001)
-                NumberField("Longitude", value: lineField(\.longitude), fractionDigits: 0...6, step: 0.0001)
-                NumberField(
-                    "Heading (°)",
-                    value: Binding(
-                        get: { line.headingDegrees ?? -1 },
-                        set: { v in updateLine { $0.headingDegrees = v < 0 ? nil : v } }))
-                NumberField("Line half-width (m)", value: lineField(\.halfWidthMeters))
-                NumberField("Heading tolerance (°)", value: lineField(\.headingToleranceDegrees))
-                Stepper(
-                    "Ignore first crossings: \(line.ignoreFirstCrossings)",
-                    value: Binding(
-                        get: { line.ignoreFirstCrossings },
-                        set: { v in updateLine { $0.ignoreFirstCrossings = max(0, v) } }), in: 0...10)
-            }
-            if let session, !session.laps.isEmpty {
-                ForEach(session.laps, id: \.number) { lap in
-                    LabeledContent("Lap \(lap.number)") {
-                        Text(lap.duration.map(TimeParsing.lapTimeString) ?? "—").monospacedDigit()
-                            .foregroundStyle(lap.isComplete ? .primary : .secondary)
-                    }
-                }
-            } else {
-                Text("No laps found.").foregroundStyle(.secondary)
-            }
+            timingPicker
+            if settings.timesRuns { runLines } else { lapLineControls }
+            lapList
         }
         sectorsSection
+    }
+
+    /// A circuit's start/finish line: from the file's laps or from crossings of a line placed here.
+    @ViewBuilder var lapLineControls: some View {
+        Toggle(
+            "Detect laps from a start/finish line",
+            isOn: Binding(
+                get: { settings.lapLine != nil },
+                set: { on in
+                    update(on ? "Enable Lap Detection" : "Use File Laps") {
+                        $0.lapLine = on ? (currentPositionLine ?? LapLineSpec(latitude: 0, longitude: 0)) : nil
+                    }
+                }))
+        Button("Suggest a Start/Finish from the Data") { editor.suggestStartFinish(for: input.id) }
+            .accessibilityIdentifier("data.suggestStartFinish")
+            .disabled(session == nil)
+        if let line = settings.lapLine {
+            Toggle("Place it on the track map", isOn: placingOnMap)
+                .accessibilityIdentifier("data.placeStartFinish")
+            Text(
+                "Drag the yellow line to move it, or either end to turn it. The stub shows which way the "
+                    + "car crosses. Needs a track map object on screen."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+            Button("Use Current Preview Position as Start/Finish") {
+                if let here = currentPositionLine {
+                    update("Set Start/Finish") {
+                        $0.lapLine = LapLineSpec(
+                            latitude: here.latitude, longitude: here.longitude, headingDegrees: here.headingDegrees,
+                            halfWidthMeters: line.halfWidthMeters,
+                            headingToleranceDegrees: line.headingToleranceDegrees,
+                            ignoreFirstCrossings: line.ignoreFirstCrossings)
+                    }
+                }
+            }
+            .disabled(!hasPosition)
+            NumberField("Latitude", value: lineField(\.latitude), fractionDigits: 0...6, step: 0.0001)
+            NumberField("Longitude", value: lineField(\.longitude), fractionDigits: 0...6, step: 0.0001)
+            NumberField(
+                "Heading (°)",
+                value: Binding(
+                    get: { line.headingDegrees ?? -1 },
+                    set: { v in updateLine { $0.headingDegrees = v < 0 ? nil : v } }))
+            NumberField("Line half-width (m)", value: lineField(\.halfWidthMeters))
+            NumberField("Heading tolerance (°)", value: lineField(\.headingToleranceDegrees))
+            Stepper(
+                "Ignore first crossings: \(line.ignoreFirstCrossings)",
+                value: Binding(
+                    get: { line.ignoreFirstCrossings },
+                    set: { v in updateLine { $0.ignoreFirstCrossings = max(0, v) } }), in: 0...10)
+        }
     }
 
     /// How this file's laps are split, and what the split produced. Nothing here knows the

@@ -4,22 +4,31 @@ import TelemetryKit
 
 /// A lap range offers every lap with its time and starts on the best one (#467).
 extension ExportSheet {
+    var lapCount: Int { lapSession?.laps.listed.count ?? 0 }
+    /// Whether the data file is timed in runs (#552), which is what every "lap" here then says.
+    var areRuns: Bool { lapSession?.laps.areRuns ?? false }
+    var lapNumbers: ClosedRange<Int> {
+        let numbers = lapSession?.laps.listed.map(\.number) ?? []
+        return (numbers.min() ?? 0)...(numbers.max() ?? 0)
+    }
+
     /// The fastest complete lap, as the Logbook counts it.
     var bestLapNumber: Int? { lapSession.flatMap { SessionStats(session: $0).bestLap?.number } }
 
     /// Every lap of the data file with its time, the best one marked (#467).
     @ViewBuilder var lapChoices: some View {
         let best = bestLapNumber
-        ForEach(lapSession?.laps ?? [], id: \.number) { lap in
+        ForEach(lapSession?.laps.listed ?? [], id: \.number) { lap in
             Text(Self.lapTitle(lap, isBest: lap.number == best)).tag(lap.number)
         }
     }
 
-    /// "Lap 7 · 1:42.31 (best)", "Lap 0 · 0:58.20 (partial)".
+    /// "Lap 7 · 1:42.31 (best)", "Lap 0 · 0:58.20 (partial)", "Run 3 · 0:51.08 (DNF)".
     static func lapTitle(_ lap: Lap, isBest: Bool) -> String {
         let time = lap.duration.map { TimeParsing.lapTimeString($0) } ?? "—"
-        let note = isBest ? " (best)" : lap.isComplete ? "" : " (partial)"
-        return "Lap \(lap.number) · \(time)\(note)"
+        let unfinished = lap.kind == .run ? " (DNF)" : " (partial)"
+        let note = isBest ? " (best)" : lap.isComplete ? "" : unfinished
+        return "\(lap.title) · \(time)\(note)"
     }
 
     /// A lap range starts on the best lap, not lap 1, unless the project saved one, and is held to

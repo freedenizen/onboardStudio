@@ -58,6 +58,7 @@ extension ProjectCompiler {
                     latitude: $0.latitude, longitude: $0.longitude, headingDegrees: $0.headingDegrees,
                     halfWidthMeters: $0.halfWidthMeters, headingToleranceDegrees: $0.headingToleranceDegrees)
             },
+            runFinishLine: settings.lapLine == nil ? nil : settings.runFinishLine.map(finishLine(_:)),
             ignoreFirstCrossings: settings.lapLine?.ignoreFirstCrossings ?? 0,
             sectorMode: sectorMode(settings.sectors),
             cornerLabels: settings.cornerLabels,
@@ -69,6 +70,13 @@ extension ProjectCompiler {
             return try importer.importSession(at: url, options: options)
         }
         return try FormatDetector.importSession(at: url, options: options)
+    }
+
+    /// A project's line as the detectors want it.
+    static func finishLine(_ spec: LapLineSpec) -> FinishLine {
+        FinishLine(
+            latitude: spec.latitude, longitude: spec.longitude, headingDegrees: spec.headingDegrees,
+            halfWidthMeters: spec.halfWidthMeters, headingToleranceDegrees: spec.headingToleranceDegrees)
     }
 
     /// The project's sector settings as TelemetryKit understands them.

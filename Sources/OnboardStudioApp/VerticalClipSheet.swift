@@ -21,7 +21,7 @@ extension EditorModel {
             statusMessage = "Put the playhead in a lap to export it as a clip."
             return
         }
-        clipRequest = ClipRequest(title: "Lap \(lap.lap)", start: lap.range.lowerBound, end: lap.range.upperBound)
+        clipRequest = ClipRequest(title: lap.title, start: lap.range.lowerBound, end: lap.range.upperBound)
     }
 
     /// A marker's range, or the lap a point marker falls in.
@@ -31,7 +31,7 @@ extension EditorModel {
             let name = placed.marker.name.isEmpty ? "Range" : placed.marker.name
             clipRequest = ClipRequest(title: name, start: placed.start, end: placed.end)
         } else if let loaded, let lap = ProjectCompiler.lap(at: placed.start, in: loaded, duration: duration) {
-            clipRequest = ClipRequest(title: "Lap \(lap.lap)", start: lap.range.lowerBound, end: lap.range.upperBound)
+            clipRequest = ClipRequest(title: lap.title, start: lap.range.lowerBound, end: lap.range.upperBound)
         } else {
             statusMessage = "That marker is not in a lap; a range marker exports its own range."
         }

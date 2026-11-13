@@ -42,13 +42,16 @@ extension EditorModel {
         // jumps to the right place without the laps being recomputed.
         let dataTime = input.sync.inputTime(forProjectTime: currentTime)
         guard let lap = pick(session.laps, dataTime) else {
-            statusMessage = "No lap that way."
+            statusMessage = "No \(session.laps.noun.lowercased()) that way."
             return false
         }
         seek(to: max(0, input.sync.projectTime(forInputTime: lap.start)))
+        // "Lap 4 — 1:42.31", "Lap 0 (incomplete)"; a run that never reached the finish is a DNF.
+        let time = lap.duration.map { " — \(TimeParsing.lapTimeString($0))" }
         statusMessage =
-            lap.duration.map { "Lap \(lap.number) — \(TimeParsing.lapTimeString($0))" }
-            ?? "Lap \(lap.number) (incomplete)"
+            lap.kind == .run
+            ? lap.title + (time ?? "") + (lap.isComplete ? "" : " (DNF)")
+            : lap.title + (time ?? " (incomplete)")
         return true
     }
 }
