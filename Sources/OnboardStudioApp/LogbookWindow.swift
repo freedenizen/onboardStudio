@@ -14,6 +14,8 @@ import UniformTypeIdentifiers
     /// The track days (#392), newest first; every entry is on one once `reload` has run.
     private(set) var days: [TrackDay] = []
     private(set) var cars: [Car] = []
+    /// `reload` has read the logbook at least once.
+    private(set) var hasLoaded = false
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
     private var sessions: [UUID: TelemetrySession] = [:]
     /// Files on their way into the logbook, shown by the window's sheet (#393).
@@ -67,7 +69,10 @@ import UniformTypeIdentifiers
         try? logbook.ensureDays()
         entries = logbook.entries()
         days = logbook.days()
+        // A name put right on a day or a session leaves the garage with it, unless it has notes (#490).
+        try? logbook.tidyGarage(entries: entries, days: days)
         cars = logbook.cars()
+        hasLoaded = true
     }
 
     /// Writes an edited day — its car, driver, conditions, notes, clips — and shows it. A change
@@ -79,12 +84,7 @@ import UniformTypeIdentifiers
     }
 
     /// A car named for the first time joins the garage, wherever it was typed.
-    func note(car: String) {
-        guard !car.isEmpty, !cars.contains(where: { $0.name.caseInsensitiveCompare(car) == .orderedSame }) else {
-            return
-        }
-        try? AppLogbook.shared.saveCars(cars + [Car(name: car)])
-    }
+    func note(car: String) { try? AppLogbook.shared.addToGarage(car) }
 
     func remove(_ entry: LogbookEntry) {
         try? AppLogbook.shared.remove(id: entry.id)
@@ -182,6 +182,9 @@ struct LogbookWindow: View {
     @State private var sortOrder = [KeyPathComparator(\LogbookEntry.date, order: .reverse)]
     @State var confirmRemoval: LogbookEntry?
     @State private var confirmDayRemoval: TrackDay?
+    /// The car header's Rename… and Remove from Garage… (#490).
+    @State var renamingCar: CarRename?
+    @State var confirmCarRemoval: String?
     /// What the last export or import did, under the table (#350).
     @State var message: String?
     /// Files are being dragged over the window (#468).
@@ -207,13 +210,15 @@ struct LogbookWindow: View {
             }
             .sheet(isPresented: $model.newDayRequested) {
                 NewTrackDaySheet(
-                    knownCars: LogbookFilter.knownCars(in: model.entries, days: model.days),
+                    knownCars: model.knownCars,
                     knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days),
                     lastDay: model.days.first, create: create)
             }
+            .modifier(carSheets)
             .onAppear { model.reload() }
             .onChange(of: scope, initial: true) { model.choose(selectedDay) }
             .onChange(of: model.days) { followTheChosenDay() }
+            .onChange(of: carRows) { followTheChosenCar() }
             .onChange(of: model.requestedView, initial: true) { showRequestedView() }
             .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
                 let day = selectedDay
@@ -354,10 +359,13 @@ struct LogbookWindow: View {
                         knownCircuits: LogbookFilter.typedCircuits(in: model.entries, days: model.days))
                     Divider()
                 }
+                carHeader
                 lapReadingOffer
                 if shown.isEmpty, isSearching {
                     // Not an empty striped table (#457).
                     ContentUnavailableView.search(text: search).frame(maxHeight: .infinity)
+                } else if shown.isEmpty, selectedCar != nil {
+                    noSessionsInTheCar.frame(maxHeight: .infinity)
                 } else {
                     LogbookTable(
                         entries: shown, bests: PersonalBests.badges(in: model.entries),
@@ -392,7 +400,7 @@ struct LogbookWindow: View {
             addToProject: { addToCurrentProject(entry) },
             remove: { confirmRemoval = entry },
             save: { model.save($0) },
-            knownCars: LogbookFilter.knownCars(in: model.entries, days: model.days),
+            knownCars: model.knownCars,
             personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
             visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))
         )

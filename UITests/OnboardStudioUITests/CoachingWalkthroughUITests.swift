@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 1
 /// J57: be coached through a lap (#458). The Coaching window opens on a walkthrough — the lap in a
 /// sentence, then its biggest losses one corner at a time with the whole of what to try, then a
 /// plan of the corners the driver chose — and the full analysis is a click away as All Corners.

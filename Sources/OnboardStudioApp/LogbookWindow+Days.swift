@@ -112,7 +112,7 @@ extension LogbookWindow {
                     }
                 }
             }
-            let cars = LogbookFilter.cars(in: model.entries)
+            let cars = LogbookFilter.cars(in: model.entries, garage: model.cars)
             if !cars.isEmpty {
                 Section("Cars") {
                     ForEach(cars, id: \.scope) { group in

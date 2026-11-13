@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 2
+// ci-shard: 3
 /// J50: from a session in the logbook straight to a comparison and to a debrief (#397).
 final class LogbookActionsUITests: OnboardStudioUITestCase {
     @MainActor

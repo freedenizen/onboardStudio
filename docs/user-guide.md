@@ -400,6 +400,12 @@ the circuit chosen in the sidebar. After a first session somewhere, or files fro
 circuits at once, it is **Show Season** instead. Sessions that name no circuit are not counted as
 a visit anywhere, so they get no line.
 
+Files added with no day chosen take the car of an earlier session at the same circuit, or the car
+of the day they go on when it names one. On a first import there is neither, so the sheet says no
+car is set for the new day (or *the 3 new days*) and asks what was driven: type it, or pick one the
+logbook knows from the menu beside the field, and **Set Car** puts it on those days and their
+sessions. A car typed there and not set is set when you close the sheet.
+
 The window shows it all in three columns, as Mail does: a sidebar of track days (under their
 year when there is more than one, the year of the day you have chosen open;
 each is its date with the circuit beneath, so two days on one date read apart),
@@ -413,6 +419,16 @@ detail is of a session the sidebar and the search let through: choose another da
 away, and the detail goes with it. The toolbar follows the columns: the view, **New Track Day**,
 **Add Files** and **Export or Import** over the sessions, **New Project** and the search field
 over the session, however wide you drag it.
+
+The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
+sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
+worth keeping. **Rename…** changes the name on every day and session at once; type another car's
+name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
+added to the garage the first time its name is typed anywhere, and a name put right on the day or
+the session leaves it again. A car with notes stays when nothing names it any more: it is listed
+with no sessions, says so, and **Remove from Garage…** takes it out. A car still named on a day or
+a session cannot be removed. A project's **Details ▸ Car** offers the garage's
+cars from the menu beside the field.
 What can be done with the session stays at the foot of
 its detail, in view however many laps are listed above, and the buttons move onto another row
 rather than shorten when the detail is narrow (drag its left edge to widen it; it stays as wide

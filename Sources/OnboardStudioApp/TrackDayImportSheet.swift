@@ -37,6 +37,10 @@ struct TrackDayImportSheet: View {
     @State private var reports: [TrackDayImport.Report] = []
     /// How the new days compare with the visits before them (#459), once the sessions are in.
     @State private var progress = ImportProgress(circuits: [])
+    /// The days the new sessions went on with no car (#489), and the car the report gives them.
+    @State private var carlessDays: [TrackDay] = []
+    @State private var car = ""
+    @State private var carSet: String?
     @State private var current: String?
     @State private var phase = Phase.reading
 
@@ -58,6 +62,11 @@ struct TrackDayImportSheet: View {
             case .done:
                 Text(summary).accessibilityIdentifier("trackday.summary")
                 progressLines
+                if !carlessDays.isEmpty {
+                    ImportCarField(
+                        days: carlessDays, knownCars: LogbookModel.shared.knownCars, car: $car, carSet: carSet,
+                        set: setCar)
+                }
             }
             List(Array(reports.enumerated()), id: \.offset) { _, report in
                 Label(report.line, systemImage: symbol(for: report))
@@ -75,10 +84,13 @@ struct TrackDayImportSheet: View {
                             .help(destination.help)
                             .accessibilityIdentifier("trackday.showProgress")
                     }
-                    Button(phase == .done ? "Done" : "Close") { dismiss() }
-                        .keyboardShortcut(.defaultAction)
-                        .disabled(phase == .placing)
-                        .accessibilityIdentifier("trackday.done")
+                    Button(phase == .done ? "Done" : "Close") {
+                        setCar()
+                        dismiss()
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(phase == .placing)
+                    .accessibilityIdentifier("trackday.done")
                 }
             }
         }
@@ -107,6 +119,7 @@ struct TrackDayImportSheet: View {
 
     /// The Logbook, brought forward, on the circuit's Trends or on the Season.
     private func show(_ destination: ImportProgress.Destination) {
+        setCar()
         LogbookModel.shared.requestedView = destination
         openWindow(id: LogbookWindow.windowID)
         dismiss()
@@ -222,6 +235,16 @@ struct TrackDayImportSheet: View {
             if case .added(let entry) = report.outcome { entry.id } else { nil }
         }
         progress = ImportProgress.make(added: Set(ids), in: model.entries)
+        carlessDays = Garage.daysWithoutCar(added: Set(ids), entries: model.entries, days: model.days)
+    }
+
+    /// The car typed in the report goes on the days that had none, once — on Set Car or Return,
+    /// else as the report is closed, so a car typed and not set is not lost.
+    private func setCar() {
+        let name = car.trimmingCharacters(in: .whitespaces)
+        guard carSet == nil, !name.isEmpty, !carlessDays.isEmpty else { return }
+        LogbookModel.shared.setCar(name, onDays: carlessDays.map(\.id))
+        carSet = name
     }
 }
 

@@ -42,7 +42,13 @@ Every key but `file` is optional on the way in, so an entry written by any build
 other; dates are ISO 8601, like the track definitions.
 
 `Car` is the garage: a name and notes. Cars are a list in `garage.json`, not a table — a driver
-has three, not three hundred.
+has three, not three hundred. Days and sessions name a car by its name; the garage holds one `Car`
+per name, compared without regard to case (`Garage.same`). A name joins it the first time it is
+typed (`Logbook.addToGarage`); `renameCar` changes it on every day and session and makes it one
+with another car of the new name, and `removeCar` takes out only a car nothing names (#490).
+`tidyGarage`, run as the app reads the logbook, drops a name that nothing names and that has no
+notes — what a typo leaves once it is put right — so the sidebar lists, with no sessions, only the
+cars kept for their notes.
 
 `Logbook` is the library: one `<uuid>.onboardsession` JSON file per entry and the garage file in
 `~/Library/Application Support/OnboardStudio/Logbook`, beside `Tracks` and `Templates`, read and
