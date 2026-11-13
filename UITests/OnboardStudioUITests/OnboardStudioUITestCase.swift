@@ -347,14 +347,7 @@ extension OnboardStudioUITestCase {
             container.scrollViews.allElementsBoundByIndex
             .filter { $0.frame.minX <= midX && midX <= $0.frame.maxX }
             .max { $0.frame.height < $1.frame.height } ?? container.scrollViews.firstMatch
-        if nearest.exists {
-            var attempts = 0
-            while attempts < 8, !nearest.frame.contains(element.frame) {
-                let delta = element.frame.midY < nearest.frame.midY ? 120.0 : -120.0
-                nearest.scroll(byDeltaX: 0, deltaY: delta)
-                attempts += 1
-            }
-        }
+        if nearest.exists { scroll(nearest, toShow: element) }
         guard !element.isHittable else { return }
         for scrollView in app.scrollViews.allElementsBoundByIndex {
             for _ in 0..<12 {
@@ -365,6 +358,32 @@ extension OnboardStudioUITestCase {
                 if element.isHittable { return }
                 scrollView.scroll(byDeltaX: 0, deltaY: 80)
             }
+        }
+    }
+
+    /// Scrolls `scrollView` until `element` lies wholly inside it, clear of its edges, for as long
+    /// as each scroll still moves the element. A fixed number of scrolls fell short: how far one
+    /// travels varies from run to run, and on CI's short screen the inspector's Stabilisation pop-up
+    /// was sometimes left across the window's bottom edge, where a click opens nothing (#538).
+    /// Stops when two scrolls in a row move nothing — the end of the content, or an element that is
+    /// not in this scroll view at all.
+    private func scroll(_ scrollView: XCUIElement, toShow element: XCUIElement) {
+        var last = element.frame
+        var stalls = 0
+        for _ in 0..<40 {
+            let view = scrollView.frame.insetBy(dx: 0, dy: 8)
+            let frame = element.frame
+            // Up and down only, as the scroll goes; something taller than the view is shown when its
+            // middle is.
+            let shown =
+                frame.height <= view.height
+                ? view.minY <= frame.minY && frame.maxY <= view.maxY
+                : view.minY <= frame.midY && frame.midY <= view.maxY
+            if shown { return }
+            scrollView.scroll(byDeltaX: 0, deltaY: frame.midY < view.midY ? 120 : -120)
+            stalls = element.frame == last ? stalls + 1 : 0
+            if stalls == 2 { return }
+            last = element.frame
         }
     }
 }
