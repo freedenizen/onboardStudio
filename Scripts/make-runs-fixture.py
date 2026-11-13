@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes Tests/Fixtures/autocross.vbo: three runs of a synthetic autocross course at 5 Hz in
+"""Writes Tests/Fixtures/runs.d/autocross.vbo: three runs of a synthetic autocross course at 5 Hz in
 Racelogic VBO, with the start and finish gates in its [laptiming] section, so a point-to-point
 course can be timed in runs (#552) from a file alone.
 
@@ -9,7 +9,9 @@ west. The course passes the finish once mid-run, going the same way, and the sta
 last finish crossing ends a run. Runs 1 and 2 finish (1,040 m at 20 and 16 m/s: 52 s and 65 s);
 run 3 turns off before the finish and stops, a DNF. Between runs the car drives back to the grid
 round the outside, crossing neither line. Positions are metres east and north of 47° N, 8° E, a
-place with no circuit to be recognised. Deterministic: run it again and the file does not change."""
+place with no circuit to be recognised. It lives in a folder with an extension, which a whole-folder
+import skips as it skips a package, so the UI tests that add every fixture as a track day do not
+gain a session. Deterministic: run it again and the file does not change."""
 import math
 import os
 
@@ -103,7 +105,7 @@ def main():
             f"012 {clock} {minutes_lat(y):+012.6f} {minutes_long(x):+013.6f} "
             f"{speed * 3.6:07.3f} {heading:07.3f} +00450.00"
         )
-    with open(os.path.join(root, "Tests", "Fixtures", "autocross.vbo"), "w", encoding="utf-8") as out:
+    with open(os.path.join(root, "Tests", "Fixtures", "runs.d", "autocross.vbo"), "w", encoding="utf-8") as out:
         out.write("\n".join(lines) + "\n")
 
 

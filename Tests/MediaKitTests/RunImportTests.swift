@@ -9,7 +9,7 @@ import Testing
 /// point-to-point course, and a data input with both lines is timed in runs.
 @Suite("Runs of a point-to-point course (#552)")
 struct RunImportTests {
-    static let vbo = TrackDayImportTests.fixtures.appending(path: "autocross.vbo")
+    static let vbo = TrackDayImportTests.fixtures.appending(path: "runs.d/autocross.vbo")
 
     /// The settings `EditorModel.applyLapGeometry` writes for a file just added.
     static func settings(runs: Bool) throws -> DataInputSettings {
@@ -37,6 +37,12 @@ struct RunImportTests {
         let deltaTimes = try #require(session[.lapDelta]).times
         #expect(!deltaTimes.contains { $0 > between.start && $0 < (between.end ?? 0) })
         #expect(CoachingReference.fastestRolling.resolve(in: session) == nil, "no rolling lap on an open course")
+    }
+
+    @Test func aWholeFolderImportLeavesTheRunsFixtureOut() {
+        // The UI tests add every fixture as a track day and count what arrives.
+        let files = TrackDayImport.files(in: [TrackDayImportTests.fixtures])
+        #expect(!files.contains { $0.lastPathComponent == "autocross.vbo" })
     }
 
     @Test func withoutAFinishLineItIsTimedInLapsAsBefore() throws {
