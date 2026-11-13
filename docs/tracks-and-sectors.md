@@ -213,17 +213,74 @@ curvature detector finds.
 
 So corner numbering lands where sector geometry landed: **derived or drawn, never fetched.**
 
-`TelemetrySession.cornerLabels` carries them, filled from `DataInputSettings.cornerLabels` the
-same way sectors are, and `TrackDefinition.cornerLabels` remembers them per circuit — which is the
-point of a shareable definition, since one driver working out that Sonoma goes 3, 3a, 4, 4a saves
-everyone else doing it.
+`TrackDefinition` remembers them per circuit — which is the point of a shareable definition, since
+one driver working out that Sonoma goes 3, 3a, 4, 4a saves everyone else doing it.
 
-**Labels attach to the corners the detector found**, which are the ones numbered on the map. That
-sidesteps the count mismatch entirely: the driver assigns `3a` to whichever corner it is, rather
-than the app trying to reconcile twelve detected corners with fourteen official turns.
+**Names attach to the corners the detector found**, which are the ones numbered on the map. That
+sidesteps the count mismatch: the driver assigns `3a` to whichever corner it is, rather than the
+app trying to reconcile twelve detected corners with fourteen official turns.
 
-Until labels are set the map shows `1…N`, and the inspector says in as many words that this is a
+Until names are set the map shows `1…N`, and the inspector says in as many words that this is a
 count and not what the circuit calls them.
+
+### A name is pinned to where its turn is (#548)
+
+Names were first kept as a list in driving order — `cornerLabels: ["1", "2", "3", "3a"]` — and
+given to the corners found by their place in it. **The detector does not find the same corners on
+every lap.** A short kink near the line is above the curvature threshold on one lap and below it on
+the next; on a real session some laps found one corner more than the rest. On those laps every
+name after the extra corner moved one turn along — and Trends, which lines corners up across
+sessions *by name*, compared one session's 4 with another's 3a.
+
+So a name is now a `TurnName`: the label, the **apex's latitude and longitude**, and the **bend
+on the ground** from entry to exit, a point every 10 m. `CornerDetector` gives every corner it finds
+its apex and its bend, and `CornerNaming` gives each pinned name to a corner within **40 m** — the
+lap's apex to the named bend, or the named apex to the lap's bend, whichever is nearer — closest
+pairs first, each name and each corner once. A position names the same piece of tarmac on any lap, from any start/finish line, in
+any session and in a definition from another driver; a distance into the lap does none of that.
+
+- **A corner the lap found that no name reaches** is called by the named turns either side,
+  `3a–4`, going round the line (`4–1` before the first). That is the same on every lap that finds
+  it, so Trends can still line it up, and Coaching still has something to call it. The **map does
+  not number it**: it is not one of the circuit's turns.
+- **A pinned name the lap did not reach** is simply unused on that lap and kept.
+- **The first name the driver types pins every corner** of the lap with the name it shows at that
+  moment — the old list's name or its count — so naming one turn does not leave the rest called by
+  their neighbours. A blank field unpins that turn.
+- **Projects and definitions saved before** have no pinned names, and `CornerNaming` reads their
+  list exactly as before, by position: they render as they did. The list is emptied the first time
+  a name is pinned in that project.
+
+**Why the bend and not only the apex.** Matching apex to apex was tried first and failed on a
+real session: the apex of a long constant-radius bend wandered along it by about twice the radius
+from lap to lap, so two long turns lost their names on most laps. Against the whole bend, every
+turn kept one name on every lap, whichever lap it was named on. The same session showed the
+opposite trap: a kink at the entry of a long turn lies on that turn's bend as much as the turn
+does, so between two corners on one bend the one whose apex is nearer the named apex is matched
+first (a quarter of the apex distance is added to the score).
+
+### Getting turn names right before the driver types them (#551)
+
+Every circuit starts out counted 1…N, which is wrong at most of them. What could give the app
+accurate names ahead of time, checked on 2026-11-13:
+
+| Route | What it would give | Verdict |
+|---|---|---|
+| **Pinned names** (#548, done) | Names that stay on their turns across laps, sessions and drivers | The precondition for every route below: a bundled or shared name is worthless if it slides |
+| **A bundled library of contributed definitions** | Turn names, start/finish and sectors for the circuits contributors have driven, shipped with the app | **Recommended next.** The contributor's own laps place the turns, the circuit's published map gives the numbering, and a numbering is a fact, not a work — so a definition can be dedicated CC0 by the person who made it. The `.onboardtrack` file already carries everything; what is missing is a folder in the repository that the build bundles and a read-only "built in" source under `TrackLibrary` that a driver's own definition overrides |
+| **Agreement across laps** | A corner list that does not change from lap to lap: keep the corners found on most laps of the session, drop a kink found on one | Worth doing: it removes most `3a–4` labels before anyone sees them. It changes which corners a project's map numbers, so it applies to projects created after it (`Project.migrateIfNeeded()`) |
+| **Numbering help in the naming sheet** | Typing `3a` on a corner offers to call the ones after it 4, 4a… or 4, 5… | Cheap, and it is the step a driver repeats at every new circuit |
+| **A circuit's official list typed in** (turn labels only, no positions) | `1, 2, 3, 3a, 4, …` per configuration, offered in order as the driver names corners | Half a route: still needs positions, so it only shortens the typing. Facts from a circuit's own map may be typed in; copying the map or a site's text may not |
+| **Wikidata** | Circuit name and position | **No turns.** No property for a turn count or for turns exists, and its 213 layout items cover about fifteen F1 circuits' historical layouts, without geometry |
+| **OpenStreetMap** | Track geometry, an occasional named bend | **Rejected.** ODbL share-alike, no turn numbers at the circuits checked |
+| **`lovely-track-data` / track-atlas** | Sectors and some corners | **Rejected.** CC BY-NC-SA, unusable in an MIT repository |
+| **RaceChrono, VBOX, AiM, Garmin Catalyst, Harry's LapTimer** | Their own track databases (Catalyst names corners) | **Rejected.** Closed; no published API or licensing route |
+| **Tracing satellite imagery or a circuit map image** | Apex positions | **Rejected.** Apple's and Google's map terms forbid deriving data from their imagery, and a circuit's map drawing is copyrighted even though its numbering is not |
+| **Scraping Wikipedia turn lists** | Labels for well-known circuits | **Rejected** as a bulk source: CC BY-SA text, inconsistent, F1-centred, and still no positions |
+
+So the ranked plan is: pinned names (#548), naming from the circuit card with numbering help
+(#550), configurations so each layout keeps its own (#549), then the bundled contributed library
+and agreement across laps. Nothing here fetches anything at run time.
 
 ### The corner on the start/finish line
 

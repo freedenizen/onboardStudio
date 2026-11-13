@@ -219,8 +219,9 @@ the single highest sample. A constant-radius bend has no single tightest point a
 put its apex at one end; the track map's corner numbers moved to the middle of such bends with it.
 
 `CornerComparison` (`CornerComparison.swift`) pairs the two laps' readings for each corner and
-reads the time lost in each phase off the delta trace, with the circuit's own corner labels when
-`TelemetrySession.cornerLabels` has them. The line offset at the apex comes with position
+reads the time lost in each phase off the delta trace, with the circuit's own turn names when
+the session has them (`TelemetrySession.cornerNames(for:)`, pinned to the reference lap's apexes,
+#548). The line offset at the apex comes with position
 alignment (#316).
 
 ### Opportunities and notes

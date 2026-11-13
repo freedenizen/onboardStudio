@@ -41,7 +41,7 @@ extension ProjectCompiler {
             if let source = mapping.source { sourceColumns[role] = source }
             if let unit = mapping.sourceUnit { sourceUnits[role] = TelemetryUnit(parsing: unit) }
         }
-        let options = SessionBuilder.Options(
+        var options = SessionBuilder.Options(
             roleOverrides: overrides,
             deriveSpeedFromPosition: settings.deriveSpeedFromPosition,
             deriveHeadingFromPosition: settings.deriveHeadingFromPosition,
@@ -62,6 +62,7 @@ extension ProjectCompiler {
             sectorMode: sectorMode(settings.sectors),
             cornerLabels: settings.cornerLabels,
             trimStart: settings.trim.start, trimEnd: settings.trim.end, legacyFirstLap: settings.legacyFirstLap)
+        options.turnNames = settings.turnNames
         if let importerID = settings.importerID {
             guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {
                 throw ImportError.unrecognisedFormat

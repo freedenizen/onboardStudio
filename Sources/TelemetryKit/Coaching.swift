@@ -197,7 +197,8 @@ public struct CoachingAnalysis: Sendable {
         }
         let lapMetrics = CornerMetrics.measure(corners: lapCorners, of: lap, options: options.metrics)
         let comparisons = CornerComparison.compare(
-            lap: lapMetrics, reference: referenceMetrics, delta: delta, labels: session.cornerLabels)
+            lap: lapMetrics, reference: referenceMetrics, delta: delta,
+            labels: session.cornerNames(for: referenceCorners).map(\.label))
         var warnings: [CoachingWarning] = []
         if delta.confidence == 0 && alignment != delta.alignment { warnings.append(.approximateAlignment) }
         if lapMetrics.contains(where: { $0.brakeSource == .speedTrace }) { warnings.append(.pedalsFromSpeedTrace) }

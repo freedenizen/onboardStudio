@@ -1,4 +1,5 @@
 import Foundation
+import TelemetryKit
 import Testing
 
 @testable import ProjectModel
@@ -57,6 +58,31 @@ struct TrackDefinitionTests {
         #expect(decoded.startFinish == nil)
         #expect(decoded.sectors == SectorSpec())
         #expect(decoded.cornerLabels.isEmpty)
+        #expect(decoded.turnNames.isEmpty)
+    }
+
+    @Test func pinnedTurnNamesRoundTripAndCountAsGeometry() throws {
+        // Invented positions: what matters is that each name keeps its own.
+        var definition = TrackDefinition(name: "Test Circuit", latitude: 47, longitude: 11)
+        #expect(!definition.hasGeometry)
+        definition.turnNames = [
+            TurnName(label: "3", latitude: 47.001, longitude: 11.002),
+            TurnName(label: "3a", latitude: 47.003, longitude: 11.004),
+        ]
+        #expect(definition.hasGeometry, "a definition that only names turns is still worth applying")
+        let decoded = try JSONDecoder().decode(TrackDefinition.self, from: try JSONEncoder().encode(definition))
+        #expect(decoded.turnNames == definition.turnNames)
+    }
+
+    @Test func aDataInputKeepsItsPinnedNamesAndAnOldOneHasNone() throws {
+        var settings = DataInputSettings()
+        settings.turnNames = [TurnName(label: "Carousel", latitude: 47.001, longitude: 11.002)]
+        let decoded = try JSONDecoder().decode(DataInputSettings.self, from: try JSONEncoder().encode(settings))
+        #expect(decoded.turnNames == settings.turnNames)
+        // A project saved before #548: its list still names the corners, with nothing pinned.
+        let old = try JSONDecoder().decode(DataInputSettings.self, from: Data(#"{"cornerLabels":["1","3a"]}"#.utf8))
+        #expect(old.cornerLabels == ["1", "3a"])
+        #expect(old.turnNames.isEmpty)
     }
 }
 

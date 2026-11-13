@@ -56,7 +56,7 @@ extension EditorModel {
             return TrackDefinition(
                 circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
                 longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
-                cornerLabels: settings.cornerLabels)
+                cornerLabels: settings.cornerLabels, turnNames: settings.turnNames)
         }
     }
 }

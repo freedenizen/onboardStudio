@@ -73,6 +73,7 @@ extension DataInputInspector {
     @ViewBuilder var cornerSection: some View {
         Section("Corners") {
             let corners = editor.corners(for: input.id)
+            let names = editor.cornerNames(for: input.id)
             if corners.isEmpty {
                 Text("Naming corners needs laps and a GPS trace to find them in.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -83,9 +84,9 @@ extension DataInputInspector {
                             HStack {
                                 Text(corner.turnsRight ? "right" : "left").foregroundStyle(.secondary)
                                 CommittingTextField(
-                                    "\(index + 1)",
+                                    index < names.count ? names[index].label : "\(index + 1)",
                                     text: Binding(
-                                        get: { label(at: index) },
+                                        get: { label(at: index, in: names) },
                                         set: { editor.setCornerLabel($0, at: index, for: input.id) })
                                 )
                                 .frame(width: cornerNameWidth)
@@ -95,16 +96,20 @@ extension DataInputInspector {
                     }
                 }
                 Text(
-                    "The map numbers these 1…\(corners.count), which is a count and not what the circuit calls "
-                        + "them. Type the real names — 3a and the like — and they are kept with the track."
+                    "Until they are named the map counts these 1…\(corners.count), which is not what the circuit "
+                        + "calls them. Type the real names — 3a and the like. Each name stays on its turn, "
+                        + "and a corner left blank among named ones is not numbered on the map."
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }
         }
     }
 
-    func label(at index: Int) -> String {
-        index < settings.cornerLabels.count ? settings.cornerLabels[index] : ""
+    /// The name typed for a corner, blank when it is only counted or called by its neighbours —
+    /// which the field's placeholder then shows.
+    func label(at index: Int, in names: [CornerName]) -> String {
+        guard index < names.count, names[index].source == .named else { return "" }
+        return names[index].label
     }
 
     func confidence(_ match: CircuitCatalog.Match) -> String {
