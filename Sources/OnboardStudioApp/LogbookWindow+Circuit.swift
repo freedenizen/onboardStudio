@@ -71,7 +71,10 @@ extension LogbookWindow {
                 model.newDayRequested = true
             },
             makePlan: lastVisitSession(at: key).map { entry in { coach(entry) } },
-            savePlan: { model.savePlan($0, for: key, name: $1, undo: undoManager) }
+            savePlan: { model.savePlan($0, for: key, name: $1, undo: undoManager) },
+            goals: model.goals(at: key).map { GoalProgress.make($0, entries: model.entries) },
+            speed: LogbookWindow.speedUnit, corners: cornerLabels(at: key), cars: carsDriven(at: key),
+            addGoal: { model.addGoal($0, undo: undoManager) }, removeGoal: { model.removeGoal($0, undo: undoManager) }
         )
         .id(key)
     }

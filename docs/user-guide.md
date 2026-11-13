@@ -441,6 +441,16 @@ Edit ▸ Undo. **New Track Day Here…** begins the next day at the circuit, and
 card until its first session arrives. A plan is kept with a circuit the catalogue knows; for a
 circuit named by hand the card says so.
 
+**Goals** are on the same card. **Add Goal…** sets what you are aiming for at the circuit: a **lap
+time**, **consistency** (your flying laps within so many seconds of each other in one session), or
+**a corner** — the time through it, or the speed at its apex, on a session's best lap — in any car
+or one, and by a date if you like. Each goal says how far there is to go (*Best 1:42.31 — 2.31 s
+to go*) or the day it was reached; the minus removes it, and Edit ▸ Undo brings it back. A
+lap-time goal is drawn as a dashed line on the circuit's **Trends** chart, a consistency goal on
+its consistency chart. When you add a day's files, the report says which goals the new sessions
+reached, or how much closer they came. The **Season** lists the goals reached that year, on the
+page and in its PDF.
+
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
 sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
 worth keeping. **Rename…** changes the name on every day and session at once; type another car's

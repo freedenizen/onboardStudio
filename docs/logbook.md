@@ -461,6 +461,18 @@ begins one from the corners to work on. Only a catalogue circuit has a track def
 circuit typed by hand shows the card without a plan. An empty day at a circuit shows the card too,
 and New Track Day Here… opens the sheet with the circuit chosen (`LogbookModel.newDayCircuit`).
 
+## Goals (#461)
+
+A `Goal` is a target at a circuit (`circuitKey`): a lap time, a consistency (the spread of a
+session's flying laps, `LogbookTrends.lapSpread`), or a corner's time through it or apex speed on
+a session's best lap — in one car or any, by a date or not. Goals are a list in `goals.json`
+beside the garage, and travel with an export. `GoalProgress.make` reads the sessions a goal is
+measured on: the best so far, the latest, the first session that met it (reached), and what is
+left. The circuit's card sets and lists them (`LogbookModel.saveGoals`, one step of the window's
+Undo); Trends draws lap-time and consistency goals as dashed `RuleMark`s; `GoalNews.make` compares
+the goals before and after an import's sessions for its report; Season lists the goals first
+reached in its year.
+
 ## On the command line (#398)
 
 `onboard logbook new-day` (`--date`, `--circuit` as a catalogue search or id, else kept as typed,
