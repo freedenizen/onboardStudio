@@ -22,6 +22,8 @@ import UniformTypeIdentifiers
     var trackDayRequest: TrackDayRequest?
     /// File ▸ New Track Day… asked for the sheet (#393).
     var newDayRequested = false
+    /// The Logbook's tour (#452): which callout is up, if any.
+    var tourStep: Int?
     /// Show Trends or Show Season in an import's report (#459), for the window to go to.
     var requestedView: ImportProgress.Destination?
     /// The day chosen in the sidebar, for the Testing menu and the ways in.
@@ -182,6 +184,11 @@ struct LogbookWindow: View {
     @State var renamingCar: CarRename?
     /// The window's, for the Logbook's edits to be steps of Edit ▸ Undo (#454).
     @Environment(\.undoManager) var undoManager
+    /// Getting Started in the detail column, and what it remembers (#452).
+    @AppStorage(Preferences.showLogbookGettingStarted.key) var showGettingStarted = true
+    @AppStorage(Preferences.logbookCoached.key) var coached = false
+    @AppStorage(Preferences.logbookSawProgress.key) var sawProgress = false
+    @AppStorage(Preferences.logbookTourSeen.key) private var tourSeen = false
     /// What the last export or import did, under the table (#350).
     @State var message: String?
     /// Files are being dragged over the window (#468).
@@ -200,6 +207,7 @@ struct LogbookWindow: View {
     var body: some View {
         browser
             .overlay { if isDropTarget { dropHighlight } }
+            .overlay { LogbookTourOverlay(model: model) }
             // The session, the view and the window's actions, for the menu bar (#450).
             .focusedSceneValue(\.logbook, commandContext)
             .sheet(item: $model.trackDayRequest) { request in
@@ -213,7 +221,15 @@ struct LogbookWindow: View {
                     lastDay: model.days.first, create: create)
             }
             .modifier(carSheets)
-            .onAppear { model.reload() }
+            .onAppear {
+                model.reload()
+                // Once, as the editor's is: the app opens here (#452).
+                if !tourSeen {
+                    tourSeen = true
+                    model.tourStep = 0
+                }
+            }
+            .onChange(of: view) { if view != .sessions { sawProgress = true } }
             .onChange(of: scope, initial: true) { model.choose(selectedDay) }
             .onChange(of: model.days) { followTheChosenDay() }
             .onChange(of: carRows) { followTheChosenCar() }
@@ -250,6 +266,9 @@ struct LogbookWindow: View {
                     detail(of: entry)
                 } else if selectedEntries.count > 1 {
                     selectionDetail
+                } else if showGettingStarted, !gettingStarted.allSatisfy(\.done) {
+                    LogbookGettingStartedView(
+                        steps: gettingStarted, perform: performGettingStarted, hide: { showGettingStarted = false })
                 } else {
                     ContentUnavailableView(
                         "No Session Selected", systemImage: "flag.checkered",
@@ -364,7 +383,7 @@ struct LogbookWindow: View {
         LogbookDetail(
             entry: entry, clips: model.clips(of: entry), hasProject: active.editor != nil,
             templates: LogbookModel.templates, newProject: { openAsProject(entry, template: $0) },
-            coach: { CoachingWindow.open(openWindow, coaching: entry) },
+            coach: { coach(entry) },
             compare: { compare(entry, with: $0) }, comparisons: comparisons(for: entry),
             debrief: {
                 model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)

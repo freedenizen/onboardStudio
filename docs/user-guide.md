@@ -20,6 +20,11 @@ and, ideally, a data log.
    **Open Project…** and the sample project. While a session is selected that menu's projects
    are made from the session, and **New Project Without a Session** is the empty one.
    **File ▸ Open Recent** has your recent projects.
+   The first time, the Logbook shows a three-step tour of its sidebar, its sessions and the
+   session's detail (**Help ▸ Take the Tour** repeats it while the Logbook is in front). While no
+   session is chosen, the detail column holds the Logbook's **Getting Started**: add a track day's
+   files, say what was driven, make a video of a session, be coached through a lap, see how you
+   are getting on — each ticked as you do it, with a button that does or shows it.
    Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a blank project
    instead; **Window ▸ Logbook** (⌃⌘L) brings it back. A new project opens with a welcome panel
    and, the first time, a three-step tour (**Help ▸ Take the Tour** repeats it). Files can be
@@ -56,8 +61,12 @@ and, ideally, a data log.
    of laps), then a preset (1080p, 4K, vertical…), and press Export. **Upload to YouTube…** appears
    when it is done.
 
-The **Getting Started** checklist in the inspector tracks these steps and offers the next one;
-**Help ▸ Show Getting Started** brings it back after you hide it.
+As soon as a project has a file in it, a bar above the preview says the next of these steps —
+*Next step: Add gauges* — with the button that does it (*Apply the Classic Dash Template*), and
+**Show All Steps** brings up the whole **Getting Started** checklist, first in the project's
+inspector. Export is ticked once a video has been exported from the project. The bar's ✕ hides it
+and the checklist, in projects and in the Logbook; **Help ▸ Show Getting Started** brings them
+back.
 
 ## 2. The window
 
@@ -97,8 +106,8 @@ also puts the playhead where you clicked, as in any editor. The magnet button (N
   scroll sideways. The thin strip above the ruler shows the whole project with a window for the
   visible part; drag it to scroll.
 - **Inspector (right)**: settings for the selected input or object; drag its left edge to widen it.
-  With nothing selected it shows the project's output size and frame rate, its details, font,
-  camera framing and the Getting Started checklist; **Project ▸ Show Project Details** (⌃⌘I)
+  With nothing selected it shows the Getting Started checklist first, then the project's output
+  size and frame rate, its details, font and camera framing; **Project ▸ Show Project Details** (⌃⌘I)
   clears the selection to get there from anywhere. **View ▸ Hide Inspector** (⌥⌘I), or the
   inspector button at the right-hand end of the toolbar, puts it away for a bigger preview and
   timeline, and brings it back; the app remembers which you chose. The window fits displays 1024 points wide. What you type in a

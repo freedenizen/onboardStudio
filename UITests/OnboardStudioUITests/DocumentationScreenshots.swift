@@ -21,7 +21,7 @@ final class DocumentationScreenshots: OnboardStudioUITestCase {
         }
         let time = environment["ONBOARD_SCREENSHOT_TIME"] ?? "0"
         launch(
-            extraArguments: ["-showGettingStarted", "NO"],
+            extraArguments: ["-showGettingStarted", "NO", "-showLogbookGettingStarted", "NO"],
             environment: ["ONBOARD_TEST_SCREENSHOT_PROJECT": project, "ONBOARD_TEST_SCREENSHOT_TIME": time])
 
         testing("Open Screenshot Project")

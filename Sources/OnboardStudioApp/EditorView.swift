@@ -25,6 +25,8 @@ struct EditorView: View {
                     if editor.pictureTool != nil {
                         PictureToolBar(editor: editor)
                         Divider()
+                    } else {
+                        NextStepBar(editor: editor)
                     }
                     PreviewView(editor: editor)
                     Divider()

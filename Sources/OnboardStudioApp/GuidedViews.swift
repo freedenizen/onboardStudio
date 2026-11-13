@@ -91,7 +91,7 @@ struct GettingStartedSection: View {
                                 .foregroundStyle(step.done ? .secondary : .primary)
                             if !step.done {
                                 Text(step.detail).font(.caption).foregroundStyle(.secondary)
-                                Button(label(for: step.action)) { perform(step.action) }
+                                Button(Self.label(for: step.action)) { Self.perform(step.action, in: editor) }
                                     .controlSize(.small).padding(.top, 2)
                             }
                         }
@@ -109,18 +109,18 @@ struct GettingStartedSection: View {
         }
     }
 
-    func label(for action: GettingStartedStep.Action) -> String {
+    static func label(for action: GettingStartedStep.Action) -> String {
         switch action {
         case .addVideo: "Add Video…"
         case .addData: "Add Data File…"
         case .useEmbedded: "Use the GoPro's GPS"
         case .sync: "Synchronize…"
-        case .applyTemplate: "Apply the Classic Dash template"
+        case .applyTemplate: "Apply the Classic Dash Template"
         case .export: "Export Video…"
         }
     }
 
-    func perform(_ action: GettingStartedStep.Action) {
+    static func perform(_ action: GettingStartedStep.Action, in editor: EditorModel) {
         switch action {
         case .addVideo: editor.addVideo()
         case .addData: editor.addData()
