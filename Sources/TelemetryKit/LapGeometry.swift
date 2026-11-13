@@ -67,8 +67,13 @@ public struct LapGeometry: Sendable, Hashable {
 
     public var isEmpty: Bool { gates.isEmpty }
     public var start: LapGate? { gates.first { $0.kind == .start } }
-    /// The end of a point-to-point course (#552), which makes the session a run rather than laps.
-    public var finish: LapGate? { gates.first { $0.kind == .finish } }
+    /// The end of a point-to-point course (#552), which makes the session a run rather than laps:
+    /// a `Finish` gate, unless the start calls itself the finish too. A gate labelled "Start /
+    /// Finish" says the course is a circuit, whatever else the file lists.
+    public var finish: LapGate? {
+        guard let start, !start.label.localizedCaseInsensitiveContains("finish") else { return nil }
+        return gates.first { $0.kind == .finish }
+    }
     /// Sector boundaries in the order the track runs them. The start/finish is not one of them.
     public var splits: [LapGate] { gates.filter { $0.kind == .split } }
 }
