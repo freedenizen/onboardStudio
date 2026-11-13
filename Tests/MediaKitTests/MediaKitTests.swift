@@ -34,7 +34,7 @@ enum MediaFixtures {
     }
 }
 
-@Suite("MediaProbe")
+@Suite("MediaProbe", .media)
 struct MediaProbeTests {
     @Test func describesTheFixture() async throws {
         let info = try await MediaProbe.probe(try MediaFixtures.video)
@@ -53,7 +53,7 @@ struct MediaProbeTests {
     }
 }
 
-@Suite("CompositionBuilder")
+@Suite("CompositionBuilder", .media)
 struct CompositionBuilderTests {
     @Test func buildsTracksAndInstruction() async throws {
         let compiled = try await CompositionBuilder.build(
@@ -95,7 +95,7 @@ struct CompositionBuilderTests {
     }
 }
 
-@Suite("Exporter", .serialized)
+@Suite("Exporter", .serialized, .media)
 struct ExporterTests {
     /// Overlay that paints the left half of the frame solid blue so the export can be probed.
     struct HalfBlue: OverlayDrawing {
@@ -196,7 +196,7 @@ struct ExporterTests {
     }
 }
 
-@Suite("ProjectCompiler", .serialized)
+@Suite("ProjectCompiler", .serialized, .media)
 struct ProjectCompilerTests {
     static var sliceURL: URL {
         get throws {
@@ -254,7 +254,7 @@ struct ProjectCompilerTests {
     }
 }
 
-@Suite("Preview/export parity", .serialized)
+@Suite("Preview/export parity", .serialized, .media)
 struct ParityTests {
     /// The preview (AVPlayer / AVAssetImageGenerator on the composition) and the export must show
     /// the same pixels for the same time. Compares a generator frame against an exported frame.
@@ -327,7 +327,7 @@ struct ParityTests {
 /// an offset of zero one press makes it negative. `insertTimeRange(_:of:at:)` cannot take a
 /// negative time and fails the **whole** composition with `-11800` / `-12780`, so the preview
 /// stops recompiling until the nudge is undone.
-@Suite("Sync before the project start")
+@Suite("Sync before the project start", .media)
 struct NegativeOffsetTests {
     /// Where the composition's first real segment reads from in the source file. This is the
     /// claim that matters: "the video moved earlier" means project zero shows a later frame.

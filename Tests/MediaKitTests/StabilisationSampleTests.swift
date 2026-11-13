@@ -8,7 +8,7 @@ import Vision
 
 /// The user's HERO13 helmet clip (local only): steadied from its motion record, the exported picture
 /// moves less from frame to frame than the recording did (#262).
-@Suite("Stabilisation on real footage", .serialized)
+@Suite("Stabilisation on real footage", .serialized, .media)
 struct StabilisationSampleTests {
     @Test func aSteadiedExportShakesLessThanTheRecording() async throws {
         guard let dir = ProcessInfo.processInfo.environment["ONBOARD_SAMPLES_DIR"] else { return }

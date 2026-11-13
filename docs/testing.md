@@ -26,6 +26,12 @@ swift test --filter "RaceChrono"            # tests whose name matches
 - **MediaKit**: real AVFoundation round-trips on `Tests/Fixtures/test-3s.mp4`: probe, build a
   composition, export, then decode a frame of the *output* and check the overlay is there. When
   `ffprobe` is installed the output is cross-checked with it; otherwise that test is skipped.
+  Every suite that decodes, renders or writes media carries the `.media` trait
+  (`Tests/MediaKitTests/MediaGate.swift`), which lets one such test run at a time across all of
+  them: dozens at once under `--parallel` stalled CI's macOS 27 runners until the Test job's
+  30-minute limit (#514, #529, #531). A media test still running two minutes after it was let in
+  names itself on stderr and stops the test process, so a hang fails in minutes with the test's
+  name; `ONBOARD_MEDIA_TEST_DEADLINE=<seconds>` shortens that, to see it work.
 
 swift-testing runs suites **in parallel in one process**, so a test never writes a process-wide
 setting. For the logbook a compile reads, scope it to the test's own task with

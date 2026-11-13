@@ -51,7 +51,7 @@ enum SyntheticMotionClip {
     }
 }
 
-@Suite("Motion sync", .serialized)
+@Suite("Motion sync", .serialized, .media)
 struct MotionSyncTests {
     static func speedSession(duration: Double, moving: [ClosedRange<Double>], shift: Double) -> TelemetrySession {
         let times = Array(stride(from: 0.0, through: duration, by: 0.1))
@@ -115,7 +115,7 @@ struct MotionSyncTests {
     }
 }
 
-@Suite("Motion sync on real samples")
+@Suite("Motion sync on real samples", .media)
 struct RealMotionSyncTests {
     /// The HERO13 clip against the RaceChrono log recorded in the same car; the GPS cross-check
     /// in M10 established data time 1787528146.8 at video time 0.
