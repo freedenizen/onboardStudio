@@ -12,7 +12,7 @@ All fixtures are small and synthetic; none are copied from third-party files.
 | `activity.tcx` | TCX | Two laps of two trackpoints with HR, cadence, speed and power extensions. |
 | `track.nmea` | NMEA 0183 | GGA/RMC/GLL sentences incl. a void (`V`) RMC that must be skipped and a GLL-only fix. |
 | `session.vbo` | Racelogic VBO | `[header]`, `[column names]`, `[data]`; lat/long in minutes (long west-positive), velocity km/h, lap number. |
-| `autocross.vbo` | Racelogic VBO | Three runs of a synthetic autocross at 5 Hz with `Start` and `Finish` gates in `[laptiming]`: two finished (52 s and 65 s), one a DNF; the course passes the finish once mid-run. Regenerate with `Scripts/make-runs-fixture.py`. |
+| `runs.d/autocross.vbo` | Racelogic VBO | Three runs of a synthetic autocross at 5 Hz with `Start` and `Finish` gates in `[laptiming]`: two finished (52 s and 65 s), one a DNF; the course passes the finish once mid-run. In a folder with an extension, which a whole-folder import skips like a package, so tests that add every fixture as a track day are unchanged. Regenerate with `Scripts/make-runs-fixture.py`. |
 | `harrys.csv` | Generic CSV (Harry's LapTimer profile) | Signature line + named columns with units in parentheses. |
 | `generic.csv` | Generic CSV | Unknown app: `hh:mm:ss.nn` time and fuzzy column names (`mph`, `course`, `lateral g`). |
 | `track.gpx` | GPX 1.1 | Six timed track points with elevation and Garmin `hr` extension, one untimed point, fractional-second timestamps. |
