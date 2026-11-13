@@ -6,7 +6,7 @@ import Testing
 @testable import ProjectModel
 @testable import RenderKit
 
-@Suite("Audio processing", .serialized)
+@Suite("Audio processing", .serialized, .media)
 struct AudioProcessingTests {
     @Test func channelGainsFollowBalanceAndSelection() {
         let centre = ChannelGains(balance: 0, channels: .stereo)
@@ -83,7 +83,7 @@ struct AudioProcessingTests {
     }
 }
 
-@Suite("FFmpeg bridge", .serialized)
+@Suite("FFmpeg bridge", .serialized, .media)
 struct FFmpegBridgeTests {
     @Test func readableFilesPassThrough() async throws {
         let url = try MediaFixtures.video
@@ -122,7 +122,7 @@ struct FFmpegBridgeTests {
     }
 }
 
-@Suite("Recompile decisions")
+@Suite("Recompile decisions", .media)
 struct RecompileTests {
     @Test func pictureEditsReplanButTimingAndAudioRecompile() throws {
         var base = try ProjectLocation(try ProjectCompilerTests.sliceURL).load()
@@ -142,7 +142,7 @@ struct RecompileTests {
     }
 }
 
-@Suite("Source orientation", .serialized)
+@Suite("Source orientation", .serialized, .media)
 struct SourceOrientationMediaTests {
     static var rotated: URL {
         get throws {

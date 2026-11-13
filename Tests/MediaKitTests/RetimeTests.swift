@@ -7,7 +7,7 @@ import Testing
 @testable import RenderKit
 
 /// The slice project retimed (#442): its picture and its overlays slowed and held together.
-@Suite("Retime", .serialized)
+@Suite("Retime", .serialized, .media)
 struct RetimeTests {
     /// 0.5–1.5 s at half speed and a 1 s hold at 2 s: the 3 s slice takes 5 s.
     static let retimes = [

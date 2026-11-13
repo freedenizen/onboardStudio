@@ -5,7 +5,7 @@ import Testing
 @testable import ProjectModel
 @testable import TelemetryKit
 
-@Suite("Timestamp sync")
+@Suite("Timestamp sync", .media)
 struct TimestampSyncTests {
     func session(epoch: Bool) -> TelemetrySession {
         let base = epoch ? 1_787_528_164.0 : 0.0
@@ -92,7 +92,7 @@ struct TimestampSyncTests {
     }
 }
 
-@Suite("Companion telemetry")
+@Suite("Companion telemetry", .media)
 struct CompanionTelemetryTests {
     @Test func findsADJILogNextToTheVideoAndUsesItsClock() async throws {
         let dir = FileManager.default.temporaryDirectory.appending(path: "companion-\(UUID().uuidString)")

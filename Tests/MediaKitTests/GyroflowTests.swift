@@ -5,7 +5,7 @@ import Testing
 
 @testable import MediaKit
 
-@Suite("Gyroflow (#263)", .serialized)
+@Suite("Gyroflow (#263)", .serialized, .media)
 struct GyroflowTests {
     @Test func theArgumentsKeepTheRecordingsSizeAndASafeName() throws {
         let input = URL(fileURLWithPath: "/Volumes/Card/Track Day (am)/GX010037.MP4")

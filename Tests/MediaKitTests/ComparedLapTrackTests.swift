@@ -7,7 +7,7 @@ import Testing
 @testable import MediaKit
 @testable import RenderKit
 
-@Suite("The compared lap's picture (#154)", .serialized)
+@Suite("The compared lap's picture (#154)", .serialized, .media)
 struct ComparedLapTrackTests {
     /// The fixture video with a data input whose lap 1 (0–1 s) is twice as fast as lap 2 (1–3 s),
     /// laid out as a comparison of lap 2 (left) with lap 1 (right).

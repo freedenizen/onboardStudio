@@ -4,7 +4,7 @@ import Testing
 
 @testable import MediaKit
 
-@Suite("A recording as one asset (#516)")
+@Suite("A recording as one asset (#516)", .media)
 struct RecordingAssetTests {
     static let video = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         .appendingPathComponent("Fixtures/test-3s.mp4")

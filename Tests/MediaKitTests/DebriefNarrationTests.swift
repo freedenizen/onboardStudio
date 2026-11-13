@@ -7,7 +7,7 @@ import Testing
 
 @testable import MediaKit
 
-@Suite("Debrief narration (#335)", .serialized)
+@Suite("Debrief narration (#335)", .serialized, .media)
 struct DebriefNarrationTests {
     @Test func aSentenceBecomesAShortAudioFileOfItsLength() async throws {
         try #require(DebriefNarrator.isAvailable, "no system voice on this machine")
