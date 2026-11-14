@@ -12,6 +12,10 @@ struct CornerDetailView: View {
     var others: [LapProfile] = []
     /// `nil` when the reference cannot be filmed: a spliced lap, or a file without a camera.
     let compareInVideo: (() -> Void)?
+    /// The lap being read, for the traffic mark's label.
+    var lapNumber: Int?
+    /// Marks the corner as held up by traffic or a flag, or clears it (#571).
+    var markTraffic: ((TrafficSpan.Kind?) -> Void)?
 
     private var format: CoachingNotes.Formatter { CoachingNotes.Formatter(units: units) }
 
@@ -27,6 +31,11 @@ struct CornerDetailView: View {
                             .help("Lay the project out with both laps' pictures over this corner")
                             .accessibilityIdentifier("coaching.compareInVideo")
                     }
+                }
+                if let markTraffic, let lapNumber {
+                    CornerMarkPicker(
+                        comparison: comparison, referencePhrase: analysis.referencePhrase, lapNumber: lapNumber,
+                        mark: markTraffic)
                 }
                 PhaseLossBars(comparison: comparison, units: units)
                 CornerLinesView(analysis: analysis, comparison: comparison, units: units, others: others)

@@ -1091,6 +1091,33 @@ playhead goes to the brake point and the export range is the corner, so one expo
 It is offered when the reference is a real lap with a camera; the rolling and spliced laps are
 data only.
 
+### Traffic and flags
+
+A corner where another car held you up, or that you drove under a yellow flag, says nothing
+about how you drive, so mark it and the coaching leaves it out. On the corner's step of the
+walkthrough choose **Leave This Corner Out ▸ Held Up by Traffic** or **Under a Flag**; in All
+Corners right-click its row (**Mark Turn 4 as Traffic**, **Mark Turn 4 as a Flag**, **Clear
+Traffic Mark**), or use the mark at the top of the corner's detail. A marked corner:
+
+- is never an opportunity, gets no advice, and is listed under the walkthrough's first step as
+  left out; the table reads *traffic* or *flag* in its Phase column;
+- still counts in the lap's total, which says how much of it was traffic ("2.40 s behind, 1.80 s
+  of it held up by traffic");
+- is left out of that corner's consistency — the rest of the lap still counts, and a lap slowed
+  past the flying-lap limit only by its marked corners counts too, though its lap time is left
+  out of the lap-time spread;
+- makes a lap a poor default: with no lap chosen the window reads the quickest lap no mark
+  touches;
+- reads "Turn 4: held up by traffic" on a Corner Callout, and is skipped by the Coaching Debrief
+  and by **Only corners that lost time** when exporting one file per corner.
+
+The mark covers the stretch of the session the corner was read over, so it applies whatever the
+lap is compared with; when the compared lap is from the same session and was held up there
+itself, the corner is left out too, and its detail says so. Marks are kept with the project's
+coaching choices (or with the session, from the Logbook), and each one is an undo step. A project
+with no marks reads exactly as it did. `onboard coach --traffic 312.5-330,1204-1215:flag` does the
+same from the command line, in seconds of the data file.
+
 ### A plan for next session
 
 **Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
@@ -1232,11 +1259,13 @@ chart. Click a point to open that session.
 
 Below the charts, corner by corner, the best lap of your latest track day against the best of the
 track day before and against your personal best — brake point, minimum speed and time in the
-corner. A line above the table names the laps it reads, and a comparison's columns appear only when
-there is one to make: none against the personal best when the latest day set it. Sessions entered
-before corners were kept offer **Read Their Corners**, as do sessions whose corners were measured
-before a correction to how the app measures them (#438), so a fixed reading reaches sessions
-already in the logbook.
+corner. Minimum speed is in the app's speed unit, and brake points are in feet when that is mph
+and in metres otherwise, as Coaching gives them; the line under the table names both. A line
+above the table names the laps it reads, and a comparison's columns appear only when there is one
+to make: none against the personal best when the latest day set it. Sessions entered before
+corners were kept offer **Read Their Corners**, as do sessions whose corners were measured before
+a correction to how the app measures them (#438), so a fixed reading reaches sessions already in
+the logbook.
 
 ### Car against car
 
@@ -1330,7 +1359,10 @@ fastest rolling lap (the quickest lap-length stretch starting anywhere, which of
 timed lap), `--reference optimal` with the best sectors spliced together, `--reference lap:6` with
 another lap; `--units imperial` writes the notes in mph and feet; `--json` prints everything as
 data. A project works too: `onboard coach my.onboardproj` reads its first data input, with the
-sectors and corner names the project has. The method is in [coaching.md](coaching.md).
+sectors, corner names and traffic marks the project has. `--traffic 312.5-330,1204-1215:flag` marks
+stretches as held up by traffic (or `:flag`) in seconds of the data file, and the corners they cover
+are left out of the coaching ([Traffic and flags](#traffic-and-flags)). The method is in
+[coaching.md](coaching.md).
 
 **The logbook.** `onboard logbook new-day --date 2026-08-23 --circuit Sonoma --car Miata` begins a
 day, `onboard logbook add <files or folders> --day <id or date>` puts files on it (`--car`,
