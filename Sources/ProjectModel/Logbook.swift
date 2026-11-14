@@ -52,6 +52,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// Wikidata id of the circuit when recognised; the layout, when the file names one.
     public var circuitID: String?
     public var trackName: String?
+    /// Which of the circuit's configurations was driven (#549): "Club Course"; `nil` for its
+    /// unnamed configuration, which is every session added before configurations existed.
+    public var configuration: String?
     /// When the session was recorded, from the file; `nil` when the file does not say.
     public var date: Date?
     public var car: String
@@ -139,6 +142,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         return URL(fileURLWithPath: file.path).deletingPathExtension().lastPathComponent
     }
 
+    /// The circuit and the configuration driven: "Sonoma Raceway — Club Course" (#549).
+    public var circuitTitle: String { CircuitKey.title(title, configuration: configuration) }
+
     /// The year the session was driven, for grouping; `nil` when the date is unknown.
     public var year: Int? { date.map { Calendar(identifier: .gregorian).component(.year, from: $0) } }
 
@@ -169,7 +175,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
+        case id, file, circuitID, trackName, configuration, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
         case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
     }
@@ -180,6 +186,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         file = try c.decode(SourceFile.self, forKey: .file)
         circuitID = try c.decodeIfPresent(String.self, forKey: .circuitID)
         trackName = try c.decodeIfPresent(String.self, forKey: .trackName)
+        configuration = try c.decodeIfPresent(String.self, forKey: .configuration)
         date = try c.decodeIfPresent(Date.self, forKey: .date)
         car = try c.decodeIfPresent(String.self, forKey: .car) ?? ""
         driver = try c.decodeIfPresent(String.self, forKey: .driver) ?? ""

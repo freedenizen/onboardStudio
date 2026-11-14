@@ -92,6 +92,7 @@ public enum LogbookEditName {
         if old.notes != new.notes { changed.append("Notes") }
         if old.conditions != new.conditions { changed.append("Conditions") }
         if old.circuitID != new.circuitID || old.trackName != new.trackName { changed.append("Circuit") }
+        if old.configuration != new.configuration { changed.append("Configuration") }
         if old.tags != new.tags { changed.append("Tags") }
         if old.trackDayID != new.trackDayID { changed.append("Track Day") }
         return changed.count == 1 ? "Change \(changed[0])" : "Change Session"

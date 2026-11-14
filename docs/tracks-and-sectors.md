@@ -282,6 +282,28 @@ So the ranked plan is: pinned names (#548), naming from the circuit card with nu
 (#550), configurations so each layout keeps its own (#549), then the bundled contributed library
 and agreement across laps. Nothing here fetches anything at run time.
 
+### A circuit's configurations (#549)
+
+Most circuits run more than one layout. They share some corners and not others, number their turns
+differently and usually have different start/finish lines, so a lap of one says nothing about a
+lap of another. Nothing published identifies one: Wikidata has layout items for about fifteen F1
+circuits' historical layouts, without geometry, and a logger file carries a track name at most.
+
+So a configuration is a **name the driver gives**, and it is part of the **key** everything about a
+circuit is kept under: `Q112563` is Sonoma's usual layout, `Q112563|Club Course` its club course
+(`CircuitKey`). The track definition, the Logbook's circuit row and card, the personal best,
+Trends, goals and the plan all go by that key, so they split by configuration without each knowing
+about configurations. The circuit's own key with no configuration is the usual layout — every
+session, definition, goal and plan kept before configurations existed — so nothing moved.
+
+**Which configuration a session drove is read from where its turns are** (`ConfigurationMatch`):
+the session's best lap's corners against each configuration's pinned turn names, scored as the
+turns matched out of the larger of the two counts. Above 75 %, and clear of every other
+configuration, it is filed there; otherwise on the usual layout, where it would have gone before,
+for the driver to move. Configurations with no named turns cannot be told apart and are never
+chosen by themselves. A track day stays at the circuit: which configuration was driven is each
+session's.
+
 ### The corner on the start/finish line
 
 Numbering the corners of a square found three of four. The missing one sat on the start/finish

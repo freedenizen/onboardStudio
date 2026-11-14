@@ -43,8 +43,7 @@ struct LogbookTable<RowMenu: View>: View {
                 Image(systemName: "star").foregroundStyle(.secondary)
                     .accessibilityLabel("Former personal best")
                     .help("A personal best at this circuit when it was driven, since beaten")
-            case nil:
-                EmptyView()
+            case nil: EmptyView()
             }
         }
         .width(min: 28, ideal: 32)
@@ -53,7 +52,7 @@ struct LogbookTable<RowMenu: View>: View {
             Text(entry.date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "—")
         }
         .width(min: 130, ideal: 160)
-        TableColumn("Circuit", value: \.title).width(min: 110, ideal: 150)
+        TableColumn("Circuit", value: \.circuitTitle).width(min: 110, ideal: 150)
         TableColumn("Car", value: \.car).width(min: 70, ideal: 100)
         TableColumn("Laps", value: \.completeLapCount) { entry in Text("\(entry.completeLapCount)") }
             .width(min: 40, ideal: 50)
@@ -129,6 +128,7 @@ struct LogbookDetail: View {
     let save: (LogbookEntry) -> Void
     /// The cars the logbook names, for correcting this session's without retyping (#453).
     var knownCars: [String] = []
+    var knownConfigurations: [String] = []  // named at the session's circuit (#549)
     /// The personal best at this session's circuit (#351) and how many track days the logbook has
     /// there (#426).
     var personalBest: PersonalBest?
@@ -143,13 +143,14 @@ struct LogbookDetail: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.title).font(.title3.weight(.semibold))
+                    Text(entry.circuitTitle).font(.title3.weight(.semibold))
                     Text(subtitle).font(.callout).foregroundStyle(.secondary)
                 }
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
                     // What was driven and by whom first, as the day's header has them, in the same
                     // columns as the numbers under them (#453).
                     SessionCarFields(entry: entry, knownCars: knownCars, save: save)
+                    SessionConfigurationField(entry: entry, known: knownConfigurations, save: save)
                     row(
                         "Best lap", entry.bestLap.map { TimeParsing.lapTimeString($0) },
                         detail: entry.bestLapNumber.map { "lap \($0)" })

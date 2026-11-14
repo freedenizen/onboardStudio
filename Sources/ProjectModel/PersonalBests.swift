@@ -85,7 +85,8 @@ public enum PersonalBests {
             let key = LogbookFilter.circuitKey(of: entry)
             // No circuit, no personal best there (#455).
             guard !key.isEmpty else { continue }
-            for scope in [key, key + "|" + entry.car.lowercased()]
+            // Not "|", which joins a circuit and its configuration (#549).
+            for scope in [key, key + "\u{1E}" + entry.car.lowercased()]
             where best < bestSoFar[scope]?.seconds ?? .infinity {
                 bestSoFar[scope] = (best, entry.id)
                 setters.insert(entry.id)

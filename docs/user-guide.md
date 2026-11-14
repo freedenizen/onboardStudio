@@ -232,6 +232,16 @@ knows a click away, and keeps what you put there whatever the day says later. A 
 corrected in its header's **Circuit** row ([Starting a day](#starting-a-day)), a car's name with
 **Rename…** in the [garage](#the-garage-your-cars).
 
+**Configuration.** Most circuits run more than one layout — a long course and a club course, with
+or without a chicane — and a lap of one says nothing about a lap of another. A session at a circuit
+has a **Configuration** field under its car and driver: type the layout it drove, *Club Course*, or
+choose one already named there from the menu beside the field; leave it empty for the circuit's
+usual layout. Each configuration is a circuit of its own under **Circuits** — *Sonoma Raceway —
+Club Course* — with its own card, personal best, Trends, goals and plan, and its own start/finish,
+sectors and turn names. Once a configuration's turns are named, a file added at that circuit is
+filed under the configuration whose turns it drives; one that matches none goes on the usual layout,
+for you to move. Sessions added before configurations existed are on the usual layout, as they were.
+
 Everything you change in the Logbook can be taken back: **Edit ▸ Undo** names what it will undo —
 *Undo Remove 3 Sessions*, *Undo Move Session*, *Undo Change Car*, *Undo Add Files* — and **Redo**
 does it again. So nothing asks before it removes: a session, a day or a car taken out by mistake is
@@ -610,8 +620,12 @@ corner", so a lap with an extra kink does not move 3a onto turn 4. A corner you 
 named ones is not numbered on the map, and Coaching and Trends call it by the turns either side of
 it, such as *3a–4*. Clear a name to take it off a turn.
 
+A circuit with more than one layout keeps each one's settings apart: the **Configuration** field
+under the circuit says which this file drove, and choosing one uses the start/finish, sectors and
+turn names saved for it ([Configuration](#putting-mistakes-right) in the Logbook).
+
 **Save Start/Finish, Sectors and Corner Names for This Track** files them all against that
-circuit. The next data file you *add* from the same place starts with them already
+circuit and configuration. The next data file you *add* from the same place starts with them already
 filled in, so you set a venue up once rather than once a session. Opening a project you saved
 earlier never applies them: a project renders the way you left it, whatever the app has learned
 since.

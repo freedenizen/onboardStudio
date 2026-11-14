@@ -293,7 +293,8 @@ why it is only the fallback. `onboard sync --dump signals.csv` writes the signal
 
 One JSON file per session in `~/Library/Application Support/OnboardStudio/Logbook` (#345), written
 by `Logbook.write` with ISO 8601 dates and sorted keys: `id`, `file` (`path`, `bookmark` as
-base64, `contentHash` SHA-256 hex, `byteCount`, `importerID`), `circuitID`, `trackName`, `date`,
+base64, `contentHash` SHA-256 hex, `byteCount`, `importerID`), `circuitID`, `trackName`,
+`configuration` (the layout driven, #549; absent = the circuit's usual layout), `date`,
 `car`, `driver`, `laps` (`[{ number, seconds, isComplete }]`), `bestLap`, `bestLapNumber`,
 `optimalLap`, `fastestRollingLap`, `topSpeed` (m/s), `distanceMeters` (#355), `notes`, `tags`, `conditions`
 (`{ weather: sunny|cloudy|overcast|rain|mixed, track: dry|damp|wet|drying|greasy, ambientCelsius, tyres, setup }`,
@@ -304,7 +305,7 @@ every key optional, #348), `projects` and `exports` (`[{ path, name }]`, #349), 
 An exported logbook (#350) is a folder of these files plus `garage.json` and, when asked, `Files/`
 with each session's data file as `<hash prefix>-<original name>`; the written entries' `file.path`
 is then relative to the folder. Only `file` is required to read one. `garage.json` in the
-same folder is `[{ id, name, notes }]`, and `goals.json` (#461) is `[{ id, circuitKey, target, car,
+same folder is `[{ id, name, notes }]`, and `goals.json` (#461) is `[{ id, circuitKey (`Q…|Club Course` for a configuration, #549), target, car,
 by, set }]`, `target` being one of `lapTime { seconds }`, `consistency { seconds }`,
 `cornerTime { label, seconds }` or `cornerSpeed { label, metersPerSecond }`; an import adds the
 goals the logbook does not have, by id. Design in [logbook.md](logbook.md).

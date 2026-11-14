@@ -21,6 +21,7 @@ extension DataInputInspector {
                         Text(confidence(match)).font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                configurationRow
                 if !match.isConfident {
                     Text("Another circuit is about as close, so this is a guess. Correct it below if it is wrong.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -28,7 +29,7 @@ extension DataInputInspector {
                 Button("Save Start/Finish, Sectors and Corner Names for This Track") {
                     editor.saveTrackDefinition(for: input.id)
                 }
-                if editor.trackLibrary.definition(id: match.circuit.id) != nil {
+                if let key = editor.trackKey(for: input.id), editor.trackLibrary.definition(id: key) != nil {
                     Button("Forget Saved Settings") { editor.forgetTrackDefinition(for: input.id) }
                     Text("A file added at this circuit starts with these — a project already saved is untouched.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -48,6 +49,45 @@ extension DataInputInspector {
             sharingRow
         }
         cornerSection
+    }
+
+    /// Which of the circuit's configurations the file drove (#549), with the ones already named.
+    @ViewBuilder var configurationRow: some View {
+        let known = editor.knownConfigurations(for: input.id)
+        LabeledContent("Configuration") {
+            HStack(spacing: 4) {
+                CommittingTextField(
+                    "The usual layout",
+                    text: Binding(
+                        get: { editor.configuration(for: input.id) ?? "" },
+                        set: { editor.setConfiguration($0, for: input.id) })
+                )
+                .accessibilityLabel("Configuration")
+                .accessibilityIdentifier("data.configuration")
+                if !known.isEmpty {
+                    Menu {
+                        ForEach(known, id: \.self) { name in
+                            Button(name) { editor.setConfiguration(name, for: input.id) }
+                        }
+                        if editor.configuration(for: input.id) != nil {
+                            Divider()
+                            Button("The Usual Layout") { editor.setConfiguration("", for: input.id) }
+                        }
+                    } label: {
+                        Label(
+                            "Configurations at This Circuit",
+                            systemImage: SessionConfigurationField.symbol)
+                    }
+                    .labelStyle(.iconOnly).fixedSize()
+                    .accessibilityLabel("Configurations at This Circuit")
+                    .help("A configuration already named at this circuit")
+                }
+            }
+        }
+        .help(
+            "Which layout of the circuit this file drove, such as Club Course. "
+                + "Each keeps its own start/finish, sectors and turn names."
+        )
     }
 
     /// Handing a track definition to another driver, and taking one.
