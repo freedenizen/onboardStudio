@@ -62,7 +62,9 @@ public struct CornerComparison: Sendable, Equatable, Codable {
             let end = bounds[.exit]?.upperBound ?? pair.reference.phaseEnd
             let cornerIndex = pair.reference.index
             return CornerComparison(
-                index: cornerIndex, label: cornerIndex < labels.count ? labels[cornerIndex] : "\(cornerIndex + 1)",
+                index: cornerIndex,
+                label: cornerIndex < labels.count && !labels[cornerIndex].isEmpty
+                    ? labels[cornerIndex] : "\(cornerIndex + 1)",
                 lap: pair.lap, reference: pair.reference, timeLost: delta.loss(from: start, to: end), phaseLoss: losses,
                 range: start...max(start, end))
         }

@@ -194,6 +194,22 @@ struct LogbookTrendsTests {
         let back = try Logbook.decoder.decode(LogbookEntry.self, from: try Logbook.encoder.encode(entry))
         #expect(back.corners == entry.corners)
     }
+
+    @Test func anEntrysCornersTakeThePinnedNamesOfTheirTurns() throws {
+        // #548: the names go to the turns where they were pinned, not to the first and second
+        // corners found, so naming only the second turn leaves the first called by its neighbours.
+        var session = try RaceRenderCSVImporter().importSession(at: Self.fixture, options: SessionBuilder.Options())
+        let best = try #require(LapDeltas.sessionBest(in: session))
+        let profile = try #require(LapProfile(lap: best, in: session))
+        let found = CornerDetector.corners(of: profile)
+        #expect(found.count == 2)
+        let second = try #require(found.last)
+        session.turnNames = [
+            TurnName(
+                label: "Hairpin", latitude: try #require(second.apexLatitude), longitude: second.apexLongitude ?? 0)
+        ]
+        #expect(LogbookEntry.cornerRecords(of: session).map(\.label) == ["Hairpin–Hairpin", "Hairpin"])
+    }
 }
 
 extension Double {

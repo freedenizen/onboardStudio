@@ -197,7 +197,7 @@ struct TrackMapDisplayTests {
         var params = TrackMapParams()
         params.showCornerNumbers = true
         let marks = renderer(params).marks
-        #expect(marks.labels.isEmpty)
+        #expect(marks.labels == marks.corners.indices.map { "\($0 + 1)" })
         // A count, deliberately: the circuit's own numbering is not derivable and Sonoma runs
         // 3, 3a, 4, 4a, so 1…N would be wrong if it claimed to be the real thing.
         #expect(marks.cornerLabel(0) == "1")
@@ -396,5 +396,25 @@ struct TrackMapDisplayTests {
             outputWidth: Int(size.width), outputHeight: Int(size.height), frameRate: 30, videoLayers: [],
             overlays: [renderer(params)])
         return try FrameCompositor(plan: plan).renderFrame(sources: [:], time: time)
+    }
+}
+
+/// Turn names pinned to their apexes (#548).
+extension TrackMapDisplayTests {
+    @Test func pinnedNamesNumberTheirTurnsAndAnUnnamedCornerIsNotNumbered() throws {
+        // #548: names pinned to three of the four corners, the third left unnamed among them.
+        var session = SectorMapSession.session
+        let reference = try #require(Sectors.referenceLap(in: session))
+        let found = CornerDetector.corners(of: reference, in: session)
+        #expect(found.count == 4)
+        session.turnNames = zip(["1", "2", "", "3"], found).compactMap { label, corner in
+            label.isEmpty
+                ? nil : TurnName(label: label, latitude: corner.apexLatitude ?? 0, longitude: corner.apexLongitude ?? 0)
+        }
+        var params = TrackMapParams()
+        params.showCornerNumbers = true
+        let marks = renderer(params, session: session).marks
+        #expect(marks.labels == ["1", "2", "3"])
+        #expect(marks.corners.count == 3)
     }
 }

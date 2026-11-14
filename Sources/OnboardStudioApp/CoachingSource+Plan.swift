@@ -31,15 +31,11 @@ extension LogbookCoachingSource {
 
     func savePlan(_ plan: NextSessionPlan) -> Bool {
         guard let circuit else { return false }
+        // Through the Logbook, so the circuit's card shows it at once and its Undo takes it back
+        // (#543): the Coaching window has no Undo of its own for a session.
+        let logbook = LogbookModel.shared
         do {
-            // A circuit planned for the first time keeps the plan alone: the logbook knows no
-            // start/finish or sectors to give it, and a definition without them does not change
-            // how the next file there is set up (`TrackDefinition.hasGeometry`).
-            try TrackLibrary.app.remember(plan, id: circuit.id) {
-                TrackDefinition(
-                    circuitID: circuit.id, name: circuit.name, latitude: circuit.latitude,
-                    longitude: circuit.longitude)
-            }
+            try logbook.savePlan(plan, for: circuit.id, name: "Make Plan", undo: logbook.windowUndo)
             return true
         } catch {
             message = "The plan could not be kept for \(circuit.name): \(error.localizedDescription)"
