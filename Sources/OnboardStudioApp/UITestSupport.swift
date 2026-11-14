@@ -230,6 +230,7 @@ struct UITestCommands: Commands {
             Button("Add Fixture Data (GPX)") { add(data: "track.gpx") }
             Button("Add Fixture Data (Coaching Laps)") { add(data: "coaching-laps.csv") }
             Button("Add Fixture Data (Autocross)") { add(data: "runs.d/autocross.vbo") }
+            Button("Add Fixture Data (Autocross, No Gates)") { add(data: "runs.d/autocross-no-gates.vbo") }
             // A folder dragged onto the window, which no test can drag (#466).
             Button("Drop Fixture Folder") {
                 if let folder = UITestSupport.fixtures { editor?.addDroppedFiles([folder]) }
@@ -241,6 +242,15 @@ struct UITestCommands: Commands {
                     editor.trackDayRequest = TrackDayRequest(urls: [folder])
                 } else {
                     LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [folder])
+                }
+            }
+            // An autocross timed in runs by its own gates, into the Logbook on its own (#552).
+            Button("Add Fixture Autocross to Logbook") {
+                guard let file = UITestSupport.fixture("runs.d/autocross.vbo") else { return }
+                if let editor {
+                    editor.trackDayRequest = TrackDayRequest(urls: [file])
+                } else {
+                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [file])
                 }
             }
             // Into the day chosen in the Logbook window's sidebar (#393).

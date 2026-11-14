@@ -17,6 +17,7 @@ extension Logbook {
             let old = entry.trackDayID.flatMap { id in sources[id] ?? day(id: id) }
             var moved = entry
             moved.trackDayID = target.id
+            moved.takePenalty(from: target)
             if !target.car.isEmpty, entry.car == (old?.car ?? "") { moved.car = target.car }
             if !target.driver.isEmpty, entry.driver == (old?.driver ?? "") { moved.driver = target.driver }
             let ownCircuit = entry.circuitID != nil || (entry.trackName ?? "") != (old?.trackName ?? "")

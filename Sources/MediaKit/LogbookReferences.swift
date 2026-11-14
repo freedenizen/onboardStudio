@@ -43,9 +43,7 @@ public enum LogbookReferences {
     /// gone or unreadable.
     public static func load(_ entry: LogbookEntry) -> TelemetrySession? {
         guard let url = entry.resolveFile() else { return nil }
-        var settings = DataInputSettings()
-        settings.importerID = entry.file.importerID
-        return try? ProjectCompiler.importData(at: url, settings: settings)
+        return try? ProjectCompiler.importData(at: url, settings: entry.readingSettings)
     }
 
     /// Reads again the files of the entries that were read before a correction to their laps

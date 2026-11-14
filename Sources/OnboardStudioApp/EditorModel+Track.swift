@@ -45,11 +45,7 @@ extension EditorModel {
     /// A gate as the lap detector wants it: the middle of the line, and how far it reaches either
     /// side. The heading is deliberately left unset — a gate says where the line is and not which
     /// way the car crosses it, and the two perpendiculars are equally consistent with it.
-    static func lapLine(from gate: LapGate) -> LapLineSpec {
-        LapLineSpec(
-            latitude: gate.centreLatitude, longitude: gate.centreLongitude,
-            halfWidthMeters: gate.halfWidthMeters)
-    }
+    static func lapLine(from gate: LapGate) -> LapLineSpec { LapLineSpec(gate: gate) }
 
     /// Offers the line the data itself suggests, so a session opens with something workable rather
     /// than with nothing.
@@ -77,6 +73,33 @@ extension EditorModel {
         }
         statusMessage = suggestion.summary
         return true
+    }
+
+    /// Offers the start and finish of a point-to-point course the driving suggests (#552): the
+    /// start where runs set off from a standstill, the finish where they ended. The input is then
+    /// timed in runs between them, as one step of Undo called `name`.
+    ///
+    /// Returns whether there was anything to suggest, so a caller can fall back on something else.
+    @discardableResult
+    func suggestRunLines(for id: InputID, name: String = "Suggest Start and Finish") -> Bool {
+        guard let session = sessions[id], let suggestion = RunLineFinder.suggest(in: session) else {
+            statusMessage = "No run in this file sets off from a standstill, so there is no start or finish to suggest."
+            return false
+        }
+        updateInput(id, name: name) {
+            guard case .data(var settings) = $0.kind else { return }
+            settings.lapLine = Self.lapLine(from: suggestion.start)
+            settings.runFinishLine = Self.lapLine(from: suggestion.finish)
+            $0.kind = .data(settings)
+        }
+        statusMessage = suggestion.summary
+        return true
+    }
+
+    static func lapLine(from line: FinishLine) -> LapLineSpec {
+        LapLineSpec(
+            latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees,
+            halfWidthMeters: line.halfWidthMeters, headingToleranceDegrees: line.headingToleranceDegrees)
     }
 
     /// Writes this input's circuit, line, sectors and corner names to a file to hand to someone.

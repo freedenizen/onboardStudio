@@ -21,7 +21,7 @@ extension EditorModel {
         do {
             let request = ProjectLogbook.Request(
                 url: url, session: session, importerID: settings.importerID, circuitID: circuit(for: id)?.circuit.id,
-                car: project.details.car, driver: project.details.driver)
+                car: project.details.car, driver: project.details.driver, runLines: RunLines(settings))
             let enrolment = try ProjectLogbook.enter(request, into: logbook)
             // Bookkeeping, not an edit the user made: no undo step of its own.
             document.apply(nil, name: "Enter in Logbook") { project in
@@ -39,6 +39,26 @@ extension EditorModel {
             statusMessage = "Could not enter the data file in the logbook: \(error.localizedDescription)"
         }
         recordProjectInLogbook()
+    }
+
+    /// Called after every compile: a data file the driver has since timed in runs, or moved the
+    /// lines of, or put back to laps, is read the same way in the logbook (#552), so its entry lists
+    /// the runs the project shows and is on the course they were driven on. Nothing happens while
+    /// the two agree, which is every time a saved project is opened.
+    func syncRunsToLogbook() {
+        let logbook = AppLogbook.shared
+        var changed = false
+        for input in project.dataInputs {
+            guard let settings = input.dataSettings, let id = settings.logbookEntryID, let session = sessions[input.id],
+                var entry = logbook.entry(id: id)
+            else { continue }
+            let lines = RunLines(settings)
+            guard entry.runLines != lines else { continue }
+            entry.readRuns(lines, of: session, among: logbook.entries())
+            try? logbook.save(entry)
+            changed = true
+        }
+        if changed { LogbookModel.shared.reload() }
     }
 
     /// The car and the driver the logbook already knows, into blank details.

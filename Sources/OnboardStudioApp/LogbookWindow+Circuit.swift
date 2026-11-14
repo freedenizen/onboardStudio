@@ -71,7 +71,9 @@ extension LogbookWindow {
             title: title, brief: brief, plan: model.plans[key], canPlan: LogbookModel.canPlan(key),
             showsNewDay: showsNewDay,
             newDay: {
-                model.newDayCircuit = key
+                // A course's next day is at its venue: a day is at a place, not on a layout (#552).
+                let course = model.entries.first { $0.course != nil && LogbookFilter.circuitKey(of: $0) == key }
+                model.newDayCircuit = course.map(LogbookFilter.venueKey(of:)) ?? key
                 model.newDayRequested = true
             },
             makePlan: lastVisitSession(at: key).map { entry in { coach(entry) } },

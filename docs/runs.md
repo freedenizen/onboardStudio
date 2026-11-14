@@ -1,6 +1,9 @@
 # Runs: autocross, hill climb and stages (#552) — design
 
-**Status:** step 1 of the build order (runs in the project) is built; steps 2–4 are to come.
+**Status:** built, in four steps: runs in the project, runs and courses in the Logbook, cones and
+DNF, and suggested lines (`RunLineFinder`). A finish placed by dragging it on the map, as the start
+can be, and timing a Logbook session in runs without a project are not done. How step 2 keeps courses is in
+`docs/logbook.md`, *Runs and courses*.
 
 Draft of 2026-11-13. The decisions it builds on were made by the user on 2026-11-13. A circuit lap
 starts and ends at one line. A **run** starts at one line and ends at another: an autocross, a hill
@@ -16,7 +19,7 @@ deltas, the Timer, sectors, the optimal lap, and *Every lap, one file each*.
    today. A loop course timed from a standing start puts both lines in one place: the run ends at
    the line's last crossing before the car stops. A VBO file that carries `Start` and `Finish`
    gates turns Runs on and places both lines by itself (the status bar says so), just as its
-   start/finish and splits are used today. Suggesting the lines from the data is step 4.
+   start/finish and splits are used today. Choosing Runs suggests both lines from the driving.
 2. **The runs.** The timeline's data bar divides at each run's start and finish, and the bar is
    dimmed between runs. Runs are numbered 1, 2, 3. ⌥↑ / ⌥↓ go from run to run, and the status line
    reads "Run 3 — 52.341". A run that never reached the finish is shown as **DNF**.
@@ -67,35 +70,41 @@ deltas, the Timer, sectors, the optimal lap, and *Every lap, one file each*.
 - Corner detection already treats an open path as open (`CornerDetector`, `isClosed`). Sectors at
   *equal distances* work on a run unchanged.
 
-### Suggesting the lines (`StartFinishFinder`)
+### Suggesting the lines (`RunLineFinder`)
 
-- **Start:** where runs launch from a standstill. That is the points where speed rises from under
-  5 km/h to over 30 km/h within 5 s, clustered. The line goes through the cluster's centre, across
-  the launch direction.
-- **Finish:** the last point all runs pass at speed before they slow to a stop. A single run uses
-  the point where speed falls below 40 % of its top speed for good.
-- **Trust.** Both say where they came from and are meant to be checked, as the start/finish
-  suggestion is today. The thresholds are parameters, not constants spread through the code.
+- **Start:** where runs launch from a standstill — under 1.5 m/s, then over 8 m/s (about
+  30 km/h) within 8 s without standing still again. Rolling from the grid to the line is never that
+  quick. The launches within 25 m of most others are the start; the line goes through their centre,
+  across their mean heading.
+- **Finish:** for each launch, the last moment before the car next stands still that it was at half
+  its top speed of that run (one sample earlier, so the line is crossed rather than ended on). The
+  ends within 25 m of most others are the finish, so a run that went off course elsewhere is left
+  out, and one run is enough.
+- **Checked by timing.** The suggestion is kept only if its lines time at least one finished run,
+  and it says how many set off and how many finished.
+- **Trust.** Both are a few metres off the real lines: the start is where the car first moved, the
+  finish where it began to slow. The status line says to check them on the map. The thresholds are
+  `RunLineFinder.Options`.
+- **A fix it needed.** A start drawn where the car stood used to be crossed a sample before the
+  moving stretch began, and was missed. `RunDetector` now starts a stretch at the last standing
+  sample.
 
 ### Courses in the Logbook (`ProjectModel`)
 
-- `Logbook.courses: [RunCourse]` holds, for each course:
-  - an id, the venue key and a name;
-  - the start and finish lines;
-  - a reference path, one run's GPS resampled every 4 m, as the Replay track file is.
-- `LogbookEntry.courseID` links a session to its course.
-- **Matching.** A session matches a course when all of these hold:
-  - it is at the same venue (`LogbookFilter.circuitKey`);
-  - its start and finish lines are each within 15 m of the course's;
-  - the mean distance from its best run's path to the course path is under 5 m.
-
-  The best match wins. The thresholds are parameters with these defaults, to be checked on
-  synthetic layouts that differ by one gate.
-- **Keys.** For a session in runs, `circuitKey` becomes the course id. Personal bests, Trends,
-  goals, the circuit card and *Compare With ▸* key on it unchanged.
-- **Per-run fields.** `LapRecord` gains `cones: Int` and `dnf: Bool`, entered by the driver.
-  `dnf` is taken from detection at first. `TrackDay.penaltyPerCone` holds the penalty and defaults
-  to 2 s.
+- **As built:** a course is not a list of its own. Each session on it keeps its `CourseTag` (an id
+  and a name), its `runLines` and its best run's `coursePath`, so renaming a course or moving a
+  session between courses is an ordinary logbook edit that undoes as one. A new session matches
+  the course of the first entry whose lines are each within 15 m of its own and whose path is within
+  5 m on average, measured both ways; there is no venue test, because lines that close are at the
+  same venue.
+- **Keys.** For a session on a course, `circuitKey` is `course:<id>`. Personal bests, Trends,
+  goals, the circuit card and *Compare With ▸* key on it unchanged; `venueKey` is the circuit
+  without the course, for comparing a session with its track day.
+- **Per-run fields.** `LapRecord` gains `cones: Int` and `offCourse: Bool`, entered by the driver.
+  A run is a DNF when detection found no finish or the driver ticked it off course (the draft had
+  one `dnf` flag; two keep what detection found apart from what the driver said).
+  `TrackDay.penaltyPerCone`, 2 s when unset, is copied onto the day's sessions in runs, as a day's
+  car is, so an entry's best counts the same wherever it is read.
 - **Saving the course.** Venues are mostly not in the catalogue: there are no hill climbs in it, and
   car parks aren't circuits. They are named by hand, as a *No circuit* day is today.
   `TrackDefinition` gains `finish: LapLineSpec?`, so *Save … for This Track* keeps a hill climb's

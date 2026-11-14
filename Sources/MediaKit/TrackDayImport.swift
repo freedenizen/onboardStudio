@@ -244,9 +244,18 @@ public enum TrackDayImport {
                 options.ignoreFirstCrossings = line.ignoreFirstCrossings
                 if let again = try? candidate.importer.importSession(at: url, options: options) { session = again }
             }
+            // A file that recorded a start and a finish gate is a point-to-point course: read it
+            // again in runs between them (#552), as adding it to a project does.
+            let lines = RunLines(session.lapGeometry)
+            if let lines {
+                var settings = DataInputSettings(lapLine: lines.start, runFinishLine: lines.finish)
+                settings.importerID = candidate.id
+                if let again = try? ProjectCompiler.importData(at: url, settings: settings) { session = again }
+            }
             // As the file alone describes it; the day's circuit, car and driver come with the filing.
-            let entry = try LogbookEntry.make(
+            var entry = try LogbookEntry.make(
                 session: session, file: url, importerID: candidate.id, circuitID: match?.circuit.id)
+            if lines != nil { entry.readRuns(lines, of: session, among: logbook.entries()) }
             let reading = Reading(entry: entry, fileDriver: session.info.driverName)
             if batch.strays == .kept, let day = batch.day, let stray = Stray(reading, at: url, against: day) {
                 // A drive the logbook has from another file is that, not a file to ask about (#465).

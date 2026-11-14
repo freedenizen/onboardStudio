@@ -27,6 +27,9 @@ struct Probe: ParsableCommand {
         help: "With --lap-line as the start, time runs to this finish line: lat,lon[,heading[,halfWidthMeters]].")
     var finishLine: String?
 
+    @Flag(name: .long, help: "Suggest the start and finish of a point-to-point course from the driving.")
+    var suggestRuns = false
+
     @Option(name: .long, help: "Warm-up crossings to ignore before lap 1 (with --lap-line).")
     var ignoreFirst: Int = 0
 
@@ -124,7 +127,24 @@ struct Probe: ParsableCommand {
                     + "  → \(suggestion.laps) laps, lengths within "
                     + String(format: "%.1f%%", suggestion.spread * 100))
         }
+        if suggestRuns { printRunSuggestion(session) }
         if let at { printValues(session, at: at) }
+    }
+
+    /// The lines a point-to-point course's driving suggests (#552), as `--lap-line` and
+    /// `--finish-line` take them.
+    private func printRunSuggestion(_ session: TelemetrySession) {
+        guard let suggestion = RunLineFinder.suggest(in: session) else {
+            print("\nSuggested runs: none — no run sets off from a standstill.")
+            return
+        }
+        func text(_ line: FinishLine) -> String {
+            String(format: "%.6f,%.6f", line.latitude, line.longitude)
+                + (line.headingDegrees.map { String(format: ",%.0f", $0) } ?? "")
+        }
+        print(
+            "\nSuggested runs: --lap-line \(text(suggestion.start)) --finish-line \(text(suggestion.finish))"
+                + "  → \(suggestion.runs) runs, \(suggestion.finished) finished")
     }
 
     private func printHeader(
