@@ -46,8 +46,7 @@ public enum LogbookReferences {
     /// corners are read and coached by their names as they were when it was entered.
     public static func load(_ entry: LogbookEntry, tracks: TrackLibrary? = nil) -> TelemetrySession? {
         guard let url = entry.resolveFile() else { return nil }
-        var settings = DataInputSettings()
-        settings.importerID = entry.file.importerID
+        var settings = entry.readingSettings
         if let tracks, entry.circuitID != nil,
             let definition = tracks.definition(id: LogbookFilter.circuitKey(of: entry))
         {

@@ -30,6 +30,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Speed / heading from position, heading offset | ◐ | Derived speed/heading/distance; no heading offset field |
 | Calculated fields | ✅ | Expression language |
 | Lap detection (line by lat/lon or "position at this time", tolerances, ignore first N, sub-sample precision) | ✅ | Map pick, heading tolerance, half width, ignore-first-N, interpolated crossing |
+| Point-to-point runs (autocross, hill climb, stage) | ➕ | Not in RaceRender (TrackAddict's *Segment* mode): **Timing ▸ Runs** times each run from a start line to a separate finish line, runs told apart by the car stopping; a VBO file's finish gate does it on its own (#552) |
 | Data Sync Wizard | ✅ | Plus timestamp auto-sync and motion (audio) auto-sync, which RaceRender lacks |
 
 ## Display objects

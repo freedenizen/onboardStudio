@@ -51,7 +51,7 @@ extension LogbookFilter {
     ) -> [String] {
         guard !base.isEmpty else { return [] }
         let named =
-            entries.filter { baseCircuitKey(of: $0) == base }.compactMap(\.configuration)
+            entries.filter { venueKey(of: $0) == base }.compactMap(\.configuration)
             + definitions.filter { $0.circuitID == base }.compactMap(\.configuration)
         return Array(Set(named.map(CircuitKey.cleaned).filter { !$0.isEmpty }))
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }

@@ -180,7 +180,7 @@ extension TrackDayImport {
             if entry.circuitID == nil { entry.circuitID = day?.circuitID }
             // A day whose circuit was typed lends its name the same way (#455): the session was
             // listed under a circuit named after its file, on a day that said where it was.
-            if LogbookFilter.circuitKey(of: entry).isEmpty, let name = day?.trackName, !name.isEmpty {
+            if LogbookFilter.venueKey(of: entry).isEmpty, let name = day?.trackName, !name.isEmpty {
                 entry.trackName = name
                 tookDayCircuit = true
             }

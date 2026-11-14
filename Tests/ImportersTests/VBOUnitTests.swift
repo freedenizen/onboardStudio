@@ -190,6 +190,20 @@ struct VBOLapTimingTests {
         #expect(geometry.splits.first?.label == "Split 1")
         #expect(geometry.splits.last?.label.isEmpty == true, "a gate the logger named nothing")
         #expect(geometry.gates.last?.kind == .finish)
+        // A start that calls itself the finish too is a circuit's: the Finish gate does not make
+        // the file a point-to-point course (#552).
+        #expect(geometry.finish == nil)
+    }
+
+    @Test func aStartAndASeparateFinishAreAPointToPointCourse() throws {
+        let start = LapGate(
+            kind: .start, label: "Start", startLatitude: 0, startLongitude: 0, endLatitude: 0, endLongitude: 1)
+        let finish = LapGate(
+            kind: .finish, label: "Finish", startLatitude: 1, startLongitude: 0, endLatitude: 1, endLongitude: 1)
+        #expect(LapGeometry(gates: [start, finish]).finish == finish)
+        var both = start
+        both.label = "Start/finish"
+        #expect(LapGeometry(gates: [both, finish]).finish == nil)
     }
 
     @Test func aFileWithNoSectionCarriesNoGates() throws {

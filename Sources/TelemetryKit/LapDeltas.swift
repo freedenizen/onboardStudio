@@ -24,7 +24,7 @@ public enum LapDeltas {
         guard let longest = lengths.compactMap({ $0 }).max(), longest > 0 else { return laps }
         return zip(laps, lengths).map { lap, length in
             guard lap.isComplete, let length, length < longest * fullLapFraction else { return lap }
-            return Lap(number: lap.number, start: lap.start, end: lap.end, isComplete: false)
+            return lap.demoted
         }
     }
 
@@ -46,7 +46,8 @@ public enum LapDeltas {
         var timeDeltas: [Double] = []
         var speedDeltas: [Double] = []
         let speed = session[.speed]
-        for lap in session.laps {
+        // No delta while driving between runs (#552): it is not a lap of the course.
+        for lap in session.laps.listed {
             let end = lap.end ?? sessionEnd
             guard end > lap.start, let startDistance = distance.value(at: lap.start) else { continue }
             var index = distance.times.firstIndex(atOrAfter: lap.start)

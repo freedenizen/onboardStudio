@@ -17,7 +17,7 @@ public enum Diagnostics {
     static func imported(_ session: TelemetrySession, from url: URL) -> TelemetrySession {
         let summary =
             "\(url.lastPathComponent): \(session.info.sourceFormat), \(session.channels.count) channels, "
-            + "\(session.laps.count) laps, \(String(format: "%.1f", session.duration)) s"
+            + "\(session.laps.listed.count) laps, \(String(format: "%.1f", session.duration)) s"
         importing.info("Read \(summary, privacy: .public)")
         return session
     }

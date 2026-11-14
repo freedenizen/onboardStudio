@@ -290,13 +290,16 @@ public enum Sectors {
     /// because the trace on a real session is six figures of samples.
     public static func sectorIndices(at times: [Double], layout: SectorLayout, session: TelemetrySession) -> [Int?] {
         guard let distance = session[.distance] else { return [Int?](repeating: nil, count: times.count) }
+        // The driving between runs (#552) is in no sector; it stays in the list so the cursor
+        // still walks the session in order.
         let laps = session.laps.sorted { $0.start < $1.start }
         let lapStartDistances = laps.map { distance.value(at: $0.start) }
         var cursor = 0
         return times.map { time in
             // The trace is chronological, so the lap only ever moves forwards.
             while cursor < laps.count, (laps[cursor].end ?? .infinity) <= time { cursor += 1 }
-            guard cursor < laps.count, time >= laps[cursor].start, let start = lapStartDistances[cursor],
+            guard cursor < laps.count, laps[cursor].isListed, time >= laps[cursor].start,
+                let start = lapStartDistances[cursor],
                 let now = distance.value(at: time)
             else { return nil }
             return layout.sector(atDistanceIntoLap: max(0, now - start))
@@ -308,7 +311,7 @@ public enum Sectors {
         mode: SectorMode, session: TelemetrySession, cornerOptions: CornerDetector.Options = .init()
     ) -> SectorAnalysis? {
         guard let layout = layout(mode: mode, session: session, cornerOptions: cornerOptions) else { return nil }
-        let laps = session.laps.map {
+        let laps = session.laps.listed.map {
             LapSectors(lapNumber: $0.number, times: times(for: $0, layout: layout, session: session))
         }
         .filter { $0.times.contains { $0 != nil } }
@@ -320,7 +323,7 @@ extension SectorAnalysis {
     /// Where the car is at `time`: which sector, how long it has been in it, and what this lap's
     /// finished sectors took. `nil` outside every lap.
     public func status(at time: Double, session: TelemetrySession) -> SectorStatus? {
-        guard let lap = session.laps.lap(containing: time), let distance = session[.distance],
+        guard let lap = session.laps.lap(containing: time), lap.isListed, let distance = session[.distance],
             let into = LapComparison.distanceIntoLap(at: time, lap: lap, distance: distance)
         else { return nil }
         let index = layout.sector(atDistanceIntoLap: into)

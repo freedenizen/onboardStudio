@@ -74,7 +74,7 @@ final class DataBridge: NSObject, DataExports {
     }
 
     var laps: [[String: Any]] {
-        (context?.sampler?.session.laps ?? []).map { lap in
+        (context?.sampler?.session.laps.listed ?? []).map { lap in
             ["number": lap.number, "start": lap.start, "duration": lap.duration ?? NSNull()]
         }
     }

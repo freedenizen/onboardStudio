@@ -328,7 +328,7 @@ extension Render {
                 .eachLap(completeOnly: !includePartialLaps, slowerThanBest: skipSlowerThan.map { $0 / 100 }),
                 in: loaded, duration: compiled.duration)
             guard !eachLap.isEmpty else { throw ValidationError("No laps in the project's data match.") }
-            batch = eachLap.map { BatchFile(title: "Lap \($0.lap)", range: $0.range) }
+            batch = eachLap.map { BatchFile(title: $0.title, range: $0.range) }
         } else if let laps {
             let parts = laps.split(separator: ":").compactMap { Int($0) }
             guard parts.count == 2 else { throw ValidationError("--laps expects first:last, e.g. 2:4.") }

@@ -76,7 +76,7 @@ public struct StatCardRenderer: OverlayDrawing {
             return sessionRows(SessionStats(session: session))
         case .lapAtPlayhead:
             let inputTime = context.inputTime(time)
-            guard let lap = session.laps.first(where: { $0.contains(inputTime) }) else {
+            guard let lap = session.laps.first(where: { $0.isListed && $0.contains(inputTime) }) else {
                 return sessionRows(SessionStats(session: session))
             }
             return lapRows(SessionStats(lap: lap, in: session), lapNumber: lap.number)

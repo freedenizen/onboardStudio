@@ -223,6 +223,29 @@ with no sessions, says so, and **Remove from Garage** takes it out. A car still 
 session cannot be removed. A project's **Details ▸ Car** offers the garage's cars from the menu
 beside the field.
 
+### Runs and courses
+
+An autocross, a hill climb or a stage is a session of **runs**, from a start line to a finish
+line, rather than laps ([Runs](#runs-autocross-hill-climbs-and-stages)). A Racelogic VBO file that
+recorded a start and a finish gate goes into the Logbook in runs as it is; any other file is timed
+in runs by setting it to Runs in a project, and its session in the Logbook follows. Such a session
+lists **Runs**, with **DNF** beside one that never reached the finish, and its best and optimal
+*run*; it has no fastest rolling lap.
+
+Runs are kept on a **course**. A hill climb is the same road every visit, while an autocross car
+park is a new layout every time the cones move, so a personal best is only worth comparing with
+the same course. A session goes onto the course of an earlier one when its start and finish lines
+are where that one's were and its runs followed the same path; otherwise it starts a new course,
+named for its day, *Course of 13 Nov 2026*. The course is listed under **Circuits** in the sidebar
+as the venue and the course (*Lot 4 – Course of 13 Nov 2026*), with its own personal best, Trends,
+goals and card, apart from the venue's other courses.
+
+In a session's detail, **Course** names it: type a name and Return renames the course for every
+session driven on it. The button beside it puts a wrong match right: **Same Course as ▸** another
+course the logbook has (those at the same venue first), or **New Course** for a course of its own.
+Each is one step of Edit ▸ Undo. **New Track Day Here…** on a course's card begins the day at its
+venue.
+
 ### Putting mistakes right
 
 The day's car and driver are its sessions' too: change one in the header and every session that
@@ -234,7 +257,8 @@ corrected in its header's **Circuit** row ([Starting a day](#starting-a-day)), a
 
 **Configuration.** Most circuits run more than one layout — a long course and a club course, with
 or without a chicane — and a lap of one says nothing about a lap of another. A session at a circuit
-has a **Configuration** field under its car and driver: type the layout it drove, *Club Course*, or
+timed in laps has a **Configuration** field under its car and driver (a course timed in runs is a
+layout of its own already, and has none): type the layout it drove, *Club Course*, or
 choose one already named there from the menu beside the field; leave it empty for the circuit's
 usual layout. Each configuration is a circuit of its own under **Circuits** — *Sonoma Raceway —
 Club Course* — with its own card, personal best, Trends, goals and plan, and its own start/finish,
@@ -934,6 +958,29 @@ Laps that fall past the end of the video cannot be reached — the timeline ends
 does. The bar ends there too: a log that runs on after the camera stopped, or one chapter of a
 longer recording, shows the part of the file that the picture covers, with its laps under the
 times on the ruler.
+
+#### Runs: autocross, hill climbs and stages
+
+A circuit is timed in laps, from one line round to the same line. An autocross, a hill climb or a
+rally stage is timed in **runs**, from a start line to a different finish line. Select the data
+file and, under **Laps** in the inspector, set **Timing** to **Runs**. Both lines are put where the
+preview is; move each with **Use Current Preview Position as Start** and **…as Finish**, or type
+where it is, which way it is crossed and how wide it is. A Racelogic VBO file that recorded a start
+and a finish gate is timed in runs as soon as it is added.
+
+Runs are told apart by the car **stopping** between them, as it does when it is staged at the start
+and after it slows down past the finish, so a course may pass through either line on the way round:
+a run lasts from its first crossing of the start to its last crossing of the finish before the car
+next stops. Each line counts only the way the course crosses it, so the drive back down a hill climb
+is not a run. A run that never reached the finish is listed as **DNF**.
+
+The inspector lists every run with its time. On the timeline the driving between runs is shaded
+and unnumbered, **⌥↑** and **⌥↓** go from run to run (*Run 2 — 0:51.97*), a Timer showing the
+current lap reads **RUN**, and the export sheet offers **Runs** and **Every run, one file each**
+(*Autocross – Run 2.mp4*), finished runs only unless you say otherwise. Compare Laps and the Coaching
+window list runs too; the fastest rolling lap is not offered, because an open course has nothing to
+roll into. **Timing ▸ Laps** goes back to laps, and Edit ▸ Undo undoes either choice. The session's
+entry in the Logbook follows, on its course ([Runs and courses](#runs-and-courses)).
 
 #### Sectors
 

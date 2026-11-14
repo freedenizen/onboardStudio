@@ -4,9 +4,10 @@ CSV, driven fast, slow, fast, fast, so the Coaching window has corners, a best l
 to say. The geometry and the driving are the ones in Tests/TelemetryKitTests/CoachingFixture.swift
 (straights 400 m, bends of radius 60 m, 40 m/s on the straights, constant-deceleration stops to a
 minimum near each apex), so the numbers the window shows are the ones the unit tests assert.
-Also writes coaching-laps-at-circuit.csv: the same laps placed at the catalogue's coordinate for
-Thunderhill Raceway Park, so the circuit is recognised and a session can be filed under one of its
-configurations (#549). Deterministic: run it again and the files do not change."""
+Also writes circuit.d/coaching-laps-at-circuit.csv: the same laps placed at the catalogue's
+coordinate for Thunderhill Raceway Park, so the circuit is recognised and a session can be filed
+under one of its configurations (#549). It is in a folder with an extension, which a whole-folder
+import skips like a package, so the UI tests that add every fixture as a track day are unchanged. Deterministic: run it again and the files do not change."""
 import math
 import os
 
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     main()
     # Thunderhill Raceway Park's coordinate in TelemetryKit's circuits.csv (Wikidata, CC0).
     main(
-        origin=(39.54033, -122.33069), name="coaching-laps-at-circuit.csv",
+        origin=(39.54033, -122.33069), name="circuit.d/coaching-laps-at-circuit.csv",
         note="Placed at the catalogue's Thunderhill Raceway Park so the circuit is recognised (#549), "
         "and driven in another order so the logbook does not take it for the same drive.",
         drivings=[FAST, FAST, SLOW, FAST])

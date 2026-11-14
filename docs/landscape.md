@@ -6,7 +6,10 @@ next.
 
 Surveyed 2026-09-19. Claims carry sources; anything that could not be confirmed says so. The
 "Onboard Studio" column and the candidate list were brought up to date on 2026-09-23, at v0.24.0
-(#242); the survey itself was not repeated.
+(#242). On 2026-11-13, at v0.36.0, TrackAddict and the analysis side of its peers were surveyed again,
+with trackdayanalysis.com and a wider search for what track-day drivers ask for. That survey is in
+[Analysis tools and drivers' asks](#analysis-tools-and-drivers-asks-2026-11-13), and the gaps it
+found are filed as #552–#563.
 
 ## 3D replay sites
 
@@ -58,8 +61,16 @@ feature is a fully automatic overlay of performance numbers on a phone clip; nea
 
 **TrackAddict** (HP Tuners) — phone capture designed to hand off to RaceRender. Speed/RPM/G-force
 gauges, track map, driving-line analysis, run comparison, predictive timing, sector splits,
-theoretical lap. Autocross, rally, drift and drag modes besides circuit.
-([Features](https://racerender.com/TrackAddict/Features.html))
+theoretical lap. Five track modes: *Circuit* (one start/finish), *Segment* (separate start and
+finish, used for autocross, rally and drift, results listed as runs), *Drag Race* (run time, splits,
+trap speed), *4x4 Trail* (pitch and roll) and *Raw Data*. A 0–60 / 0–100 time appears whenever a
+session starts from a stop. The lap list puts sector times under each lap with the fastest in bold.
+A missed split reads 0.000. Shares data as CSV, GPX, KML or VBO. Reviews complain about export and
+lap detection (a lost start/finish marker), and ask for overlay-only export, play all laps in
+sequence, and a brake-pressure channel. Onboard Studio already has all three of those asks.
+([Features](https://racerender.com/TrackAddict/Features.html),
+[Getting Started](https://racerender.com/TrackAddict/docs/GettingStarted.html),
+[App Store](https://apps.apple.com/us/app/trackaddict/id632355692))
 
 **Harry's LapTimer** — overlay rendered as a separate export step; multi-lap ranges, intro/extro.
 Source of two of the clearest validated gaps above: matte export and sync drift. Reviewed as
@@ -94,6 +105,70 @@ Recorded here only so it is not mistaken for a comparable product. Its "root-cau
 slow exit attributed to a braking error two corners earlier — is an interesting UX pattern, nothing
 more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 
+## Analysis tools and drivers' asks (2026-11-13)
+
+A second pass, at v0.36.0, looking at how other tools let a driver *review* a session rather than
+render one. Sources are web pages and forum threads. Reddit returned nothing to the search, so
+forum evidence is from Rennlist, Miata.net and Grassroots Motorsports.
+
+**trackdayanalysis.com** — the closest competitor found to the Logbook and Coaching half of the
+app. A free web app built by an HPDE driver and SCCA chief instructor. You drop a file (AiM XRK and
+CSV, MoTeC, RaceChrono, Harry's VBO, Catalyst CSV) and see it with no account. It finds corners and
+reads brake point, minimum speed, throttle pick-up, trail braking and combined-G use per corner. It
+has sectors with a theoretical best, a friction circle, and linked panels where hovering a corner
+on the map highlights it everywhere. *Track Difference* is a ribbon on the circuit showing who is
+ahead. Its 3D replay takes up to four laps, and *Head-to-Head* compares up to four drivers corner by
+corner. A Progress page tracks best lap, consistency, grip used, smoothness and coasting over time,
+filtered by car and by conditions. It fills in each session's weather and merges an ECU CSV by
+cross-correlating RPM. With an account it adds sharing, comments pinned to a corner, a leaderboard,
+a virtual dyno and a car-health check.
+([analysis](https://trackdayanalysis.com/analysis.html),
+[progress](https://trackdayanalysis.com/progress.html), [FAQ](https://trackdayanalysis.com/faq.html))
+
+**Peers' review screens.** Racelogic Circuit Tools opens on the fastest lap and adds a second, with
+side-by-side video bordered green and red. Its v3.2 *Insights* reads grip used corner by corner
+against a target, which comes closest to the Coaching window. AiM Race Studio 3 has Split, Channels
+and Track reports, scatter and histograms. MoTeC i2 has overlaid laps with a variance trace, a
+time report, and a Track Report that puts statistics on the map. RaceChrono's 2025 analysis screen
+has an X/Y graph and the map line coloured by any channel. Harry's LapTimer has histograms, a G-G
+chart with two-cursor sections, and a live overlay player. Garmin Catalyst gives three
+opportunities on a segmented map with clips of the same corner across laps. Its *True Optimal Lap*
+is criticised for hiding which laps it spliced and for letting no lap be left out.
+
+**Newer tools.** Laptura (stacks sessions to show which corners got faster), Laptica (AI coach with
+setup management), LapSmart (sends your data for a human review), SoloStorm, AutoX Data Logger and
+ConeMaster (autocross run comparison and cone maps), and OpenLap (a GPL desktop overlay app with a
+reference lap and live delta, the nearest open-source rival to the editor). AimMac is a native Mac
+reader of AiM data with maths channels; it was not examined.
+
+**What drivers ask for**, by how often it came up:
+
+1. Video first, with a few numbers on it, rather than raw graphs. The editor and the Coaching
+   window's *Watch* already lead with this.
+2. One thing to work on, not every channel. Novices are told to pick one focus for the next
+   session. The walkthrough and the plan already do this.
+3. Whether phone GPS can be trusted. Opinion swings from "garbage" to "within 0.01 s of the
+   transponder" because nothing tells the driver which case they are in (#555).
+4. Comparison with a reference: their best, earlier against later in the day, a friend's or an
+   instructor's lap. Covered by Coaching, Compare Laps and Trends.
+5. Whether a tyre, pressure or setup change helped (#559).
+6. Autocross runs, cone penalties and run against run (#552).
+
+**Not found anywhere surveyed:** a logbook of days, sessions and cars; per-circuit goals; a season
+summary; a next-session plan carried to the circuit. These remain Onboard Studio's own.
+
+**Looked at and not filed:**
+
+- `Homan13/hpde-analytics-cli` turned out to be a MotorsportsReg registration-report tool, with no
+  telemetry, so it offers nothing here.
+- Comments, leaderboards, following other drivers, and send-for-review need a backend (see
+  [Out of scope](#out-of-scope)). A file to hand to a friend is #563.
+- Live tools (RaceVoice, Runtime Racing, Apex Pro's lights, TrackAddict's live telemetry and
+  auto-start) are out of scope.
+- The virtual dyno, car-health rules on engine channels, and a brake-balance worksheet are
+  engineering tools, not driver coaching.
+- TrackAddict's 4x4 Trail mode is off-road pitch and roll, outside the track-day audience.
+
 ## Overlay elements by how widely supported they are
 
 | Support | Element | Onboard Studio |
@@ -113,6 +188,10 @@ more. ([tracktitan.io](https://www.tracktitan.io/overlay))
 | Niche | Shift lights | Covered by Indicator lights and segmented Bars |
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
+| Common | Track line coloured by any channel (speed, brake, throttle, G) | No — by sector or delta only (#561) |
+| Moderate | Friction-circle / combined-G use read per corner | No — the G-force object draws it, nothing reads it (#558) |
+| Moderate | Point-to-point runs (autocross, hill climb, stage) | No — laps need one start/finish line (#552) |
+| Moderate | Performance runs: 0–60, ¼ mile, braking distance | No (#553) |
 | Niche | Theoretical / optimal lap | Yes — *Optimal* on the Sector Times panel, and in the data inspector |
 | Emerging | Video stabilisation of helmet or chest footage | Yes — from GoPro's motion data, from the picture's own movement, or with a user-installed Gyroflow, keeping telemetry and sync (#140) |
 | Emerging | After-session coaching: corners ranked by time lost, with what to change | Yes — the Coaching window and `onboard coach` (#321, #320): phases, brake point, minimum speed, throttle, consistency, against the best lap, the fastest rolling lap, the spliced optimal lap or another driver's lap; see `docs/coaching.md` |
@@ -150,6 +229,22 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 10. **Coaching** — the step none of the surveyed overlay tools takes and every coaching product
     does: rank the corners by time lost, say which phase and what to try. Milestones v0.29.0,
     v0.30.0 and v0.31.0 (#315–#335); design in `docs/coaching.md`.
+
+**Filed 2026-11-13, from the analysis survey below** (none started; most need a design first)
+
+- #552 point-to-point runs: autocross, hill climb, rally stage, with penalties and a course that
+  changes every event
+- #553 performance runs from a standstill: 0–60, ¼ mile, trap speed, braking distance
+- #554 a lap that should not count (traffic, a flag, an off), and which laps an optimal lap came from
+- #555 how good the GPS data is, and how far its brake points can be trusted
+- #556 laps as data without building a video: linked traces, delta-T, map and picture
+- #557 a session's lap table: sector splits per lap, best sectors, speeds
+- #558 grip use: combined braking and turning, time near the limit, and its trend
+- #559 judging a tyre, pressure or setup change: structured pressures, Trends split by conditions
+- #560 weather filled in from the session's time and place (the first network read for analysis)
+- #561 the track line coloured by any channel
+- #562 a second logger (an ECU CSV) lined up with the first by a shared channel
+- #563 a lap or session's telemetry exported as CSV, GPX, KML or VBO
 
 **Not filed**
 

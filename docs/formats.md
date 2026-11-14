@@ -135,6 +135,13 @@ better than the 25 m it otherwise assumes. It gives no heading: a gate says wher
 not which way the car crosses it, and the two perpendiculars fit equally, so any direction is
 accepted rather than a guess being invented.
 
+A `Finish` gate is the end of a point-to-point course, so a file that carries one is timed in runs
+from its `Start` to its `Finish` (#552) — unless its start gate is labelled as the finish too
+(`Start / Finish`), which says the course is a circuit whatever else the file lists. There a line with no heading takes the direction the car
+first crossed it in: a hill climb's drive back down would otherwise cross the finish and then the
+start, and be taken for a run of its own. `Tests/Fixtures/runs.d/autocross.vbo` is synthetic: three runs
+of an autocross, one a DNF (`Scripts/make-runs-fixture.py`).
+
 Sections the importer still does not read: `[avi]` (the video file this log accompanies) and
 `[comments]` (device type, serial, firmware, log rate).
 

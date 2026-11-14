@@ -23,7 +23,7 @@ final class TurnNamingUITests: OnboardStudioUITestCase {
     func testATurnNamedOnTheCardIsKeptForTheCircuitUntilUndone() throws {
         launch(logbook: true)
         XCTAssertTrue(app.windows["Logbook"].waitForExistence(timeout: Self.timeout), "No Logbook at launch")
-        testing("Add Fixture Track Day")
+        testing("Add Fixture Session at a Circuit")
         XCTAssertTrue(
             app.staticTexts["trackday.summary"].waitForExistence(timeout: Self.timeout * 3), "No import report")
         app.buttons["trackday.done"].click()

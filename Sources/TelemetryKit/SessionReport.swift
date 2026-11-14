@@ -70,7 +70,7 @@ public struct SessionReport: Encodable, Sendable {
                 role: $0.role.identifier, name: $0.name, unit: $0.unit.symbol, samples: $0.count, min: $0.minValue,
                 max: $0.maxValue, sampleRate: $0.sampleRate, interpolation: $0.interpolation.rawValue)
         }
-        laps = session.laps.map {
+        laps = session.laps.listed.map {
             LapSummary(
                 number: $0.number, start: $0.start, end: $0.end, duration: $0.duration, isComplete: $0.isComplete)
         }

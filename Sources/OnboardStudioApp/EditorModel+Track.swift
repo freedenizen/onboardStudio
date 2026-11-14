@@ -22,9 +22,12 @@ extension EditorModel {
         guard let start = session.lapGeometry.start else { return false }
         guard case .data(let existing)? = project.input(id)?.kind, existing.lapLine == nil else { return false }
         let splits = session.lapGeometry.splits
-        updateInput(id, name: "Use the File's Start/Finish") {
+        let finish = session.lapGeometry.finish
+        updateInput(id, name: finish == nil ? "Use the File's Start/Finish" : "Use the File's Start and Finish") {
             guard case .data(var settings) = $0.kind else { return }
             settings.lapLine = Self.lapLine(from: start)
+            // A separate finish gate is a point-to-point course: timed in runs (#552).
+            settings.runFinishLine = finish.map(Self.lapLine(from:))
             if !splits.isEmpty {
                 settings.sectors = SectorSpec(
                     mode: .manual, count: splits.count + 1, lines: splits.map(Self.lapLine(from:)))
@@ -32,18 +35,17 @@ extension EditorModel {
             $0.kind = .data(settings)
         }
         let sectors = splits.isEmpty ? "" : " and \(splits.count + 1) sectors"
-        statusMessage = "Used the start/finish line\(sectors) this file was recorded with."
+        statusMessage =
+            finish == nil
+            ? "Used the start/finish line\(sectors) this file was recorded with."
+            : "Used the start and finish lines\(sectors) this file was recorded with; it is timed in runs."
         return true
     }
 
     /// A gate as the lap detector wants it: the middle of the line, and how far it reaches either
     /// side. The heading is deliberately left unset — a gate says where the line is and not which
     /// way the car crosses it, and the two perpendiculars are equally consistent with it.
-    static func lapLine(from gate: LapGate) -> LapLineSpec {
-        LapLineSpec(
-            latitude: gate.centreLatitude, longitude: gate.centreLongitude,
-            halfWidthMeters: gate.halfWidthMeters)
-    }
+    static func lapLine(from gate: LapGate) -> LapLineSpec { LapLineSpec(gate: gate) }
 
     /// Offers the line the data itself suggests, so a session opens with something workable rather
     /// than with nothing.

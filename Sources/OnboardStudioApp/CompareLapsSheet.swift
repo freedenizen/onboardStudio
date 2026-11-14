@@ -174,9 +174,9 @@ struct CompareLapsSheet: View {
         }
         let laps = data.wrappedValue.map(editor.comparableLaps) ?? []
         if let choice {
-            Picker("Lap", selection: choice) {
+            Picker(laps.noun, selection: choice) {
                 ForEach(laps, id: \.number) { lap in
-                    Text("Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))")
+                    Text("\(lap.title) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))")
                         .monospacedDigit().tag(Optional(ComparedChoice.lap(lap.number)))
                 }
                 if laps.count > 1 {
@@ -188,16 +188,16 @@ struct CompareLapsSheet: View {
             }
             .accessibilityIdentifier(identifier)
         } else {
-            Picker("Lap", selection: lap) {
+            Picker(laps.noun, selection: lap) {
                 ForEach(laps, id: \.number) { lap in
-                    Text("Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))")
+                    Text("\(lap.title) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))")
                         .monospacedDigit().tag(Optional(lap.number))
                 }
             }
             .accessibilityIdentifier(identifier)
         }
         if laps.isEmpty {
-            Text("This data has no complete laps.").font(.caption).foregroundStyle(.secondary)
+            Text("This data has no complete laps or runs.").font(.caption).foregroundStyle(.secondary)
         }
         let videos = editor.project.videoInputs
         if videos.count > 1 {

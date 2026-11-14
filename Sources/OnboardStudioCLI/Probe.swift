@@ -22,6 +22,11 @@ struct Probe: ParsableCommand {
     @Option(name: .long, help: "Detect laps from a finish line: lat,lon[,heading[,halfWidthMeters]].")
     var lapLine: String?
 
+    @Option(
+        name: .long,
+        help: "With --lap-line as the start, time runs to this finish line: lat,lon[,heading[,halfWidthMeters]].")
+    var finishLine: String?
+
     @Option(name: .long, help: "Warm-up crossings to ignore before lap 1 (with --lap-line).")
     var ignoreFirst: Int = 0
 
@@ -77,15 +82,26 @@ struct Probe: ParsableCommand {
             return CalculatedField(name: parts[0], expression: parts[1])
         }
         if let lapLine {
-            let parts = lapLine.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
-            guard parts.count >= 2 else { throw ValidationError("--lap-line expects lat,lon[,heading[,halfWidth]].") }
-            options.finishLine = FinishLine(
-                latitude: parts[0], longitude: parts[1], headingDegrees: parts.count > 2 ? parts[2] : nil,
-                halfWidthMeters: parts.count > 3 ? parts[3] : 25)
+            options.finishLine = try Self.line(lapLine, option: "--lap-line")
             options.ignoreFirstCrossings = ignoreFirst
+        }
+        if let finishLine {
+            guard options.finishLine != nil else {
+                throw ValidationError("--finish-line needs --lap-line as the start.")
+            }
+            options.runFinishLine = try Self.line(finishLine, option: "--finish-line")
         }
         options.sectorMode = cornerAware ? .cornerAware(count: sectors) : .equalDistance(count: sectors)
         return options
+    }
+
+    /// `lat,lon[,heading[,halfWidthMeters]]` as a line.
+    static func line(_ text: String, option: String) throws -> FinishLine {
+        let parts = text.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+        guard parts.count >= 2 else { throw ValidationError("\(option) expects lat,lon[,heading[,halfWidth]].") }
+        return FinishLine(
+            latitude: parts[0], longitude: parts[1], headingDegrees: parts.count > 2 ? parts[2] : nil,
+            halfWidthMeters: parts.count > 3 ? parts[3] : 25)
     }
 
     // MARK: - Text report
@@ -157,13 +173,14 @@ struct Probe: ParsableCommand {
     }
 
     private func printLaps(_ session: TelemetrySession) {
-        print("\nLaps:")
-        for lap in session.laps {
+        let runs = session.laps.areRuns
+        print(runs ? "\nRuns:" : "\nLaps:")
+        for lap in session.laps.listed {
             let duration = lap.duration.map(TimeParsing.lapTimeString) ?? "…"
-            let flag = lap.isComplete ? "" : "  (partial)"
+            let flag = lap.isComplete ? "" : runs ? "  (DNF)" : "  (partial)"
             let number = pad(String(lap.number), 3)
             let start = pad(fmt(lap.start), 10, left: true)
-            print("  Lap \(number)  start \(start)  time \(pad(duration, 10, left: true))\(flag)")
+            print("  \(session.laps.noun) \(number)  start \(start)  time \(pad(duration, 10, left: true))\(flag)")
         }
     }
 

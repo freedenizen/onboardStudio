@@ -49,6 +49,13 @@ struct DataLaneView: View {
         .clipped()
     }
 
+    /// "12 laps", "4 runs": what the bar is divided into, without the driving between runs.
+    private func lapSummary(_ laps: [PlacedLap]) -> String {
+        let listed = laps.map(\.lap).listed
+        let noun = listed.areRuns ? "run" : "lap"
+        return "\(listed.count) \(noun)\(listed.count == 1 ? "" : "s")"
+    }
+
     /// The bar of `data` from project time `start` on, with a divider where each lap begins.
     private func bar(
         _ data: Input, laps: [PlacedLap], from start: Double, selected: Bool, pixelsPerSecond: CGFloat
@@ -58,11 +65,17 @@ struct DataLaneView: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 4).stroke(Color.teal.opacity(selected ? 1 : 0.5), lineWidth: 1))
             // A divider where each lap begins, with its number when there is room for it.
+            // The driving between runs (#552) is dimmed and unnumbered: it is not part of the course.
             ForEach(laps) { placed in
                 let x = (placed.start - start) * pixelsPerSecond
+                if !placed.lap.isListed, let end = placed.end {
+                    Rectangle().fill(Color.black.opacity(0.25))
+                        .frame(width: max(0, (end - placed.start) * pixelsPerSecond))
+                        .offset(x: x)
+                }
                 Rectangle().fill(Color.white.opacity(selected ? 0.9 : 0.6)).frame(width: 1)
                     .offset(x: x)
-                if let end = placed.end, (end - placed.start) * pixelsPerSecond > 22 {
+                if placed.lap.isListed, let end = placed.end, (end - placed.start) * pixelsPerSecond > 22 {
                     Text("\(placed.lap.number)")
                         .font(.system(size: 9)).monospacedDigit()
                         .foregroundStyle(.secondary)
@@ -76,10 +89,10 @@ struct DataLaneView: View {
         .frame(height: Self.height - 6)
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .contentShape(Rectangle())
-        .help(laps.isEmpty ? data.label : "\(data.label) — \(laps.count) laps")
+        .help(laps.isEmpty ? data.label : "\(data.label) — \(lapSummary(laps))")
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(data.label)
-        .accessibilityValue(laps.isEmpty ? "Data" : "\(laps.count) laps")
+        .accessibilityValue(laps.isEmpty ? "Data" : lapSummary(laps))
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("timeline.data.\(data.label)")
     }
