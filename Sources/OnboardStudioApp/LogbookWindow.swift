@@ -21,6 +21,8 @@ import UniformTypeIdentifiers
     /// Every track definition kept, read with the plans: the configurations named at each circuit
     /// (#549).
     var trackDefinitions: [TrackDefinition] = []
+    /// The circuit whose turns are being named on its card (#550).
+    var turnNaming: TurnNamingRequest?
     /// What the driver is aiming for at each circuit (#461).
     var goals: [Goal] = []
     /// The Logbook window's Undo, for a Logbook edit made in another window: a plan saved for the
@@ -29,7 +31,7 @@ import UniformTypeIdentifiers
     /// New Track Day Here… on a circuit's card: the circuit the sheet begins with (#460).
     var newDayCircuit: String?
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
-    private var sessions: [UUID: TelemetrySession] = [:]
+    var sessions: [UUID: TelemetrySession] = [:]
     /// Files on their way into the logbook, shown by the window's sheet (#393).
     var trackDayRequest: TrackDayRequest?
     /// File ▸ New Track Day… asked for the sheet (#393).
@@ -240,6 +242,7 @@ struct LogbookWindow: View {
                 }
             )
             .modifier(carSheets)
+            .sheet(item: $model.turnNaming) { request in turnNamingSheet(request) }
             .onAppear {
                 model.reload()
                 // Once, as the editor's is: the app opens here (#452).

@@ -201,3 +201,34 @@ extension TelemetrySession {
         CornerNaming.names(for: corners, pinned: turnNames, legacy: cornerLabels)
     }
 }
+extension CornerNaming {
+    /// `pinned` with the corners of one lap named as `labels` say, one label per corner: a label
+    /// pins the name to that corner's bend, a blank leaves the corner unnamed (#550).
+    ///
+    /// Names pinned to turns this lap did not find are kept — another lap, or another driver's
+    /// definition, named them — and every name this lap's corners took is replaced, so renaming a
+    /// turn never leaves its old name behind beside the new one.
+    public static func naming(_ corners: [Corner], as labels: [String], pinned: [TurnName]) -> [TurnName] {
+        let taken = Set(match(corners, to: pinned).compactMap { $0 })
+        var result = pinned.enumerated().filter { !taken.contains($0.offset) }.map(\.element)
+        for (corner, label) in zip(corners, labels) {
+            let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, let pin = TurnName(label: trimmed, corner: corner) { result.append(pin) }
+        }
+        return result
+    }
+
+    /// The labels for the corners after `index`, numbered on from the label at `index`: after
+    /// "3a" come "4", "5", "6"… — the help a driver wants after typing the one turn a circuit
+    /// numbers its own way (#550). `nil` when the label at `index` does not begin with a number.
+    public static func numbering(_ labels: [String], from index: Int) -> [String]? {
+        guard labels.indices.contains(index) else { return nil }
+        let digits = labels[index].trimmingCharacters(in: .whitespaces).prefix { $0.isNumber }
+        guard let start = Int(digits) else { return nil }
+        var result = labels
+        for (offset, position) in ((index + 1)..<labels.count).enumerated() {
+            result[position] = String(start + offset + 1)
+        }
+        return result
+    }
+}

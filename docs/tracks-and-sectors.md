@@ -259,6 +259,17 @@ opposite trap: a kink at the entry of a long turn lies on that turn's bend as mu
 does, so between two corners on one bend the one whose apex is nearer the named apex is matched
 first (a quarter of the apex distance is added to the score).
 
+### Naming the turns from the circuit's card (#550)
+
+Names belong to a circuit, and most of what reads them is in the Logbook, so they are named there:
+**Name Turns…** on the circuit's card opens a sheet that draws the circuit from the personal best
+session's best lap — the same lap `LogbookEntry.cornerRecords` reads corners from — with a field per
+corner. `CornerNaming.naming` pins every field's name to that lap's bends at once and keeps names
+pinned to turns that lap did not find; `CornerNaming.numbering` is the "4, 5, 6… after a 3a" help.
+Saving writes the circuit's (or configuration's) track definition as one step of the Logbook's
+Undo, and the sessions there read their corners again with the names (`LogbookReferences.load`
+with the library), which is what Trends, goals and plans read.
+
 ### Getting turn names right before the driver types them (#551)
 
 Every circuit starts out counted 1…N, which is wrong at most of them. What could give the app

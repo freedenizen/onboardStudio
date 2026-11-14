@@ -221,6 +221,30 @@ struct CornerNamingTests {
         #expect(corner.trace.isEmpty)
     }
 
+    // MARK: - Naming a lap's corners at once (#550)
+
+    @Test func namingALapPinsEachLabelAndLeavesBlanksUnnamed() {
+        let corners = (0..<4).map { Self.corner(north: Double($0) * 300) }
+        let pinned = CornerNaming.naming(corners, as: ["1", "2", "", "3"], pinned: [])
+        #expect(pinned.map(\.label) == ["1", "2", "3"])
+        #expect(CornerNaming.names(for: corners, pinned: pinned).map(\.label) == ["1", "2", "2–3", "3"])
+    }
+
+    @Test func namingALapReplacesItsOwnNamesAndKeepsTheOthers() {
+        // 3 is on a turn this lap did not find; 1 and 2 are renamed.
+        let corners = [0, 300].map { Self.corner(north: Double($0)) }
+        let pinned = CornerNaming.naming(corners, as: ["Turn One", ""], pinned: Self.pinned)
+        #expect(pinned.map(\.label).sorted() == ["3", "3a", "4", "Turn One"])
+    }
+
+    @Test func numberingOnFollowsTheTurnTyped() {
+        #expect(CornerNaming.numbering(["1", "2", "3a", "x", "y"], from: 2) == ["1", "2", "3a", "4", "5"])
+        #expect(CornerNaming.numbering(["1", "2", "12", "", ""], from: 2) == ["1", "2", "12", "13", "14"])
+        #expect(CornerNaming.numbering(["Carousel", "", ""], from: 0) == nil, "nothing to count on from")
+        #expect(CornerNaming.numbering(["1"], from: 3) == nil)
+        #expect(CornerNaming.numbering(["1", "2"], from: 1) == ["1", "2"], "the last turn has nothing after it")
+    }
+
     @Test func aTurnNameSurvivesEncoding() throws {
         let data = try JSONEncoder().encode(Self.pinned)
         #expect(try JSONDecoder().decode([TurnName].self, from: data) == Self.pinned)
