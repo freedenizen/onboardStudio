@@ -93,16 +93,20 @@ struct CoachingSelection: Hashable, Sendable {
     var sessionStamp: Int
     /// The stretches marked as traffic or a flag (#571); a mark re-reads the analysis.
     var traffic: [TrafficSpan] = []
+    /// The stretches whose traffic suggestions were dismissed (#572); a dismissal re-reads it.
+    var dismissedTraffic: [LapProfile.Window] = []
 
     var settings: CoachingSettings {
         CoachingSettings(
             dataInputID: input.id, lap: lapNumber, reference: reference, alignByPosition: alignByPosition,
-            traffic: traffic)
+            traffic: traffic, dismissedTraffic: dismissedTraffic)
     }
 
-    /// The analysis options the choices amount to.
+    /// The analysis options the choices amount to: the window offers the telemetry's traffic
+    /// suggestions (#572).
     var options: CoachingOptions {
         var options = CoachingOptions()
+        options.suggestsTraffic = true
         if alignByPosition { options.alignment = .byPosition }
         return options
     }

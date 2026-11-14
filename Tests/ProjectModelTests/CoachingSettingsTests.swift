@@ -64,4 +64,24 @@ struct CoachingSettingsTests {
         #expect(older.coaching?.traffic.isEmpty == true)
         #expect(older.coaching?.lap == 2)
     }
+
+    @Test func dismissedSuggestionsRoundTripApplyToTheirInputAndAreAbsentInOlderSettings() throws {
+        let data = Input(label: "Data", source: MediaReference(path: "/tmp/s.csv"), kind: .data(DataInputSettings()))
+        let other = Input(label: "Other", source: MediaReference(path: "/tmp/o.csv"), kind: .data(DataInputSettings()))
+        var project = Project(inputs: [data, other])
+        let dismissed = [LapProfile.Window(start: 210, end: 224.5)]
+        project.coaching = CoachingSettings(dataInputID: data.id, lap: 2, dismissedTraffic: dismissed)
+        let reopened = try Project.decode(try project.encoded())
+        #expect(reopened.coaching?.dismissedTraffic == dismissed)
+        #expect(reopened.coaching?.dismissedTraffic(for: data.id) == dismissed)
+        #expect(reopened.coaching?.dismissedTraffic(for: other.id).isEmpty == true)
+        // Settings saved before suggestions existed have no key and read as none dismissed.
+        var json = try #require(try JSONSerialization.jsonObject(with: try project.encoded()) as? [String: Any])
+        var coaching = try #require(json["coaching"] as? [String: Any])
+        coaching["dismissedTraffic"] = nil
+        json["coaching"] = coaching
+        let older = try Project.decode(try JSONSerialization.data(withJSONObject: json))
+        #expect(older.coaching?.dismissedTraffic.isEmpty == true)
+        #expect(older.coaching?.lap == 2)
+    }
 }

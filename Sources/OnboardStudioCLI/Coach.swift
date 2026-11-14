@@ -56,6 +56,14 @@ struct Coach: AsyncParsableCommand {
             """)
     var traffic: String?
 
+    @Flag(
+        name: .long,
+        help: """
+            List every stretch of the session the telemetry suggests was traffic: a lift where the other laps \
+            are flat out, or a corner far slower than usual. Suggestions only; they change nothing.
+            """)
+    var suggestTraffic = false
+
     @Option(name: .long, help: "Force a specific importer id for a file instead of auto-detecting.")
     var format: String?
 
@@ -95,13 +103,7 @@ struct Coach: AsyncParsableCommand {
         case "imperial": units = .imperial
         default: throw ValidationError("--units must be metric or imperial.")
         }
-        var options = CoachingOptions()
-        switch align?.lowercased() {
-        case nil: break
-        case "distance": options.alignment = .distance
-        case "position": options.alignment = .byPosition
-        default: throw ValidationError("--align must be distance or position.")
-        }
+        let options = try coachingOptions()
         let analysis: CoachingAnalysis?
         if let logbookReference {
             analysis = LapProfile(lap: chosen, in: session).flatMap { lapProfile in
@@ -131,6 +133,7 @@ struct Coach: AsyncParsableCommand {
             print(sheet.markdown)
         } else {
             printReport(analysis, lapNumber: chosen.number, units: units)
+            if suggestTraffic { printSuggestions(analysis, session: session, units: units) }
         }
     }
 
@@ -322,5 +325,37 @@ extension Coach {
         case .traffic(let labels):
             "Marked as traffic or a flag, so not coached: turn \(labels.joined(separator: ", "))."
         }
+    }
+}
+
+extension Coach {
+    /// The session's traffic suggestions (#572), each with its lap, its stretch of the data file's
+    /// time and what the telemetry saw, to check against the video.
+    func printSuggestions(_ analysis: CoachingAnalysis, session: TelemetrySession, units: CoachingUnits) {
+        let suggestions = analysis.suggestions
+        print("\nTraffic suggestions" + (suggestions.isEmpty ? ": none." : ""))
+        let origin = session.laps.first?.start ?? 0
+        for suggestion in suggestions {
+            // The file's own seconds, as --traffic takes them, and how far into the laps that is.
+            let window = String(format: "%.1f–%.1f s", suggestion.window.start, suggestion.window.end)
+            let seconds = Int(max(0, suggestion.window.start - origin))
+            let into = String(format: "%d:%02d", seconds / 60, seconds % 60)
+            print(
+                "  Lap \(suggestion.lapNumber), Turn \(suggestion.label) (\(window), \(into) in): "
+                    + suggestion.sentence(units: units) + ".")
+        }
+    }
+
+    /// What `--align` and `--suggest-traffic` ask of the reading.
+    func coachingOptions() throws -> CoachingOptions {
+        var options = CoachingOptions()
+        options.suggestsTraffic = suggestTraffic
+        switch align?.lowercased() {
+        case nil: break
+        case "distance": options.alignment = .distance
+        case "position": options.alignment = .byPosition
+        default: throw ValidationError("--align must be distance or position.")
+        }
+        return options
     }
 }

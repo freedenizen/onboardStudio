@@ -32,6 +32,11 @@ public struct CoachingOptions: Sendable, Hashable {
     /// Five flying laps of the reference Sonoma session spread 3–10 % by corner; the corners a
     /// coach would call repeatable sit under 5 %.
     public var consistentSpeedSpreadFraction = 0.05
+    /// Look for stretches the telemetry suggests were traffic (#572), for the Coaching window and
+    /// `onboard coach` to offer. Off by default: a suggestion changes nothing until the driver
+    /// marks the corner, so a render never needs them.
+    public var suggestsTraffic = false
+    public var trafficSuggestions = TrafficSuggestions.Options()
 
     public init() {}
 }
@@ -121,6 +126,10 @@ public struct CoachingAnalysis: Sendable {
     public let consistency: ConsistencyStats?
     public let warnings: [CoachingWarning]
     public let options: CoachingOptions
+    /// Every stretch of the session the telemetry suggests may have been traffic (#572), when
+    /// `options.suggestsTraffic` and the reference is a lap of the same session; the lap's own are
+    /// also on its corners.
+    public var suggestions: [TrafficSuggestion] = []
 
     public var top: [Opportunity] { Array(opportunities.prefix(options.topCount)) }
     /// Seconds the lap lost to the reference over the whole lap.
@@ -155,8 +164,11 @@ public struct CoachingAnalysis: Sendable {
         public let phrase: String
         public let sameSession: Bool
         public let consistency: ConsistencyStats?
+        /// The session's traffic suggestions (#572), read once for every lap measured against it.
+        public let suggestions: [TrafficSuggestion]
 
-        /// `consistency` is read from `session` when `sameSession`, over the reference's corners.
+        /// `consistency` is read from `session` when `sameSession`, over the reference's corners,
+        /// and so are the traffic suggestions when the options ask for them.
         public init(
             profile: LapProfile, phrase: String, sameSession: Bool, session: TelemetrySession,
             options: CoachingOptions = CoachingOptions()
@@ -167,6 +179,9 @@ public struct CoachingAnalysis: Sendable {
             corners = CornerDetector.corners(of: profile, options: options.corners)
             metrics = CornerMetrics.measure(corners: corners, of: profile, options: options.metrics)
             consistency = sameSession ? ConsistencyStats.measure(in: session, corners: corners, options: options) : nil
+            suggestions =
+                sameSession && options.suggestsTraffic
+                ? TrafficSuggestions.find(in: session, corners: corners, options: options) : []
         }
     }
 
@@ -210,6 +225,7 @@ public struct CoachingAnalysis: Sendable {
         // The marks are the session's: the reference is read against them only when it is a lap
         // of the same session.
         markTraffic(&comparisons, lap: lap, reference: sameSession ? reference : nil, delta: delta, in: session)
+        attach(reading.suggestions, to: &comparisons, lap: lap)
         var warnings: [CoachingWarning] = []
         if delta.confidence == 0 && alignment != delta.alignment { warnings.append(.approximateAlignment) }
         if lapMetrics.contains(where: { $0.brakeSource == .speedTrace }) { warnings.append(.pedalsFromSpeedTrace) }
@@ -226,7 +242,8 @@ public struct CoachingAnalysis: Sendable {
             comparisons, consistency: consistency, referencePhrase: referencePhrase, units: units, options: options)
         return CoachingAnalysis(
             lap: lap, reference: reference, referencePhrase: referencePhrase, delta: delta, corners: comparisons,
-            opportunities: opportunities, consistency: consistency, warnings: warnings, options: options)
+            opportunities: opportunities, consistency: consistency, warnings: warnings, options: options,
+            suggestions: reading.suggestions)
     }
 }
 

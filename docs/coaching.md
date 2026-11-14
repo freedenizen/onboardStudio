@@ -269,8 +269,24 @@ headline names the loss in corners covered on the lap (`trafficLoss`); consisten
 corner's reading on that lap and keeps the rest, judges a marked lap flying by its time with the
 marked stretches driven at the best lap's pace, and leaves marked laps out of the lap-time spread;
 the default lap is the quickest no mark touches. No marks reads exactly as before, so nothing is
-pinned for older projects. Detection — from the telemetry, the video and another car's log — is
-#572–#574, designed in [traffic.md](traffic.md).
+pinned for older projects.
+
+**Traffic suggestions** (#572, `Sources/TelemetryKit/TrafficSuggestions.swift`). Read only when
+`CoachingOptions.suggestsTraffic` (the Coaching window, `onboard coach --suggest-traffic`), once per
+reference reading, from the session's complete laps no more than 50 % slower than the best (three
+at least). Each corner of the reference owns the lap from the quickest lap's brake point for it to
+the brake point for the next, as the corner table divides it. A corner is suggested on a lap for
+either of two things: a *lift* — at least 20 m where the throttle is below half its range while
+more than half the other laps are at 90 % of it or more, read at the same fraction of each lap and
+counted to the corner where it ends (plus 10 m); without a recorded throttle, slowing by 0.1 g or
+more where most others slow by less than half that — or a *slow corner*, its stretch taking at
+least 0.5 s and twice the spread longer than usual, where usual and the spread (median and median
+absolute deviation) are read from the quicker half of the laps, because traffic only makes a corner
+slower and where half the laps were held up the median of them all is a held-up lap. A corner that
+a mark covers a quarter of, or a dismissal (`TelemetrySession.dismissedTraffic`) half of, is not
+suggested. The suggestion hangs on the lap's `CornerComparison.suggestion` and changes nothing
+else: the corner is ranked and noted as before. Off-line detection and the video are in
+[traffic.md](traffic.md).
 
 **Notes** are deterministic phrase templates filled from the numbers, in the units asked for
 (km/h and metres, or mph and feet): a headline ("Turn 4: 0.31 s lost on entry"), the evidence

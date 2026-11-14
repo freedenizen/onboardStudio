@@ -50,6 +50,9 @@ public struct TelemetrySession: Sendable {
     /// read from the file: whoever reads the session for coaching puts the marks the project or
     /// the logbook keeps here first, so every reading of it leaves the same corners out.
     public var traffic: [TrafficSpan] = []
+    /// Stretches where the driver said a traffic suggestion was wrong (#572), in session time: a
+    /// suggestion they cover is not offered again.
+    public var dismissedTraffic: [LapProfile.Window] = []
     /// The unit a channel was *recorded* in, for every role the builder converted to its canonical
     /// unit. `channels[.speed].unit` is always m/s by the time anyone reads it, so this is the
     /// only record of whether the file said mph or kph — which is what *Automatic* in the speed
