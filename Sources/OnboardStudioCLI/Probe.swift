@@ -36,6 +36,9 @@ struct Probe: ParsableCommand {
     @Flag(name: .long, help: "Put sector boundaries on the straights between corners, not at equal distances.")
     var cornerAware = false
 
+    @Flag(name: .long, help: "List every standing start and stop: 0–60, the quarter mile, 60–0 (#553).")
+    var performance = false
+
     @Flag(name: .long, help: "List the corners found on the reference lap.")
     var corners = false
 
@@ -115,6 +118,7 @@ struct Probe: ParsableCommand {
         if !session.laps.isEmpty { printLaps(session) }
         if let analysis = session.sectors, analysis.count > 1 { printSectors(analysis) }
         if corners { printCorners(session) }
+        if performance { printPerformance(session) }
         if let suggestion = StartFinishFinder.suggest(in: session) {
             let line = suggestion.line
             print(
@@ -263,5 +267,43 @@ extension Probe {
     private func printJSON(_ session: TelemetrySession, importerID: String, confidence: ImportConfidence) throws {
         let data = try SessionReport(session: session, importer: importerID, confidence: confidence.rawValue).json()
         print(String(bytes: data, encoding: .utf8) ?? "{}")
+    }
+
+    // MARK: - Performance runs (#553)
+
+    private func printPerformance(_ session: TelemetrySession) {
+        let result = PerformanceRuns.measure(in: session)
+        print("\nPerformance runs: \(result.attempts.count) standing starts, \(result.stops.count) stops")
+        for (number, attempt) in result.attempts.enumerated() {
+            print("  Start \(number + 1) at \(fmt(attempt.start)) s" + Self.notes(attempt.slope, attempt.sampleHertz))
+            for range in PerformanceRuns.SpeedRange.allCases {
+                guard let seconds = attempt.speedTimes[range] else { continue }
+                print("    \(pad(range.label, 14)) \(String(format: "%6.2f s", seconds))")
+            }
+            for mark in PerformanceRuns.DragDistance.allCases {
+                guard let seconds = attempt.distanceTimes[mark] else { continue }
+                let trap = attempt.trapSpeeds[mark].map {
+                    String(format: " @ %.1f mph / %.1f km/h", $0 / 0.447_04, $0 * 3.6)
+                }
+                print("    \(pad(mark.label(metric: false), 14)) \(String(format: "%6.3f s", seconds))\(trap ?? "")")
+            }
+        }
+        if !result.attempts.isEmpty { print("  (distance times have a 1-ft rollout, as a timeslip; speed times none)") }
+        for stop in result.stops {
+            print(
+                "  \(pad(stop.from.label, 12)) at \(fmt(stop.start)) s: "
+                    + String(format: "%.1f m (%.0f ft) in %.2f s", stop.metres, stop.metres / 0.3048, stop.seconds)
+                    + Self.notes(stop.slope, nil))
+        }
+    }
+
+    /// "  (1.8 % downhill; 5 Hz)": what makes a result worth a second look.
+    static func notes(_ slope: Double?, _ hertz: Double?) -> String {
+        var notes: [String] = []
+        if let slope, abs(slope) > PerformanceRuns.Options.notableSlope {
+            notes.append(String(format: "%.1f %% %@", abs(slope) * 100, slope > 0 ? "uphill" : "downhill"))
+        }
+        if let hertz, hertz < PerformanceRuns.Options.notableRate { notes.append(String(format: "%.0f Hz", hertz)) }
+        return notes.isEmpty ? "" : "  (" + notes.joined(separator: "; ") + ")"
     }
 }
