@@ -259,3 +259,49 @@ public struct TrendsChartLayout: Hashable, Sendable {
         positions.indices.min { abs(positions[$0] - x) < abs(positions[$1] - x) }
     }
 }
+
+extension LogbookTrends {
+    /// How the corner table writes its numbers (#544): minimum speed in the app's speed unit, as
+    /// the Logbook shows speed everywhere, and brake points in the distance Coaching writes them in
+    /// for the same setting — feet with mph, metres otherwise (`CoachingUnits.following`). The
+    /// note under the table names both, so it can never say km/h over a column in mph.
+    public struct CornerFormat: Sendable, Hashable {
+        public let speed: SpeedDisplayUnit
+        public let distance: TelemetryUnit
+
+        public init(setting: SpeedUnitSetting, locale: Locale = .current) {
+            speed = setting.shown(in: locale)
+            distance = CoachingUnits.following(setting, locale: locale).distance
+        }
+
+        /// "64 m" or "210 ft": a brake point stored in metres before the apex.
+        public func brakePoint(_ metres: Double?) -> String {
+            guard let metres else { return "—" }
+            return CoachingNotes.Formatter(units: CoachingUnits(distance: distance)).metres(metres)
+        }
+
+        /// "+12 ft", or "same" within half a unit: a change of brake point stored in metres.
+        public func brakePointChange(_ metres: Double?) -> String {
+            guard let metres else { return "—" }
+            let change = TelemetryUnit.meters.convert(metres, to: distance) ?? metres
+            return change.magnitude < 0.5 ? "same" : String(format: "%+.0f \(distance.symbol)", change)
+        }
+
+        /// "84 mph": a minimum speed stored in metres per second.
+        public func minimumSpeed(_ metersPerSecond: Double?) -> String {
+            metersPerSecond.map { speed.text(metersPerSecond: $0) } ?? "—"
+        }
+
+        /// "+3 mph", or "same" within half a unit.
+        public func minimumSpeedChange(_ metersPerSecond: Double?) -> String {
+            metersPerSecond.map { speed.changeText(metersPerSecond: $0) } ?? "—"
+        }
+
+        /// The line under the table, in the units the table shows.
+        public var note: String {
+            let length = distance == .feet ? "feet" : "metres"
+            return "Brake point in \(length): positive means later than the other visit. Minimum speed in "
+                + "\(speed.symbol). Time: negative means quicker through the corner."
+        }
+    }
+}

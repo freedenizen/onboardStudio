@@ -48,6 +48,14 @@ struct Coach: AsyncParsableCommand {
     @Flag(name: .long, help: "Print the analysis as JSON instead of text.")
     var json = false
 
+    @Option(
+        name: .long,
+        help: """
+            Stretches held up by traffic or a flag, in seconds of the data file: start-end[:flag], comma-separated \
+            (312.5-330,1204-1215:flag). Corners they cover are not coached. A project's own marks apply without it.
+            """)
+    var traffic: String?
+
     @Option(name: .long, help: "Force a specific importer id for a file instead of auto-detecting.")
     var format: String?
 
@@ -64,7 +72,7 @@ struct Coach: AsyncParsableCommand {
     var cornerAware = false
 
     func run() async throws {
-        let session = try await loadSession()
+        let session = try await markedSession()
         let complete = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
             .filter { $0.isComplete && $0.end != nil }
         guard !complete.isEmpty else {
@@ -79,7 +87,7 @@ struct Coach: AsyncParsableCommand {
             }
             chosen = found
         } else {
-            chosen = try defaultLap(among: complete, reference: reference)
+            chosen = try defaultLap(among: complete, reference: reference, in: session)
         }
         let units: CoachingUnits
         switch self.units.lowercased() {
@@ -128,7 +136,7 @@ struct Coach: AsyncParsableCommand {
 
     // MARK: - Input
 
-    private func loadSession() async throws -> TelemetrySession {
+    fileprivate func loadSession() async throws -> TelemetrySession {
         let url = URL(fileURLWithPath: path)
         if url.pathExtension == "onboardproj" || url.lastPathComponent == "project.json" {
             let loaded = try await ProjectCompiler.load(url)
@@ -175,8 +183,11 @@ struct Coach: AsyncParsableCommand {
     }
 
     /// Without `--lap`: the quickest lap that is not the reference itself, so the comparison has
-    /// something to say, or the best lap when the reference is spliced or rolling.
-    private func defaultLap(among complete: [Lap], reference: CoachingReference) throws -> Lap {
+    /// something to say, or the best lap when the reference is spliced or rolling; one with no
+    /// traffic mark when there is one (#571).
+    private func defaultLap(among complete: [Lap], reference: CoachingReference, in session: TelemetrySession) throws
+        -> Lap
+    {
         let byTime = complete.sorted { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }
         let excluded: Int?
         switch reference {
@@ -184,7 +195,7 @@ struct Coach: AsyncParsableCommand {
         case .lap(let number): excluded = number
         case .fastestRolling, .compositeOptimal: excluded = nil
         }
-        guard let lap = byTime.first(where: { $0.number != excluded }) else {
+        guard let lap = complete.quickest(excluding: excluded, in: session) else {
             throw ValidationError("Only one complete lap: name a different reference, such as --reference rolling.")
         }
         return lap
@@ -269,7 +280,35 @@ struct Coach: AsyncParsableCommand {
         }
     }
 
-    private func describe(_ warning: CoachingWarning) -> String {
+    private func pad(_ text: String, _ width: Int, left: Bool = false) -> String {
+        let missing = max(0, width - text.count)
+        let fill = String(repeating: " ", count: missing)
+        return left ? fill + text : text + fill
+    }
+}
+
+extension Coach {
+    /// The session with `--traffic`'s marks, when given, in place of any the project had.
+    func markedSession() async throws -> TelemetrySession {
+        var session = try await loadSession()
+        if let traffic { session.traffic = try Self.parseTraffic(traffic) }
+        return session
+    }
+
+    /// `start-end[:flag]`, comma-separated, as `--traffic` takes it.
+    static func parseTraffic(_ text: String) throws -> [TrafficSpan] {
+        try text.split(separator: ",").map { item in
+            let parts = item.trimmingCharacters(in: .whitespaces).split(separator: ":")
+            let bounds = parts.first.map { $0.split(separator: "-").compactMap { Double($0) } } ?? []
+            let kind = parts.count > 1 ? TrafficSpan.Kind(rawValue: String(parts[1]).lowercased()) : .traffic
+            guard bounds.count == 2, parts.count <= 2, let kind else {
+                throw ValidationError("--traffic expects start-end[:flag] in seconds, comma-separated; got '\(item)'.")
+            }
+            return TrafficSpan(start: bounds[0], end: bounds[1], kind: kind)
+        }
+    }
+
+    func describe(_ warning: CoachingWarning) -> String {
         switch warning {
         case .approximateAlignment:
             "The two laps could not be lined up by place and were lined up by fraction of lap; "
@@ -280,12 +319,8 @@ struct Coach: AsyncParsableCommand {
             "The reference changes lap inside turn \(labels.joined(separator: ", ")), so its speed can step there."
         case .tooFewLapsForConsistency:
             "Fewer than three complete laps: nothing to say about consistency."
+        case .traffic(let labels):
+            "Marked as traffic or a flag, so not coached: turn \(labels.joined(separator: ", "))."
         }
-    }
-
-    private func pad(_ text: String, _ width: Int, left: Bool = false) -> String {
-        let missing = max(0, width - text.count)
-        let fill = String(repeating: " ", count: missing)
-        return left ? fill + text : text + fill
     }
 }

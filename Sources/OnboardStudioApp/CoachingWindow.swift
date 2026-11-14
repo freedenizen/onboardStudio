@@ -65,7 +65,8 @@ struct CoachingContent: View {
     }
 
     /// The lap to read without a choice: the lap at the playhead when it is a complete lap and
-    /// not the reference, else the quickest lap that is not the reference.
+    /// not the reference, else the quickest lap that is not the reference, preferring one with no
+    /// traffic mark (#571).
     private func defaultLap(in laps: [Lap], input: Input, reference: CoachingSettings.Reference) -> Lap? {
         let excluded: Int?
         switch reference {
@@ -81,7 +82,8 @@ struct CoachingContent: View {
         {
             return atPlayhead
         }
-        return laps.sorted { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }.first { $0.number != excluded }
+        return source.session.flatMap { laps.quickest(excluding: excluded, in: $0) }
+            ?? laps.sorted { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }.first { $0.number != excluded }
     }
 
     private func selection(input: Input, session: TelemetrySession) -> CoachingSelection? {
@@ -95,7 +97,7 @@ struct CoachingContent: View {
         let stamp = session.laps.count &* 31 &+ Int(session.duration * 10)
         return CoachingSelection(
             input: input, lapNumber: lap.number, reference: reference, alignByPosition: saved?.alignByPosition ?? false,
-            sessionStamp: stamp)
+            sessionStamp: stamp, traffic: saved?.traffic(for: input.id) ?? [])
     }
 
     // MARK: - Layout
@@ -209,6 +211,7 @@ extension CoachingContent {
                 watch: { [source] comparison in
                     await source.watchClips(for: comparison, analysis: analysis, selection: selection)
                 },
+                markTraffic: { setTraffic($1, corner: $0.index, analysis: analysis, selection: selection) },
                 change: { choices(selection: selection, laps: laps) }
             )
             .id(selection)
@@ -246,7 +249,9 @@ extension CoachingContent {
                 CornerDetailView(
                     analysis: analysis, comparison: comparison, units: units, others: otherProfiles,
                     compareInVideo: compareAction(
-                        for: comparison, analysis: analysis, selection: selection, session: session)
+                        for: comparison, analysis: analysis, selection: selection, session: session),
+                    lapNumber: selection.lapNumber,
+                    markTraffic: { setTraffic($0, corner: comparison.index, analysis: analysis, selection: selection) }
                 )
                 .frame(minWidth: 300, idealWidth: 340, maxWidth: 440)
             }
@@ -279,7 +284,8 @@ extension CoachingContent {
                 .padding(.horizontal)
                 .focusedSceneValue(\.coachingSheet, sheetAction(analysis, selection: selection, session: session))
                 CornerTable(
-                    rows: analysis.rows(units: units), selection: $selectedCorner, sortOrder: $sortOrder, units: units)
+                    rows: analysis.rows(units: units), selection: $selectedCorner, sortOrder: $sortOrder, units: units,
+                    mark: { setTraffic($1, corner: $0, analysis: analysis, selection: selection) })
                 if !analysis.warnings.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
                         ForEach(analysis.warnings.map(describe), id: \.self) { line in
@@ -331,7 +337,13 @@ extension CoachingContent {
 extension CoachingContent {
     // MARK: - Doing
 
-    func analyse(_ selection: CoachingSelection, session: TelemetrySession) async {
+    func analyse(_ selection: CoachingSelection, session read: TelemetrySession) async {
+        // The marks as chosen, not as the last compile left them on the session.
+        let session = {
+            var session = read
+            session.traffic = selection.traffic
+            return session
+        }()
         isAnalysing = true
         defer { isAnalysing = false }
         guard let lap = session.laps.first(where: { $0.number == selection.lapNumber }) else {
