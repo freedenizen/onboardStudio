@@ -97,7 +97,8 @@ struct CoachingContent: View {
         let stamp = session.laps.count &* 31 &+ Int(session.duration * 10)
         return CoachingSelection(
             input: input, lapNumber: lap.number, reference: reference, alignByPosition: saved?.alignByPosition ?? false,
-            sessionStamp: stamp, traffic: saved?.traffic(for: input.id) ?? [])
+            sessionStamp: stamp, traffic: saved?.traffic(for: input.id) ?? [],
+            dismissedTraffic: saved?.dismissedTraffic(for: input.id) ?? [])
     }
 
     // MARK: - Layout
@@ -216,6 +217,7 @@ extension CoachingContent {
                     await source.watchClips(for: comparison, analysis: analysis, selection: selection)
                 },
                 markTraffic: { setTraffic($1, corner: $0.index, analysis: analysis, selection: selection) },
+                answerSuggestion: { answer($0, isTraffic: $1, analysis: analysis, selection: selection) },
                 change: { choices(selection: selection, laps: laps) }
             )
             .id(selection)
@@ -255,7 +257,8 @@ extension CoachingContent {
                     compareInVideo: compareAction(
                         for: comparison, analysis: analysis, selection: selection, session: session),
                     lapNumber: selection.lapNumber,
-                    markTraffic: { setTraffic($0, corner: comparison.index, analysis: analysis, selection: selection) }
+                    markTraffic: { setTraffic($0, corner: comparison.index, analysis: analysis, selection: selection) },
+                    answerSuggestion: { answer($0, isTraffic: $1, analysis: analysis, selection: selection) }
                 )
                 .frame(minWidth: 300, idealWidth: 340, maxWidth: 440)
             }
@@ -289,7 +292,8 @@ extension CoachingContent {
                 .focusedSceneValue(\.coachingSheet, sheetAction(analysis, selection: selection, session: session))
                 CornerTable(
                     rows: analysis.rows(units: units), selection: $selectedCorner, sortOrder: $sortOrder, units: units,
-                    mark: { setTraffic($1, corner: $0, analysis: analysis, selection: selection) })
+                    mark: { setTraffic($1, corner: $0, analysis: analysis, selection: selection) },
+                    dismissSuggestion: { answer($0, isTraffic: false, analysis: analysis, selection: selection) })
                 if !analysis.warnings.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
                         ForEach(analysis.warnings.map(describe), id: \.self) { line in
@@ -346,6 +350,7 @@ extension CoachingContent {
         let session = {
             var session = read
             session.traffic = selection.traffic
+            session.dismissedTraffic = selection.dismissedTraffic
             return session
         }()
         isAnalysing = true

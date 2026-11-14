@@ -1141,6 +1141,21 @@ coaching choices (or with the session, from the Logbook), and each one is an und
 with no marks reads exactly as it did. `onboard coach --traffic 312.5-330,1204-1215:flag` does the
 same from the command line, in seconds of the data file.
 
+**Suggestions from the telemetry.** The window also points at corners that may have been traffic,
+so you know which ones to check in the video. A corner is suggested on a lap when you lifted for
+20 m or more where most of your other laps were flat out (or, without a throttle channel, slowed
+where they did not), or when it took far longer than it does on your quicker laps — from its
+braking to the next corner's, so a slow run out behind another car counts. The walkthrough's
+first step lists them ("Possibly traffic in Turn 3 and Turn 9. Check the video before you trust
+their notes."), and the corner's step and its detail in All Corners say what the telemetry saw,
+with **Mark as Traffic** and **Not Traffic**; in the table a suggested corner has a small car
+beside its number, and right-clicking it offers **Dismiss Traffic Suggestion**. A suggestion is
+only a question: the same lift is a car in the way or a mistake, so nothing changes until you
+mark the corner. **Not Traffic** is remembered and not suggested again; both answers are undo
+steps (**Undo Mark Traffic**, **Undo Dismiss Traffic Suggestion**). Laps more than half as slow
+again as your best, such as a cool-down lap, are left out, and a session needs three laps for
+anything to be usual.
+
 ### A plan for next session
 
 **Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
@@ -1385,7 +1400,9 @@ another lap; `--units imperial` writes the notes in mph and feet; `--json` print
 data. A project works too: `onboard coach my.onboardproj` reads its first data input, with the
 sectors, corner names and traffic marks the project has. `--traffic 312.5-330,1204-1215:flag` marks
 stretches as held up by traffic (or `:flag`) in seconds of the data file, and the corners they cover
-are left out of the coaching ([Traffic and flags](#traffic-and-flags)). The method is in
+are left out of the coaching ([Traffic and flags](#traffic-and-flags)); `--suggest-traffic` lists
+every corner of the session the telemetry suggests was traffic, with its stretch of the data file,
+to check against the video. The method is in
 [coaching.md](coaching.md).
 
 **The logbook.** `onboard logbook new-day --date 2026-08-23 --circuit Sonoma --car Miata` begins a
