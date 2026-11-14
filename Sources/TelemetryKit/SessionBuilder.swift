@@ -32,6 +32,9 @@ public enum SessionBuilder {
         public var calculatedFields: [CalculatedField]
         /// Lap detection from a finish line; `nil` keeps the file's own laps.
         public var finishLine: FinishLine?
+        /// With `finishLine` as the start, the finish of a point-to-point course (#552): the session
+        /// is timed in runs (`RunDetector`) rather than laps. `nil` for a circuit.
+        public var runFinishLine: FinishLine?
         public var ignoreFirstCrossings: Int
         /// How laps are split into sectors. Three equal parts is the convention and costs a
         /// binary search per boundary per lap, so it is always measured rather than asked for.
@@ -68,6 +71,7 @@ public enum SessionBuilder {
             smoothingSeconds: Double = 0,
             calculatedFields: [CalculatedField] = [],
             finishLine: FinishLine? = nil,
+            runFinishLine: FinishLine? = nil,
             ignoreFirstCrossings: Int = 0,
             sectorMode: SectorMode = .equalDistance(count: SectorMode.defaultCount),
             cornerLabels: [String] = [],
@@ -89,6 +93,7 @@ public enum SessionBuilder {
             self.smoothingSeconds = smoothingSeconds
             self.calculatedFields = calculatedFields
             self.finishLine = finishLine
+            self.runFinishLine = runFinishLine
             self.ignoreFirstCrossings = ignoreFirstCrossings
             self.sectorMode = sectorMode
             self.cornerLabels = cornerLabels
@@ -148,11 +153,7 @@ public enum SessionBuilder {
         for field in options.calculatedFields {
             try? session.addCalculatedField(field)
         }
-        if let line = options.finishLine {
-            session.laps = LapDetector.detect(in: session, line: line, ignoreFirst: options.ignoreFirstCrossings)
-        } else {
-            session.laps = deriveLaps(table: table, session: session, legacyFirstLap: options.legacyFirstLap)
-        }
+        session.laps = timedLaps(of: session, table: table, options: options)
         // Pit-lane fragments cannot be the best lap, and every object can read the deltas to it.
         session.laps = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
         for channel in LapDeltas.channels(for: session) { session.add(channel) }
@@ -335,5 +336,19 @@ public enum SessionBuilder {
             laps.append(Lap(number: run.number, start: run.start, end: end, isComplete: !isLast && !isFirstPartial))
         }
         return laps
+    }
+}
+
+extension SessionBuilder {
+    /// Runs between a start and a finish line (#552), laps from crossings of one line, or the
+    /// file's own laps, in that order of what the options ask for.
+    static func timedLaps(of session: TelemetrySession, table: RawTable, options: Options) -> [Lap] {
+        if let start = options.finishLine, let finish = options.runFinishLine {
+            return RunDetector.detect(in: session, start: start, finish: finish)
+        }
+        if let line = options.finishLine {
+            return LapDetector.detect(in: session, line: line, ignoreFirst: options.ignoreFirstCrossings)
+        }
+        return deriveLaps(table: table, session: session, legacyFirstLap: options.legacyFirstLap)
     }
 }

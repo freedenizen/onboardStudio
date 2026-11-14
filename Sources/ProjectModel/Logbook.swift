@@ -262,7 +262,7 @@ extension LogbookEntry {
     /// the conditions, the notes — is touched.
     public mutating func readLaps(of session: TelemetrySession) {
         let stats = SessionStats(session: session)
-        laps = session.laps.map { LapRecord(number: $0.number, seconds: $0.duration, isComplete: $0.isComplete) }
+        laps = session.laps.listed.map { LapRecord(number: $0.number, seconds: $0.duration, isComplete: $0.isComplete) }
         bestLap = stats.bestLap?.seconds
         bestLapNumber = stats.bestLap?.number
         optimalLap = stats.optimalLap

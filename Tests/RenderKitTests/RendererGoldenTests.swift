@@ -170,6 +170,21 @@ struct RendererBehaviourTests {
             ).text == "0:06.00")
     }
 
+    @Test func aTimerDuringARunSaysRunAndBetweenRunsShowsNoNumber() {
+        var session = SyntheticSession.session
+        session.laps = [
+            Lap(number: -1, start: 0, end: 2, isComplete: false, kind: .transit),
+            Lap(number: 1, start: 2, end: 5, isComplete: true, kind: .run),
+            Lap(number: -2, start: 5, end: 100, isComplete: false, kind: .transit),
+        ]
+        let context = ObjectContext(
+            objectID: DisplayObjectID(), frame: .full, opacity: 1, sampler: TelemetrySampler(session: session),
+            sync: .identity, cache: RenderCache())
+        let timer = TimerRenderer(context: context, params: TimerParams(mode: .currentLap))
+        #expect(timer.labelText(sample: context.sample(at: 3)) == "RUN 1")
+        #expect(timer.labelText(sample: context.sample(at: 6)) == "LAP")
+    }
+
     @Test func plannerBuildsOneRendererPerVisibleDataObject() {
         let data = Input(label: "d", source: MediaReference(path: "x.csv"), kind: .data(DataInputSettings()))
         let video = Input(label: "v", source: MediaReference(path: "x.mp4"), kind: .video(VideoInputSettings()))

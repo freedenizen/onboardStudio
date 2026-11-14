@@ -39,7 +39,9 @@ public enum RollingLap {
     /// length) begins and ends. Looked for within the complete laps only, so an out lap or the
     /// pit lane can never be part of it. `nil` without laps or a distance channel.
     public static func fastestWindow(in session: TelemetrySession, lengthMeters: Double? = nil) -> LapProfile.Window? {
-        guard let distance = session[.distance] else { return nil }
+        // A rolling lap runs on past the line into the next lap; a run's course ends at the finish
+        // and the next run starts somewhere else, so there is nothing to roll into (#552).
+        guard let distance = session[.distance], !session.laps.areRuns else { return nil }
         let laps = LapDeltas.demotingShortLaps(session.laps, distance: distance)
             .filter { $0.isComplete && $0.end != nil }
         guard let first = laps.first, let last = laps.last, let lastEnd = last.end else { return nil }

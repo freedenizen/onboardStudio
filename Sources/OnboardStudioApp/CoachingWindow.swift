@@ -135,7 +135,7 @@ struct CoachingContent: View {
     private func choices(selection: CoachingSelection, laps: [Lap]) -> some View {
         HStack(spacing: 16) {
             Picker(
-                "Lap",
+                laps.noun,
                 selection: Binding(
                     get: { selection.lapNumber }, set: { setLap($0, selection: selection) })
             ) {
@@ -151,7 +151,11 @@ struct CoachingContent: View {
             ) {
                 Section("This session") {
                     Text(CoachingReference.sessionBest.displayName).tag(CoachingSettings.Reference.sessionBest)
-                    Text(CoachingReference.fastestRolling.displayName).tag(CoachingSettings.Reference.fastestRolling)
+                    // A run's course ends at the finish: there is no rolling lap to offer (#552).
+                    if !laps.areRuns {
+                        Text(CoachingReference.fastestRolling.displayName)
+                            .tag(CoachingSettings.Reference.fastestRolling)
+                    }
                     Text(CoachingReference.compositeOptimal.displayName)
                         .tag(CoachingSettings.Reference.compositeOptimal)
                     ForEach(laps.filter { $0.number != selection.lapNumber }, id: \.number) { lap in
@@ -196,7 +200,7 @@ struct CoachingContent: View {
     static func lapNumbers(in reference: LapProfile) -> [Int] { reference.pieces.map(\.lapNumber) }
 
     static func lapTitle(_ lap: Lap) -> String {
-        "Lap \(lap.number) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))"
+        "\(lap.title) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))"
     }
 }
 

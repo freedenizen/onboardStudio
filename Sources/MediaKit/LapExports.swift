@@ -6,15 +6,22 @@ import TelemetryKit
 public struct LapExport: Sendable, Equatable {
     public let lap: Int
     public let range: ClosedRange<Double>
+    /// A run of a point-to-point course (#552) rather than a circuit lap, which is all it changes:
+    /// what the file and the progress call it.
+    public let isRun: Bool
 
-    public init(lap: Int, range: ClosedRange<Double>) {
+    public init(lap: Int, range: ClosedRange<Double>, isRun: Bool = false) {
         self.lap = lap
         self.range = range
+        self.isRun = isRun
     }
+
+    /// "Lap 7", "Run 3".
+    public var title: String { "\(isRun ? "Run" : "Lap") \(lap)" }
 
     /// `Sonoma – Lap 7.mp4`: the project's name and the lap's number, as the file will be called.
     public func fileName(base: String, fileExtension: String) -> String {
-        "\(base) – Lap \(lap).\(fileExtension)"
+        "\(base) – \(title).\(fileExtension)"
     }
 }
 
@@ -38,7 +45,8 @@ extension ProjectCompiler {
         for input in loaded.project.dataInputs {
             guard let session = loaded.sessions[input.id], !session.laps.isEmpty else { continue }
             return lapExports(
-                laps: session.laps, sessionEnd: session.timeRange?.upperBound, sync: input.sync, duration: duration,
+                laps: session.laps.listed, sessionEnd: session.timeRange?.upperBound, sync: input.sync,
+                duration: duration,
                 keeping: LapSelection(completeOnly: completeOnly, slowerThanBest: slowerThanBest))
         }
         return []
@@ -59,7 +67,7 @@ extension ProjectCompiler {
             guard let end = lap.end ?? sessionEnd else { return nil }
             let start = min(max(sync.projectTime(forInputTime: lap.start), 0), duration)
             let stop = min(max(sync.projectTime(forInputTime: end), start), duration)
-            return stop > start ? LapExport(lap: lap.number, range: start...stop) : nil
+            return stop > start ? LapExport(lap: lap.number, range: start...stop, isRun: lap.kind == .run) : nil
         }
     }
 }
