@@ -102,6 +102,9 @@ public enum CoachingWarning: Sendable, Equatable, Codable {
     case seamInCorner(labels: [String])
     /// Fewer than three complete laps: nothing to say about consistency.
     case tooFewLapsForConsistency
+    /// These corners are marked as traffic or a flag on the lap or the reference (#571), and are
+    /// not coached.
+    case traffic(labels: [String])
 }
 
 /// One lap read against a reference: the delta, every corner, the opportunities in order, and
@@ -122,6 +125,11 @@ public struct CoachingAnalysis: Sendable {
     public var top: [Opportunity] { Array(opportunities.prefix(options.topCount)) }
     /// Seconds the lap lost to the reference over the whole lap.
     public var totalLoss: Double { delta.total }
+    /// Seconds the lap lost in the corners it was held up in (#571): part of `totalLoss`, and the
+    /// part no note is about.
+    public var trafficLoss: Double {
+        corners.filter { $0.traffic?.onLap == true }.reduce(0) { $0 + max(0, $1.timeLost) }
+    }
 
     /// `lap` of `session` against `reference` from the same session. `nil` when the lap or the
     /// reference cannot be profiled (no distance channel, an incomplete lap, no complete laps).
@@ -196,8 +204,11 @@ public struct CoachingAnalysis: Sendable {
                 headingChangeDegrees: corner.headingChangeDegrees, lapLengthMeters: lap.lengthMeters)
         }
         let lapMetrics = CornerMetrics.measure(corners: lapCorners, of: lap, options: options.metrics)
-        let comparisons = CornerComparison.compare(
+        var comparisons = CornerComparison.compare(
             lap: lapMetrics, reference: referenceMetrics, delta: delta, labels: session.cornerLabels)
+        // The marks are the session's: the reference is read against them only when it is a lap
+        // of the same session.
+        markTraffic(&comparisons, lap: lap, reference: sameSession ? reference : nil, delta: delta, in: session)
         var warnings: [CoachingWarning] = []
         if delta.confidence == 0 && alignment != delta.alignment { warnings.append(.approximateAlignment) }
         if lapMetrics.contains(where: { $0.brakeSource == .speedTrace }) { warnings.append(.pedalsFromSpeedTrace) }
@@ -208,11 +219,50 @@ public struct CoachingAnalysis: Sendable {
         }
         if !seamed.isEmpty { warnings.append(.seamInCorner(labels: seamed.map(\.label))) }
         if sameSession, consistency == nil { warnings.append(.tooFewLapsForConsistency) }
+        let held = comparisons.filter { $0.traffic != nil }
+        if !held.isEmpty { warnings.append(.traffic(labels: held.map(\.label))) }
         let opportunities = Coaching.rank(
             comparisons, consistency: consistency, referencePhrase: referencePhrase, units: units, options: options)
         return CoachingAnalysis(
             lap: lap, reference: reference, referencePhrase: referencePhrase, delta: delta, corners: comparisons,
             opportunities: opportunities, consistency: consistency, warnings: warnings, options: options)
+    }
+}
+
+extension CoachingAnalysis {
+    /// Marks each corner a traffic mark covers, on the lap at the aligned place and on the
+    /// reference where it is given.
+    static func markTraffic(
+        _ comparisons: inout [CornerComparison], lap: LapProfile, reference: LapProfile?, delta: LapDeltaTrace,
+        in session: TelemetrySession
+    ) {
+        guard !session.traffic.isEmpty else { return }
+        for index in comparisons.indices {
+            let comparison = comparisons[index]
+            let range =
+                comparison.range ?? comparison.reference
+                .phaseStart...max(
+                    comparison.reference.phaseStart, comparison.reference.phaseEnd)
+            let onLap = lap.traffic(
+                from: delta.lapDistance(atReferenceDistance: range.lowerBound),
+                to: delta.lapDistance(atReferenceDistance: range.upperBound), in: session.traffic)
+            let onReference = reference?.traffic(from: range.lowerBound, to: range.upperBound, in: session.traffic)
+            guard let span = onLap ?? onReference else { continue }
+            comparisons[index].traffic = CornerTraffic(
+                kind: span.kind, onLap: onLap != nil, onReference: onReference != nil)
+        }
+    }
+
+    /// The stretch of session time a corner was read over on the lap: what marking the corner
+    /// as traffic marks.
+    public func sessionTimes(of comparison: CornerComparison) -> ClosedRange<Double> {
+        let range =
+            comparison.range ?? comparison.reference
+            .phaseStart...max(
+                comparison.reference.phaseStart, comparison.reference.phaseEnd)
+        let start = lap.sessionTime(atDistance: delta.lapDistance(atReferenceDistance: range.lowerBound))
+        let end = lap.sessionTime(atDistance: delta.lapDistance(atReferenceDistance: range.upperBound))
+        return min(start, end)...max(start, end)
     }
 }
 
@@ -226,17 +276,19 @@ public enum Coaching {
 
     /// Corners that lost time, biggest loss first, each with the phase, the kind of difference
     /// and a note. A corner whose loss the next corner wins back is a compromise that paid, not
-    /// an opportunity, and is left out.
+    /// an opportunity, and is left out; so is a corner marked as traffic on either lap (#571).
     public static func rank(
         _ comparisons: [CornerComparison], consistency: ConsistencyStats?, referencePhrase: String,
         units: CoachingUnits, options: CoachingOptions
     ) -> [Opportunity] {
         var candidates: [Candidate] = []
         for (position, comparison) in comparisons.enumerated() {
-            guard comparison.timeLost >= options.minimumLossSeconds, let phase = comparison.worstPhase else { continue }
+            guard comparison.traffic == nil, comparison.timeLost >= options.minimumLossSeconds,
+                let phase = comparison.worstPhase
+            else { continue }
             if position + 1 < comparisons.count {
                 let next = comparisons[position + 1]
-                if next.timeLost < 0, -next.timeLost >= comparison.timeLost { continue }
+                if next.traffic == nil, next.timeLost < 0, -next.timeLost >= comparison.timeLost { continue }
             }
             let kind = kind(of: comparison, phase: phase, options: options)
             candidates.append(Candidate(comparison: comparison, phase: phase, kind: kind))

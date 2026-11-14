@@ -247,6 +247,8 @@ extension CoachingContent {
             "The reference changes lap inside turn \(labels.joined(separator: ", ")), so its speed can step there."
         case .tooFewLapsForConsistency:
             "Fewer than three flying laps: nothing to say about consistency."
+        case .traffic(let labels):
+            "Marked as traffic or a flag, so not coached: turn \(labels.joined(separator: ", "))."
         }
     }
 }

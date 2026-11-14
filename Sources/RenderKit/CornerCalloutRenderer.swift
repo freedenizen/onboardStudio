@@ -45,6 +45,11 @@ public struct CornerCalloutRenderer: OverlayDrawing {
     ) -> Card? {
         let options = analysis.options
         let lost = comparison.timeLost
+        // A corner held up by traffic or a flag is no opportunity, and a note on its driving
+        // would be wrong (#571): the card says what happened and nothing more.
+        if let traffic = comparison.trafficHeadline(referencePhrase: analysis.referencePhrase) {
+            return params.onlyOpportunities ? nil : Card(headline: traffic, timeLost: 0, evidence: [], suggestion: nil)
+        }
         if params.onlyOpportunities, lost < options.minimumLossSeconds { return nil }
         let format = CoachingNotes.Formatter(units: units)
         let headline: String

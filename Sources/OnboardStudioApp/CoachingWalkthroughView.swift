@@ -30,6 +30,8 @@ struct CoachingWalkthroughView<Change: View>: View {
     let change: () -> Change
     /// What Watch plays for a corner (#516).
     let watch: (CornerComparison) async -> [WatchClip]
+    /// Marks a corner as held up by traffic or a flag (#571); the reading then leaves it out.
+    var markTraffic: ((CornerComparison, TrafficSpan.Kind) -> Void)?
 
     @State private var step: CoachingWalkthrough.Step = .lap
     /// The corners the driver means to try next time, by index: all of them to begin with.
@@ -42,8 +44,10 @@ struct CoachingWalkthroughView<Change: View>: View {
     init(
         analysis: CoachingAnalysis, lapNumber: Int, units: CoachingUnits, others: [LapProfile],
         source: any CoachingSource, watch: @escaping (CornerComparison) async -> [WatchClip],
+        markTraffic: ((CornerComparison, TrafficSpan.Kind) -> Void)? = nil,
         @ViewBuilder change: @escaping () -> Change
     ) {
+        self.markTraffic = markTraffic
         self.analysis = analysis
         self.lapNumber = lapNumber
         self.units = units
@@ -110,6 +114,7 @@ struct CoachingWalkthroughView<Change: View>: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            LeftOutCorners(analysis: analysis)
         }
     }
 
@@ -136,6 +141,9 @@ struct CoachingWalkthroughView<Change: View>: View {
                     .accessibilityIdentifier("coaching.walkthrough.suggestion")
                 Toggle("Try this next time", isOn: tryBinding(opportunity.corner.index))
                     .accessibilityIdentifier("coaching.walkthrough.try")
+                if let markTraffic {
+                    LeaveCornerOutMenu { markTraffic(opportunity.corner, $0) }
+                }
             }
             .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .leading, spacing: 16) {

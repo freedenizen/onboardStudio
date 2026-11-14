@@ -15,6 +15,12 @@ public struct CornerComparison: Sendable, Equatable, Codable {
     /// Seconds lost (+) or gained (−) from the braking phase's start to the exit phase's end.
     public let timeLost: Double
     public let phaseLoss: [CornerPhase: Double]
+    /// Where on the reference the loss is read, metres: from the earlier brake point to where the
+    /// next corner's braking takes over. `nil` for a comparison made by hand.
+    public var range: ClosedRange<Double>?
+    /// The traffic mark covering the corner on either lap (#571); such a corner is no
+    /// opportunity and says nothing about consistency.
+    public var traffic: CornerTraffic?
     /// Where the delta grew the most, if it grew anywhere.
     public var worstPhase: CornerPhase? {
         let worst = CornerPhase.allCases.max { (phaseLoss[$0] ?? 0) < (phaseLoss[$1] ?? 0) }
@@ -57,7 +63,8 @@ public struct CornerComparison: Sendable, Equatable, Codable {
             let cornerIndex = pair.reference.index
             return CornerComparison(
                 index: cornerIndex, label: cornerIndex < labels.count ? labels[cornerIndex] : "\(cornerIndex + 1)",
-                lap: pair.lap, reference: pair.reference, timeLost: delta.loss(from: start, to: end), phaseLoss: losses)
+                lap: pair.lap, reference: pair.reference, timeLost: delta.loss(from: start, to: end), phaseLoss: losses,
+                range: start...max(start, end))
         }
     }
 }

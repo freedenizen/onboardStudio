@@ -29,22 +29,52 @@ public struct ConsistencyStats: Sendable, Equatable, Codable {
     /// Over the session's flying laps: complete laps (short ones excluded) within
     /// `options.flyingLapTolerance` of the best. `nil` with fewer than three, which is too few
     /// to call anything a pattern.
+    ///
+    /// Traffic marks (#571) are read corner by corner: a corner a mark covers is left out of that
+    /// lap's readings and the lap's other corners still count. A marked lap is judged flying by
+    /// its time with the marked stretches driven at the best lap's pace, so a lap spent behind a
+    /// slower car is not thrown away whole, and its lap time is left out of the lap-time spread.
     public static func measure(
         in session: TelemetrySession, corners: [Corner], options: CoachingOptions = CoachingOptions()
     ) -> ConsistencyStats? {
         let complete = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
             .filter { $0.isComplete && $0.duration != nil }
-        guard let best = complete.compactMap(\.duration).min() else { return nil }
-        let laps = complete.filter { ($0.duration ?? .infinity) <= best * (1 + options.flyingLapTolerance) }
+        guard let best = complete.min(by: { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }),
+            let bestTime = best.duration
+        else { return nil }
+        let limit = bestTime * (1 + options.flyingLapTolerance)
+        let bestProfile =
+            session.traffic.isEmpty ? nil : LapProfile(lap: best, in: session, stepMeters: options.stepMeters)
+        var laps: [FlyingLap] = []
+        for lap in complete {
+            guard let duration = lap.duration else { continue }
+            if session.isClearOfTraffic(lap) {
+                if duration <= limit { laps.append(FlyingLap(lap: lap, profile: nil, clear: true)) }
+                continue
+            }
+            guard let profile = LapProfile(lap: lap, in: session, stepMeters: options.stepMeters),
+                let bestProfile,
+                duration - trafficCost(of: profile, against: bestProfile, in: session.traffic) <= limit
+            else { continue }
+            laps.append(FlyingLap(lap: lap, profile: profile, clear: false))
+        }
         guard laps.count >= 3 else { return nil }
         var readings: [Int: [CornerMetrics]] = [:]
-        for lap in laps {
-            guard let profile = LapProfile(lap: lap, in: session, stepMeters: options.stepMeters) else { continue }
+        for entry in laps {
+            guard let profile = entry.profile ?? LapProfile(lap: entry.lap, in: session, stepMeters: options.stepMeters)
+            else { continue }
             for metrics in CornerMetrics.measure(corners: corners, of: profile, options: options.metrics) {
+                if !entry.clear,
+                    profile.traffic(
+                        from: metrics.phaseStart, to: max(metrics.phaseStart, metrics.phaseEnd), in: session.traffic)
+                        != nil
+                {
+                    continue
+                }
                 readings[metrics.index, default: []].append(metrics)
             }
         }
-        let times = laps.compactMap(\.duration)
+        let times = laps.filter(\.clear).compactMap(\.lap.duration)
         let spreads = readings.keys.sorted().compactMap { index -> CornerSpread? in
             guard let metrics = readings[index], metrics.count >= 2 else { return nil }
             let brakes = metrics.compactMap(\.brakePointMeters)
@@ -62,6 +92,33 @@ public struct ConsistencyStats: Sendable, Equatable, Codable {
         }
         return ConsistencyStats(
             lapCount: laps.count, lapTimeMean: mean(times), lapTimeSpread: deviation(times), corners: spreads)
+    }
+
+    /// A lap read for consistency: the profile already made when its marks were weighed, and
+    /// whether no mark touches it.
+    struct FlyingLap {
+        let lap: Lap
+        let profile: LapProfile?
+        let clear: Bool
+    }
+
+    /// Seconds `lap` spent in marked stretches beyond what `best` took over the same distances
+    /// (scaled to its length): how much quicker the lap would have been driven at the best lap's
+    /// pace there. Never negative.
+    static func trafficCost(of lap: LapProfile, against best: LapProfile, in spans: [TrafficSpan]) -> Double {
+        guard lap.count >= 2, lap.lengthMeters > 0 else { return 0 }
+        let scale = best.lengthMeters / lap.lengthMeters
+        var cost = 0.0
+        for index in 0..<(lap.count - 1) {
+            let middle = (lap.times[index] + lap.times[index + 1]) / 2
+            guard spans.contains(where: { $0.start <= middle && middle <= $0.end }) else { continue }
+            let own = lap.elapsed[index + 1] - lap.elapsed[index]
+            let theirs =
+                best.elapsed(atDistance: lap.distances[index + 1] * scale)
+                - best.elapsed(atDistance: lap.distances[index] * scale)
+            cost += own - theirs
+        }
+        return max(0, cost)
     }
 
     static func mean(_ values: [Double]) -> Double {
