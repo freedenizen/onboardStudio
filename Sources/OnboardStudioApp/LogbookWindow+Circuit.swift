@@ -17,25 +17,29 @@ extension LogbookModel {
         CircuitCatalog.circuit(id: CircuitKey.base(of: circuitKey)) != nil
     }
 
-    /// Writes the circuit's plan — none takes it away — as one step of the Logbook window's Undo.
-    func savePlan(_ plan: NextSessionPlan?, for circuitKey: String, name: String, undo: UndoManager?) {
+    /// Writes the circuit's plan — none takes it away — as one step of the Logbook window's Undo,
+    /// from the card or the Coaching window (#543).
+    func savePlan(_ plan: NextSessionPlan?, for circuitKey: String, name: String, undo: UndoManager?) throws {
         guard let circuit = CircuitCatalog.circuit(id: CircuitKey.base(of: circuitKey)) else { return }
         let configuration = CircuitKey.configuration(of: circuitKey)
         let before = plans[circuitKey]
         let kept = plan.flatMap { $0.experiments.isEmpty ? nil : $0 }
         guard kept != before else { return }
+        defer { reloadPlans() }
         if let kept {
-            try? TrackLibrary.app.remember(kept, id: circuitKey) {
+            // A circuit planned for the first time keeps the plan alone: the logbook knows no
+            // start/finish or sectors to give it, and a definition without them does not change
+            // how the next file there is set up (`TrackDefinition.hasGeometry`).
+            try TrackLibrary.app.remember(kept, id: circuitKey) {
                 TrackDefinition(
                     circuitID: circuit.id, configuration: configuration, name: circuit.name,
                     latitude: circuit.latitude, longitude: circuit.longitude)
             }
         } else {
-            try? TrackLibrary.app.forgetPlan(id: circuitKey)
+            try TrackLibrary.app.forgetPlan(id: circuitKey)
         }
-        reloadPlans()
         undo?.registerUndo(withTarget: self) { model in
-            MainActor.assumeIsolated { model.savePlan(before, for: circuitKey, name: name, undo: undo) }
+            MainActor.assumeIsolated { try? model.savePlan(before, for: circuitKey, name: name, undo: undo) }
         }
         undo?.setActionName(name)
     }
@@ -76,7 +80,7 @@ extension LogbookWindow {
                 model.newDayRequested = true
             },
             makePlan: lastVisitSession(at: key).map { entry in { coach(entry) } },
-            savePlan: { model.savePlan($0, for: key, name: $1, undo: undoManager) },
+            savePlan: { try? model.savePlan($0, for: key, name: $1, undo: undoManager) },
             goals: model.goals(at: key).map { GoalProgress.make($0, entries: model.entries) },
             speed: LogbookWindow.speedUnit, corners: cornerLabels(at: key), cars: carsDriven(at: key),
             addGoal: { model.addGoal($0, undo: undoManager) }, removeGoal: { model.removeGoal($0, undo: undoManager) }

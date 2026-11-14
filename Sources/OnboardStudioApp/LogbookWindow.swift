@@ -23,6 +23,9 @@ import UniformTypeIdentifiers
     var trackDefinitions: [TrackDefinition] = []
     /// What the driver is aiming for at each circuit (#461).
     var goals: [Goal] = []
+    /// The Logbook window's Undo, for a Logbook edit made in another window: a plan saved for the
+    /// circuit in the Coaching window is a step of it, as the card's own edits are (#543).
+    @ObservationIgnored weak var windowUndo: UndoManager?
     /// New Track Day Here… on a circuit's card: the circuit the sheet begins with (#460).
     var newDayCircuit: String?
     /// Sessions read in for coaching references (#352), by entry, kept for the app's life.
@@ -245,6 +248,7 @@ struct LogbookWindow: View {
                     model.tourStep = 0
                 }
             }
+            .onChange(of: undoManager, initial: true) { model.windowUndo = undoManager }
             .onChange(of: view) { if view != .sessions { sawProgress = true } }
             .onChange(of: scope, initial: true) { model.choose(selectedDay) }
             .onChange(of: model.days) { followTheChosenDay() }
