@@ -91,7 +91,7 @@ public enum TrackDayImport {
         }
 
         public static func describe(_ entry: LogbookEntry) -> String {
-            var parts = [entry.title]
+            var parts = [entry.circuitTitle]
             if let date = entry.date { parts.append(date.formatted(date: .abbreviated, time: .omitted)) }
             parts.append(entry.laps.isEmpty ? "no laps" : "\(entry.completeLapCount) laps")
             if let best = entry.bestLap { parts.append("best \(TimeParsing.lapTimeString(best))") }
@@ -252,9 +252,19 @@ public enum TrackDayImport {
                 settings.importerID = candidate.id
                 if let again = try? ProjectCompiler.importData(at: url, settings: settings) { session = again }
             }
+            // Which of the circuit's configurations it drove, from where its turns are (#549), and
+            // the names that configuration keeps for them, so its corners are read by their names.
+            // A course timed in runs is a layout of its own, not one of a circuit's configurations.
+            let kept = lines == nil ? match.map { batch.tracks?.configurations(of: $0.circuit.id) ?? [] } ?? [] : []
+            let configuration = ConfigurationMatch.configuration(of: session, among: kept)
+            if let definition = kept.first(where: { $0.configuration == configuration }) {
+                session.turnNames = definition.turnNames
+                session.cornerLabels = definition.cornerLabels
+            }
             // As the file alone describes it; the day's circuit, car and driver come with the filing.
             var entry = try LogbookEntry.make(
                 session: session, file: url, importerID: candidate.id, circuitID: match?.circuit.id)
+            entry.configuration = configuration
             if lines != nil { entry.readRuns(lines, of: session, among: logbook.entries()) }
             let reading = Reading(entry: entry, fileDriver: session.info.driverName)
             if batch.strays == .kept, let day = batch.day, let stray = Stray(reading, at: url, against: day) {

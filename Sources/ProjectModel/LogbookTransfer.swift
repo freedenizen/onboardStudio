@@ -152,7 +152,8 @@ public enum LogbookTransfer {
         let labels = Dictionary(days.map { ($0.id, $0.label) }, uniquingKeysWith: { first, _ in first })
         for entry in entries {
             let cells: [String] = [
-                entry.date.map(ProjectDetails.iso) ?? "", entry.trackDayID.flatMap { labels[$0] } ?? "", entry.title,
+                entry.date.map(ProjectDetails.iso) ?? "", entry.trackDayID.flatMap { labels[$0] } ?? "",
+                entry.circuitTitle,
                 entry.car, entry.driver,
                 String(entry.completeLapCount), seconds(entry.bestLap), entry.bestLapNumber.map(String.init) ?? "",
                 seconds(entry.optimalLap), seconds(entry.fastestRollingLap),
@@ -176,7 +177,7 @@ public enum LogbookTransfer {
         for entry in entries {
             for lap in entry.laps {
                 let cells = [
-                    entry.date.map(ProjectDetails.iso) ?? "", entry.title, entry.car, String(lap.number),
+                    entry.date.map(ProjectDetails.iso) ?? "", entry.circuitTitle, entry.car, String(lap.number),
                     seconds(lap.seconds), lap.isComplete ? "yes" : "no",
                     entry.isRuns ? String(lap.cones) : "",
                     entry.isRuns ? seconds(lap.officialSeconds(perCone: entry.perCone)) : "",
@@ -204,7 +205,7 @@ public enum LogbookTransfer {
         lines.append("|---|---|---|---:|---:|---:|---:|---|")
         for entry in entries {
             let cells = [
-                entry.date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—", entry.title,
+                entry.date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—", entry.circuitTitle,
                 entry.car.isEmpty ? "—" : entry.car, String(entry.completeLapCount), lapTime(entry.bestLap),
                 lapTime(entry.optimalLap), lapTime(entry.fastestRollingLap),
                 entry.conditions.summary.isEmpty ? "—" : entry.conditions.summary,
@@ -215,7 +216,7 @@ public enum LogbookTransfer {
         for entry in entries where !entry.laps.isEmpty {
             lines.append("")
             let when = entry.date.map { " — " + $0.formatted(date: .long, time: .omitted) } ?? ""
-            lines.append("## \(entry.title)\(when)")
+            lines.append("## \(entry.circuitTitle)\(when)")
             if !entry.car.isEmpty || !entry.driver.isEmpty {
                 lines.append("*\([entry.car, entry.driver].filter { !$0.isEmpty }.joined(separator: " · "))*")
             }
