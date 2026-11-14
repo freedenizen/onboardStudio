@@ -133,11 +133,20 @@ struct LogbookDetail: View {
     /// there (#426).
     var personalBest: PersonalBest?
     var visits = 0
+    /// For a session in runs (#552): the logbook's other courses, and what renaming the course,
+    /// joining another or starting a new one does.
+    var otherCourses: [CourseTag] = []
+    var renameCourse: (String) -> Void = { _ in }
+    var joinCourse: (CourseTag) -> Void = { _ in }
+    var separateCourse: () -> Void = {}
     /// The template the last New Project used; the next one uses it too.
     @AppStorage("logbook.projectTemplate") private var templateName = "Classic Dash"
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
     @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
     private var speedUnit: SpeedDisplayUnit { (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown() }
+
+    /// "lap", or "run" for a point-to-point course (#552).
+    private var noun: String { entry.isRuns ? "run" : "lap" }
 
     var body: some View {
         ScrollView {
@@ -150,32 +159,38 @@ struct LogbookDetail: View {
                     // What was driven and by whom first, as the day's header has them, in the same
                     // columns as the numbers under them (#453).
                     SessionCarFields(entry: entry, knownCars: knownCars, save: save)
+                    if let course = entry.course {
+                        SessionCourseField(
+                            entry: entry, course: course, otherCourses: otherCourses, rename: renameCourse,
+                            join: joinCourse, separate: separateCourse)
+                    }
                     row(
-                        "Best lap", entry.bestLap.map { TimeParsing.lapTimeString($0) },
-                        detail: entry.bestLapNumber.map { "lap \($0)" })
-                    row("Optimal lap", entry.optimalLap.map { TimeParsing.lapTimeString($0) })
-                    row("Fastest rolling lap", entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) })
+                        "Best \(noun)", entry.bestLap.map { TimeParsing.lapTimeString($0) },
+                        detail: entry.bestLapNumber.map { "\(noun) \($0)" })
+                    row("Optimal \(noun)", entry.optimalLap.map { TimeParsing.lapTimeString($0) })
+                    // A run's course ends at the finish: there is no rolling lap (#552).
+                    if !entry.isRuns {
+                        row("Fastest rolling lap", entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) })
+                    }
                     row(
                         "Top speed", entry.topSpeed.map { speedUnit.text(metersPerSecond: $0) },
                         identifier: "logbook.detail.topSpeed")
                     row(
-                        "Laps", "\(entry.completeLapCount) complete of \(entry.laps.count)",
+                        entry.isRuns ? "Runs" : "Laps",
+                        "\(entry.completeLapCount) \(entry.isRuns ? "finished" : "complete") of \(entry.laps.count)",
                         identifier: "logbook.detail.laps")
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                 }
                 .font(.callout)
                 if !entry.laps.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Laps").font(.subheadline.weight(.semibold))
+                        Text(entry.isRuns ? "Runs" : "Laps").font(.subheadline.weight(.semibold))
                         ForEach(entry.laps, id: \.number) { lap in
-                            HStack {
-                                Text("Lap \(lap.number)")
-                                Spacer()
-                                Text(lap.seconds.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
-                                    .foregroundStyle(lap.number == entry.bestLapNumber ? Color.accentColor : .primary)
-                                if !lap.isComplete { Text("partial").foregroundStyle(.secondary) }
+                            if entry.isRuns {
+                                RunPenaltyRow(entry: entry, lap: lap, save: save)
+                            } else {
+                                lapRow(lap)
                             }
-                            .font(.callout)
                         }
                     }
                 }
@@ -227,6 +242,18 @@ struct LogbookDetail: View {
         }
         .accessibilityIdentifier("logbook.detail")
         .safeAreaInset(edge: .bottom, spacing: 0) { actions }
+    }
+
+    /// A circuit lap: its number and time, the best in the accent colour.
+    private func lapRow(_ lap: LogbookEntry.LapRecord) -> some View {
+        HStack {
+            Text("Lap \(lap.number)")
+            Spacer()
+            Text(lap.seconds.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
+                .foregroundStyle(lap.number == entry.bestLapNumber ? Color.accentColor : .primary)
+            if !lap.isComplete { Text("partial").foregroundStyle(.secondary) }
+        }
+        .font(.callout)
     }
 
     /// What can be done with the session. Under the detail rather than at the end of it, so the
@@ -356,144 +383,5 @@ struct LogbookDetail: View {
                 }
             }
         }
-    }
-}
-
-/// Weather, track, temperature, tyres, setup and notes, written to the entry as they are set:
-/// pickers and the temperature at once, text when Return is pressed or the field is left (#348).
-struct ConditionsEditor: View {
-    /// Whose conditions these are, so a change of session or day reloads the fields.
-    let identity: UUID
-    let conditions: SessionConditions
-    let notes: String
-    let save: (SessionConditions, String) -> Void
-    @State private var temperature = ""
-    @State private var tyres = ""
-    @State private var setup = ""
-    @State private var notesText = ""
-    @FocusState private var focus: Field?
-
-    enum Field: Hashable { case temperature, tyres, setup, notes }
-
-    /// A session's conditions and notes (#348).
-    init(entry: LogbookEntry, save: @escaping (LogbookEntry) -> Void) {
-        identity = entry.id
-        conditions = entry.conditions
-        notes = entry.notes
-        self.save = { conditions, notes in
-            var changed = entry
-            changed.conditions = conditions
-            changed.notes = notes
-            save(changed)
-        }
-    }
-
-    /// A track day's conditions and notes (#393): the default for the sessions added to it.
-    init(day: TrackDay, save: @escaping (TrackDay) -> Void) {
-        identity = day.id
-        conditions = day.conditions
-        notes = day.notes
-        self.save = { conditions, notes in
-            var changed = day
-            changed.conditions = conditions
-            changed.notes = notes
-            save(changed)
-        }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Conditions").font(.subheadline.weight(.semibold))
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
-                GridRow {
-                    Text("Weather").foregroundStyle(.secondary)
-                    Picker("Weather", selection: binding(\.weather)) {
-                        Text("Not noted").tag(SessionConditions.Weather?.none)
-                        ForEach(SessionConditions.Weather.allCases, id: \.self) {
-                            Text($0.displayName).tag(Optional($0))
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityIdentifier("logbook.weather")
-                }
-                GridRow {
-                    Text("Surface").foregroundStyle(.secondary)
-                    Picker("Surface", selection: binding(\.track)) {
-                        Text("Not noted").tag(SessionConditions.Track?.none)
-                        ForEach(SessionConditions.Track.allCases, id: \.self) {
-                            Text($0.displayName).tag(Optional($0))
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityIdentifier("logbook.track")
-                }
-                GridRow {
-                    Text("Air").foregroundStyle(.secondary)
-                    HStack(spacing: 4) {
-                        TextField("°C", text: $temperature).frame(width: 56)
-                            .focused($focus, equals: .temperature)
-                            .onSubmit(commit)
-                            .accessibilityIdentifier("logbook.temperature")
-                        Text("°C").foregroundStyle(.secondary)
-                    }
-                }
-                GridRow {
-                    Text("Tyres").foregroundStyle(.secondary)
-                    TextField("Compound, age, pressures", text: $tyres)
-                        .focused($focus, equals: .tyres)
-                        .onSubmit(commit)
-                        .accessibilityIdentifier("logbook.tyres")
-                }
-                GridRow {
-                    Text("Setup").foregroundStyle(.secondary)
-                    TextField("What was changed", text: $setup, axis: .vertical).lineLimit(1...3)
-                        .focused($focus, equals: .setup)
-                        .onSubmit(commit)
-                        .accessibilityIdentifier("logbook.setup")
-                }
-            }
-            .font(.callout)
-            Text("Notes").font(.subheadline.weight(.semibold)).padding(.top, 4)
-            TextField("Anything worth remembering about the day", text: $notesText, axis: .vertical).lineLimit(2...6)
-                .focused($focus, equals: .notes)
-                .onSubmit(commit)
-                .accessibilityIdentifier("logbook.notes")
-        }
-        .onAppear(perform: load)
-        .onChange(of: identity) { load() }
-        .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
-    }
-
-    private func binding<Value>(_ keyPath: WritableKeyPath<SessionConditions, Value>) -> Binding<Value> {
-        Binding(
-            get: { conditions[keyPath: keyPath] },
-            set: { value in
-                var changed = conditions
-                changed[keyPath: keyPath] = value
-                save(changed, notes)
-            })
-    }
-
-    private func load() {
-        temperature = conditions.ambientCelsius.map { Self.format($0) } ?? ""
-        tyres = conditions.tyres
-        setup = conditions.setup
-        notesText = notes
-    }
-
-    /// The text fields into the entry, when any of them changed.
-    private func commit() {
-        var changed = conditions
-        let trimmed = temperature.trimmingCharacters(in: .whitespaces)
-        let number = Double(trimmed.replacingOccurrences(of: ",", with: "."))
-        changed.ambientCelsius = trimmed.isEmpty ? nil : number
-        changed.tyres = tyres.trimmingCharacters(in: .whitespaces)
-        changed.setup = setup.trimmingCharacters(in: .whitespacesAndNewlines)
-        let changedNotes = notesText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if changed != conditions || changedNotes != notes { save(changed, changedNotes) }
-    }
-
-    static func format(_ celsius: Double) -> String {
-        celsius == celsius.rounded() ? String(Int(celsius)) : String(format: "%.1f", celsius)
     }
 }

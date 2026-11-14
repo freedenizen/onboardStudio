@@ -473,6 +473,47 @@ Undo); Trends draws lap-time and consistency goals as dashed `RuleMark`s; `GoalN
 the goals before and after an import's sessions for its report; Season lists the goals first
 reached in its year.
 
+## Runs and courses (#552)
+
+A session timed in runs — an autocross, a hill climb, a stage — keeps on its entry what that
+takes, so the file reads the same way whenever it is read again:
+
+- `runLines`: the start and finish it is timed between. `readingSettings` hands them, with the
+  importer, to everything that reads the file again — a reference, the personal best a project's
+  Timer compares with, the Coaching window, a re-reading of its laps.
+- `course`: a `CourseTag`, an id and a name, kept on every session of the course rather than in a
+  list of its own. Renaming a course, saying a session was on another one or on a new one, is then
+  an ordinary edit of entries and one step of the Logbook's Undo (`LogbookChange` already
+  snapshots entries).
+- `coursePath`: the best run's path every 4 m, to recognise the course next time.
+
+A session is on the same course as another when both its lines are within 15 m of the other's and
+the two paths are within 5 m of each other on average, measured both ways (`RunCourse.matches`). A
+hill climb matches itself visit after visit; an autocross layout with a gate moved does not. The
+first match wins, else the session starts a new course named *Course of 13 Nov 2026*.
+`LogbookFilter.circuitKey` is `course:<id>` for a session on a course, so personal bests, Trends,
+goals, the circuit card and *Compare With* keep a course apart from the venue's other courses and
+its laps. `venueKey` is the circuit without the course — what a track day's circuit is compared
+with, since a day is at a place, not on a layout. `title` is *Lot 4 – Course of 13 Nov 2026*, or
+the course's name alone where nothing names the venue.
+
+A run's `LapRecord` carries the driver's `cones` and `offCourse`. `isDNF` is a run that never
+reached the finish or went off course; `officialSeconds(perCone:)` is the clock plus the cones,
+`nil` for a DNF. For a session in runs `applyPenalties` makes `bestLap` and `bestLapNumber` the
+quickest official time, so everything that reads the best — personal bests, Trends, goals, the
+import report, the reference a coaching read starts on — counts cones without knowing of them;
+`optimalLap` stays the driving's own. `readLaps` keeps a run's cones and off-course by its number
+when the file is read again. The penalty per cone is the track day's (`TrackDay.penaltyPerCone`,
+2 s when unset), copied onto each of its sessions in runs (`takePenalty(from:)`) wherever a
+session joins a day — an import, `assignDay`, Move to Day — and when the day's changes, as a day's
+car reaches its sessions. The laps CSV ends with `cones` and `official`.
+
+Entries come into runs three ways. A file whose own gates hold a start and a finish is read again
+between them when it is added to the logbook or entered from a project. A project whose data file
+is set to Runs, or whose lines move, brings its entry along after the next compile
+(`EditorModel.syncRunsToLogbook`), and back to laps when it is set back. Entries written before
+runs have none of these keys and are laps, as they were.
+
 ## On the command line (#398)
 
 `onboard logbook new-day` (`--date`, `--circuit` as a catalogue search or id, else kept as typed,

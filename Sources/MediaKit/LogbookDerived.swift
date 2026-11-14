@@ -54,9 +54,7 @@ public enum LogbookDerived {
         else { return result }
         // The personal best is this very session: the session best already measures it.
         if let own = try? LogbookEntry.hash(of: url).hex, own == entry.file.contentHash { return result }
-        var settings = DataInputSettings()
-        settings.importerID = entry.file.importerID
-        guard let other = try? ProjectCompiler.importData(at: file, settings: settings),
+        guard let other = try? ProjectCompiler.importData(at: file, settings: entry.readingSettings),
             let lap = other.laps.first(where: { $0.number == best.lapNumber }) ?? LapDeltas.sessionBest(in: other),
             let profile = LapProfile(lap: lap, in: other)
         else { return result }

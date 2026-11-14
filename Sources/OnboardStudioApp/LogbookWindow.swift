@@ -410,8 +410,20 @@ struct LogbookWindow: View {
             save: { model.save($0, undo: undoManager) },
             knownCars: model.knownCars,
             personalBest: PersonalBests.best(in: model.entries, circuitKey: circuitKey(of: entry)),
-            visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry))
+            visits: PersonalBests.trackDays(in: model.entries, circuitKey: circuitKey(of: entry)),
+            otherCourses: otherCourses(than: entry),
+            renameCourse: { name in entry.course.map { model.renameCourse($0.id, to: name, undo: undoManager) } },
+            joinCourse: { model.move([entry.id], toCourse: $0, undo: undoManager) },
+            separateCourse: { model.separateCourse([entry.id], undo: undoManager) }
         )
+    }
+
+    /// The courses another session could be on instead of this one's: those at its venue first.
+    private func otherCourses(than entry: LogbookEntry) -> [CourseTag] {
+        let venue = LogbookFilter.venueKey(of: entry)
+        let here = Set(model.entries.filter { LogbookFilter.venueKey(of: $0) == venue }.compactMap(\.course?.id))
+        let others = model.courses.filter { $0.id != entry.course?.id }
+        return others.filter { here.contains($0.id) } + others.filter { !here.contains($0.id) }
     }
 
     private func circuitKey(of entry: LogbookEntry) -> String { LogbookFilter.circuitKey(of: entry) }

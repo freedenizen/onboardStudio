@@ -62,4 +62,24 @@ struct RunImportTests {
         let again = try JSONDecoder().decode(DataInputSettings.self, from: JSONEncoder().encode(settings))
         #expect(again == settings)
     }
+
+    @Test func aFileWithGatesGoesIntoTheLogbookInRunsOnACourse() async throws {
+        let logbook = Logbook(
+            directory: FileManager.default.temporaryDirectory.appending(path: "runs-\(UUID().uuidString)"))
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        _ = await TrackDayImport.run([Self.vbo], into: logbook)
+        let entry = try #require(logbook.entries().first)
+        #expect(entry.isRuns)
+        #expect(entry.laps.map(\.number) == [1, 2, 3])
+        #expect(entry.laps.map(\.isComplete) == [true, true, false])
+        #expect(abs(try #require(entry.bestLap) - 52) < 0.3)
+        #expect(entry.fastestRollingLap == nil)
+        let course = try #require(entry.course)
+        #expect(course.name.hasPrefix("Course of "))
+        #expect(!entry.coursePath.isEmpty)
+        #expect(LogbookFilter.circuitKey(of: entry) == RunCourse.key(course.id))
+        // Read again — as a reference, a personal best or a re-reading — it is still in runs.
+        let again = try #require(LogbookReferences.load(entry))
+        #expect(again.laps.listed.map(\.number) == [1, 2, 3])
+    }
 }

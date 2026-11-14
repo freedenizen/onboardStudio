@@ -1,6 +1,8 @@
 # Runs: autocross, hill climb and stages (#552) — design
 
-**Status:** step 1 of the build order (runs in the project) is built; steps 2–4 are to come.
+**Status:** steps 1 (runs in the project), 2 (runs and courses in the Logbook) and 3 (cones and
+DNF) are built; step 4 (suggested lines) is to come. How step 2 keeps courses is in
+`docs/logbook.md`, *Runs and courses*.
 
 Draft of 2026-11-13. The decisions it builds on were made by the user on 2026-11-13. A circuit lap
 starts and ends at one line. A **run** starts at one line and ends at another: an autocross, a hill
@@ -79,23 +81,20 @@ deltas, the Timer, sectors, the optimal lap, and *Every lap, one file each*.
 
 ### Courses in the Logbook (`ProjectModel`)
 
-- `Logbook.courses: [RunCourse]` holds, for each course:
-  - an id, the venue key and a name;
-  - the start and finish lines;
-  - a reference path, one run's GPS resampled every 4 m, as the Replay track file is.
-- `LogbookEntry.courseID` links a session to its course.
-- **Matching.** A session matches a course when all of these hold:
-  - it is at the same venue (`LogbookFilter.circuitKey`);
-  - its start and finish lines are each within 15 m of the course's;
-  - the mean distance from its best run's path to the course path is under 5 m.
-
-  The best match wins. The thresholds are parameters with these defaults, to be checked on
-  synthetic layouts that differ by one gate.
-- **Keys.** For a session in runs, `circuitKey` becomes the course id. Personal bests, Trends,
-  goals, the circuit card and *Compare With ▸* key on it unchanged.
-- **Per-run fields.** `LapRecord` gains `cones: Int` and `dnf: Bool`, entered by the driver.
-  `dnf` is taken from detection at first. `TrackDay.penaltyPerCone` holds the penalty and defaults
-  to 2 s.
+- **As built:** a course is not a list of its own. Each session on it keeps its `CourseTag` (an id
+  and a name), its `runLines` and its best run's `coursePath`, so renaming a course or moving a
+  session between courses is an ordinary logbook edit that undoes as one. A new session matches
+  the course of the first entry whose lines are each within 15 m of its own and whose path is within
+  5 m on average, measured both ways; there is no venue test, because lines that close are at the
+  same venue.
+- **Keys.** For a session on a course, `circuitKey` is `course:<id>`. Personal bests, Trends,
+  goals, the circuit card and *Compare With ▸* key on it unchanged; `venueKey` is the circuit
+  without the course, for comparing a session with its track day.
+- **Per-run fields.** `LapRecord` gains `cones: Int` and `offCourse: Bool`, entered by the driver.
+  A run is a DNF when detection found no finish or the driver ticked it off course (the draft had
+  one `dnf` flag; two keep what detection found apart from what the driver said).
+  `TrackDay.penaltyPerCone`, 2 s when unset, is copied onto the day's sessions in runs, as a day's
+  car is, so an entry's best counts the same wherever it is read.
 - **Saving the course.** Venues are mostly not in the catalogue: there are no hill climbs in it, and
   car parks aren't circuits. They are named by hand, as a *No circuit* day is today.
   `TrackDefinition` gains `finish: LapLineSpec?`, so *Save … for This Track* keeps a hill climb's

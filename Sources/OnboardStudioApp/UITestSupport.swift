@@ -243,6 +243,15 @@ struct UITestCommands: Commands {
                     LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [folder])
                 }
             }
+            // An autocross timed in runs by its own gates, into the Logbook on its own (#552).
+            Button("Add Fixture Autocross to Logbook") {
+                guard let file = UITestSupport.fixture("runs.d/autocross.vbo") else { return }
+                if let editor {
+                    editor.trackDayRequest = TrackDayRequest(urls: [file])
+                } else {
+                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [file])
+                }
+            }
             // Into the day chosen in the Logbook window's sidebar (#393).
             Button("Add Fixture Sessions to Selected Day") {
                 guard let folder = UITestSupport.fixtures else { return }
