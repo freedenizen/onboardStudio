@@ -21,6 +21,9 @@ public struct CornerComparison: Sendable, Equatable, Codable {
     /// The traffic mark covering the corner on either lap (#571); such a corner is no
     /// opportunity and says nothing about consistency.
     public var traffic: CornerTraffic?
+    /// What the telemetry suggests may have been traffic in the corner on the lap (#572), when it
+    /// is not marked. Only a suggestion: the corner is coached as any other.
+    public var suggestion: TrafficSuggestion?
     /// Where the delta grew the most, if it grew anywhere.
     public var worstPhase: CornerPhase? {
         let worst = CornerPhase.allCases.max { (phaseLoss[$0] ?? 0) < (phaseLoss[$1] ?? 0) }

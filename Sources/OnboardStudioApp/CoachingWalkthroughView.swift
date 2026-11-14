@@ -32,6 +32,8 @@ struct CoachingWalkthroughView<Change: View>: View {
     let watch: (CornerComparison) async -> [WatchClip]
     /// Marks a corner as held up by traffic or a flag (#571); the reading then leaves it out.
     var markTraffic: ((CornerComparison, TrafficSpan.Kind) -> Void)?
+    /// Answers the telemetry's traffic suggestion for a corner (#572): traffic, or not.
+    var answerSuggestion: ((TrafficSuggestion, Bool) -> Void)?
 
     @State private var step: CoachingWalkthrough.Step = .lap
     /// The corners the driver means to try next time, by index: all of them to begin with.
@@ -45,9 +47,11 @@ struct CoachingWalkthroughView<Change: View>: View {
         analysis: CoachingAnalysis, lapNumber: Int, units: CoachingUnits, others: [LapProfile],
         source: any CoachingSource, watch: @escaping (CornerComparison) async -> [WatchClip],
         markTraffic: ((CornerComparison, TrafficSpan.Kind) -> Void)? = nil,
+        answerSuggestion: ((TrafficSuggestion, Bool) -> Void)? = nil,
         @ViewBuilder change: @escaping () -> Change
     ) {
         self.markTraffic = markTraffic
+        self.answerSuggestion = answerSuggestion
         self.analysis = analysis
         self.lapNumber = lapNumber
         self.units = units
@@ -115,6 +119,7 @@ struct CoachingWalkthroughView<Change: View>: View {
                 }
             }
             LeftOutCorners(analysis: analysis)
+            SuggestedCorners(analysis: analysis)
         }
     }
 
@@ -141,9 +146,9 @@ struct CoachingWalkthroughView<Change: View>: View {
                     .accessibilityIdentifier("coaching.walkthrough.suggestion")
                 Toggle("Try this next time", isOn: tryBinding(opportunity.corner.index))
                     .accessibilityIdentifier("coaching.walkthrough.try")
-                if let markTraffic {
-                    LeaveCornerOutMenu { markTraffic(opportunity.corner, $0) }
-                }
+                CornerTrafficControls(
+                    corner: opportunity.corner, units: units, markTraffic: markTraffic,
+                    answerSuggestion: answerSuggestion)
             }
             .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .leading, spacing: 16) {

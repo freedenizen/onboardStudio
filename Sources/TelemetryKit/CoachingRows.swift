@@ -78,7 +78,8 @@ extension CoachingAnalysis {
                 exitSpeed: Self.speed(lap.exitSpeed - reference.exitSpeed, format: format),
                 throttleDifference: throttle,
                 throttle: Self.metres(throttle, format: format, positive: "late", negative: "early"),
-                consistency: consistency, consistent: consistentText, traffic: corner.traffic)
+                consistency: consistency, consistent: consistentText, traffic: corner.traffic,
+                suggestion: corner.suggestion)
         }
     }
 
@@ -119,6 +120,8 @@ public struct CornerRow: Identifiable, Sendable, Hashable {
     public let consistent: String
     /// The traffic or flag mark covering the corner (#571); its phase reads "traffic" or "flag".
     public var traffic: CornerTraffic?
+    /// What the telemetry suggests may have been traffic in the corner (#572).
+    public var suggestion: TrafficSuggestion?
 
     /// Sort keys for the optional differences: a corner without a reading sorts as "same".
     public var brakeOrder: Double { brakeDifference ?? 0 }

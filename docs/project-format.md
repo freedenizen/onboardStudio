@@ -157,6 +157,10 @@ in seconds of the data file's own time (the timebase trim keeps). The coaching l
 cover out of the opportunities and the consistency figures, and a Corner Callout on such a corner says
 only what happened. Absent means no marks, which reads every corner as every earlier build did, so no
 migration pins anything.
+`dismissedTraffic` (optional, #572, default empty) is the stretches of the same session whose traffic
+suggestion the driver answered **Not Traffic**: `[{ "start": 210.0, "end": 224.5 }]`, in the same
+seconds. The Coaching window does not suggest a corner again when a dismissed stretch covers half of
+it. Suggestions change no reading and no render, so absent (none dismissed) needs no migration.
 `lap` absent follows the playhead. It is kept with the project so the same analysis comes back on
 reopening; the reference and `traffic` are also what the Corner Callout, the Track Map's coaching
 options and the corner exports read. Absent means the window has not been opened for this project.

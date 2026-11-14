@@ -2,8 +2,8 @@
 
 Design study: finding the stretches of a lap where another car held the driver up, and keeping
 them out of the coaching, the consistency figures and the trends, written so the reasoning can be
-re-checked. Issues: marks and their effect #571 (built: *What was built* below), telemetry
-suggestions #572, the video #573, another car's log #574.
+re-checked. Issues: marks and their effect #571 and telemetry suggestions #572 (both built: *What
+was built* below), the video #573, another car's log #574.
 
 ## The problem
 
@@ -123,6 +123,29 @@ The driver's own marks and everything they change in the coaching; no detection 
 - No schema step: with only explicit marks, a project without marks reads as it did. The pin
   described under *Compatibility* comes with the first suggestion that applies itself (#573).
 
+## What was built (#572)
+
+Telemetry suggestions, read on demand and never applied on their own.
+
+- `TrafficSuggestions.find` (`Sources/TelemetryKit/TrafficSuggestions.swift`) reads one suggestion per
+  lap and corner. A corner owns the lap from the quickest lap's brake point for it to the brake point
+  for the next, the way the corner table divides the lap, so a slow run out behind a car counts
+  towards the corner whose time it cost. Two signals: a *lift* where most other laps are flat out
+  (throttle as a fraction of its own range; the speed trace without one), and a *slow corner*,
+  judged against the quicker half of the laps. On the reference Sonoma session the median of all
+  the laps missed a corner the video shows was traffic, because half the laps were held up there.
+- Off the line on a straight and the run of slow corners ending in a pass are not built: GPS
+  scatter on a phone or a GoPro is about the width of the move a pass makes, and both need the
+  video to be worth showing.
+- The Coaching window and `onboard coach --suggest-traffic` ask for them
+  (`CoachingOptions.suggestsTraffic`); the compile and the renders never do, so no saved project
+  renders differently and nothing is pinned. A suggestion hangs on its corner
+  (`CornerComparison.suggestion`) and the corner is coached as before until the driver marks it.
+- **Not Traffic** keeps the stretch in `CoachingSettings.dismissedTraffic`, data the driver made;
+  the suggestions themselves are read again each time, so a better detector replaces them freely.
+- No `source`, `confidence` or `state` on `TrafficSpan` yet: a suggestion is a separate type until a
+  detector can apply itself (#573), and a confirmed suggestion is a mark like any other.
+
 ## The model
 
 A `TrafficSpan` in `TelemetryKit`: a stretch of session time, with
@@ -188,7 +211,7 @@ an old project reads as it did until the driver turns it on.
    consistency, default lap, callout and debrief changes, the CLI `--traffic`. Useful with no
    detection at all, and it is what every detector feeds.
 2. **Telemetry candidates** as low-confidence suggestions, on synthetic fixtures with an invented
-   car ahead.
+   car ahead (#572, built).
 3. **Video spike.** Convert one Apache-2.0 detector, run it over local clips, measure recall and
    false positives against hand marks, and measure time per minute of 2.7K and 4K footage. Go or
    no-go on bundling, and which model.

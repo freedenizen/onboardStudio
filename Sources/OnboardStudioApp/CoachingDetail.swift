@@ -16,6 +16,8 @@ struct CornerDetailView: View {
     var lapNumber: Int?
     /// Marks the corner as held up by traffic or a flag, or clears it (#571).
     var markTraffic: ((TrafficSpan.Kind?) -> Void)?
+    /// Answers the telemetry's traffic suggestion for the corner (#572).
+    var answerSuggestion: ((TrafficSuggestion, Bool) -> Void)?
 
     private var format: CoachingNotes.Formatter { CoachingNotes.Formatter(units: units) }
 
@@ -36,6 +38,9 @@ struct CornerDetailView: View {
                     CornerMarkPicker(
                         comparison: comparison, referencePhrase: analysis.referencePhrase, lapNumber: lapNumber,
                         mark: markTraffic)
+                }
+                if let suggestion = comparison.suggestion, let answerSuggestion {
+                    TrafficSuggestionNote(suggestion: suggestion, units: units) { answerSuggestion(suggestion, $0) }
                 }
                 PhaseLossBars(comparison: comparison, units: units)
                 CornerLinesView(analysis: analysis, comparison: comparison, units: units, others: others)

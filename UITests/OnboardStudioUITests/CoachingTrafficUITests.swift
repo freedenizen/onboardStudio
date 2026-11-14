@@ -1,9 +1,11 @@
 import XCTest
 
 // ci-shard: 4
-/// J67: leave traffic out of the coaching (#571). A corner where another car held the driver up is
-/// marked from the walkthrough or the corner's detail; the coaching stops calling it an
-/// opportunity, says how much of the lap's loss it was, and the mark is one undo step.
+/// J67: leave traffic out of the coaching (#571, #572). A corner where another car held the driver
+/// up is marked from the walkthrough or the corner's detail; the coaching stops calling it an
+/// opportunity, says how much of the lap's loss it was, and the mark is one undo step. The
+/// telemetry points at corners that may have been traffic, and each suggestion is taken or
+/// dismissed.
 final class CoachingTrafficUITests: OnboardStudioUITestCase {
     @MainActor
     func testACornerHeldUpByTrafficIsLeftOutOfTheCoaching() throws {
@@ -70,5 +72,54 @@ final class CoachingTrafficUITests: OnboardStudioUITestCase {
         XCTAssertTrue(
             app.buttons["coaching.showMe.2"].waitForNonExistence(timeout: Self.timeout * 2),
             "Undo did not put the mark back")
+    }
+
+    /// The slow lap brakes early into both bends where the others are flat out: the telemetry
+    /// suggests both, one is dismissed, the other taken.
+    @MainActor
+    func testTheTelemetrysTrafficSuggestionsAreTakenOrDismissed() throws {
+        launch()
+        testing("Add Fixture Data (Coaching Laps)")
+        XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout), "No fixture data")
+        menu("Project", "Coaching…")
+        let change = app.buttons["coaching.walkthrough.change"]
+        XCTAssertTrue(change.waitForExistence(timeout: Self.timeout * 2), "The window did not open on the walkthrough")
+        change.click()
+        let lapPicker = app.popUpButtons["coaching.lap"]
+        XCTAssertTrue(lapPicker.waitForExistence(timeout: Self.timeout), "No lap to choose under Change…")
+        choosePopUpItem("Lap 2 — 0:44.60", in: lapPicker)
+        app.typeKey(.escape, modifierFlags: [])
+
+        // The lap's sentence is followed by the corners to check.
+        let suggested = app.staticTexts["coaching.walkthrough.suggested"]
+        XCTAssertTrue(suggested.waitForExistence(timeout: Self.timeout * 2), "No corners suggested as traffic")
+        expect(suggested, toContain: "Possibly traffic in Turn 1 and Turn 2")
+
+        // The first corner's step says what the telemetry saw; it was the driving, not a car.
+        app.buttons["coaching.walkthrough.next"].click()
+        let note = app.staticTexts["coaching.trafficSuggestion"]
+        XCTAssertTrue(note.waitForExistence(timeout: Self.timeout), "No suggestion on the corner")
+        expect(note, toContain: "where most of your other laps were flat out")
+        app.buttons["coaching.trafficSuggestion.dismiss"].click()
+        expect(suggested, toContain: "Possibly traffic: Turn")
+
+        // The other corner's suggestion is taken: it is marked, and left out.
+        let mark = app.buttons["coaching.trafficSuggestion.mark"]
+        for _ in 0..<2 where !mark.exists {
+            app.buttons["coaching.walkthrough.next"].click()
+            _ = mark.waitForExistence(timeout: Self.timeout)
+        }
+        XCTAssertTrue(mark.exists, "The other corner has no suggestion to take")
+        mark.click()
+        XCTAssertTrue(
+            app.staticTexts["coaching.walkthrough.leftOut"].waitForExistence(timeout: Self.timeout * 2),
+            "Taking the suggestion did not leave the corner out")
+        XCTAssertTrue(suggested.waitForNonExistence(timeout: Self.timeout), "A suggestion is left after both answers")
+
+        // Each answer is one undo step.
+        menu("Edit", "Undo Mark Traffic")
+        expect(suggested, toContain: "Possibly traffic: Turn")
+        menu("Edit", "Undo Dismiss Traffic Suggestion")
+        expect(suggested, toContain: "Possibly traffic in Turn 1 and Turn 2")
     }
 }

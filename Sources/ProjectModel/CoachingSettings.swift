@@ -38,22 +38,34 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
     /// opportunities and the consistency figures. Absent before #571; no marks reads every corner,
     /// as every reading did then.
     public var traffic: [TrafficSpan]
+    /// Stretches of the same session where the driver said a traffic suggestion was wrong (#572):
+    /// the window does not offer a suggestion they cover again. Absent before #572; suggestions
+    /// change nothing in a reading, so none dismissed reads as every reading did then.
+    public var dismissedTraffic: [LapProfile.Window]
 
     public init(
         dataInputID: InputID, lap: Int? = nil, reference: Reference = .sessionBest, alignByPosition: Bool = false,
-        traffic: [TrafficSpan] = []
+        traffic: [TrafficSpan] = [], dismissedTraffic: [LapProfile.Window] = []
     ) {
         self.dataInputID = dataInputID
         self.lap = lap
         self.reference = reference
         self.alignByPosition = alignByPosition
         self.traffic = traffic
+        self.dismissedTraffic = dismissedTraffic
     }
 
     /// The marks that apply to `input`'s session: none for an input the settings do not name.
     public func traffic(for input: InputID) -> [TrafficSpan] { input == dataInputID ? traffic : [] }
 
-    private enum CodingKeys: String, CodingKey { case dataInputID, lap, reference, alignByPosition, traffic }
+    /// The dismissed suggestions that apply to `input`'s session.
+    public func dismissedTraffic(for input: InputID) -> [LapProfile.Window] {
+        input == dataInputID ? dismissedTraffic : []
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case dataInputID, lap, reference, alignByPosition, traffic, dismissedTraffic
+    }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -62,5 +74,6 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
         reference = try c.decodeIfPresent(Reference.self, forKey: .reference) ?? .sessionBest
         alignByPosition = try c.decodeIfPresent(Bool.self, forKey: .alignByPosition) ?? false
         traffic = try c.decodeIfPresent([TrafficSpan].self, forKey: .traffic) ?? []
+        dismissedTraffic = try c.decodeIfPresent([LapProfile.Window].self, forKey: .dismissedTraffic) ?? []
     }
 }

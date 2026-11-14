@@ -50,11 +50,25 @@ struct CornerTable: View {
     let units: CoachingUnits
     /// Marks a corner as held up by traffic or a flag, or clears its mark (#571).
     var mark: ((Int, TrafficSpan.Kind?) -> Void)?
+    /// Dismisses the telemetry's traffic suggestion for a corner (#572).
+    var dismissSuggestion: ((TrafficSuggestion) -> Void)?
 
     var body: some View {
         let format = CoachingNotes.Formatter(units: units)
         Table(rows.sorted(using: sortOrder), selection: $selection, sortOrder: $sortOrder) {
-            TableColumn("Turn", value: \.index) { row in Text(row.label) }.width(min: 44, ideal: 56)
+            TableColumn("Turn", value: \.index) { row in
+                HStack(spacing: 4) {
+                    Text(row.label)
+                    if row.suggestion != nil {
+                        Image(systemName: "car.2")
+                            .foregroundStyle(.secondary)
+                            .help("The telemetry suggests traffic here")
+                            .accessibilityLabel("Possibly Traffic")
+                            .accessibilityIdentifier("coaching.table.suggested.\(row.index)")
+                    }
+                }
+            }
+            .width(min: 52, ideal: 64)
             TableColumn("Time Lost", value: \.timeLost) { row in
                 Text((row.timeLost >= 0 ? "+" : "−") + format.seconds(abs(row.timeLost)))
                     .foregroundStyle(timeColor(row))
@@ -79,6 +93,10 @@ struct CornerTable: View {
                 if row.traffic?.onLap == true {
                     Divider()
                     Button("Clear Traffic Mark") { mark(index, nil) }
+                }
+                if let suggestion = row.suggestion, let dismissSuggestion {
+                    Divider()
+                    Button("Dismiss Traffic Suggestion") { dismissSuggestion(suggestion) }
                 }
             }
         }
