@@ -957,10 +957,15 @@ times on the ruler.
 
 A circuit is timed in laps, from one line round to the same line. An autocross, a hill climb or a
 rally stage is timed in **runs**, from a start line to a different finish line. Select the data
-file and, under **Laps** in the inspector, set **Timing** to **Runs**. Both lines are put where the
-preview is; move each with **Use Current Preview Position as Start** and **…as Finish**, or type
-where it is, which way it is crossed and how wide it is. A Racelogic VBO file that recorded a start
-and a finish gate is timed in runs as soon as it is added.
+file and, under **Laps** in the inspector, set **Timing** to **Runs**. The app suggests both lines
+from the driving: the start where runs set off from a standstill, the finish where they were last
+at speed before the car stopped, and the status line says how many runs set off and how many
+finished. Both are a few metres off the real lines at best — the start is where the car first
+moved, the finish where it began to slow — so check them on the map. **Suggest Start and Finish
+from the Data** asks again; **Use Current Preview Position as Start** and **…as Finish** move either
+to the preview, or type where it is, which way it is crossed and how wide it is. With nothing that
+sets off from a standstill to go on, both are put where the preview is. A Racelogic VBO file that
+recorded a start and a finish gate is timed in runs between them as soon as it is added.
 
 Runs are told apart by the car **stopping** between them, as it does when it is staged at the start
 and after it slows down past the finish, so a course may pass through either line on the way round:
@@ -1420,6 +1425,10 @@ sectors, corner names and traffic marks the project has. `--traffic 312.5-330,12
 stretches as held up by traffic (or `:flag`) in seconds of the data file, and the corners they cover
 are left out of the coaching ([Traffic and flags](#traffic-and-flags)). The method is in
 [coaching.md](coaching.md).
+
+**Runs.** `onboard probe autocross.vbo --suggest-runs` prints the start and finish the driving
+suggests, as `--lap-line lat,lon,heading --finish-line lat,lon,heading`; given both, `probe` lists
+the runs, each with its time or *DNF*.
 
 **The logbook.** `onboard logbook new-day --date 2026-08-23 --circuit Sonoma --car Miata` begins a
 day, `onboard logbook add <files or folders> --day <id or date>` puts files on it (`--car`,
