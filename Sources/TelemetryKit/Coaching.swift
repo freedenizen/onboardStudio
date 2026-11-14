@@ -205,7 +205,8 @@ public struct CoachingAnalysis: Sendable {
         }
         let lapMetrics = CornerMetrics.measure(corners: lapCorners, of: lap, options: options.metrics)
         var comparisons = CornerComparison.compare(
-            lap: lapMetrics, reference: referenceMetrics, delta: delta, labels: session.cornerLabels)
+            lap: lapMetrics, reference: referenceMetrics, delta: delta,
+            labels: session.cornerNames(for: referenceCorners).map(\.label))
         // The marks are the session's: the reference is read against them only when it is a lap
         // of the same session.
         markTraffic(&comparisons, lap: lap, reference: sameSession ? reference : nil, delta: delta, in: session)

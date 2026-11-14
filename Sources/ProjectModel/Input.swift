@@ -1,4 +1,5 @@
 import Foundation
+import TelemetryKit
 
 /// A path to a media or data file. Relative paths resolve against the project's directory.
 public struct MediaReference: Hashable, Codable, Sendable {
@@ -248,6 +249,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// corner the detector finds. Strings, because circuits number 3, 3a, 4, 4a. Empty leaves
     /// the map counting them instead.
     public var cornerLabels: [String]
+    /// The circuit's turn names, each pinned to its apex (#548). Once any is set these are what
+    /// names the corners and `cornerLabels` is not read; a project saved before has none, and
+    /// keeps the names its list gave.
+    public var turnNames: [TurnName]
     /// Seconds of the data file to keep, in its own time. Applied before laps are detected, so a
     /// trimmed-away out-lap is not counted and does not compete for the best lap.
     public var trim: TrimRange
@@ -275,6 +280,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         sectors: SectorSpec = SectorSpec(),
         circuitID: String? = nil,
         cornerLabels: [String] = [],
+        turnNames: [TurnName] = [],
         trim: TrimRange = .none,
         legacyFirstLap: Bool = false
     ) {
@@ -292,6 +298,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         self.sectors = sectors
         self.circuitID = circuitID
         self.cornerLabels = cornerLabels
+        self.turnNames = turnNames
         self.trim = trim
     }
 
@@ -299,7 +306,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case importerID, roleOverrides, unitOverrides, attributeMappings
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID
-        case cornerLabels, trim
+        case cornerLabels, turnNames, trim
         case logbookEntryID, legacyFirstLap
     }
 
@@ -326,6 +333,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         // library has learned since.
         circuitID = try c.decodeIfPresent(String.self, forKey: .circuitID)
         cornerLabels = try c.decodeIfPresent([String].self, forKey: .cornerLabels) ?? []
+        // Absent before names were pinned (#548): the list above names the corners, as it did.
+        turnNames = try c.decodeIfPresent([TurnName].self, forKey: .turnNames) ?? []
         // Absent in projects saved before data could be trimmed; no trim is the right reading.
         trim = try c.decodeIfPresent(TrimRange.self, forKey: .trim) ?? .none
         logbookEntryID = try c.decodeIfPresent(UUID.self, forKey: .logbookEntryID)

@@ -1,4 +1,5 @@
 import Foundation
+import TelemetryKit
 
 /// What was worked out about a circuit once, kept so the next visit does not start from nothing:
 /// the start/finish line, how the lap is split into sectors, and what to call the place.
@@ -24,6 +25,9 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     /// The reason a definition is worth sharing: no source publishes corner numbering, so one
     /// driver working out that Sonoma goes 3, 3a, 4, 4a saves everyone else doing it.
     public var cornerLabels: [String]
+    /// The turn names pinned to their apexes (#548), which name the corners in place of
+    /// `cornerLabels` when there are any. A definition saved before has none.
+    public var turnNames: [TurnName]
     /// When it was last written. Two drivers swapping definitions need to know which is newer.
     public var modified: Date
     /// What the driver planned to try next time here (#330), kept so the next project at this
@@ -38,6 +42,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         startFinish: LapLineSpec? = nil,
         sectors: SectorSpec = SectorSpec(),
         cornerLabels: [String] = [],
+        turnNames: [TurnName] = [],
         modified: Date = Date(),
         plan: NextSessionPlan? = nil
     ) {
@@ -48,6 +53,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         self.startFinish = startFinish
         self.sectors = sectors
         self.cornerLabels = cornerLabels
+        self.turnNames = turnNames
         self.modified = modified
         self.plan = plan
     }
@@ -61,7 +67,9 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     /// sectors or corner names. One that only keeps a plan — made from the Logbook, or from a file
     /// that brought its own laps — says nothing, and a new file at the circuit is set up as if
     /// there were no definition: its start/finish is suggested from the trace (#458).
-    public var hasGeometry: Bool { startFinish != nil || sectors != SectorSpec() || !cornerLabels.isEmpty }
+    public var hasGeometry: Bool {
+        startFinish != nil || sectors != SectorSpec() || !cornerLabels.isEmpty || !turnNames.isEmpty
+    }
 
     /// Lowercased, accents folded, and runs of anything else collapsed to a single `-`, so the
     /// key is a safe file name and the same name always produces the same one.
@@ -82,7 +90,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case circuitID, name, latitude, longitude, startFinish, sectors, cornerLabels, modified, plan
+        case circuitID, name, latitude, longitude, startFinish, sectors, cornerLabels, turnNames, modified, plan
     }
 
     public init(from decoder: any Decoder) throws {
@@ -94,6 +102,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         startFinish = try c.decodeIfPresent(LapLineSpec.self, forKey: .startFinish)
         sectors = try c.decodeIfPresent(SectorSpec.self, forKey: .sectors) ?? SectorSpec()
         cornerLabels = try c.decodeIfPresent([String].self, forKey: .cornerLabels) ?? []
+        turnNames = try c.decodeIfPresent([TurnName].self, forKey: .turnNames) ?? []
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? Date(timeIntervalSince1970: 0)
         plan = try c.decodeIfPresent(NextSessionPlan.self, forKey: .plan)
     }

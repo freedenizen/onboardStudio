@@ -49,13 +49,11 @@ extension LogbookEntry {
         }
         let corners = CornerDetector.corners(of: profile)
         let metrics = CornerMetrics.measure(corners: corners, of: profile)
+        let names = session.cornerNames(for: corners)
         return metrics.enumerated().map { index, metric in
-            var label = String(index + 1)
-            if index < session.cornerLabels.count, !session.cornerLabels[index].isEmpty {
-                label = session.cornerLabels[index]
-            }
-            return CornerRecord(
-                index: index, label: label, brakePointMeters: metric.brakePointMeters,
+            CornerRecord(
+                index: index, label: index < names.count ? names[index].label : String(index + 1),
+                brakePointMeters: metric.brakePointMeters,
                 minimumSpeed: metric.minimumSpeed, exitSpeed: metric.exitSpeed, timeInCorner: metric.timeInCorner)
         }
     }

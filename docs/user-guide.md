@@ -604,6 +604,12 @@ counts them 1, 2, 3 — which is not what your circuit calls them: Sonoma runs 1
 **4a**, and letter suffixes are normal everywhere. No public source publishes corner numbering, so
 type the real names into *Corners* once and they stay with the track.
 
+Each name stays on its own turn. A lap does not always find the same corners — a kink near the line
+counts on one lap and not the next — and a name is kept where the turn is, not as "the fourth
+corner", so a lap with an extra kink does not move 3a onto turn 4. A corner you leave blank among
+named ones is not numbered on the map, and Coaching and Trends call it by the turns either side of
+it, such as *3a–4*. Clear a name to take it off a turn.
+
 **Save Start/Finish, Sectors and Corner Names for This Track** files them all against that
 circuit. The next data file you *add* from the same place starts with them already
 filled in, so you set a venue up once rather than once a session. Opening a project you saved

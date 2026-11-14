@@ -13,16 +13,48 @@ public struct Corner: Sendable, Equatable, Codable {
     public let headingChangeDegrees: Double
     /// The lap these distances are into, needed to measure a corner that spans the line.
     public let lapLengthMeters: Double
+    /// Where the apex is on the ground, degrees; `nil` for a corner placed by distance alone, such
+    /// as the reference's corners carried onto another lap. A distance into the lap names a
+    /// different place on a lap that is longer or starts elsewhere; a position does not, which
+    /// is what keeps a turn's name on its turn (#548).
+    public var apexLatitude: Double?
+    public var apexLongitude: Double?
+    /// The corner on the ground from where it begins to where it ends, a point every
+    /// `CornerDetector.traceSpacingMeters`; empty for a corner placed by distance alone. The apex of a
+    /// long constant-radius bend moves along it by tens of metres from lap to lap, so a turn's name
+    /// is matched against the whole bend and not one point of it.
+    public var trace: [GeoPoint]
 
     public init(
         startDistance: Double, endDistance: Double, apexDistance: Double, headingChangeDegrees: Double,
-        lapLengthMeters: Double
+        lapLengthMeters: Double, apexLatitude: Double? = nil, apexLongitude: Double? = nil, trace: [GeoPoint] = []
     ) {
         self.startDistance = startDistance
         self.endDistance = endDistance
         self.apexDistance = apexDistance
         self.headingChangeDegrees = headingChangeDegrees
         self.lapLengthMeters = lapLengthMeters
+        self.apexLatitude = apexLatitude
+        self.apexLongitude = apexLongitude
+        self.trace = trace
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case startDistance, endDistance, apexDistance, headingChangeDegrees, lapLengthMeters
+        case apexLatitude, apexLongitude, trace
+    }
+
+    /// Anything written before corners had a place on the ground (#548) reads with none.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        startDistance = try c.decode(Double.self, forKey: .startDistance)
+        endDistance = try c.decode(Double.self, forKey: .endDistance)
+        apexDistance = try c.decode(Double.self, forKey: .apexDistance)
+        headingChangeDegrees = try c.decode(Double.self, forKey: .headingChangeDegrees)
+        lapLengthMeters = try c.decode(Double.self, forKey: .lapLengthMeters)
+        apexLatitude = try c.decodeIfPresent(Double.self, forKey: .apexLatitude)
+        apexLongitude = try c.decodeIfPresent(Double.self, forKey: .apexLongitude)
+        trace = try c.decodeIfPresent([GeoPoint].self, forKey: .trace) ?? []
     }
 
     public var turnsRight: Bool { headingChangeDegrees > 0 }
@@ -81,6 +113,9 @@ public enum CornerDetector {
         /// Curvature at which a turn becomes a corner, in degrees per metre.
         var curvatureThreshold: Double { (180 / .pi) / cornerRadiusMeters }
     }
+
+    /// How far apart the points of `Corner.trace` are, metres.
+    public static let traceSpacingMeters = 10.0
 
     /// The corners of `lap`, in the order they are driven.
     public static func corners(of lap: Lap, in session: TelemetrySession, options: Options = Options()) -> [Corner] {
@@ -299,10 +334,16 @@ public enum CornerDetector {
             let change = indices.reduce(0.0) { $0 + raw[$1] * path.step }
             guard abs(change) >= options.minTurnDegrees else { return nil }
             let apex = Self.apex(of: indices, curvature: smooth)
+            let every = max(1, Int((Self.traceSpacingMeters / path.step).rounded()))
+            let trace = indices.enumerated().compactMap { offset, index in
+                offset % every == 0 || offset == indices.count - 1
+                    ? GeoPoint(latitude: path.latitude[index], longitude: path.longitude[index]) : nil
+            }
             return Corner(
                 startDistance: path.distances[run.lower], endDistance: path.distances[run.upper],
                 apexDistance: path.distances[apex], headingChangeDegrees: change,
-                lapLengthMeters: path.length)
+                lapLengthMeters: path.length, apexLatitude: path.latitude[apex], apexLongitude: path.longitude[apex],
+                trace: trace)
         }
         // In the order they are met after the start/finish line, which is how a circuit numbers
         // them. Joining a corner across the line can put it either end depending on where its

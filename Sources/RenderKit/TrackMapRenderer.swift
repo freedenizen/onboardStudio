@@ -289,8 +289,8 @@ struct TrackMapMarks: Sendable {
     var boundaries: [LapComparison.LapPoint] = []
     /// Each corner's apex on the reference lap, in the order they are driven.
     var corners: [LapComparison.LapPoint] = []
-    /// What the circuit calls them, if the driver has said. Shorter than `corners` is fine: the
-    /// rest fall back to their position round the lap.
+    /// What each of `corners` is called (`TelemetrySession.cornerNames(for:)`). Shorter than
+    /// `corners` is fine: the rest fall back to their position round the lap.
     var labels: [String] = []
 
     /// The label for the `index`-th corner of the lap.
@@ -316,10 +316,18 @@ struct TrackMapMarks: Sendable {
             }
         }
         if params.showCornerNumbers {
-            corners = CornerDetector.corners(of: reference, in: session).compactMap {
-                LapComparison.point(atDistanceInto: reference, metres: $0.apexDistance, session: session)
+            let found = CornerDetector.corners(of: reference, in: session)
+            // A corner the driver left unnamed among named ones is not one of the circuit's turns
+            // — a kink one lap finds and the next does not — and a number on it would be a turn
+            // the circuit does not have (#548).
+            for (corner, name) in zip(found, session.cornerNames(for: found)) where name.source != .between {
+                guard
+                    let point = LapComparison.point(
+                        atDistanceInto: reference, metres: corner.apexDistance, session: session)
+                else { continue }
+                corners.append(point)
+                labels.append(name.label)
             }
-            labels = session.cornerLabels
         }
     }
 }
