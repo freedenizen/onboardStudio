@@ -151,9 +151,15 @@ each join — and `comparedLap.lap` a placeholder; absent means the lap itself.
 (`logbook`, #352: a logbook entry at the same circuit, its `lap` or, absent, its best lap; read on demand).
 `alignByPosition` (optional, #333, default false) lines two laps of one session up by place rather than
 metre for metre, for laps driven on different lines; absent means off, how every earlier reading was made.
-`lap` absent follows the playhead. It is window state kept with the project so the same analysis
-comes back on reopening, and nothing in it changes how the project renders; absent means the
-window has not been opened for this project.
+`traffic` (optional, #571, default empty) is the stretches of `dataInputID`'s session the driver marked
+as held up by another car or a flag: `[{ "id": <uuid>, "start": 312.5, "end": 330.0, "kind": "traffic" | "flag" }]`,
+in seconds of the data file's own time (the timebase trim keeps). The coaching leaves the corners they
+cover out of the opportunities and the consistency figures, and a Corner Callout on such a corner says
+only what happened. Absent means no marks, which reads every corner as every earlier build did, so no
+migration pins anything.
+`lap` absent follows the playhead. It is kept with the project so the same analysis comes back on
+reopening; the reference and `traffic` are also what the Corner Callout, the Track Map's coaching
+options and the corner exports read. Absent means the window has not been opened for this project.
 
 `plan` (optional, #330) is what to try next session:
 `{ "experiments": [{ "id", "cornerLabel": "4", "text": "…" }], "fromLap": 5, "referencePhrase": "your best lap", "made": <date> }`.
@@ -199,7 +205,8 @@ Data input settings (all optional):
 | `runFinishLine` | a `lapLine`-shaped line: the finish of a point-to-point course (#552). With `lapLine` as the start, the file is timed in runs from one to the other. Absent in files saved before runs existed, which were all timed in laps, as an absent value still means — no migration |
 | `sectors` | `{ "mode": "equalDistance" / "cornerAware" / "manual", "count": 3, "lines": [ … ] }`: how each lap is split for sector times. `count` applies to the two automatic modes; `lines` holds `lapLine`-shaped gates for `manual`. Absent in files saved before sectors existed, and read as three equal sectors — safe as a decode default only because nothing in such a project draws a sector time, so measuring them cannot change how it renders |
 | `circuitID` | Wikidata id (`Q112563`) of the circuit this file was recorded at, or a track-definition key for a venue the bundled list does not have. Set when the file is **added** and correctable in the inspector. Absent in older files and left `nil` on open — never worked out or applied when a saved project is opened, or a definition saved since would change how that project renders |
-| `cornerLabels` | What the circuit calls its corners, in driving order from the start/finish, one per corner the detector finds (`["1","2","3","3a","4","4a"]`). Strings, because circuits number 3, 3a, 4, 4a; a blank or missing entry leaves the map counting that corner instead. No source publishes this, so it is set by hand and kept in the track definition |
+| `cornerLabels` | What the circuit calls its corners, in driving order from the start/finish, one per corner the detector finds (`["1","2","3","3a","4","4a"]`). Strings, because circuits number 3, 3a, 4, 4a; a blank or missing entry leaves the map counting that corner instead. No source publishes this, so it is set by hand and kept in the track definition. **Read only while `turnNames` is empty**, and emptied when the first name is pinned |
+| `turnNames` | The circuit's turn names, each pinned to its apex (#548): `[{ "label": "3a", "latitude": …, "longitude": … , "trace": [{ "latitude", "longitude" }, …] }]` — the apex, and the bend from entry to exit a point every 10 m (`trace` may be absent). A corner takes the name whose bend is within 40 m of it, so a name stays on its turn when a lap finds a corner more or fewer; a corner no name reaches is called by the named turns either side (`3a–4`) and not numbered on the map. Absent in files saved before, which leaves `cornerLabels` naming the corners as it did. The same field is kept in the circuit's `.onboardtrack` |
 
 Video input settings (all optional; older files decode as neutral):
 

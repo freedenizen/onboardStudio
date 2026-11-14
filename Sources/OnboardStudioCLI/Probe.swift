@@ -212,11 +212,12 @@ struct Probe: ParsableCommand {
     private func printCorners(_ session: TelemetrySession) {
         guard let reference = Sectors.referenceLap(in: session) else { return }
         let found = CornerDetector.corners(of: reference, in: session)
+        let names = session.cornerNames(for: found)
         print("\nCorners on lap \(reference.number) (\(found.count)):")
         for (index, corner) in found.enumerated() {
             let turn = corner.turnsRight ? "right" : "left"
             print(
-                "  \(pad(String(index + 1), 4))"
+                "  \(pad(names[index].label, 6))"
                     + "  \(pad(String(format: "%.0f", corner.startDistance), 6, left: true))"
                     + " … \(pad(String(format: "%.0f", corner.endDistance), 6, left: true)) m"
                     + "  apex \(pad(String(format: "%.0f", corner.apexDistance), 6, left: true)) m"

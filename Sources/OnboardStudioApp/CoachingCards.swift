@@ -48,6 +48,8 @@ struct CornerTable: View {
     @Binding var selection: Int?
     @Binding var sortOrder: [KeyPathComparator<CornerRow>]
     let units: CoachingUnits
+    /// Marks a corner as held up by traffic or a flag, or clears its mark (#571).
+    var mark: ((Int, TrafficSpan.Kind?) -> Void)?
 
     var body: some View {
         let format = CoachingNotes.Formatter(units: units)
@@ -55,7 +57,7 @@ struct CornerTable: View {
             TableColumn("Turn", value: \.index) { row in Text(row.label) }.width(min: 44, ideal: 56)
             TableColumn("Time Lost", value: \.timeLost) { row in
                 Text((row.timeLost >= 0 ? "+" : "−") + format.seconds(abs(row.timeLost)))
-                    .foregroundStyle(row.timeLost > 0.03 ? Color.red : row.timeLost < -0.03 ? Color.green : .primary)
+                    .foregroundStyle(timeColor(row))
                     .monospacedDigit()
             }
             .width(min: 72, ideal: 84)
@@ -70,6 +72,23 @@ struct CornerTable: View {
             TableColumn("Consistent", value: \.consistency) { row in Text(row.consistent) }.width(min: 90, ideal: 110)
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .contextMenu(forSelectionType: Int.self) { indices in
+            if let mark, let index = indices.first, let row = rows.first(where: { $0.index == index }) {
+                Button("Mark Turn \(row.label) as Traffic") { mark(index, .traffic) }
+                Button("Mark Turn \(row.label) as a Flag") { mark(index, .flag) }
+                if row.traffic?.onLap == true {
+                    Divider()
+                    Button("Clear Traffic Mark") { mark(index, nil) }
+                }
+            }
+        }
         .accessibilityIdentifier("coaching.table")
+    }
+
+    /// Lost in red, gained in green; a corner held up by traffic in neither, since the time is
+    /// not the driver's.
+    private func timeColor(_ row: CornerRow) -> Color {
+        if row.traffic != nil { return .secondary }
+        return row.timeLost > 0.03 ? .red : row.timeLost < -0.03 ? .green : .primary
     }
 }

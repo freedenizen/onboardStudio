@@ -48,10 +48,11 @@ struct LogbookTable<RowMenu: View>: View {
             }
         }
         .width(min: 28, ideal: 32)
+        // The time too: a day's sessions all share its date, and only the time tells them apart (#564).
         TableColumn("Date", value: \.date, comparator: OptionalDateComparator()) { entry in
-            Text(entry.date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—")
+            Text(entry.date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "—")
         }
-        .width(min: 90, ideal: 110)
+        .width(min: 130, ideal: 160)
         TableColumn("Circuit", value: \.title).width(min: 110, ideal: 150)
         TableColumn("Car", value: \.car).width(min: 70, ideal: 100)
         TableColumn("Laps", value: \.completeLapCount) { entry in Text("\(entry.completeLapCount)") }

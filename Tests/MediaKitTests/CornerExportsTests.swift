@@ -113,4 +113,21 @@ struct CornerExportsTests {
             )
             .allSatisfy { $0.retimes.isEmpty })
     }
+
+    @Test func aCornerMarkedAsTrafficIsNoOpportunityClipAndTheMarksReachTheSession() async throws {
+        var loaded = try Self.loaded()
+        let read = try #require(ProjectCompiler.coachingLap(in: loaded))
+        let marked = read.analysis.corners[0]
+        let times = read.analysis.sessionTimes(of: marked)
+        loaded.project.coaching?.traffic = [TrafficSpan(start: times.lowerBound, end: times.upperBound)]
+        // What the compile does to every session: put the project's marks on it.
+        let id = try #require(loaded.project.dataInputs.first?.id)
+        loaded.sessions[id]?.traffic = loaded.project.coaching?.traffic(for: id) ?? []
+        let clips = ProjectCompiler.cornerExports(.eachCorner(onlyOpportunities: true), in: loaded, duration: 170)
+        #expect(!clips.isEmpty)
+        #expect(!clips.contains { $0.index == marked.index })
+        // Every corner still has its clip when the export asks for all of them.
+        #expect(
+            ProjectCompiler.cornerExports(.eachCorner(onlyOpportunities: false), in: loaded, duration: 170).count == 2)
+    }
 }

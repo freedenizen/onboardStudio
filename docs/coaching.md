@@ -219,8 +219,9 @@ the single highest sample. A constant-radius bend has no single tightest point a
 put its apex at one end; the track map's corner numbers moved to the middle of such bends with it.
 
 `CornerComparison` (`CornerComparison.swift`) pairs the two laps' readings for each corner and
-reads the time lost in each phase off the delta trace, with the circuit's own corner labels when
-`TelemetrySession.cornerLabels` has them. The line offset at the apex comes with position
+reads the time lost in each phase off the delta trace, with the circuit's own turn names when
+the session has them (`TelemetrySession.cornerNames(for:)`, pinned to the reference lap's apexes,
+#548). The line offset at the apex comes with position
 alignment (#316).
 
 ### Opportunities and notes
@@ -254,6 +255,22 @@ minimum speeds spread 3–10 % by corner, and the corners a coach would call rep
 5 %. Three flying laps is the minimum. An inconsistent corner's suggestion begins "This corner
 varies lap to lap (brake point spread 23 m): repeat your best lap's brake point first, then …",
 because every coach says consistency before speed.
+
+**Traffic and flags** (#571, `Sources/TelemetryKit/Traffic.swift`). The driver marks stretches of
+the session as held up by traffic or under a flag (`TrafficSpan`, in session time, kept in
+`CoachingSettings.traffic` and put on `TelemetrySession.traffic` by whoever reads the session —
+the compile, the Logbook's source, `onboard coach --traffic`). A corner is covered when a mark
+spans at least a quarter of the stretch it is read over (`CornerComparison.range`, read at each
+grid point's session time through `LapProfile.times`, so a spliced reference is read in the laps
+it came from); the quarter keeps a mark on one corner off the next, whose stretch begins where the
+first one's ends. The reference is read against the marks only when it is a lap of the same
+session. A covered corner is no opportunity and gets no note (`CornerComparison.traffic`); the
+headline names the loss in corners covered on the lap (`trafficLoss`); consistency drops that
+corner's reading on that lap and keeps the rest, judges a marked lap flying by its time with the
+marked stretches driven at the best lap's pace, and leaves marked laps out of the lap-time spread;
+the default lap is the quickest no mark touches. No marks reads exactly as before, so nothing is
+pinned for older projects. Detection — from the telemetry, the video and another car's log — is
+#572–#574, designed in [traffic.md](traffic.md).
 
 **Notes** are deterministic phrase templates filled from the numbers, in the units asked for
 (km/h and metres, or mph and feet): a headline ("Turn 4: 0.31 s lost on entry"), the evidence

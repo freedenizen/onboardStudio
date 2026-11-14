@@ -134,7 +134,14 @@ enum CoachingSourceKind: Hashable {
 /// Coaching window has none of its own for a session.
 @MainActor @Observable final class LogbookCoachingSource: CoachingSource {
     var entry: LogbookEntry
-    private(set) var session: TelemetrySession?
+    /// The file as read, without the marks.
+    private var loaded: TelemetrySession?
+    /// The session with the traffic marks kept on the entry (#571).
+    var session: TelemetrySession? {
+        guard var session = loaded else { return nil }
+        session.traffic = entry.coaching?.traffic(for: InputID(entry.id)) ?? []
+        return session
+    }
     private(set) var problem: String?
     var message: String?
 
@@ -179,9 +186,9 @@ enum CoachingSourceKind: Hashable {
     }
 
     func load() async {
-        guard session == nil else { return }
-        if let loaded = await LogbookModel.shared.session(for: entry) {
-            session = loaded
+        guard loaded == nil else { return }
+        if let read = await LogbookModel.shared.session(for: entry) {
+            loaded = read
         } else {
             problem =
                 "The session's file could not be read. It may have moved: Show in Finder in the Logbook says "

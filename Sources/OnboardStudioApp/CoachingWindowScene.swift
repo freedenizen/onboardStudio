@@ -91,10 +91,13 @@ struct CoachingSelection: Hashable, Sendable {
     var alignByPosition: Bool
     /// A cheap fingerprint of the session, so a re-import re-reads the analysis.
     var sessionStamp: Int
+    /// The stretches marked as traffic or a flag (#571); a mark re-reads the analysis.
+    var traffic: [TrafficSpan] = []
 
     var settings: CoachingSettings {
         CoachingSettings(
-            dataInputID: input.id, lap: lapNumber, reference: reference, alignByPosition: alignByPosition)
+            dataInputID: input.id, lap: lapNumber, reference: reference, alignByPosition: alignByPosition,
+            traffic: traffic)
     }
 
     /// The analysis options the choices amount to.

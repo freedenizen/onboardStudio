@@ -123,9 +123,9 @@ The window shows it all in three columns, as Mail does: a sidebar of track days 
 when there is more than one, the year of the day you have chosen open; each is its date with the
 circuit beneath, so two days on one date read apart), circuits (ending with **No circuit** when
 some sessions name none), cars and years with how many sessions each; a table of sessions (a
-personal-best star, date, circuit, car, laps, best, optimal and fastest rolling lap) sortable by any
-column and narrowed by the search field; and, for the selected session, its numbers, every lap with
-the best marked, the notes, the projects made from it and where the file is.
+personal-best star, the date and time it was driven, circuit, car, laps, best, optimal and fastest
+rolling lap) sortable by any column and narrowed by the search field; and, for the selected session,
+its numbers, every lap with the best marked, the notes, the projects made from it and where the file is.
 
 The session stays beside **Trends** and the **Season** too, and the column says **No Session
 Selected** when none is. A search that finds nothing says so, and the detail is of a session the
@@ -627,6 +627,12 @@ counts them 1, 2, 3 — which is not what your circuit calls them: Sonoma runs 1
 **4a**, and letter suffixes are normal everywhere. No public source publishes corner numbering, so
 type the real names into *Corners* once and they stay with the track.
 
+Each name stays on its own turn. A lap does not always find the same corners — a kink near the line
+counts on one lap and not the next — and a name is kept where the turn is, not as "the fourth
+corner", so a lap with an extra kink does not move 3a onto turn 4. A corner you leave blank among
+named ones is not numbered on the map, and Coaching and Trends call it by the turns either side of
+it, such as *3a–4*. Clear a name to take it off a turn.
+
 **Save Start/Finish, Sectors and Corner Names for This Track** files them all against that
 circuit. The next data file you *add* from the same place starts with them already
 filled in, so you set a venue up once rather than once a session. Opening a project you saved
@@ -1090,7 +1096,7 @@ the corners you chose, as next session's experiments in the analysis's own words
 edit before **Save Plan**. **Next** (Return) and **Back** (⌘[) move between the steps. The plan is
 kept for the circuit, so it is there when you prepare to go back and on the Season page, and in the
 project when there is one, undoably; from the Logbook it needs no project, only a circuit the
-Logbook knows. **All Corners**, beside **Walkthrough** in the toolbar, shows the whole analysis at
+Logbook knows, and it is a step of the Logbook window's Edit ▸ Undo. **All Corners**, beside **Walkthrough** in the toolbar, shows the whole analysis at
 once, as described below, and the window opens next time on whichever you used last.
 
 ### All corners
@@ -1130,6 +1136,33 @@ the project out as Compare Laps does, with both laps' pictures, over that corner
 playhead goes to the brake point and the export range is the corner, so one export is the clip.
 It is offered when the reference is a real lap with a camera; the rolling and spliced laps are
 data only.
+
+### Traffic and flags
+
+A corner where another car held you up, or that you drove under a yellow flag, says nothing
+about how you drive, so mark it and the coaching leaves it out. On the corner's step of the
+walkthrough choose **Leave This Corner Out ▸ Held Up by Traffic** or **Under a Flag**; in All
+Corners right-click its row (**Mark Turn 4 as Traffic**, **Mark Turn 4 as a Flag**, **Clear
+Traffic Mark**), or use the mark at the top of the corner's detail. A marked corner:
+
+- is never an opportunity, gets no advice, and is listed under the walkthrough's first step as
+  left out; the table reads *traffic* or *flag* in its Phase column;
+- still counts in the lap's total, which says how much of it was traffic ("2.40 s behind, 1.80 s
+  of it held up by traffic");
+- is left out of that corner's consistency — the rest of the lap still counts, and a lap slowed
+  past the flying-lap limit only by its marked corners counts too, though its lap time is left
+  out of the lap-time spread;
+- makes a lap a poor default: with no lap chosen the window reads the quickest lap no mark
+  touches;
+- reads "Turn 4: held up by traffic" on a Corner Callout, and is skipped by the Coaching Debrief
+  and by **Only corners that lost time** when exporting one file per corner.
+
+The mark covers the stretch of the session the corner was read over, so it applies whatever the
+lap is compared with; when the compared lap is from the same session and was held up there
+itself, the corner is left out too, and its detail says so. Marks are kept with the project's
+coaching choices (or with the session, from the Logbook), and each one is an undo step. A project
+with no marks reads exactly as it did. `onboard coach --traffic 312.5-330,1204-1215:flag` does the
+same from the command line, in seconds of the data file.
 
 ### A plan for next session
 
@@ -1272,11 +1305,13 @@ chart. Click a point to open that session.
 
 Below the charts, corner by corner, the best lap of your latest track day against the best of the
 track day before and against your personal best — brake point, minimum speed and time in the
-corner. A line above the table names the laps it reads, and a comparison's columns appear only when
-there is one to make: none against the personal best when the latest day set it. Sessions entered
-before corners were kept offer **Read Their Corners**, as do sessions whose corners were measured
-before a correction to how the app measures them (#438), so a fixed reading reaches sessions
-already in the logbook.
+corner. Minimum speed is in the app's speed unit, and brake points are in feet when that is mph
+and in metres otherwise, as Coaching gives them; the line under the table names both. A line
+above the table names the laps it reads, and a comparison's columns appear only when there is one
+to make: none against the personal best when the latest day set it. Sessions entered before
+corners were kept offer **Read Their Corners**, as do sessions whose corners were measured before
+a correction to how the app measures them (#438), so a fixed reading reaches sessions already in
+the logbook.
 
 ### Car against car
 
@@ -1312,7 +1347,8 @@ can be changed right there, **Add Experiment** adds one and the minus removes on
 yet, **Start a Plan** begins one from **Where the Last Visit Lost Time** — the corners where your
 last visit's best session was slowest against your best lap, with how much and whether you braked
 earlier or were slower at the apex — and **Make a Plan in Coaching…** opens Coaching on that session
-to write one from its laps. Each change is one step of Edit ▸ Undo.
+to write one from its laps; the plan saved there is on the card at once. Each change, the one made
+in Coaching too, is one step of the Logbook's Edit ▸ Undo.
 
 **New Track Day Here…** begins the next day at the circuit, and that day shows the same card until
 its first session arrives. A plan is kept with a circuit the catalogue knows; for a circuit named by
@@ -1370,7 +1406,10 @@ fastest rolling lap (the quickest lap-length stretch starting anywhere, which of
 timed lap), `--reference optimal` with the best sectors spliced together, `--reference lap:6` with
 another lap; `--units imperial` writes the notes in mph and feet; `--json` prints everything as
 data. A project works too: `onboard coach my.onboardproj` reads its first data input, with the
-sectors and corner names the project has. The method is in [coaching.md](coaching.md).
+sectors, corner names and traffic marks the project has. `--traffic 312.5-330,1204-1215:flag` marks
+stretches as held up by traffic (or `:flag`) in seconds of the data file, and the corners they cover
+are left out of the coaching ([Traffic and flags](#traffic-and-flags)). The method is in
+[coaching.md](coaching.md).
 
 **The logbook.** `onboard logbook new-day --date 2026-08-23 --circuit Sonoma --car Miata` begins a
 day, `onboard logbook add <files or folders> --day <id or date>` puts files on it (`--car`,

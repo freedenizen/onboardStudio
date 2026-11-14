@@ -107,6 +107,7 @@ extension EditorModel {
             if let line = definition.startFinish { settings.lapLine = line }
             settings.sectors = definition.sectors
             settings.cornerLabels = definition.cornerLabels
+            settings.turnNames = definition.turnNames
             $0.kind = .data(settings)
         }
         try? trackLibrary.save(definition)
@@ -124,14 +125,15 @@ extension EditorModel {
             return TrackDefinition(
                 circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
                 longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
-                cornerLabels: settings.cornerLabels)
+                cornerLabels: settings.cornerLabels, turnNames: settings.turnNames)
         }
         guard let session = sessions[id], let latitude = session[.latitude]?.values.first,
             let longitude = session[.longitude]?.values.first
         else { return nil }
         return TrackDefinition(
             name: project.input(id)?.label ?? "Track", latitude: latitude, longitude: longitude,
-            startFinish: settings.lapLine, sectors: settings.sectors, cornerLabels: settings.cornerLabels)
+            startFinish: settings.lapLine, sectors: settings.sectors, cornerLabels: settings.cornerLabels,
+            turnNames: settings.turnNames)
     }
 
     // MARK: - Placing the line on the map
@@ -189,19 +191,26 @@ extension EditorModel {
         return CornerDetector.corners(of: reference, in: session)
     }
 
-    /// Names the `index`-th corner of `id`'s lap, padding the list out as needed so a label can
-    /// be set on any corner without filling in the ones before it.
+    /// Names the `index`-th corner of `id`'s lap, pinning the name to where the corner is (#548).
+    ///
+    /// The first name pinned takes over from the list a project from before kept, which is then
+    /// emptied: the pinned names start as that list, so nothing on the map changes but the one
+    /// name, and a list nobody reads would only confuse the next person to look at the file.
     func setCornerLabel(_ label: String, at index: Int, for id: InputID) {
+        let corners = corners(for: id)
         updateInput(id, name: "Name Corner") {
-            guard case .data(var settings) = $0.kind, index >= 0 else { return }
-            var labels = settings.cornerLabels
-            while labels.count <= index { labels.append("") }
-            labels[index] = label.trimmingCharacters(in: .whitespaces)
-            // Trailing blanks carry no meaning and would grow the file for nothing.
-            while let last = labels.last, last.isEmpty { labels.removeLast() }
-            settings.cornerLabels = labels
+            guard case .data(var settings) = $0.kind else { return }
+            settings.turnNames = CornerNaming.renaming(
+                index, to: label, corners: corners, pinned: settings.turnNames, legacy: settings.cornerLabels)
+            if !settings.turnNames.isEmpty { settings.cornerLabels = [] }
             $0.kind = .data(settings)
         }
+    }
+
+    /// What each corner of `id`'s reference lap is called, and why (#548).
+    func cornerNames(for id: InputID) -> [CornerName] {
+        guard let session = sessions[id] else { return [] }
+        return session.cornerNames(for: corners(for: id))
     }
 }
 

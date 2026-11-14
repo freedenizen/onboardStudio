@@ -54,6 +54,9 @@ public struct LapProfile: Sendable {
     public let distances: [Double]
     /// Seconds since the window began at each grid point; never decreasing.
     public let elapsed: [Double]
+    /// Session time at each grid point. For a plain lap `window.start + elapsed`; for a spliced
+    /// profile each point's time in the lap it was cut from, which jumps at the seams.
+    public let times: [Double]
     public let latitude: [Double]?
     public let longitude: [Double]?
     /// Direction of travel at each grid point in degrees (0 = north, clockwise), from the path.
@@ -139,6 +142,7 @@ public struct LapProfile: Sendable {
         self.stepMeters = stepMeters
         self.distances = distances
         self.elapsed = elapsed
+        self.times = times
         self.pieces = pieces
 
         var channels: [ChannelRole: [Double]] = [:]

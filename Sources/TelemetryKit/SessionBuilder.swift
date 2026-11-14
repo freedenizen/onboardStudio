@@ -41,6 +41,9 @@ public enum SessionBuilder {
         public var sectorMode: SectorMode
         /// What the circuit calls its corners, in driving order. Empty leaves them unnamed.
         public var cornerLabels: [String]
+        /// The circuit's turn names pinned to their apexes (#548); used instead of `cornerLabels`
+        /// when there are any.
+        public var turnNames: [TurnName] = []
         /// Ignore samples before this point in the file's own time (`nil` = from the beginning).
         ///
         /// Applied before anything else, so the session behaves as if the recording had started
@@ -157,6 +160,7 @@ public enum SessionBuilder {
         // After the demotion, so an out-lap cannot be the lap the sectors are measured on.
         session.sectors = Sectors.analyse(mode: options.sectorMode, session: session)
         session.cornerLabels = options.cornerLabels
+        session.turnNames = options.turnNames
         return session
     }
 

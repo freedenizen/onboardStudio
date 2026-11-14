@@ -231,6 +231,7 @@ final class EditorModel {
             if let line = definition.startFinish { settings.lapLine = line }
             settings.sectors = definition.sectors
             settings.cornerLabels = definition.cornerLabels
+            settings.turnNames = definition.turnNames
             $0.kind = .data(settings)
         }
         statusMessage = "Recognised \(definition.name) and used your saved start/finish and sectors."
@@ -253,7 +254,7 @@ final class EditorModel {
         let definition = TrackDefinition(
             circuitID: match.circuit.id, name: match.circuit.name, latitude: match.circuit.latitude,
             longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
-            cornerLabels: settings.cornerLabels)
+            cornerLabels: settings.cornerLabels, turnNames: settings.turnNames)
         do {
             try trackLibrary.save(definition)
             statusMessage = "Saved the start/finish and sectors for \(definition.name)."
