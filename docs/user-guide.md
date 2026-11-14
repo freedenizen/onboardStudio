@@ -1388,6 +1388,13 @@ stretches as held up by traffic (or `:flag`) in seconds of the data file, and th
 are left out of the coaching ([Traffic and flags](#traffic-and-flags)). The method is in
 [coaching.md](coaching.md).
 
+**Performance runs.** `onboard probe drag.vbo --performance` lists every standing start: 0–30,
+0–60, 0–100 and 60–130 mph, 0–50, 0–100, 0–200 and 100–200 km/h, then 60 ft, 330 ft, ⅛ mile,
+1,000 ft and ¼ mile with trap speeds at the eighth and the quarter. Each stop is listed from 60 mph
+and from 100 km/h, as distance and time. Distance times have a timeslip's 1-ft rollout and speed
+times none. A slope over 1 % or a log under 10 Hz is noted beside the run. The method is in
+[performance-runs.md](performance-runs.md).
+
 **The logbook.** `onboard logbook new-day --date 2026-08-23 --circuit Sonoma --car Miata` begins a
 day, `onboard logbook add <files or folders> --day <id or date>` puts files on it (`--car`,
 `--driver`; without `--day`, each file goes on the day its date and circuit say; with it, every
