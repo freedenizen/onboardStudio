@@ -58,6 +58,8 @@ extension EditorModel {
                 longitude: match.circuit.longitude, startFinish: settings.lapLine, sectors: settings.sectors,
                 cornerLabels: settings.cornerLabels)
         }
+        // The circuit's card in the Logbook shows the plan as it is now (#543).
+        LogbookModel.shared.reloadPlans()
     }
 }
 
