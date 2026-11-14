@@ -920,6 +920,29 @@ does. The bar ends there too: a log that runs on after the camera stopped, or on
 longer recording, shows the part of the file that the picture covers, with its laps under the
 times on the ruler.
 
+#### Runs: autocross, hill climbs and stages
+
+A circuit is timed in laps, from one line round to the same line. An autocross, a hill climb or a
+rally stage is timed in **runs**, from a start line to a different finish line. Select the data
+file and, under **Laps** in the inspector, set **Timing** to **Runs**. Both lines are put where the
+preview is; move each with **Use Current Preview Position as Start** and **…as Finish**, or type
+where it is, which way it is crossed and how wide it is. A Racelogic VBO file that recorded a start
+and a finish gate is timed in runs as soon as it is added.
+
+Runs are told apart by the car **stopping** between them, as it does when it is staged at the start
+and after it slows down past the finish, so a course may pass through either line on the way round:
+a run lasts from its first crossing of the start to its last crossing of the finish before the car
+next stops. Each line counts only the way the course crosses it, so the drive back down a hill climb
+is not a run. A run that never reached the finish is listed as **DNF**.
+
+The inspector lists every run with its time. On the timeline the driving between runs is shaded
+and unnumbered, **⌥↑** and **⌥↓** go from run to run (*Run 2 — 0:51.97*), a Timer showing the
+current lap reads **RUN**, and the export sheet offers **Runs** and **Every run, one file each**
+(*Autocross – Run 2.mp4*), finished runs only unless you say otherwise. Compare Laps and the Coaching
+window list runs too; the fastest rolling lap is not offered, because an open course has nothing to
+roll into. **Timing ▸ Laps** goes back to laps, and Edit ▸ Undo undoes either choice. Runs in the
+Logbook, with courses, cones and DNFs, are still to come (#552).
+
 #### Sectors
 
 A lap split into parts tells you *where* the time went, not just how much. Select the data file

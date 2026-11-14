@@ -240,6 +240,13 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     public var calculatedFields: [CalculatedFieldSpec]
     /// When set, laps come from crossings of this line instead of the file's lap markers.
     public var lapLine: LapLineSpec?
+    /// The finish of a point-to-point course (#552): with it, `lapLine` is the start and the file
+    /// is timed in runs from one to the other — an autocross, a hill climb, a stage. `nil`, as in
+    /// every project saved before runs existed, is a circuit timed in laps.
+    public var runFinishLine: LapLineSpec?
+
+    /// Whether the file is timed in runs: both a start and a finish line are set.
+    public var timesRuns: Bool { lapLine != nil && runFinishLine != nil }
     /// How each lap is divided for sector times.
     public var sectors: SectorSpec
     /// The circuit this file was recorded at, as a Wikidata id (`Q112563`) or a track-definition
@@ -277,6 +284,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         smoothingSeconds: Double = 0,
         calculatedFields: [CalculatedFieldSpec] = [],
         lapLine: LapLineSpec? = nil,
+        runFinishLine: LapLineSpec? = nil,
         sectors: SectorSpec = SectorSpec(),
         circuitID: String? = nil,
         cornerLabels: [String] = [],
@@ -295,6 +303,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         self.smoothingSeconds = smoothingSeconds
         self.calculatedFields = calculatedFields
         self.lapLine = lapLine
+        self.runFinishLine = runFinishLine
         self.sectors = sectors
         self.circuitID = circuitID
         self.cornerLabels = cornerLabels
@@ -305,7 +314,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case importerID, roleOverrides, unitOverrides, attributeMappings
         case deriveSpeedFromPosition, deriveHeadingFromPosition
-        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, sectors, circuitID
+        case resampleHertz, smoothingSeconds, calculatedFields, lapLine, runFinishLine, sectors, circuitID
         case cornerLabels, turnNames, trim
         case logbookEntryID, legacyFirstLap
     }
@@ -325,6 +334,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         smoothingSeconds = try c.decodeIfPresent(Double.self, forKey: .smoothingSeconds) ?? 0
         calculatedFields = try c.decodeIfPresent([CalculatedFieldSpec].self, forKey: .calculatedFields) ?? []
         lapLine = try c.decodeIfPresent(LapLineSpec.self, forKey: .lapLine)
+        // Absent before runs (#552): every such project was timed in laps, which nil keeps.
+        runFinishLine = try c.decodeIfPresent(LapLineSpec.self, forKey: .runFinishLine)
         // Absent in projects saved before sectors existed. Nothing drew a sector time then, so
         // measuring them now cannot change how such a project renders.
         sectors = try c.decodeIfPresent(SectorSpec.self, forKey: .sectors) ?? SectorSpec()
