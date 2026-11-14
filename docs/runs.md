@@ -1,7 +1,7 @@
 # Runs: autocross, hill climb and stages (#552) — design
 
-**Status:** steps 1 (runs in the project) and 2 (runs and courses in the Logbook) are built;
-steps 3 (cones and DNF) and 4 (suggested lines) are to come. How step 2 keeps courses is in
+**Status:** steps 1 (runs in the project), 2 (runs and courses in the Logbook) and 3 (cones and
+DNF) are built; step 4 (suggested lines) is to come. How step 2 keeps courses is in
 `docs/logbook.md`, *Runs and courses*.
 
 Draft of 2026-11-13. The decisions it builds on were made by the user on 2026-11-13. A circuit lap
@@ -90,9 +90,11 @@ deltas, the Timer, sectors, the optimal lap, and *Every lap, one file each*.
 - **Keys.** For a session on a course, `circuitKey` is `course:<id>`. Personal bests, Trends,
   goals, the circuit card and *Compare With ▸* key on it unchanged; `venueKey` is the circuit
   without the course, for comparing a session with its track day.
-- **Per-run fields.** `LapRecord` gains `cones: Int` and `dnf: Bool`, entered by the driver.
-  `dnf` is taken from detection at first. `TrackDay.penaltyPerCone` holds the penalty and defaults
-  to 2 s.
+- **Per-run fields.** `LapRecord` gains `cones: Int` and `offCourse: Bool`, entered by the driver.
+  A run is a DNF when detection found no finish or the driver ticked it off course (the draft had
+  one `dnf` flag; two keep what detection found apart from what the driver said).
+  `TrackDay.penaltyPerCone`, 2 s when unset, is copied onto the day's sessions in runs, as a day's
+  car is, so an entry's best counts the same wherever it is read.
 - **Saving the course.** Venues are mostly not in the catalogue: there are no hill climbs in it, and
   car parks aren't circuits. They are named by hand, as a *No circuit* day is today.
   `TrackDefinition` gains `finish: LapLineSpec?`, so *Save … for This Track* keeps a hill climb's

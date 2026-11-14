@@ -240,6 +240,16 @@ named for its day, *Course of 13 Nov 2026*. The course is listed under **Circuit
 as the venue and the course (*Lot 4 – Course of 13 Nov 2026*), with its own personal best, Trends,
 goals and card, apart from the venue's other courses.
 
+Each run in a session's detail has its **cones** and a **DNF** box. A cone adds the day's
+penalty to the run's time, and the run then shows the time that counts with the clock's time and
+its cones beneath it; ticking DNF says it went off course, so it has no time to count, though it
+crossed the finish. A run that never reached the finish is a DNF already. The best run is the
+quickest that counts, so the personal best, Trends, goals and what the import says of a day compare
+what counts; the optimal run stays the driving's own, the best sectors whatever was hit. A day with
+runs on it has **Per cone** under its car and driver, 2 s to begin with, which every run on the
+day counts at. Each change is one step of Edit ▸ Undo, and the Logbook's exports carry the cones
+and the time that counts.
+
 In a session's detail, **Course** names it: type a name and Return renames the course for every
 session driven on it. The button beside it puts a wrong match right: **Same Course as ▸** another
 course the logbook has (those at the same venue first), or **New Course** for a course of its own.
