@@ -94,6 +94,7 @@ public enum RunDetector {
         var stretches: [ClosedRange<Double>] = []
         var movingSince: Double? = range.lowerBound
         var stoppedSince: Double?
+        var previous = range.lowerBound
         for (time, value) in zip(speed.times, speed.values) {
             if value < options.stopSpeed {
                 if stoppedSince == nil { stoppedSince = time }
@@ -102,9 +103,12 @@ public enum RunDetector {
                     movingSince = nil
                 }
             } else {
-                if movingSince == nil { movingSince = time }
+                // From the last moment standing: a start line drawn where the car was staged is
+                // crossed between that sample and this one, and belongs to this stretch.
+                if movingSince == nil { movingSince = previous }
                 stoppedSince = nil
             }
+            previous = time
         }
         if let began = movingSince, range.upperBound > began { stretches.append(began...range.upperBound) }
         return stretches

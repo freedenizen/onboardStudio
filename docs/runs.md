@@ -1,7 +1,8 @@
 # Runs: autocross, hill climb and stages (#552) — design
 
-**Status:** steps 1 (runs in the project), 2 (runs and courses in the Logbook) and 3 (cones and
-DNF) are built; step 4 (suggested lines) is to come. How step 2 keeps courses is in
+**Status:** built, in four steps: runs in the project, runs and courses in the Logbook, cones and
+DNF, and suggested lines (`RunLineFinder`). A finish placed by dragging it on the map, as the start
+can be, and timing a Logbook session in runs without a project are not done. How step 2 keeps courses is in
 `docs/logbook.md`, *Runs and courses*.
 
 Draft of 2026-11-13. The decisions it builds on were made by the user on 2026-11-13. A circuit lap
@@ -18,7 +19,7 @@ deltas, the Timer, sectors, the optimal lap, and *Every lap, one file each*.
    today. A loop course timed from a standing start puts both lines in one place: the run ends at
    the line's last crossing before the car stops. A VBO file that carries `Start` and `Finish`
    gates turns Runs on and places both lines by itself (the status bar says so), just as its
-   start/finish and splits are used today. Suggesting the lines from the data is step 4.
+   start/finish and splits are used today. Choosing Runs suggests both lines from the driving.
 2. **The runs.** The timeline's data bar divides at each run's start and finish, and the bar is
    dimmed between runs. Runs are numbered 1, 2, 3. ⌥↑ / ⌥↓ go from run to run, and the status line
    reads "Run 3 — 52.341". A run that never reached the finish is shown as **DNF**.
@@ -69,15 +70,24 @@ deltas, the Timer, sectors, the optimal lap, and *Every lap, one file each*.
 - Corner detection already treats an open path as open (`CornerDetector`, `isClosed`). Sectors at
   *equal distances* work on a run unchanged.
 
-### Suggesting the lines (`StartFinishFinder`)
+### Suggesting the lines (`RunLineFinder`)
 
-- **Start:** where runs launch from a standstill. That is the points where speed rises from under
-  5 km/h to over 30 km/h within 5 s, clustered. The line goes through the cluster's centre, across
-  the launch direction.
-- **Finish:** the last point all runs pass at speed before they slow to a stop. A single run uses
-  the point where speed falls below 40 % of its top speed for good.
-- **Trust.** Both say where they came from and are meant to be checked, as the start/finish
-  suggestion is today. The thresholds are parameters, not constants spread through the code.
+- **Start:** where runs launch from a standstill — under 1.5 m/s, then over 8 m/s (about
+  30 km/h) within 8 s without standing still again. Rolling from the grid to the line is never that
+  quick. The launches within 25 m of most others are the start; the line goes through their centre,
+  across their mean heading.
+- **Finish:** for each launch, the last moment before the car next stands still that it was at half
+  its top speed of that run (one sample earlier, so the line is crossed rather than ended on). The
+  ends within 25 m of most others are the finish, so a run that went off course elsewhere is left
+  out, and one run is enough.
+- **Checked by timing.** The suggestion is kept only if its lines time at least one finished run,
+  and it says how many set off and how many finished.
+- **Trust.** Both are a few metres off the real lines: the start is where the car first moved, the
+  finish where it began to slow. The status line says to check them on the map. The thresholds are
+  `RunLineFinder.Options`.
+- **A fix it needed.** A start drawn where the car stood used to be crossed a sample before the
+  moving stretch began, and was missed. `RunDetector` now starts a stretch at the last standing
+  sample.
 
 ### Courses in the Logbook (`ProjectModel`)
 

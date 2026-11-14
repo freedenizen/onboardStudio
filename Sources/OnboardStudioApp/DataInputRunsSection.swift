@@ -17,6 +17,8 @@ extension DataInputInspector {
                 set: { timing in
                     switch timing {
                     case .runs:
+                        // The lines the driving suggests, else both at the preview to be moved.
+                        if editor.suggestRunLines(for: input.id, name: "Time in Runs") { return }
                         update("Time in Runs") {
                             let here = currentPositionLine ?? LapLineSpec(latitude: 0, longitude: 0)
                             if $0.lapLine == nil { $0.lapLine = here }
@@ -42,6 +44,10 @@ extension DataInputInspector {
                 + "stopping between them, so the course may pass either line on the way."
         )
         .font(.caption).foregroundStyle(.secondary)
+        Button("Suggest Start and Finish from the Data") { editor.suggestRunLines(for: input.id) }
+            .disabled(session == nil)
+            .help("A start where runs set off from a standstill, and a finish where they ended")
+            .accessibilityIdentifier("data.suggestRunLines")
         Button("Use Current Preview Position as Start") {
             setRunLine("Set Start") { $0.lapLine = $1 }
         }

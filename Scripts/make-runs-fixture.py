@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Writes Tests/Fixtures/runs.d/autocross.vbo: three runs of a synthetic autocross course at 5 Hz in
-Racelogic VBO, with the start and finish gates in its [laptiming] section, so a point-to-point
-course can be timed in runs (#552) from a file alone.
+"""Writes Tests/Fixtures/runs.d/autocross.vbo: three runs of a synthetic autocross course at 5 Hz
+in Racelogic VBO, with the start and finish gates in its [laptiming] section, so a point-to-point
+course can be timed in runs (#552) from a file alone; and autocross-no-gates.vbo, the same runs
+without the gates, for lines suggested from the driving.
 
 The course is the one in Tests/TelemetryKitTests/RunDetectorTests.swift: staged at (-10, 0),
 start line at x = 0 crossed going east, finish line at x = 100 on the top straight crossed going
@@ -71,7 +72,7 @@ def gate(kind, x, y0, y1, label):
     )
 
 
-def main():
+def write(name, gates):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     lines = [
         "File created on 13/11/2026 at 10:00:00",
@@ -85,10 +86,15 @@ def main():
         "heading",
         "height",
         "",
-        "[laptiming]",
-        gate("Start", 0, -10, 10, "Start"),
-        gate("Finish", 100, 90, 110, "Finish"),
-        "",
+    ]
+    if gates:
+        lines += [
+            "[laptiming]",
+            gate("Start", 0, -10, 10, "Start"),
+            gate("Finish", 100, 90, 110, "Finish"),
+            "",
+        ]
+    lines += [
         "[comments]",
         "Synthetic OnboardStudio fixture: three autocross runs (Scripts/make-runs-fixture.py).",
         "Log Rate (Hz) : 5.00",
@@ -105,8 +111,14 @@ def main():
             f"012 {clock} {minutes_lat(y):+012.6f} {minutes_long(x):+013.6f} "
             f"{speed * 3.6:07.3f} {heading:07.3f} +00450.00"
         )
-    with open(os.path.join(root, "Tests", "Fixtures", "runs.d", "autocross.vbo"), "w", encoding="utf-8") as out:
+    with open(os.path.join(root, "Tests", "Fixtures", "runs.d", name), "w", encoding="utf-8") as out:
         out.write("\n".join(lines) + "\n")
+
+
+def main():
+    write("autocross.vbo", gates=True)
+    # The same runs with no gates, for lines suggested from the driving.
+    write("autocross-no-gates.vbo", gates=False)
 
 
 if __name__ == "__main__":
