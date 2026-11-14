@@ -74,8 +74,9 @@ struct LogbookTransferTests {
             lines[1].contains(",,Stadium,Miata,Me,1,44.600,1,,,,sunny,,,\"RE, 2 days\",,\"Cold, \"\"grippy\"\"\",,"))
         let laps = LogbookTransfer.lapsCSV(entries).split(separator: "\n")
         #expect(laps.count == 3)
-        #expect(laps[1].hasSuffix(",Stadium,Miata,1,44.600,yes"))
-        #expect(laps[2].hasSuffix(",Stadium,Miata,2,,no"))
+        // A circuit's laps leave a run's cones and official time empty (#552).
+        #expect(laps[1].hasSuffix(",Stadium,Miata,1,44.600,yes,,"))
+        #expect(laps[2].hasSuffix(",Stadium,Miata,2,,no,,"))
         let markdown = LogbookTransfer.markdown(entries, title: "Season")
         let header = "# Season\n\n| Date | Circuit | Car | Laps | Best | Optimal | Rolling | Conditions |"
         #expect(markdown.hasPrefix(header))

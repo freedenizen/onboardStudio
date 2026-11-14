@@ -152,7 +152,8 @@ public enum LogbookTransfer {
         let labels = Dictionary(days.map { ($0.id, $0.label) }, uniquingKeysWith: { first, _ in first })
         for entry in entries {
             let cells: [String] = [
-                entry.date.map(ProjectDetails.iso) ?? "", entry.trackDayID.flatMap { labels[$0] } ?? "", entry.title,
+                entry.date.map(ProjectDetails.iso) ?? "", entry.trackDayID.flatMap { labels[$0] } ?? "",
+                entry.circuitTitle,
                 entry.car, entry.driver,
                 String(entry.completeLapCount), seconds(entry.bestLap), entry.bestLapNumber.map(String.init) ?? "",
                 seconds(entry.optimalLap), seconds(entry.fastestRollingLap),
@@ -166,7 +167,9 @@ public enum LogbookTransfer {
         return lines.joined(separator: "\n") + "\n"
     }
 
-    public static let lapColumns = ["date", "circuit", "car", "lap", "seconds", "complete"]
+    /// `cones` and `official` are a run's (#552): the cones it hit and the time that counts, empty
+    /// for a circuit's laps and for a DNF.
+    public static let lapColumns = ["date", "circuit", "car", "lap", "seconds", "complete", "cones", "official"]
 
     /// One line per lap of every session.
     public static func lapsCSV(_ entries: [LogbookEntry]) -> String {
@@ -174,8 +177,10 @@ public enum LogbookTransfer {
         for entry in entries {
             for lap in entry.laps {
                 let cells = [
-                    entry.date.map(ProjectDetails.iso) ?? "", entry.title, entry.car, String(lap.number),
+                    entry.date.map(ProjectDetails.iso) ?? "", entry.circuitTitle, entry.car, String(lap.number),
                     seconds(lap.seconds), lap.isComplete ? "yes" : "no",
+                    entry.isRuns ? String(lap.cones) : "",
+                    entry.isRuns ? seconds(lap.officialSeconds(perCone: entry.perCone)) : "",
                 ]
                 lines.append(cells.map(quoted).joined(separator: ","))
             }
@@ -200,7 +205,7 @@ public enum LogbookTransfer {
         lines.append("|---|---|---|---:|---:|---:|---:|---|")
         for entry in entries {
             let cells = [
-                entry.date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—", entry.title,
+                entry.date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—", entry.circuitTitle,
                 entry.car.isEmpty ? "—" : entry.car, String(entry.completeLapCount), lapTime(entry.bestLap),
                 lapTime(entry.optimalLap), lapTime(entry.fastestRollingLap),
                 entry.conditions.summary.isEmpty ? "—" : entry.conditions.summary,
@@ -211,15 +216,19 @@ public enum LogbookTransfer {
         for entry in entries where !entry.laps.isEmpty {
             lines.append("")
             let when = entry.date.map { " — " + $0.formatted(date: .long, time: .omitted) } ?? ""
-            lines.append("## \(entry.title)\(when)")
+            lines.append("## \(entry.circuitTitle)\(when)")
             if !entry.car.isEmpty || !entry.driver.isEmpty {
                 lines.append("*\([entry.car, entry.driver].filter { !$0.isEmpty }.joined(separator: " · "))*")
             }
             lines.append("")
             for lap in entry.laps {
                 var line = "- \(entry.isRuns ? "Run" : "Lap") \(lap.number): \(lapTime(lap.seconds))"
+                // "+ 2 cones = 0:55.97" (#552): the clock, then what it counts as.
+                if entry.isRuns, lap.cones > 0, let official = lap.officialSeconds(perCone: entry.perCone) {
+                    line += " + \(lap.cones) \(lap.cones == 1 ? "cone" : "cones") = \(lapTime(official))"
+                }
                 if lap.number == entry.bestLapNumber { line += " **best**" }
-                if !lap.isComplete { line += entry.isRuns ? " (DNF)" : " (partial)" }
+                if entry.isRuns ? lap.isDNF : !lap.isComplete { line += entry.isRuns ? " (DNF)" : " (partial)" }
                 lines.append(line)
             }
             if !entry.notes.isEmpty {

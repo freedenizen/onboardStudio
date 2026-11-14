@@ -240,6 +240,16 @@ named for its day, *Course of 13 Nov 2026*. The course is listed under **Circuit
 as the venue and the course (*Lot 4 – Course of 13 Nov 2026*), with its own personal best, Trends,
 goals and card, apart from the venue's other courses.
 
+Each run in a session's detail has its **cones** and a **DNF** box. A cone adds the day's
+penalty to the run's time, and the run then shows the time that counts with the clock's time and
+its cones beneath it; ticking DNF says it went off course, so it has no time to count, though it
+crossed the finish. A run that never reached the finish is a DNF already. The best run is the
+quickest that counts, so the personal best, Trends, goals and what the import says of a day compare
+what counts; the optimal run stays the driving's own, the best sectors whatever was hit. A day with
+runs on it has **Per cone** under its car and driver, 2 s to begin with, which every run on the
+day counts at. Each change is one step of Edit ▸ Undo, and the Logbook's exports carry the cones
+and the time that counts.
+
 In a session's detail, **Course** names it: type a name and Return renames the course for every
 session driven on it. The button beside it puts a wrong match right: **Same Course as ▸** another
 course the logbook has (those at the same venue first), or **New Course** for a course of its own.
@@ -285,6 +295,17 @@ else has **Car** and **Driver** fields of its own in its detail, with the cars t
 knows a click away, and keeps what you put there whatever the day says later. A day's circuit is
 corrected in its header's **Circuit** row ([Starting a day](#starting-a-day)), a car's name with
 **Rename…** in the [garage](#the-garage-your-cars).
+
+**Configuration.** Most circuits run more than one layout — a long course and a club course, with
+or without a chicane — and a lap of one says nothing about a lap of another. A session at a circuit
+timed in laps has a **Configuration** field under its car and driver (a course timed in runs is a
+layout of its own already, and has none): type the layout it drove, *Club Course*, or
+choose one already named there from the menu beside the field; leave it empty for the circuit's
+usual layout. Each configuration is a circuit of its own under **Circuits** — *Sonoma Raceway —
+Club Course* — with its own card, personal best, Trends, goals and plan, and its own start/finish,
+sectors and turn names. Once a configuration's turns are named, a file added at that circuit is
+filed under the configuration whose turns it drives; one that matches none goes on the usual layout,
+for you to move. Sessions added before configurations existed are on the usual layout, as they were.
 
 Everything you change in the Logbook can be taken back: **Edit ▸ Undo** names what it will undo —
 *Undo Remove 3 Sessions*, *Undo Move Session*, *Undo Change Car*, *Undo Add Files* — and **Redo**
@@ -664,8 +685,12 @@ corner", so a lap with an extra kink does not move 3a onto turn 4. A corner you 
 named ones is not numbered on the map, and Coaching and Trends call it by the turns either side of
 it, such as *3a–4*. Clear a name to take it off a turn.
 
+A circuit with more than one layout keeps each one's settings apart: the **Configuration** field
+under the circuit says which this file drove, and choosing one uses the start/finish, sectors and
+turn names saved for it ([Configuration](#putting-mistakes-right) in the Logbook).
+
 **Save Start/Finish, Sectors and Corner Names for This Track** files them all against that
-circuit. The next data file you *add* from the same place starts with them already
+circuit and configuration. The next data file you *add* from the same place starts with them already
 filled in, so you set a venue up once rather than once a session. Opening a project you saved
 earlier never applies them: a project renders the way you left it, whatever the app has learned
 since.
@@ -985,10 +1010,15 @@ times on the ruler.
 
 A circuit is timed in laps, from one line round to the same line. An autocross, a hill climb or a
 rally stage is timed in **runs**, from a start line to a different finish line. Select the data
-file and, under **Laps** in the inspector, set **Timing** to **Runs**. Both lines are put where the
-preview is; move each with **Use Current Preview Position as Start** and **…as Finish**, or type
-where it is, which way it is crossed and how wide it is. A Racelogic VBO file that recorded a start
-and a finish gate is timed in runs as soon as it is added.
+file and, under **Laps** in the inspector, set **Timing** to **Runs**. The app suggests both lines
+from the driving: the start where runs set off from a standstill, the finish where they were last
+at speed before the car stopped, and the status line says how many runs set off and how many
+finished. Both are a few metres off the real lines at best — the start is where the car first
+moved, the finish where it began to slow — so check them on the map. **Suggest Start and Finish
+from the Data** asks again; **Use Current Preview Position as Start** and **…as Finish** move either
+to the preview, or type where it is, which way it is crossed and how wide it is. With nothing that
+sets off from a standstill to go on, both are put where the preview is. A Racelogic VBO file that
+recorded a start and a finish gate is timed in runs between them as soon as it is added.
 
 Runs are told apart by the car **stopping** between them, as it does when it is staged at the start
 and after it slows down past the finish, so a course may pass through either line on the way round:
@@ -1455,6 +1485,10 @@ are left out of the coaching ([Traffic and flags](#traffic-and-flags)). The meth
 and from 100 km/h, as distance and time. Distance times have a timeslip's 1-ft rollout and speed
 times none. A slope over 1 % or a log under 10 Hz is noted beside the run. The method is in
 [performance-runs.md](performance-runs.md).
+
+**Runs.** `onboard probe autocross.vbo --suggest-runs` prints the start and finish the driving
+suggests, as `--lap-line lat,lon,heading --finish-line lat,lon,heading`; given both, `probe` lists
+the runs, each with its time or *DNF*.
 
 **The logbook.** `onboard logbook new-day --date 2026-08-23 --circuit Sonoma --car Miata` begins a
 day, `onboard logbook add <files or folders> --day <id or date>` puts files on it (`--car`,

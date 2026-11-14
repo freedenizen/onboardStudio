@@ -195,6 +195,7 @@ extension TrackDayImport {
             if let day {
                 // Onto the chosen day, with its conditions as the session's to begin with.
                 entry.trackDayID = day.id
+                entry.takePenalty(from: day)
                 if entry.conditions.isEmpty { entry.conditions = day.conditions }
             } else {
                 let found = try logbook.assignDay(to: &entry)
