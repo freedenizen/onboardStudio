@@ -86,6 +86,7 @@ struct DataInputInspector: View {
             timingPicker
             if settings.timesRuns { runLines } else { lapLineControls }
             lapList
+            performanceToggle
         }
         sectorsSection
     }

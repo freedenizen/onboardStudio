@@ -517,3 +517,18 @@ v0.34.0 (#392–#398) turns the workflow round so it begins here: a day created 
 Track Day…), its clips matched to its sessions by clock (#394), the logbook as the window at
 launch (#395), coaching straight from a session (#396), the debrief and comparisons from a
 session (#397) and the same on the command line (#398).
+
+## Performance runs (#553)
+
+`measuresPerformance: Bool?` is the session's switch; `nil` is automatic, on for a session with no
+laps and no runs (`measuresPerformanceInForce`), so a straight-line log is measured as soon as it is
+added and a track day only when asked. `performance` holds what was measured, as
+`PerformanceRuns.Result`: each attempt's speed times, distance times and trap speeds keyed by
+measure, its slope and data rate, and each stop's speed, distance and time. It is written by
+`readLaps(of:)`, with the laps, so whatever reads a file again — an import, a re-reading of laps,
+`syncRunsToLogbook` — keeps it current. `readingSettings` hands the switch on, so the file is
+measured in the reading itself (`ProjectCompiler.measurePerformance`) and not twice. Turning the
+switch on in the detail reads the file again off the main thread (`LogbookModel.measurePerformance`)
+and saves the entry as one step of the Logbook's Undo. An entry written before has neither field: it
+is automatic, with nothing measured until its file is read again.
+

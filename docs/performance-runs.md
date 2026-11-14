@@ -1,7 +1,7 @@
 # Performance runs: 0–60, the quarter mile and stops (#553) — design
 
-**Status:** step 1 (measuring, `PerformanceRuns`, and `onboard probe --performance`) is built;
-steps 2 and 3 are to come.
+**Status:** step 1 (measuring, `PerformanceRuns`, and `onboard probe --performance`) and step 2
+(the Logbook, the project's switch and the Stat Card rows) are built; step 3, Trends, is to come.
 
 Draft of 2026-11-13. The user decided four things that day:
 
@@ -96,7 +96,7 @@ car quicker in a straight line.
   and read again with it.
 - `LogbookEntry.measuresPerformance: Bool?` holds the switch. `nil` is automatic: on for a session
   with no laps and no runs.
-- Personal bests per measure are kept per car, not per circuit. A straight line is the car's, not
+- Personal bests per measure are kept per car, not per circuit (step 3, with Trends). A straight line is the car's, not
   the venue's.
 - Trends adds a performance chart keyed on the car, beside the circuit's lap charts.
 
@@ -129,7 +129,7 @@ One PR each, with its tests and its docs:
 **Docs.**
 
 - A user-guide section, *Performance runs*.
-- A journey, *J69 Time a 0–60*, with its XCUITest.
+- A journey, *J70 Time a 0–60*, with its XCUITest.
 - `docs/formats.md`: nothing; no format changes.
 - `docs/project-format.md` and `docs/logbook.md`.
 - `parity.md`: TrackAddict's Drag mode and Dragy.

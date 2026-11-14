@@ -246,6 +246,37 @@ course the logbook has (those at the same venue first), or **New Course** for a 
 Each is one step of Edit ▸ Undo. **New Track Day Here…** on a course's card begins the day at its
 venue.
 
+### Performance runs: 0–60, the quarter mile and stops
+
+A session's **Performance** section times every standing start and every stop in it, as a GPS
+performance meter does. A session with no laps and no runs is measured as soon as it is added: a
+drag strip, a test road, an airfield. Any other session is measured once you turn on **Performance
+runs** beside the section's title. A track day is not measured unless asked, because every pit exit
+is a standing start too. Turning it on reads the session's file again; turning it on or off is one
+step of Edit ▸ Undo.
+
+Each launch from standing still is a **Start**, with a column for each measure it reached:
+
+- **Speed times**: 0–30, 0–60, 0–100 and 60–130 mph, or 0–50, 0–100, 0–200 and 100–200 km/h. Each
+  runs from standing still, with no rollout, as magazines quote them.
+- **Distance times**: 60 ft, 330 ft, ⅛ mile, 1,000 ft and ¼ mile (18 m to 402 m in km/h). The
+  eighth and the quarter come with their trap speed, the mean over the last 66 ft. They have a
+  timeslip's **1-ft rollout**: the clock starts once the car has rolled a foot, which makes a
+  quarter mile 0.2–0.3 s quicker than timing from the first movement.
+
+A start that lifted early has the measures it reached and a dash for the rest. Each **Stop** from
+60 mph (100 km/h) to standing still is listed with its distance and time. The best of each measure
+is in the accent colour. The measures follow the speed unit in Settings; both sets are always
+measured, so changing the unit shows the other without reading the file again.
+
+A note beside a start says when its numbers should be read with care, rather than hiding it. A slope
+of more than 1 % shows as *1.8 % downhill: quicker than on the level*. A log under 10 samples a
+second shows as *5 Hz: times ±0.1 s*.
+
+The same switch is in a project, under **Laps** in the data file's inspector, for a
+[Stat Card](#stat-card-and-the-social-template)'s 0–60, quarter mile and braking rows. Set to
+neither, it says what it does by itself.
+
 ### Putting mistakes right
 
 The day's car and driver are its sessions' too: change one in the header and every session that
@@ -691,6 +722,13 @@ lap and its number, top speed, the optimal lap (best sectors spliced together, w
 sectors) and how many laps were completed. Switch *Counts* to **The lap at the playhead** and the
 card follows whichever lap is playing instead: its time, how far off the best it is (or *Best lap*),
 and its top speed. Each number can be turned off; top speed is in the card's own speed unit.
+
+The card can also show a straight-line session's **0–60 time**, **Quarter mile** (with its trap
+speed) and **60–0 braking distance**, from its
+[performance runs](#performance-runs-060-the-quarter-mile-and-stops): 0–100 km/h, 402 m and 100–0
+km/h when the card reads km/h. Counting the whole session, they are its best. Counting the lap at
+the playhead, they are the start or the stop playing, and the best between them. They are off
+until you turn them on, and the inspector says so if the card's data file is not measured.
 
 **New from Template ▸ Social (9:16)** lays a project out for a phone: 1080 × 1920, the whole
 16:9 picture as a band across the middle rather than cropped to a sliver, a lap-following stat card

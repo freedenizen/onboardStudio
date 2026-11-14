@@ -96,6 +96,14 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// The best run's path, every few metres, to tell whether another session's runs were on the
     /// same course. Empty for laps.
     public var coursePath: [CoursePoint] = []
+    // swiftlint:disable discouraged_optional_boolean
+    /// Whether its standing starts and stops are measured (#553). `nil` is automatic: measured when
+    /// the session has no laps and no runs, so a track day is not measured unless asked.
+    public var measuresPerformance: Bool?
+    // swiftlint:enable discouraged_optional_boolean
+    /// Its standing starts and stops — 0–60, the quarter mile, 60–0 — as the numbers, read with
+    /// its laps; `nil` when it is not measured.
+    public var performance: PerformanceRuns.Result?
     public var added: Date
     public var modified: Date
 
@@ -150,6 +158,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         settings.importerID = file.importerID
         settings.lapLine = runLines?.start
         settings.runFinishLine = runLines?.finish
+        settings.measuresPerformance = measuresPerformance
         return settings
     }
 
@@ -205,7 +214,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
         case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
-        case runLines, course, coursePath
+        case runLines, course, coursePath, measuresPerformance, performance
     }
 
     public init(from decoder: any Decoder) throws {
@@ -241,6 +250,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         runLines = try c.decodeIfPresent(RunLines.self, forKey: .runLines)
         course = try c.decodeIfPresent(CourseTag.self, forKey: .course)
         coursePath = try c.decodeIfPresent([CoursePoint].self, forKey: .coursePath) ?? []
+        // Absent before performance runs (#553): read again, a lapless session gains them.
+        measuresPerformance = try c.decodeIfPresent(Bool.self, forKey: .measuresPerformance)
+        performance = try? c.decodeIfPresent(PerformanceRuns.Result.self, forKey: .performance)
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }
@@ -300,6 +312,18 @@ extension LogbookEntry {
         fastestRollingLap = CoachingReference.fastestRolling.resolve(in: session)?.duration
         lapMeasurement = Self.lapMeasurement
         readCorners(of: session)
+        readPerformance(of: session)
+    }
+
+    /// Whether its standing starts and stops are measured: as the driver asked, else when it has
+    /// no laps and no runs.
+    public var measuresPerformanceInForce: Bool { measuresPerformance ?? laps.isEmpty }
+
+    /// Its standing starts and stops from `session` when they are measured, else none: what the
+    /// session's reading measured, or measured now.
+    public mutating func readPerformance(of session: TelemetrySession) {
+        performance =
+            measuresPerformanceInForce ? session.performance ?? PerformanceRuns.measure(in: session) : nil
     }
 
     /// How far the session drove, from its distance channel; `nil` without one.

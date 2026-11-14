@@ -60,11 +60,14 @@ public struct StatCardRenderer: OverlayDrawing {
 
     /// How many rows the settings ask for.
     var plannedRows: Int {
+        let performance = [params.showLaunch, params.showQuarterMile, params.showStop].filter { $0 }.count
         switch params.scope {
         case .session:
-            [params.showBestLap, params.showTopSpeed, params.showOptimalLap, params.showLapCount].filter { $0 }.count
+            return [params.showBestLap, params.showTopSpeed, params.showOptimalLap, params.showLapCount]
+                .filter { $0 }.count + performance
         case .lapAtPlayhead:
-            1 + [params.showBestLap, params.showTopSpeed, params.showOptimalLap].filter { $0 }.count
+            return 1 + [params.showBestLap, params.showTopSpeed, params.showOptimalLap].filter { $0 }.count
+                + performance
         }
     }
 
@@ -73,14 +76,50 @@ public struct StatCardRenderer: OverlayDrawing {
         guard let session = context.sampler?.session else { return [] }
         switch params.scope {
         case .session:
-            return sessionRows(SessionStats(session: session))
+            return sessionRows(SessionStats(session: session)) + performanceRows(session.performance, at: nil)
         case .lapAtPlayhead:
             let inputTime = context.inputTime(time)
+            let performance = performanceRows(session.performance, at: inputTime)
             guard let lap = session.laps.first(where: { $0.isListed && $0.contains(inputTime) }) else {
-                return sessionRows(SessionStats(session: session))
+                return sessionRows(SessionStats(session: session)) + performance
             }
-            return lapRows(SessionStats(lap: lap, in: session), lapNumber: lap.number)
+            return lapRows(SessionStats(lap: lap, in: session), lapNumber: lap.number) + performance
         }
+    }
+
+    /// 0–60, the quarter mile and 60–0 (#553): of the attempt and the stop at `inputTime` when
+    /// there is one there, else the session's best. None when the file's performance runs are not
+    /// measured.
+    private func performanceRows(_ performance: PerformanceRuns.Result?, at inputTime: Double?) -> [Row] {
+        guard let performance else { return [] }
+        let metric = context.units.label(for: "speed") != "mph"
+        let attempt = inputTime.flatMap { performance.attempt(at: $0) }
+        var rows: [Row] = []
+        if params.showLaunch {
+            let range = PerformanceWording.launch(metric: metric)
+            let seconds = attempt.map { $0.speedTimes[range] } ?? performance.best(range)?.seconds
+            rows.append(Row(label: range.label, value: seconds.map(PerformanceWording.seconds) ?? "—"))
+        }
+        if params.showQuarterMile {
+            let mark = PerformanceRuns.DragDistance.quarterMile
+            let time =
+                attempt.map { a in a.distanceTimes[mark].map { ($0, a.trapSpeeds[mark]) } }
+                ?? performance.best(mark).map { ($0.seconds, $0.trap) }
+            rows.append(
+                Row(
+                    label: mark.label(metric: metric),
+                    value: time.map { PerformanceWording.mark($0.0, trap: $0.1, metric: metric) } ?? "—"))
+        }
+        if params.showStop {
+            let braking = PerformanceWording.braking(metric: metric)
+            let here = inputTime.flatMap { performance.stop(at: $0) }.flatMap { $0.from == braking ? $0 : nil }
+            let stop = here ?? performance.best(braking)?.stop
+            rows.append(
+                Row(
+                    label: braking.label,
+                    value: stop.map { PerformanceWording.distance($0.metres, metric: metric) } ?? "—"))
+        }
+        return rows
     }
 
     private func sessionRows(_ stats: SessionStats) -> [Row] {

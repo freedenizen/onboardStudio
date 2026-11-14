@@ -64,13 +64,26 @@ extension ProjectCompiler {
             cornerLabels: settings.cornerLabels,
             trimStart: settings.trim.start, trimEnd: settings.trim.end, legacyFirstLap: settings.legacyFirstLap)
         options.turnNames = settings.turnNames
+        var session: TelemetrySession
         if let importerID = settings.importerID {
             guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {
                 throw ImportError.unrecognisedFormat
             }
-            return try importer.importSession(at: url, options: options)
+            session = try importer.importSession(at: url, options: options)
+        } else {
+            session = try FormatDetector.importSession(at: url, options: options)
         }
-        return try FormatDetector.importSession(at: url, options: options)
+        measurePerformance(of: &session, asked: settings.measuresPerformance)
+        return session
+    }
+
+    // swiftlint:disable discouraged_optional_boolean
+    /// Its standing starts and stops (#553), when the driver asked for them or the session has no
+    /// laps and no runs.
+    public static func measurePerformance(of session: inout TelemetrySession, asked: Bool?) {
+        // swiftlint:enable discouraged_optional_boolean
+        session.performance =
+            PerformanceRuns.isMeasured(asked: asked, laps: session.laps) ? PerformanceRuns.measure(in: session) : nil
     }
 
     /// A project's line as the detectors want it.

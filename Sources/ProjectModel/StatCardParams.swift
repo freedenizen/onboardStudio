@@ -18,6 +18,11 @@ public struct StatCardParams: Hashable, Codable, Sendable {
     public var showTopSpeed: Bool
     public var showOptimalLap: Bool
     public var showLapCount: Bool
+    /// 0–60 mph (0–100 km/h), the quarter mile with its trap speed, and 60–0 (100–0) braking
+    /// distance (#553), from the data file's performance runs. Off in every card saved before.
+    public var showLaunch: Bool
+    public var showQuarterMile: Bool
+    public var showStop: Bool
     public var speedUnit: SpeedUnitSetting
     public var textColor: RGBAColor
     public var labelColor: RGBAColor
@@ -30,6 +35,9 @@ public struct StatCardParams: Hashable, Codable, Sendable {
         showTopSpeed: Bool = true,
         showOptimalLap: Bool = true,
         showLapCount: Bool = true,
+        showLaunch: Bool = false,
+        showQuarterMile: Bool = false,
+        showStop: Bool = false,
         speedUnit: SpeedUnitSetting = .automatic,
         textColor: RGBAColor = .white,
         labelColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.7),
@@ -41,6 +49,9 @@ public struct StatCardParams: Hashable, Codable, Sendable {
         self.showTopSpeed = showTopSpeed
         self.showOptimalLap = showOptimalLap
         self.showLapCount = showLapCount
+        self.showLaunch = showLaunch
+        self.showQuarterMile = showQuarterMile
+        self.showStop = showStop
         self.speedUnit = speedUnit
         self.textColor = textColor
         self.labelColor = labelColor
@@ -49,6 +60,7 @@ public struct StatCardParams: Hashable, Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case title, scope, showBestLap, showTopSpeed, showOptimalLap, showLapCount, speedUnit
+        case showLaunch, showQuarterMile, showStop
         case textColor, labelColor, backgroundColor
     }
 
@@ -61,6 +73,10 @@ public struct StatCardParams: Hashable, Codable, Sendable {
         showTopSpeed = try c.decodeIfPresent(Bool.self, forKey: .showTopSpeed) ?? d.showTopSpeed
         showOptimalLap = try c.decodeIfPresent(Bool.self, forKey: .showOptimalLap) ?? d.showOptimalLap
         showLapCount = try c.decodeIfPresent(Bool.self, forKey: .showLapCount) ?? d.showLapCount
+        // Absent before performance runs (#553): such a card showed none.
+        showLaunch = try c.decodeIfPresent(Bool.self, forKey: .showLaunch) ?? false
+        showQuarterMile = try c.decodeIfPresent(Bool.self, forKey: .showQuarterMile) ?? false
+        showStop = try c.decodeIfPresent(Bool.self, forKey: .showStop) ?? false
         speedUnit = try c.decodeIfPresent(SpeedUnitSetting.self, forKey: .speedUnit) ?? d.speedUnit
         textColor = try c.decodeIfPresent(RGBAColor.self, forKey: .textColor) ?? d.textColor
         labelColor = try c.decodeIfPresent(RGBAColor.self, forKey: .labelColor) ?? d.labelColor

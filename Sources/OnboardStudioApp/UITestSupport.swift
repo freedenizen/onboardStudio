@@ -252,6 +252,15 @@ struct UITestCommands: Commands {
                     LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [file])
                 }
             }
+            // Two standing starts on a straight, measured on their own (#553).
+            Button("Add Fixture Drag Runs to Logbook") {
+                guard let file = UITestSupport.fixture("performance.d/drag.vbo") else { return }
+                if let editor {
+                    editor.trackDayRequest = TrackDayRequest(urls: [file])
+                } else {
+                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [file])
+                }
+            }
             // Into the day chosen in the Logbook window's sidebar (#393).
             Button("Add Fixture Sessions to Selected Day") {
                 guard let folder = UITestSupport.fixtures else { return }
