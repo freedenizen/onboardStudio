@@ -9,8 +9,8 @@ extension ProjectCoachingSource {
 
     var circuitPlan: NextSessionPlan? {
         guard let editor else { return nil }
-        guard let input, let match = editor.circuit(for: input.id) else { return editor.project.plan }
-        return editor.trackLibrary.definition(id: match.circuit.id)?.plan ?? editor.project.plan
+        guard let input, let key = editor.trackKey(for: input.id) else { return editor.project.plan }
+        return editor.trackLibrary.definition(id: key)?.plan ?? editor.project.plan
     }
 
     func savePlan(_ plan: NextSessionPlan) -> Bool {
@@ -25,9 +25,18 @@ extension LogbookCoachingSource {
     /// The session's circuit, when the logbook knows which it is.
     private var circuit: Circuit? { entry.circuitID.flatMap(CircuitCatalog.circuit(id:)) }
 
-    var planCircuitName: String? { circuit.map { TrackLibrary.app.definition(id: $0.id)?.name ?? $0.name } }
+    /// The circuit and the configuration the session drove: each configuration keeps its own plan
+    /// (#549).
+    private var planKey: String { LogbookFilter.circuitKey(of: entry) }
 
-    var circuitPlan: NextSessionPlan? { circuit.flatMap { TrackLibrary.app.definition(id: $0.id)?.plan } }
+    var planCircuitName: String? {
+        circuit.map { circuit in
+            TrackLibrary.app.definition(id: planKey)?.title
+                ?? CircuitKey.title(circuit.name, configuration: entry.configuration)
+        }
+    }
+
+    var circuitPlan: NextSessionPlan? { circuit.flatMap { _ in TrackLibrary.app.definition(id: planKey)?.plan } }
 
     func savePlan(_ plan: NextSessionPlan) -> Bool {
         guard let circuit else { return false }
@@ -35,7 +44,7 @@ extension LogbookCoachingSource {
         // (#543): the Coaching window has no Undo of its own for a session.
         let logbook = LogbookModel.shared
         do {
-            try logbook.savePlan(plan, for: circuit.id, name: "Make Plan", undo: logbook.windowUndo)
+            try logbook.savePlan(plan, for: planKey, name: "Make Plan", undo: logbook.windowUndo)
             return true
         } catch {
             message = "The plan could not be kept for \(circuit.name): \(error.localizedDescription)"

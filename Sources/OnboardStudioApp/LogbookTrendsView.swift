@@ -254,9 +254,11 @@ struct LogbookTrendsView: View {
         let ids = points.map(\.entryID)
         Task {
             let logbook = AppLogbook.shared
+            let tracks = TrackLibrary.app
             await Task.detached(priority: .utility) {
                 for id in ids {
-                    guard var entry = logbook.entry(id: id), let session = LogbookReferences.load(entry) else {
+                    guard var entry = logbook.entry(id: id), let session = LogbookReferences.load(entry, tracks: tracks)
+                    else {
                         continue
                     }
                     entry.readCorners(of: session)

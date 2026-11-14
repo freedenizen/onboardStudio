@@ -114,7 +114,7 @@ enum UITestSupport {
         // The first visit is on a day at its circuit already: the second joins it there, as it
         // did when both were filed by their date alone.
         if let known, let day = known.trackDayID.flatMap({ logbook.day(id: $0) }),
-            day.circuitKey == LogbookFilter.circuitKey(of: known)
+            day.circuitKey == LogbookFilter.venueKey(of: known)
         {
             return day
         }
@@ -230,6 +230,7 @@ struct UITestCommands: Commands {
             Button("Add Fixture Data (GPX)") { add(data: "track.gpx") }
             Button("Add Fixture Data (Coaching Laps)") { add(data: "coaching-laps.csv") }
             Button("Add Fixture Data (Autocross)") { add(data: "runs.d/autocross.vbo") }
+            Button("Add Fixture Data (Autocross, No Gates)") { add(data: "runs.d/autocross-no-gates.vbo") }
             // A folder dragged onto the window, which no test can drag (#466).
             Button("Drop Fixture Folder") {
                 if let folder = UITestSupport.fixtures { editor?.addDroppedFiles([folder]) }
@@ -246,6 +247,16 @@ struct UITestCommands: Commands {
             // An autocross timed in runs by its own gates, into the Logbook on its own (#552).
             Button("Add Fixture Autocross to Logbook") {
                 guard let file = UITestSupport.fixture("runs.d/autocross.vbo") else { return }
+                if let editor {
+                    editor.trackDayRequest = TrackDayRequest(urls: [file])
+                } else {
+                    LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: [file])
+                }
+            }
+            // One session at a circuit the catalogue knows (#549). Not among the files the track day
+            // above adds, whose tests count and search the sessions it makes.
+            Button("Add Fixture Session at a Circuit") {
+                guard let file = UITestSupport.fixture("circuit.d/coaching-laps-at-circuit.csv") else { return }
                 if let editor {
                     editor.trackDayRequest = TrackDayRequest(urls: [file])
                 } else {

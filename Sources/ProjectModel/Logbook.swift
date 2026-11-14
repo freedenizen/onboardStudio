@@ -28,11 +28,27 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         public var number: Int
         public var seconds: Double?
         public var isComplete: Bool
+        /// Cones the run knocked over (#552), each adding the day's penalty to its time.
+        public var cones: Int
+        /// The driver says the run went off course: a DNF, though it crossed the finish.
+        public var offCourse: Bool
 
-        public init(number: Int, seconds: Double?, isComplete: Bool) {
+        public init(number: Int, seconds: Double?, isComplete: Bool, cones: Int = 0, offCourse: Bool = false) {
             self.number = number
             self.seconds = seconds
             self.isComplete = isComplete
+            self.cones = cones
+            self.offCourse = offCourse
+        }
+
+        /// Never reached the finish, or went off course on the way: a run with no time to count.
+        public var isDNF: Bool { !isComplete || offCourse }
+
+        /// The run's time as it counts: what the clock read plus `perCone` for each cone; `nil`
+        /// for a DNF.
+        public func officialSeconds(perCone: Double) -> Double? {
+            guard !isDNF, let seconds else { return nil }
+            return seconds + Double(cones) * perCone
         }
     }
 
@@ -52,6 +68,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// Wikidata id of the circuit when recognised; the layout, when the file names one.
     public var circuitID: String?
     public var trackName: String?
+    /// Which of the circuit's configurations was driven (#549): "Club Course"; `nil` for its
+    /// unnamed configuration, which is every session added before configurations existed.
+    public var configuration: String?
     /// When the session was recorded, from the file; `nil` when the file does not say.
     public var date: Date?
     public var car: String
@@ -96,6 +115,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// The best run's path, every few metres, to tell whether another session's runs were on the
     /// same course. Empty for laps.
     public var coursePath: [CoursePoint] = []
+    /// Seconds a cone adds to a run (#552), as its track day says; `nil` is the usual 2 s.
+    public var penaltyPerCone: Double?
     public var added: Date
     public var modified: Date
 
@@ -172,6 +193,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         return URL(fileURLWithPath: file.path).deletingPathExtension().lastPathComponent
     }
 
+    /// The circuit and the configuration driven: "Sonoma Raceway — Club Course" (#549).
+    public var circuitTitle: String { CircuitKey.title(title, configuration: configuration) }
+
     /// The year the session was driven, for grouping; `nil` when the date is unknown.
     public var year: Int? { date.map { Calendar(identifier: .gregorian).component(.year, from: $0) } }
 
@@ -202,10 +226,10 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, file, circuitID, trackName, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
+        case id, file, circuitID, trackName, configuration, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
         case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
-        case runLines, course, coursePath
+        case runLines, course, coursePath, penaltyPerCone
     }
 
     public init(from decoder: any Decoder) throws {
@@ -214,6 +238,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         file = try c.decode(SourceFile.self, forKey: .file)
         circuitID = try c.decodeIfPresent(String.self, forKey: .circuitID)
         trackName = try c.decodeIfPresent(String.self, forKey: .trackName)
+        configuration = try c.decodeIfPresent(String.self, forKey: .configuration)
         date = try c.decodeIfPresent(Date.self, forKey: .date)
         car = try c.decodeIfPresent(String.self, forKey: .car) ?? ""
         driver = try c.decodeIfPresent(String.self, forKey: .driver) ?? ""
@@ -241,6 +266,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         runLines = try c.decodeIfPresent(RunLines.self, forKey: .runLines)
         course = try c.decodeIfPresent(CourseTag.self, forKey: .course)
         coursePath = try c.decodeIfPresent([CoursePoint].self, forKey: .coursePath) ?? []
+        penaltyPerCone = try c.decodeIfPresent(Double.self, forKey: .penaltyPerCone)
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }
@@ -293,12 +319,20 @@ extension LogbookEntry {
     /// the conditions, the notes — is touched.
     public mutating func readLaps(of session: TelemetrySession) {
         let stats = SessionStats(session: session)
-        laps = session.laps.listed.map { LapRecord(number: $0.number, seconds: $0.duration, isComplete: $0.isComplete) }
+        // Cones and an off-course are the driver's (#552): a run keeps them when its file is read again.
+        let penalties = Dictionary(laps.map { ($0.number, ($0.cones, $0.offCourse)) }, uniquingKeysWith: { a, _ in a })
+        laps = session.laps.listed.map { lap in
+            let kept = penalties[lap.number]
+            return LapRecord(
+                number: lap.number, seconds: lap.duration, isComplete: lap.isComplete, cones: kept?.0 ?? 0,
+                offCourse: kept?.1 ?? false)
+        }
         bestLap = stats.bestLap?.seconds
         bestLapNumber = stats.bestLap?.number
         optimalLap = stats.optimalLap
         fastestRollingLap = CoachingReference.fastestRolling.resolve(in: session)?.duration
         lapMeasurement = Self.lapMeasurement
+        applyPenalties()
         readCorners(of: session)
     }
 
@@ -434,5 +468,21 @@ public struct Logbook: Sendable {
 
     public static func write(_ entry: LogbookEntry, to url: URL) throws {
         try encoder.encode(entry).write(to: url, options: .atomic)
+    }
+}
+
+extension LogbookEntry.LapRecord {
+    private enum CodingKeys: String, CodingKey { case number, seconds, isComplete, cones, offCourse }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let number = try c.decode(Int.self, forKey: .number)
+        let seconds = try c.decodeIfPresent(Double.self, forKey: .seconds)
+        let isComplete = try c.decode(Bool.self, forKey: .isComplete)
+        // Absent before cones (#552): nothing was penalised.
+        self.init(
+            number: number, seconds: seconds, isComplete: isComplete,
+            cones: try c.decodeIfPresent(Int.self, forKey: .cones) ?? 0,
+            offCourse: try c.decodeIfPresent(Bool.self, forKey: .offCourse) ?? false)
     }
 }
