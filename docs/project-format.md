@@ -151,9 +151,15 @@ each join — and `comparedLap.lap` a placeholder; absent means the lap itself.
 (`logbook`, #352: a logbook entry at the same circuit, its `lap` or, absent, its best lap; read on demand).
 `alignByPosition` (optional, #333, default false) lines two laps of one session up by place rather than
 metre for metre, for laps driven on different lines; absent means off, how every earlier reading was made.
-`lap` absent follows the playhead. It is window state kept with the project so the same analysis
-comes back on reopening, and nothing in it changes how the project renders; absent means the
-window has not been opened for this project.
+`traffic` (optional, #571, default empty) is the stretches of `dataInputID`'s session the driver marked
+as held up by another car or a flag: `[{ "id": <uuid>, "start": 312.5, "end": 330.0, "kind": "traffic" | "flag" }]`,
+in seconds of the data file's own time (the timebase trim keeps). The coaching leaves the corners they
+cover out of the opportunities and the consistency figures, and a Corner Callout on such a corner says
+only what happened. Absent means no marks, which reads every corner as every earlier build did, so no
+migration pins anything.
+`lap` absent follows the playhead. It is kept with the project so the same analysis comes back on
+reopening; the reference and `traffic` are also what the Corner Callout, the Track Map's coaching
+options and the corner exports read. Absent means the window has not been opened for this project.
 
 `plan` (optional, #330) is what to try next session:
 `{ "experiments": [{ "id", "cornerLabel": "4", "text": "…" }], "fromLap": 5, "referencePhrase": "your best lap", "made": <date> }`.

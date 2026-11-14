@@ -256,6 +256,22 @@ minimum speeds spread 3–10 % by corner, and the corners a coach would call rep
 varies lap to lap (brake point spread 23 m): repeat your best lap's brake point first, then …",
 because every coach says consistency before speed.
 
+**Traffic and flags** (#571, `Sources/TelemetryKit/Traffic.swift`). The driver marks stretches of
+the session as held up by traffic or under a flag (`TrafficSpan`, in session time, kept in
+`CoachingSettings.traffic` and put on `TelemetrySession.traffic` by whoever reads the session —
+the compile, the Logbook's source, `onboard coach --traffic`). A corner is covered when a mark
+spans at least a quarter of the stretch it is read over (`CornerComparison.range`, read at each
+grid point's session time through `LapProfile.times`, so a spliced reference is read in the laps
+it came from); the quarter keeps a mark on one corner off the next, whose stretch begins where the
+first one's ends. The reference is read against the marks only when it is a lap of the same
+session. A covered corner is no opportunity and gets no note (`CornerComparison.traffic`); the
+headline names the loss in corners covered on the lap (`trafficLoss`); consistency drops that
+corner's reading on that lap and keeps the rest, judges a marked lap flying by its time with the
+marked stretches driven at the best lap's pace, and leaves marked laps out of the lap-time spread;
+the default lap is the quickest no mark touches. No marks reads exactly as before, so nothing is
+pinned for older projects. Detection — from the telemetry, the video and another car's log — is
+#572–#574, designed in [traffic.md](traffic.md).
+
 **Notes** are deterministic phrase templates filled from the numbers, in the units asked for
 (km/h and metres, or mph and feet): a headline ("Turn 4: 0.31 s lost on entry"), the evidence
 that applies ("Braked 18 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later",

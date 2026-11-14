@@ -18,7 +18,9 @@ struct LogbookTrendsView: View {
     @State private var readingCorners = false
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
     @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
-    private var speedUnit: SpeedDisplayUnit { (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown() }
+    private var speedSetting: SpeedUnitSetting { SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic }
+    /// The corner table's units (#544): the speed unit, and Coaching's distance for it.
+    private var cornerFormat: LogbookTrends.CornerFormat { .init(setting: speedSetting) }
 
     private var cars: [String] {
         Array(Set(entries.filter { LogbookFilter.circuitKey(of: $0) == circuitKey }.map(\.car).filter { !$0.isEmpty }))
@@ -188,11 +190,9 @@ struct LogbookTrendsView: View {
                 Text("No corners read for the latest track day yet.").font(.callout).foregroundStyle(.secondary)
             } else {
                 cornerGrid(trends, last: comparison?.previous != nil, best: comparison?.best != nil)
-                Text(
-                    "Brake point: positive means later than the other visit. Minimum speed in km/h. Time: negative "
-                        + "means quicker through the corner."
-                )
-                .font(.caption).foregroundStyle(.secondary)
+                Text(cornerFormat.note)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("logbook.trends.corners.note")
             }
         }
     }
@@ -201,7 +201,8 @@ struct LogbookTrendsView: View {
     /// when there is one to make (#426) — no earlier track day, or the latest day holding the
     /// personal best, would leave them dashes.
     private func cornerGrid(_ trends: [LogbookTrends.CornerTrend], last: Bool, best: Bool) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
+        let format = cornerFormat
+        return Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
             GridRow {
                 Text("Turn").bold()
                 Text("Brake point").bold()
@@ -217,12 +218,12 @@ struct LogbookTrendsView: View {
             ForEach(trends) { trend in
                 GridRow {
                     Text(trend.label)
-                    Text(trend.latest?.brakePointMeters.map { "\(Int($0.rounded())) m" } ?? "—")
-                    if last { Text(Self.metres(trend.brakePointChange)) }
-                    if best { Text(Self.metres(trend.brakePointToBest)) }
-                    Text(trend.latest.map { speedUnit.text(metersPerSecond: $0.minimumSpeed) } ?? "—")
-                    if last { Text(Self.speedDelta(trend.minimumSpeedChange, in: speedUnit)) }
-                    if best { Text(Self.speedDelta(trend.minimumSpeedToBest, in: speedUnit)) }
+                    Text(format.brakePoint(trend.latest?.brakePointMeters))
+                    if last { Text(format.brakePointChange(trend.brakePointChange)) }
+                    if best { Text(format.brakePointChange(trend.brakePointToBest)) }
+                    Text(format.minimumSpeed(trend.latest?.minimumSpeed))
+                    if last { Text(format.minimumSpeedChange(trend.minimumSpeedChange)) }
+                    if best { Text(format.minimumSpeedChange(trend.minimumSpeedToBest)) }
                     Text(trend.latest.map { String(format: "%.2f s", $0.timeInCorner) } ?? "—")
                     if last { Text(Self.seconds(trend.timeChange)) }
                 }
@@ -267,15 +268,6 @@ struct LogbookTrendsView: View {
             LogbookModel.shared.reload()
             readingCorners = false
         }
-    }
-
-    static func metres(_ value: Double?) -> String {
-        guard let value else { return "—" }
-        return value.magnitude < 0.5 ? "same" : String(format: "%+.0f m", value)
-    }
-
-    static func speedDelta(_ value: Double?, in unit: SpeedDisplayUnit) -> String {
-        value.map { unit.changeText(metersPerSecond: $0) } ?? "—"
     }
 
     static func seconds(_ value: Double?) -> String {

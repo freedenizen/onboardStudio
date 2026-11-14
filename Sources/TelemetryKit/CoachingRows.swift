@@ -8,7 +8,16 @@ extension CoachingAnalysis {
         let behind = totalLoss >= 0 ? "behind" : "ahead"
         return "Lap \(lapNumber) (\(TimeParsing.lapTimeString(lap.duration, decimals: 2))) against "
             + "\(referencePhrase) (\(reference.label), \(TimeParsing.lapTimeString(reference.duration, decimals: 2))): "
-            + "\(format.seconds(abs(totalLoss))) \(behind)"
+            + "\(format.seconds(abs(totalLoss))) \(behind)" + trafficClause(format: format)
+    }
+
+    /// ", 1.80 s of it held up by traffic", when the lap lost time in corners marked as traffic.
+    func trafficClause(format: CoachingNotes.Formatter) -> String {
+        let lost = trafficLoss
+        guard totalLoss > 0, lost >= options.minimumLossSeconds else { return "" }
+        let kinds = Set(corners.compactMap { $0.traffic?.onLap == true ? $0.traffic?.kind : nil })
+        let kind: TrafficSpan.Kind = kinds == [.flag] ? .flag : .traffic
+        return ", \(format.seconds(lost)) of it \(kind.phrase)"
     }
 
     /// "Spliced from laps 2, 3 and 6" for a spliced reference; `nil` otherwise.
@@ -57,7 +66,7 @@ extension CoachingAnalysis {
             }()
             return CornerRow(
                 index: corner.index, label: corner.label, timeLost: corner.timeLost,
-                phase: corner.worstPhase?.displayName.lowercased() ?? "–",
+                phase: corner.traffic?.word ?? corner.worstPhase?.displayName.lowercased() ?? "–",
                 brakeDifference: brake, brake: Self.metres(brake, format: format, positive: "early", negative: "late"),
                 minimumSpeedDifference: lap.minimumSpeed - reference.minimumSpeed,
                 minimumSpeed: Self.speed(lap.minimumSpeed - reference.minimumSpeed, format: format),
@@ -69,7 +78,7 @@ extension CoachingAnalysis {
                 exitSpeed: Self.speed(lap.exitSpeed - reference.exitSpeed, format: format),
                 throttleDifference: throttle,
                 throttle: Self.metres(throttle, format: format, positive: "late", negative: "early"),
-                consistency: consistency, consistent: consistentText)
+                consistency: consistency, consistent: consistentText, traffic: corner.traffic)
         }
     }
 
@@ -108,6 +117,8 @@ public struct CornerRow: Identifiable, Sendable, Hashable {
     public let throttle: String
     public let consistency: Consistency
     public let consistent: String
+    /// The traffic or flag mark covering the corner (#571); its phase reads "traffic" or "flag".
+    public var traffic: CornerTraffic?
 
     /// Sort keys for the optional differences: a corner without a reading sorts as "same".
     public var brakeOrder: Double { brakeDifference ?? 0 }

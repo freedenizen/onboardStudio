@@ -25,6 +25,8 @@ public struct CoachingReport: Encodable, Sendable {
     public let alignment: LapAlignment
     public let confidence: Double
     public let totalLoss: Double
+    /// Seconds of `totalLoss` lost in corners marked as traffic or a flag (#571).
+    public let trafficLoss: Double
     public let opportunities: [Opportunity]
     public let corners: [CornerComparison]
     public let consistency: ConsistencyStats?
@@ -37,6 +39,7 @@ public struct CoachingReport: Encodable, Sendable {
         alignment = analysis.delta.alignment
         confidence = analysis.delta.confidence
         totalLoss = analysis.totalLoss
+        trafficLoss = analysis.trafficLoss
         opportunities = analysis.opportunities
         corners = analysis.corners
         consistency = analysis.consistency

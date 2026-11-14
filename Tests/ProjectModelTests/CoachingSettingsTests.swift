@@ -1,4 +1,5 @@
 import Foundation
+import TelemetryKit
 import Testing
 
 @testable import ProjectModel
@@ -41,6 +42,26 @@ struct CoachingSettingsTests {
         json["coaching"] = coaching
         let older = try Project.decode(try JSONSerialization.data(withJSONObject: json))
         #expect(older.coaching?.alignByPosition == false)
+        #expect(older.coaching?.lap == 2)
+    }
+
+    @Test func trafficMarksRoundTripApplyToTheirInputAndAreAbsentInOlderSettings() throws {
+        let data = Input(label: "Data", source: MediaReference(path: "/tmp/s.csv"), kind: .data(DataInputSettings()))
+        let other = Input(label: "Other", source: MediaReference(path: "/tmp/o.csv"), kind: .data(DataInputSettings()))
+        var project = Project(inputs: [data, other])
+        let marks = [TrafficSpan(start: 100, end: 112.5), TrafficSpan(start: 300, end: 340, kind: .flag)]
+        project.coaching = CoachingSettings(dataInputID: data.id, lap: 2, traffic: marks)
+        let reopened = try Project.decode(try project.encoded())
+        #expect(reopened.coaching?.traffic == marks)
+        #expect(reopened.coaching?.traffic(for: data.id) == marks)
+        #expect(reopened.coaching?.traffic(for: other.id).isEmpty == true)
+        // Settings saved before marks existed have no key and read as none.
+        var json = try #require(try JSONSerialization.jsonObject(with: try project.encoded()) as? [String: Any])
+        var coaching = try #require(json["coaching"] as? [String: Any])
+        coaching["traffic"] = nil
+        json["coaching"] = coaching
+        let older = try Project.decode(try JSONSerialization.data(withJSONObject: json))
+        #expect(older.coaching?.traffic.isEmpty == true)
         #expect(older.coaching?.lap == 2)
     }
 }
