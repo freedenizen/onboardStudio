@@ -1,7 +1,7 @@
 import XCTest
 
 // ci-shard: 4
-/// J67: count an autocross run's cones and say it went off course (#552).
+/// J69: count an autocross run's cones and say it went off course (#552).
 final class ConesUITests: OnboardStudioUITestCase {
     @MainActor
     func testConesAndAnOffCourseDecideWhichRunCounts() throws {
