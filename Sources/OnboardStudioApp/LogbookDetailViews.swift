@@ -186,16 +186,11 @@ struct LogbookDetail: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(entry.isRuns ? "Runs" : "Laps").font(.subheadline.weight(.semibold))
                         ForEach(entry.laps, id: \.number) { lap in
-                            HStack {
-                                Text("\(entry.isRuns ? "Run" : "Lap") \(lap.number)")
-                                Spacer()
-                                Text(lap.seconds.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
-                                    .foregroundStyle(lap.number == entry.bestLapNumber ? Color.accentColor : .primary)
-                                if !lap.isComplete {
-                                    Text(entry.isRuns ? "DNF" : "partial").foregroundStyle(.secondary)
-                                }
+                            if entry.isRuns {
+                                RunPenaltyRow(entry: entry, lap: lap, save: save)
+                            } else {
+                                lapRow(lap)
                             }
-                            .font(.callout)
                         }
                     }
                 }
@@ -247,6 +242,18 @@ struct LogbookDetail: View {
         }
         .accessibilityIdentifier("logbook.detail")
         .safeAreaInset(edge: .bottom, spacing: 0) { actions }
+    }
+
+    /// A circuit lap: its number and time, the best in the accent colour.
+    private func lapRow(_ lap: LogbookEntry.LapRecord) -> some View {
+        HStack {
+            Text("Lap \(lap.number)")
+            Spacer()
+            Text(lap.seconds.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
+                .foregroundStyle(lap.number == entry.bestLapNumber ? Color.accentColor : .primary)
+            if !lap.isComplete { Text("partial").foregroundStyle(.secondary) }
+        }
+        .font(.callout)
     }
 
     /// What can be done with the session. Under the detail rather than at the end of it, so the

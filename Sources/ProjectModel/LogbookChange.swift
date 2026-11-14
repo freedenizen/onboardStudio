@@ -86,6 +86,12 @@ extension Logbook {
 /// fields of a session or a day are written whole, so the field is found by comparing them.
 public enum LogbookEditName {
     public static func of(_ old: LogbookEntry, _ new: LogbookEntry) -> String {
+        // A run's cones or its going off course (#552), the only change to its laps a driver makes.
+        if old.laps.map(\.offCourse) != new.laps.map(\.offCourse) {
+            let marked = zip(old.laps, new.laps).contains { !$0.offCourse && $1.offCourse }
+            return marked ? "Mark Off Course" : "Mark Run Finished"
+        }
+        if old.laps.map(\.cones) != new.laps.map(\.cones) { return "Change Cones" }
         var changed: [String] = []
         if old.car != new.car { changed.append("Car") }
         if old.driver != new.driver { changed.append("Driver") }
@@ -106,6 +112,7 @@ public enum LogbookEditName {
         if old.conditions != new.conditions { changed.append("Conditions") }
         if old.circuitKey != new.circuitKey { changed.append("Circuit") }
         if old.date != new.date { changed.append("Date") }
+        if old.penaltyPerCone != new.penaltyPerCone { changed.append("Penalty per Cone") }
         return changed.count == 1 ? "Change \(changed[0])" : "Change Track Day"
     }
 

@@ -497,6 +497,17 @@ its laps. `venueKey` is the circuit without the course — what a track day's ci
 with, since a day is at a place, not on a layout. `title` is *Lot 4 – Course of 13 Nov 2026*, or
 the course's name alone where nothing names the venue.
 
+A run's `LapRecord` carries the driver's `cones` and `offCourse`. `isDNF` is a run that never
+reached the finish or went off course; `officialSeconds(perCone:)` is the clock plus the cones,
+`nil` for a DNF. For a session in runs `applyPenalties` makes `bestLap` and `bestLapNumber` the
+quickest official time, so everything that reads the best — personal bests, Trends, goals, the
+import report, the reference a coaching read starts on — counts cones without knowing of them;
+`optimalLap` stays the driving's own. `readLaps` keeps a run's cones and off-course by its number
+when the file is read again. The penalty per cone is the track day's (`TrackDay.penaltyPerCone`,
+2 s when unset), copied onto each of its sessions in runs (`takePenalty(from:)`) wherever a
+session joins a day — an import, `assignDay`, Move to Day — and when the day's changes, as a day's
+car reaches its sessions. The laps CSV ends with `cones` and `official`.
+
 Entries come into runs three ways. A file whose own gates hold a start and a finish is read again
 between them when it is added to the logbook or entered from a project. A project whose data file
 is set to Runs, or whose lines move, brings its entry along after the next compile

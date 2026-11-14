@@ -21,6 +21,9 @@ public struct TrackDay: Identifiable, Hashable, Codable, Sendable {
     public var conditions: SessionConditions
     /// The camera clips of the day, matched to its sessions (#394).
     public var clips: [ClipRecord]
+    /// Seconds a cone adds to a run on this day (#552); `nil` is the usual 2 s. Each session timed
+    /// in runs keeps a copy, so its best counts the same way wherever it is read.
+    public var penaltyPerCone: Double?
     public var added: Date
     public var modified: Date
 
@@ -63,6 +66,7 @@ public struct TrackDay: Identifiable, Hashable, Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case id, date, circuitID, trackName, car, driver, notes, tags, conditions, clips, added, modified
+        case penaltyPerCone
     }
 
     public init(from decoder: any Decoder) throws {
@@ -77,6 +81,7 @@ public struct TrackDay: Identifiable, Hashable, Codable, Sendable {
         tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         conditions = try c.decodeIfPresent(SessionConditions.self, forKey: .conditions) ?? SessionConditions()
         clips = try c.decodeIfPresent([ClipRecord].self, forKey: .clips) ?? []
+        penaltyPerCone = try c.decodeIfPresent(Double.self, forKey: .penaltyPerCone)
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }
@@ -218,13 +223,17 @@ extension Logbook {
     public func updateDay(_ day: TrackDay) throws -> [LogbookEntry] {
         let old = self.day(id: day.id)
         try saveDay(day)
-        guard let old, old.car != day.car || old.driver != day.driver || old.circuitKey != day.circuitKey
+        guard let old,
+            old.car != day.car || old.driver != day.driver || old.circuitKey != day.circuitKey
+                || old.penaltyPerCone != day.penaltyPerCone
         else { return [] }
         var changed: [LogbookEntry] = []
         for var entry in sessions(of: day) {
             let before = entry
             if old.car != day.car, entry.car == old.car { entry.car = day.car }
             if old.driver != day.driver, entry.driver == old.driver { entry.driver = day.driver }
+            // The day's penalty per cone is every run's on it (#552).
+            entry.takePenalty(from: day)
             if old.circuitKey != day.circuitKey, LogbookFilter.venueKey(of: entry) == old.circuitKey {
                 entry.circuitID = day.circuitID
                 // A catalogue circuit is named by its id; the file's own track name stays beside it.
@@ -279,6 +288,7 @@ extension Logbook {
     public func assignDay(to entry: inout LogbookEntry) throws -> TrackDay {
         let day = try day(for: entry)
         entry.trackDayID = day.id
+        entry.takePenalty(from: day)
         if LogbookFilter.venueKey(of: entry).isEmpty, !day.circuitKey.isEmpty {
             entry.circuitID = day.circuitID
             if day.circuitID == nil { entry.trackName = day.trackName }

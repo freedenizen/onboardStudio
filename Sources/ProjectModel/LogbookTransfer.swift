@@ -166,7 +166,9 @@ public enum LogbookTransfer {
         return lines.joined(separator: "\n") + "\n"
     }
 
-    public static let lapColumns = ["date", "circuit", "car", "lap", "seconds", "complete"]
+    /// `cones` and `official` are a run's (#552): the cones it hit and the time that counts, empty
+    /// for a circuit's laps and for a DNF.
+    public static let lapColumns = ["date", "circuit", "car", "lap", "seconds", "complete", "cones", "official"]
 
     /// One line per lap of every session.
     public static func lapsCSV(_ entries: [LogbookEntry]) -> String {
@@ -176,6 +178,8 @@ public enum LogbookTransfer {
                 let cells = [
                     entry.date.map(ProjectDetails.iso) ?? "", entry.title, entry.car, String(lap.number),
                     seconds(lap.seconds), lap.isComplete ? "yes" : "no",
+                    entry.isRuns ? String(lap.cones) : "",
+                    entry.isRuns ? seconds(lap.officialSeconds(perCone: entry.perCone)) : "",
                 ]
                 lines.append(cells.map(quoted).joined(separator: ","))
             }
@@ -218,8 +222,12 @@ public enum LogbookTransfer {
             lines.append("")
             for lap in entry.laps {
                 var line = "- \(entry.isRuns ? "Run" : "Lap") \(lap.number): \(lapTime(lap.seconds))"
+                // "+ 2 cones = 0:55.97" (#552): the clock, then what it counts as.
+                if entry.isRuns, lap.cones > 0, let official = lap.officialSeconds(perCone: entry.perCone) {
+                    line += " + \(lap.cones) \(lap.cones == 1 ? "cone" : "cones") = \(lapTime(official))"
+                }
                 if lap.number == entry.bestLapNumber { line += " **best**" }
-                if !lap.isComplete { line += entry.isRuns ? " (DNF)" : " (partial)" }
+                if entry.isRuns ? lap.isDNF : !lap.isComplete { line += entry.isRuns ? " (DNF)" : " (partial)" }
                 lines.append(line)
             }
             if !entry.notes.isEmpty {

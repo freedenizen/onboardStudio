@@ -70,6 +70,8 @@ struct TrackDayHeader: View {
                         .frame(maxWidth: 240)
                         .accessibilityIdentifier("trackday.header.driver")
                 }
+                // A day of runs counts cones (#552); a circuit's day has none to count.
+                if sessions.contains(where: \.isRuns) { PenaltyPerConeField(day: day, save: save) }
             }
             .font(.callout)
             DisclosureGroup(isExpanded: $showConditions) {

@@ -167,3 +167,32 @@ extension LogbookEntry {
         }
     }
 }
+
+/// Cones and off-courses (#552): what an autocross run's time counts as.
+public enum RunPenalty {
+    /// Seconds per cone when the day says nothing: the usual club rule.
+    public static let defaultPerCone = 2.0
+}
+
+extension LogbookEntry {
+    /// Takes the penalty per cone of the day it is on, when it is timed in runs.
+    public mutating func takePenalty(from day: TrackDay) {
+        guard isRuns, penaltyPerCone != day.penaltyPerCone else { return }
+        penaltyPerCone = day.penaltyPerCone
+        applyPenalties()
+    }
+
+    /// Seconds a cone adds to one of its runs.
+    public var perCone: Double { penaltyPerCone ?? RunPenalty.defaultPerCone }
+
+    /// For runs, the best is the quickest **official** time — the clock plus the cones, with DNFs
+    /// left out — so the personal best, Trends, goals and the import report compare what counts.
+    /// The optimal run stays the driving's own: the best sectors, whatever was hit.
+    public mutating func applyPenalties() {
+        guard isRuns else { return }
+        let official = laps.compactMap { lap in lap.officialSeconds(perCone: perCone).map { (lap.number, $0) } }
+        let best = official.min { $0.1 < $1.1 }
+        bestLap = best?.1
+        bestLapNumber = best?.0
+    }
+}
