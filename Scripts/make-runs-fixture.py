@@ -74,7 +74,7 @@ def gate(kind, x, y0, y1, label):
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     lines = [
-        "File created on 13/11/2026 @ 10:00:00",
+        "File created on 13/11/2026 at 10:00:00",
         "",
         "[header]",
         "satellites",

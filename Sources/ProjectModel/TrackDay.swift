@@ -225,7 +225,7 @@ extension Logbook {
             let before = entry
             if old.car != day.car, entry.car == old.car { entry.car = day.car }
             if old.driver != day.driver, entry.driver == old.driver { entry.driver = day.driver }
-            if old.circuitKey != day.circuitKey, LogbookFilter.circuitKey(of: entry) == old.circuitKey {
+            if old.circuitKey != day.circuitKey, LogbookFilter.venueKey(of: entry) == old.circuitKey {
                 entry.circuitID = day.circuitID
                 // A catalogue circuit is named by its id; the file's own track name stays beside it.
                 if day.circuitID == nil { entry.trackName = day.trackName }
@@ -279,7 +279,7 @@ extension Logbook {
     public func assignDay(to entry: inout LogbookEntry) throws -> TrackDay {
         let day = try day(for: entry)
         entry.trackDayID = day.id
-        if LogbookFilter.circuitKey(of: entry).isEmpty, !day.circuitKey.isEmpty {
+        if LogbookFilter.venueKey(of: entry).isEmpty, !day.circuitKey.isEmpty {
             entry.circuitID = day.circuitID
             if day.circuitID == nil { entry.trackName = day.trackName }
         }

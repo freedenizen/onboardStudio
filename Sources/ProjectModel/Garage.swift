@@ -32,7 +32,7 @@ public enum Garage {
         let sessions = entries.filter { $0.car.trimmingCharacters(in: .whitespaces) == name }
         let named = days.filter { $0.car.trimmingCharacters(in: .whitespaces) == name }
         let dayIDs = Set(sessions.compactMap(\.trackDayID)).union(named.map(\.id))
-        let circuits = Set(sessions.map(LogbookFilter.circuitKey(of:)) + named.map(\.circuitKey)).subtracting([""])
+        let circuits = Set(sessions.map(LogbookFilter.venueKey(of:)) + named.map(\.circuitKey)).subtracting([""])
         let dates = sessions.compactMap(\.date) + named.map(\.date)
         return Summary(
             sessions: sessions.count, days: dayIDs.count, circuits: circuits.count, first: dates.min(),

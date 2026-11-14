@@ -217,9 +217,9 @@ public enum LogbookTransfer {
             }
             lines.append("")
             for lap in entry.laps {
-                var line = "- Lap \(lap.number): \(lapTime(lap.seconds))"
+                var line = "- \(entry.isRuns ? "Run" : "Lap") \(lap.number): \(lapTime(lap.seconds))"
                 if lap.number == entry.bestLapNumber { line += " **best**" }
-                if !lap.isComplete { line += " (partial)" }
+                if !lap.isComplete { line += entry.isRuns ? " (DNF)" : " (partial)" }
                 lines.append(line)
             }
             if !entry.notes.isEmpty {
