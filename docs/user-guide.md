@@ -612,7 +612,8 @@ wrong or found nothing. *Not This Circuit* clears it.
 **Corners.** The map can number the corners, found from your own driving. Out of the box it
 counts them 1, 2, 3 — which is not what your circuit calls them: Sonoma runs 1, 2, 3, **3a**, 4,
 **4a**, and letter suffixes are normal everywhere. No public source publishes corner numbering, so
-type the real names into *Corners* once and they stay with the track.
+type the real names into *Corners* once — or name them on the circuit's card in the Logbook
+([The circuit's turns](#the-circuits-turns)) — and they stay with the track.
 
 Each name stays on its own turn. A lap does not always find the same corners — a kink near the line
 counts on one lap and not the next — and a name is kept where the turn is, not as "the fourth
@@ -1321,6 +1322,23 @@ in Coaching too, is one step of the Logbook's Edit ▸ Undo.
 **New Track Day Here…** begins the next day at the circuit, and that day shows the same card until
 its first session arrives. A plan is kept with a circuit the catalogue knows; for a circuit named by
 hand the card says so.
+
+### The circuit's turns
+
+Out of the box the app counts a circuit's corners 1, 2, 3…, which is rarely what the circuit calls
+them. **Name Turns…** on the card draws the circuit from your best lap there, with each corner
+numbered on the map and a field for each beside it; the field you are typing in lights its corner.
+Type what the circuit calls each turn — *3a*, *Carousel*. After the one turn the circuit numbers its
+own way, **Number the Following Turns from Here** (also on a field's right-click menu) calls the
+turns after it 4, 5, 6…. Leave a kink blank: it is not one of the circuit's turns, the map does not
+number it, and Coaching and Trends call it by the turns either side.
+
+**Done** keeps the names for the circuit — for that configuration of it, if it has more than one
+([Configuration](#putting-mistakes-right)) — and the sessions there are read again with them, so
+Trends, goals, plans and Coaching call the turns by their names, and a project at the circuit
+starts with them. Each name stays on its turn on every lap and every visit, even one that finds a
+kink the best lap did not. **Edit ▸ Undo Name Turns** puts them back. Names are kept for a circuit
+the catalogue knows, as a plan is.
 
 ### Goals
 

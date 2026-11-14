@@ -15,6 +15,8 @@ struct CircuitCard: View {
     let newDay: () -> Void
     /// Opens Coaching on the last visit, to make a plan from its laps; `nil` with no lap to read.
     let makePlan: (() -> Void)?
+    /// Names the circuit's turns on its best lap (#550); `nil` with no lap to name them on.
+    var nameTurns: (() -> Void)?
     /// The plan as changed, and the name of the change for Edit ▸ Undo.
     let savePlan: (NextSessionPlan?, String) -> Void
     /// The goals at the circuit and how far each has come (#461), and what setting one offers.
@@ -35,6 +37,11 @@ struct CircuitCard: View {
                         .accessibilityIdentifier("circuit.card.subtitle")
                 }
                 Spacer()
+                if let nameTurns {
+                    Button("Name Turns…", systemImage: "signpost.right", action: nameTurns)
+                        .help("Say what the circuit calls each of its turns, on your best lap here")
+                        .accessibilityIdentifier("circuit.card.nameTurns")
+                }
                 if showsNewDay {
                     Button("New Track Day Here…", systemImage: "calendar.badge.plus", action: newDay)
                         .help("Begin a day at \(title), before any file exists")
