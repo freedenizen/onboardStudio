@@ -45,11 +45,7 @@ extension EditorModel {
     /// A gate as the lap detector wants it: the middle of the line, and how far it reaches either
     /// side. The heading is deliberately left unset — a gate says where the line is and not which
     /// way the car crosses it, and the two perpendiculars are equally consistent with it.
-    static func lapLine(from gate: LapGate) -> LapLineSpec {
-        LapLineSpec(
-            latitude: gate.centreLatitude, longitude: gate.centreLongitude,
-            halfWidthMeters: gate.halfWidthMeters)
-    }
+    static func lapLine(from gate: LapGate) -> LapLineSpec { LapLineSpec(gate: gate) }
 
     /// Offers the line the data itself suggests, so a session opens with something workable rather
     /// than with nothing.

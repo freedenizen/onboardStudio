@@ -42,11 +42,16 @@ public enum LogbookFilter {
     /// laps, bests, goals and plan are that configuration's; one on the unnamed configuration —
     /// every session added before configurations existed — keeps the circuit's own key.
     public static func circuitKey(of entry: LogbookEntry) -> String {
-        CircuitKey.make(baseCircuitKey(of: entry), configuration: entry.configuration)
+        // A course is kept apart from the other courses at its venue (#552): an autocross
+        // personal best on one layout says nothing about the next.
+        if let course = entry.course { return RunCourse.key(course.id) }
+        // A circuit's configurations are kept apart the same way (#549).
+        return CircuitKey.make(venueKey(of: entry), configuration: entry.configuration)
     }
 
-    /// The circuit's key whatever configuration was driven: what a track day is at.
-    public static func baseCircuitKey(of entry: LogbookEntry) -> String {
+    /// Where the entry was driven, whatever course or configuration: the circuit id, else its track
+    /// name; empty when it names neither. What a track day's circuit is compared with.
+    public static func venueKey(of entry: LogbookEntry) -> String {
         if let id = entry.circuitID { return id }
         let name = entry.trackName?.trimmingCharacters(in: .whitespaces) ?? ""
         return name

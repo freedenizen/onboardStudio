@@ -304,6 +304,11 @@ for the driver to move. Configurations with no named turns cannot be told apart 
 chosen by themselves. A track day stays at the circuit: which configuration was driven is each
 session's.
 
+A point-to-point course timed in runs (#552) is already a layout of its own, keyed by the course,
+so it takes no configuration: such a session has no **Configuration** field, and the configurations
+of a circuit are never matched against one. Both share the venue's key (`LogbookFilter.venueKey`)
+for the day they are on.
+
 ### The corner on the start/finish line
 
 Numbering the corners of a square found three of four. The missing one sat on the start/finish

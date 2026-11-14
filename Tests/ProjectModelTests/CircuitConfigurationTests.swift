@@ -40,7 +40,7 @@ struct CircuitConfigurationTests {
     @Test func aSessionIsKeyedByItsConfigurationAndAnOldOneIsNot() throws {
         #expect(LogbookFilter.circuitKey(of: entry("a")) == "Q1")
         #expect(LogbookFilter.circuitKey(of: entry("b", configuration: "Club")) == "Q1|Club")
-        #expect(LogbookFilter.baseCircuitKey(of: entry("b", configuration: "Club")) == "Q1")
+        #expect(LogbookFilter.venueKey(of: entry("b", configuration: "Club")) == "Q1")
         // A session saved before #549 decodes with no configuration: the circuit as it was.
         let old = try Logbook.decoder.decode(
             LogbookEntry.self,

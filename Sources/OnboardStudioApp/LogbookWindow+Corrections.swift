@@ -91,7 +91,8 @@ struct MoveToDayMenu: View {
 
     /// The circuit they were all driven at, if one.
     private var circuit: String? {
-        let keys = Set(entries.map(LogbookFilter.circuitKey(of:)))
+        // The venue, not the course (#552): days are at a circuit or a car park, not on a layout.
+        let keys = Set(entries.map(LogbookFilter.venueKey(of:)))
         guard keys.count == 1, let key = keys.first, !key.isEmpty else { return nil }
         return key
     }

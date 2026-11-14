@@ -20,8 +20,9 @@ struct SessionConfigurationField: View {
     private var others: [String] { known.filter { $0 != (entry.configuration ?? "") } }
 
     var body: some View {
-        // Only at a circuit: a configuration is a layout of one.
-        if !LogbookFilter.baseCircuitKey(of: entry).isEmpty { row }
+        // Only for laps at a circuit: a configuration is a layout of one, and a course timed in
+        // runs is a layout of its own (#552).
+        if entry.course == nil, !LogbookFilter.venueKey(of: entry).isEmpty { row }
     }
 
     private var row: some View {

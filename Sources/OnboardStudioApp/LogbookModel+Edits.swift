@@ -74,4 +74,45 @@ extension LogbookModel {
             try logbook.addToGarage(name)
         }
     }
+
+    // MARK: - Courses (#552)
+
+    /// The logbook's courses, one tag each, by name.
+    var courses: [CourseTag] {
+        var seen: [UUID: CourseTag] = [:]
+        for entry in entries { if let course = entry.course { seen[course.id] = course } }
+        return seen.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    /// Renames a course on every session driven on it.
+    func renameCourse(_ id: UUID, to name: String, undo: UndoManager?) {
+        edit("Rename Course", undo: undo) { logbook in
+            for var entry in logbook.entries() where entry.course?.id == id {
+                entry.course?.name = name
+                try logbook.save(entry)
+            }
+        }
+    }
+
+    /// Puts sessions on `course`: the driver saying they were on the same course as another.
+    func move(_ ids: [UUID], toCourse course: CourseTag, undo: UndoManager?) {
+        edit("Change Course", undo: undo) { logbook in
+            for var entry in logbook.entries() where ids.contains(entry.id) && entry.isRuns {
+                entry.course = course
+                try logbook.save(entry)
+            }
+        }
+    }
+
+    /// Puts sessions on a course of their own, named for the first one's day.
+    func separateCourse(_ ids: [UUID], undo: UndoManager?) {
+        edit("New Course", undo: undo) { logbook in
+            let chosen = logbook.entries().filter { ids.contains($0.id) && $0.isRuns }
+            let course = CourseTag(name: RunCourse.defaultName(for: chosen.compactMap(\.date).min()))
+            for var entry in chosen {
+                entry.course = course
+                try logbook.save(entry)
+            }
+        }
+    }
 }

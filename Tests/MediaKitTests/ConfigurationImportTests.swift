@@ -10,7 +10,7 @@ import Testing
 /// named turns it drives, and its corners are read by that configuration's names.
 @Suite("Filing a session under its configuration (#549)", .serialized)
 struct ConfigurationImportTests {
-    static let csv = TrackDayImportTests.fixtures.appending(path: "coaching-laps-at-circuit.csv")
+    static let csv = TrackDayImportTests.fixtures.appending(path: "circuit.d/coaching-laps-at-circuit.csv")
 
     func scratch(_ name: String) -> URL {
         FileManager.default.temporaryDirectory.appending(path: "\(name)-\(UUID().uuidString)")

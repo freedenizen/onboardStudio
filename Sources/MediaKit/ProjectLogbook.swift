@@ -21,11 +21,15 @@ public enum ProjectLogbook {
         public var circuitID: String?
         public var car: String
         public var driver: String
+        /// The lines the project times the file in runs between (#552); `nil` for laps, or to
+        /// take them from the file's own gates when it has a start and a finish.
+        public var runLines: RunLines?
 
         public init(
             url: URL, session: TelemetrySession, importerID: String? = nil, circuitID: String? = nil,
-            car: String = "", driver: String = ""
+            car: String = "", driver: String = "", runLines: RunLines? = nil
         ) {
+            self.runLines = runLines
             self.url = url
             self.session = session
             self.importerID = importerID
@@ -48,6 +52,16 @@ public enum ProjectLogbook {
             car: request.car.isEmpty ? previous?.car ?? "" : request.car,
             driver: request.driver.isEmpty ? request.session.info.driverName ?? previous?.driver : request.driver)
         if let twin = logbook.entry(sameSessionAs: entry) { return Enrolment(entry: twin, isNew: false) }
+        // A point-to-point course is entered in runs (#552). The project's session may still be the
+        // file's first reading, before its gates were applied, so the file is read again.
+        if let lines = request.runLines ?? RunLines(request.session.lapGeometry) {
+            var settings = entry.readingSettings
+            settings.lapLine = lines.start
+            settings.runFinishLine = lines.finish
+            if let session = try? ProjectCompiler.importData(at: url, settings: settings) {
+                entry.readRuns(lines, of: session, among: logbook.entries())
+            }
+        }
         // Onto the day its date and circuit say, as a file added to the logbook itself is (#393).
         try logbook.assignDay(to: &entry)
         try logbook.save(entry)
