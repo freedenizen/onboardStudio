@@ -33,6 +33,9 @@ let package = Package(
         .target(
             name: "MediaKit",
             dependencies: ["ProjectModel", "TelemetryKit", "RenderKit", "Importers", "GPMFKit", "Scripting"],
+            // The traffic detector (#573): YOLOX-Nano, Megvii's Apache-2.0 weights, compiled for Core
+            // ML by Scripts/make-traffic-detector.py; its licence ships beside it.
+            resources: [.copy("Resources/TrafficDetector.mlmodelc"), .copy("Resources/YOLOX-LICENSE.txt")],
             swiftSettings: strict
         ),
         .target(name: "Scripting", dependencies: ["RenderKit", "TelemetryKit", "ProjectModel"], swiftSettings: strict),

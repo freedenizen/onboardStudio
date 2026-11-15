@@ -95,6 +95,8 @@ struct CoachingSelection: Hashable, Sendable {
     var traffic: [TrafficSpan] = []
     /// The stretches whose traffic suggestions were dismissed (#572); a dismissal re-reads it.
     var dismissedTraffic: [LapProfile.Window] = []
+    /// Moves on when a video has been read for traffic (#573), so the lap is read again with it.
+    var videoReadings = 0
 
     var settings: CoachingSettings {
         CoachingSettings(

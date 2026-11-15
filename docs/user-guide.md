@@ -1259,6 +1259,18 @@ suggested the same way, naming it: "You were 0.80 s behind the GR86". It is stil
 mark, because following a friend can be deliberate; this works with any number of laps. The other
 session needs a position and a time of day, which every GPS logger records.
 
+**From the video.** When the session has onboard video — a project's camera, or the clips the
+Logbook matched to the session — a bar under the coaching says the video has not been read for
+traffic, with **Find Traffic in Video**. It reads one picture a second, on your Mac, for a car close
+ahead on the road (about a second and a half for each minute of video on Apple silicon), shows its
+progress while you go on reading, and keeps what it found, so a video is only read once. A corner
+with a car ahead in at least half of its pictures, and in two of them in a row, is suggested:
+"The video shows a car close ahead through 80 % of the corner". Like the others it is a question
+to check in the video, not a mark: the pit lane, the paddock and the queue before a session are
+left out because they are not on a lap, but a car you are happily following looks the same as one
+in your way. It is made for a camera looking forward through the windscreen; one on the roof or
+facing backwards finds little.
+
 ### A plan for next session
 
 **Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
@@ -1525,7 +1537,10 @@ are left out of the coaching ([Traffic and flags](#traffic-and-flags)); `--sugge
 every corner of the session the telemetry suggests was traffic, with its stretch of the data file,
 to check against the video. `--other-car friend.csv=GR86` reads another car's log from the same
 session as well, lists the stretches spent within 1.5 s behind it, and suggests the corners they
-cover; repeat it for more cars. The method is in
+cover; repeat it for more cars. `--detect-traffic` reads a project's onboard video for a car close
+ahead (any file not read before) and suggests the corners with one. `onboard traffic GX010037.MP4`
+reads videos on their own and lists the stretches of each with a car close ahead, in the file's
+seconds; `--again` reads a file afresh. The method is in
 [coaching.md](coaching.md).
 
 **Performance runs.** `onboard probe drag.vbo --performance` lists every standing start: 0–30,

@@ -98,7 +98,8 @@ struct CoachingContent: View {
         return CoachingSelection(
             input: input, lapNumber: lap.number, reference: reference, alignByPosition: saved?.alignByPosition ?? false,
             sessionStamp: stamp, traffic: saved?.traffic(for: input.id) ?? [],
-            dismissedTraffic: saved?.dismissedTraffic(for: input.id) ?? [])
+            dismissedTraffic: saved?.dismissedTraffic(for: input.id) ?? [],
+            videoReadings: TrafficVideoJobs.shared.generation)
     }
 
     // MARK: - Layout
@@ -113,12 +114,15 @@ struct CoachingContent: View {
                     "Coaching compares complete laps. Set a start/finish line in the data file's inspector, or check "
                         + "that the file has position and distance."))
         } else if let selection = selection(input: input, session: session) {
-            Group {
-                if mode == .walkthrough {
-                    walkthrough(selection: selection, laps: laps)
-                } else {
-                    allCorners(selection: selection, laps: laps, input: input, session: session)
+            VStack(spacing: 0) {
+                Group {
+                    if mode == .walkthrough {
+                        walkthrough(selection: selection, laps: laps)
+                    } else {
+                        allCorners(selection: selection, laps: laps, input: input, session: session)
+                    }
                 }
+                FindTrafficBar(source: source, input: input)
             }
             .task(id: selection) { await analyse(selection, session: session) }
             .onChange(of: selectedCorner) { _, corner in
@@ -352,8 +356,10 @@ extension CoachingContent {
         marked.dismissedTraffic = selection.dismissedTraffic
         isAnalysing = true
         defer { isAnalysing = false }
-        // Other cars' logs from the same session, for the suggestions (#574).
+        // Other cars' logs from the same session, and what the video showed, for the suggestions
+        // (#574, #573).
         marked.carsAhead = await carsAhead(in: marked, input: selection.input)
+        marked.pictureSamples = source.pictureSamples(for: selection.input, session: marked) ?? []
         let session = marked
         guard let lap = session.laps.first(where: { $0.number == selection.lapNumber }) else {
             analysis = nil

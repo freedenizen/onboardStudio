@@ -1,11 +1,11 @@
 import XCTest
 
 // ci-shard: 4
-/// J67: leave traffic out of the coaching (#571, #572). A corner where another car held the driver
-/// up is marked from the walkthrough or the corner's detail; the coaching stops calling it an
-/// opportunity, says how much of the lap's loss it was, and the mark is one undo step. The
+/// J67: leave traffic out of the coaching (#571, #572, #573). A corner where another car held the
+/// driver up is marked from the walkthrough or the corner's detail; the coaching stops calling it
+/// an opportunity, says how much of the lap's loss it was, and the mark is one undo step. The
 /// telemetry points at corners that may have been traffic, and each suggestion is taken or
-/// dismissed.
+/// dismissed; the video is read for a car close ahead on request.
 final class CoachingTrafficUITests: OnboardStudioUITestCase {
     @MainActor
     func testACornerHeldUpByTrafficIsLeftOutOfTheCoaching() throws {
@@ -121,5 +121,24 @@ final class CoachingTrafficUITests: OnboardStudioUITestCase {
         expect(suggested, toContain: "Possibly traffic: Turn")
         menu("Edit", "Undo Dismiss Traffic Suggestion")
         expect(suggested, toContain: "Possibly traffic in Turn 1 and Turn 2")
+    }
+
+    /// The video is read for a car close ahead on request (#573): the window offers it while the
+    /// session's video has not been read, shows the reading, and says when it is done.
+    @MainActor
+    func testTheVideoIsReadForTrafficOnRequest() throws {
+        launch()
+        testing("Add Fixture Video")
+        testing("Add Fixture Data (Coaching Laps)")
+        XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout), "No fixture data")
+        menu("Project", "Coaching…")
+        let find = app.buttons["coaching.findTraffic"]
+        XCTAssertTrue(find.waitForExistence(timeout: Self.timeout * 2), "No offer to read the video for traffic")
+        find.click()
+        // The fixture is three seconds of test picture: read in a moment, with no car in it.
+        XCTAssertTrue(
+            app.staticTexts["coaching.findTraffic.done"].waitForExistence(timeout: Self.timeout * 3),
+            "The video was not read")
+        XCTAssertFalse(find.exists, "Still offering to read a video already read")
     }
 }

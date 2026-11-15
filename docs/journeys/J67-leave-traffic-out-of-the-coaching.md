@@ -18,7 +18,10 @@ to be found by watching the video.*
    its detail, what it saw ("You lifted for 40 m where most of your other laps were flat out and
    Turn 1 took 1.86 s longer than it usually does") with **Mark as Traffic** and **Not Traffic**.
    When the Logbook holds another car's session from the same time at the circuit, the corners
-   spent close behind it are suggested too, naming it ("You were 0.80 s behind the GR86").
+   spent close behind it are suggested too, naming it ("You were 0.80 s behind the GR86"). When the
+   session has video not yet read, the bar under the coaching offers **Find Traffic in Video**; it
+   shows its progress, then "The video has been read for traffic.", and corners with a car close
+   ahead in the picture are suggested the same way.
    Marking leaves the corner out as above; Not Traffic stops the suggestion (**Edit ▸ Undo Dismiss
    Traffic Suggestion**). In the table a suggested corner has a small car by its number, and its
    context menu has **Dismiss Traffic Suggestion**.
@@ -26,8 +29,9 @@ to be found by watching the video.*
    Traffic Mark** — in a project; from the Logbook the mark is kept with the session.
 
 Tests: `CoachingTrafficUITests.testACornerHeldUpByTrafficIsLeftOutOfTheCoaching`,
-`CoachingTrafficUITests.testTheTelemetrysTrafficSuggestionsAreTakenOrDismissed`. Model:
-`TrafficTests`, `TrafficSuggestionsTests`, `CarsAheadTests`,
+`CoachingTrafficUITests.testTheTelemetrysTrafficSuggestionsAreTakenOrDismissed`,
+`CoachingTrafficUITests.testTheVideoIsReadForTrafficOnRequest`. Model:
+`TrafficTests`, `TrafficSuggestionsTests`, `CarsAheadTests`, `VideoTrafficTests`,
 `LogbookReferencesTests.theSessionsThatCouldShareTheTrackAreThoseOnTheClockBeforeItEnded`,
 `CoachingSettingsTests.dismissedSuggestionsRoundTripApplyToTheirInputAndAreAbsentInOlderSettings`, `CoachingSettingsTests.trafficMarksRoundTripApplyToTheirInputAndAreAbsentInOlderSettings`,
 `CornerExportsTests.aCornerMarkedAsTrafficIsNoOpportunityClipAndTheMarksReachTheSession`,

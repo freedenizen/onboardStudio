@@ -72,6 +72,14 @@ struct Coach: AsyncParsableCommand {
             """)
     var otherCar: [String] = []
 
+    @Flag(
+        name: .long,
+        help: """
+            Read a project's onboard video for a car close ahead, one keyframe a second, and suggest the corners \
+            where there was one (implies --suggest-traffic). A file already read is not read again.
+            """)
+    var detectTraffic = false
+
     @Option(name: .long, help: "Force a specific importer id for a file instead of auto-detecting.")
     var format: String?
 
@@ -141,7 +149,7 @@ struct Coach: AsyncParsableCommand {
             print(sheet.markdown)
         } else {
             printReport(analysis, lapNumber: chosen.number, units: units)
-            if suggestTraffic || !otherCar.isEmpty {
+            if suggestTraffic || !otherCar.isEmpty || detectTraffic {
                 printCarsAhead(session)
                 printSuggestions(analysis, session: session, units: units)
             }
@@ -150,7 +158,14 @@ struct Coach: AsyncParsableCommand {
 
     // MARK: - Input
 
-    fileprivate func loadSession() async throws -> TelemetrySession {
+    /// What was read: the session, and with a project, the project and the data input read.
+    struct Read {
+        var session: TelemetrySession
+        var project: ProjectCompiler.LoadedProject?
+        var input: Input?
+    }
+
+    fileprivate func loadSession() async throws -> Read {
         let url = URL(fileURLWithPath: path)
         if url.pathExtension == "onboardproj" || url.lastPathComponent == "project.json" {
             let loaded = try await ProjectCompiler.load(url)
@@ -168,9 +183,9 @@ struct Coach: AsyncParsableCommand {
             guard let session = loaded.sessions[picked.id] else {
                 throw ValidationError("The data input '\(picked.label)' did not load.")
             }
-            return session
+            return Read(session: session, project: loaded, input: picked)
         }
-        return try importFile(url)
+        return Read(session: try importFile(url))
     }
 
     /// Without `--lap`: the quickest lap that is not the reference itself, so the comparison has
@@ -309,7 +324,14 @@ extension Coach {
 
     /// The session with `--traffic`'s marks, when given, in place of any the project had.
     func markedSession() async throws -> TelemetrySession {
-        var session = try await loadSession()
+        let read = try await loadSession()
+        var session = read.session
+        if detectTraffic {
+            guard let loaded = read.project, let input = read.input else {
+                throw ValidationError("--detect-traffic reads a project's video.")
+            }
+            session.pictureSamples = try await Self.pictureSamples(for: input, in: loaded)
+        }
         if let traffic { session.traffic = try Self.parseTraffic(traffic) }
         for item in otherCar {
             let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
@@ -372,6 +394,20 @@ extension Coach {
         }
     }
 
+    /// What the camera that filmed `input` showed ahead, reading every file not read before.
+    static func pictureSamples(
+        for input: Input, in loaded: ProjectCompiler.LoadedProject
+    ) async throws -> [PictureSample] {
+        guard let id = loaded.project.camera(for: input.id), let camera = loaded.project.input(id) else {
+            throw ValidationError("--detect-traffic: the project has no video.")
+        }
+        for file in VideoTraffic.files(of: camera, in: loaded) where VideoTraffic.saved(for: file) == nil {
+            FileHandle.standardError.write(Data("Reading \(file.lastPathComponent) for traffic…\n".utf8))
+            for try await _ in VideoTraffic.analyse(file) {}
+        }
+        return VideoTraffic.samples(of: camera, for: input, in: loaded) ?? []
+    }
+
     /// The stretches spent close behind each `--other-car` (#574), in the data file's seconds.
     func printCarsAhead(_ session: TelemetrySession) {
         guard !otherCar.isEmpty else { return }
@@ -386,7 +422,7 @@ extension Coach {
     /// What `--align` and `--suggest-traffic` ask of the reading.
     func coachingOptions() throws -> CoachingOptions {
         var options = CoachingOptions()
-        options.suggestsTraffic = suggestTraffic || !otherCar.isEmpty
+        options.suggestsTraffic = suggestTraffic || !otherCar.isEmpty || detectTraffic
         switch align?.lowercased() {
         case nil: break
         case "distance": options.alignment = .distance

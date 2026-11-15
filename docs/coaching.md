@@ -300,6 +300,21 @@ minimum the other signals need. The Coaching window reads every Logbook session 
 circuit that began in the half day before this one ended (`LogbookReferences.sharingTheTrack`);
 the CLI takes `--other-car`.
 
+**The video** (#573, `Sources/MediaKit/VideoTraffic.swift`). The keyframe nearest each second of
+the clip (within half a second; a GoPro writes one every second, so nothing else is decoded),
+upright, cropped to the middle of the picture (15–85 % across, 12–62 % down) at full resolution,
+letterboxed to 640 px and run through YOLOX-Nano (Core ML, FP16). Its raw head is decoded on
+strides 8, 16 and 32, scores are objectness × class over COCO's car, motorcycle, bus and truck, with
+non-maximum suppression per class at an overlap of half. A car close ahead is a box scoring 0.4 or
+more, 30 to 600 px wide at 2,704 px (fractions of the width, so any resolution), centred in the
+middle three-fifths, with its bottom below the top 30 %; the widest such box is kept per picture.
+Readings are kept per file in Application Support, keyed by path, size, date and a detector
+version. They are put on the session's clock through the project's syncs (the camera's and the
+data's, chapters where they play) or, from the Logbook, by the clip's recording time; they become
+`TelemetrySession.pictureSamples`. A corner gets `.inPicture(share:)` when at least half its
+pictures have a car ahead and two of them come in a row (`pictureShare`, `picturesInARow`). The
+compile and the renders never read it.
+
 **Notes** are deterministic phrase templates filled from the numbers, in the units asked for
 (km/h and metres, or mph and feet): a headline ("Turn 4: 0.31 s lost on entry"), the evidence
 that applies ("Braked 18 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later",

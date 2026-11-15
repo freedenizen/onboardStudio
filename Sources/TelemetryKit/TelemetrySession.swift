@@ -58,6 +58,9 @@ public struct TelemetrySession: Sendable {
     /// Stretches where the driver said a traffic suggestion was wrong (#572), in session time: a
     /// suggestion they cover is not offered again.
     public var dismissedTraffic: [LapProfile.Window] = []
+    /// What the onboard video showed ahead (#573), one sample a second in session time: read from
+    /// the clips by whoever reads this session for coaching, when they have been read for traffic.
+    public var pictureSamples: [PictureSample] = []
     /// Stretches another car's log puts it close ahead of this one (#574), in session time: read
     /// from the Logbook's sessions on the same clock by whoever reads this one for coaching.
     public var carsAhead: [CarAhead] = []
