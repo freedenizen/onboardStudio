@@ -57,7 +57,10 @@ swift run onboard bench --export --codec hevc --seconds 60
   declaration — `Scripts/check-ui-test-shards.sh` (run by Lint (fast) and the pre-commit hook)
   fails the build if one is missing; `ci.yml` is not edited for it. A shard retries a failed
   test once; a test that passes only on retry is recorded on the `flaky-tests` issue, so look
-  there before calling a test stable.
+  there before calling a test stable. A shard that fails with **Runner WindowServer hang** was
+  stopped by `Scripts/windowserver-watchdog.sh`: the macOS 27 runner's GPU driver deadlocked
+  WindowServer, so no app could launch (the tell is "does not have a process ID"), and
+  `rerun-runner-hang.yml` reruns the failed jobs once by itself. It is not the PR's fault (#588).
 - **One PR in CI at a time; the rest are drafts.** CI runs one PR at a time (a run is seven macOS
   jobs), and a draft skips the macOS jobs and the Claude review — its **UI tests** check is red
   on purpose, so a draft never reads green (#239). Open further PRs with

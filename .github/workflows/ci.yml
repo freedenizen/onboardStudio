@@ -292,11 +292,25 @@ jobs:
           # A test that fails is run once more before the shard is called red: a lost key window
           # or a menu that opened late used to cost a full rerun of the workflow. The retry is
           # reported below so a flake is still a fact on record, not a silent pass.
+          # The watchdog stops the run when the runner's WindowServer stops answering: no test
+          # can launch the app after that, so the shard fails in minutes instead of timing out,
+          # and rerun-runner-hang.yml runs it again on a fresh runner (#588).
+          hung="$RUNNER_TEMP/windowserver-hung"
+          Scripts/windowserver-watchdog.sh "$hung" &
+          watchdog=$!
+          status=0
           xcodebuild test-without-building -project OnboardStudio.xcodeproj -scheme OnboardStudio \
             -destination 'platform=macOS' -derivedDataPath build/DerivedData \
             "${only[@]}" -resultBundlePath build/UITests.xcresult CODE_SIGN_IDENTITY="-" \
             -retry-tests-on-failure -test-iterations 2 \
-            | tee xcodebuild.log | grep --line-buffered -E "error:|Test Case|Executed|TEST "
+            | tee xcodebuild.log | grep --line-buffered -E "error:|Test Case|Executed|TEST " || status=$?
+          kill "$watchdog" 2>/dev/null || true
+          if [ -e "$hung" ]; then
+            # The title is what rerun-runner-hang.yml looks for: keep the two in step.
+            echo "::error title=Runner WindowServer hang::The runner's WindowServer stopped answering at $(cat "$hung"), so no app could launch; the tests were stopped. This is the runner's GPU driver, not a test (#588)."
+            exit 1
+          fi
+          exit "$status"
       # Not on a pull request from a fork: its token is read-only whatever the job asks for, and
       # the write would fail the shard for a test that passed.
       - name: Record a test that passed only on retry
