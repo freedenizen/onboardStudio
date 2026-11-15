@@ -17,6 +17,8 @@ to be found by watching the video.*
    Turn 1 and Turn 2. Check the video before you trust their notes."; on each one's step and in
    its detail, what it saw ("You lifted for 40 m where most of your other laps were flat out and
    Turn 1 took 1.86 s longer than it usually does") with **Mark as Traffic** and **Not Traffic**.
+   When the Logbook holds another car's session from the same time at the circuit, the corners
+   spent close behind it are suggested too, naming it ("You were 0.80 s behind the GR86").
    Marking leaves the corner out as above; Not Traffic stops the suggestion (**Edit ▸ Undo Dismiss
    Traffic Suggestion**). In the table a suggested corner has a small car by its number, and its
    context menu has **Dismiss Traffic Suggestion**.
@@ -25,7 +27,8 @@ to be found by watching the video.*
 
 Tests: `CoachingTrafficUITests.testACornerHeldUpByTrafficIsLeftOutOfTheCoaching`,
 `CoachingTrafficUITests.testTheTelemetrysTrafficSuggestionsAreTakenOrDismissed`. Model:
-`TrafficTests`, `TrafficSuggestionsTests`,
+`TrafficTests`, `TrafficSuggestionsTests`, `CarsAheadTests`,
+`LogbookReferencesTests.theSessionsThatCouldShareTheTrackAreThoseOnTheClockBeforeItEnded`,
 `CoachingSettingsTests.dismissedSuggestionsRoundTripApplyToTheirInputAndAreAbsentInOlderSettings`, `CoachingSettingsTests.trafficMarksRoundTripApplyToTheirInputAndAreAbsentInOlderSettings`,
 `CornerExportsTests.aCornerMarkedAsTrafficIsNoOpportunityClipAndTheMarksReachTheSession`,
 `CornerCalloutTests.aCornerMarkedAsTrafficSaysSoAndNothingMore`.

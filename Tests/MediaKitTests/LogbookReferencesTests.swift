@@ -35,6 +35,29 @@ struct LogbookReferencesTests {
         #expect(LogbookReferences.phrase(for: pb, lap: 2).hasSuffix(", lap 2"))
     }
 
+    @Test func theSessionsThatCouldShareTheTrackAreThoseOnTheClockBeforeItEnded() {
+        let at = { (hours: Double) in Date(timeIntervalSince1970: 1_700_000_000 + hours * 3_600) }
+        let all = [
+            entry("own", key: "Stadium", best: 44.6, date: at(10)),
+            entry("friend", key: "Stadium", best: 44.0, date: at(9.9), car: "GR86"),
+            entry("later", key: "Stadium", best: 44.0, date: at(10.6)),
+            entry("lastweek", key: "Stadium", best: 44.0, date: at(-160)),
+            entry("elsewhere", key: "Thunderhill", best: 40.0, date: at(10)),
+            entry("undated", key: "Stadium", best: 40.0, date: nil),
+        ]
+        let start = at(10).timeIntervalSince1970
+        let span = start...(start + 1_200)
+        let sharing = LogbookReferences.sharingTheTrack(
+            at: "Stadium", during: span, in: all, excluding: "own", path: nil)
+        #expect(sharing.map(\.file.contentHash) == ["friend"])
+        // Read from a project, the session is known by its path.
+        let byPath = LogbookReferences.sharingTheTrack(
+            at: "Stadium", during: span, in: all, excluding: nil, path: "/d/own.csv")
+        #expect(byPath.map(\.file.contentHash) == ["friend"])
+        let nowhere = LogbookReferences.sharingTheTrack(at: "", during: span, in: all, excluding: nil, path: nil)
+        #expect(nowhere.isEmpty)
+    }
+
     @Test func theCompileReadsALogbookSessionAsTheReference() async throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: "refs-\(UUID().uuidString)")
         let logbook = Logbook(directory: folder)

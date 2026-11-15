@@ -1253,6 +1253,13 @@ steps (**Undo Mark Traffic**, **Undo Dismiss Traffic Suggestion**). Laps more th
 again as your best, such as a cool-down lap, are left out, and a session needs three laps for
 anything to be usual.
 
+**Another car's log.** When the Logbook holds another car's session at the same circuit from the
+same time — a friend's logger in your run group — the window reads the two together and knows the
+gap between you at every moment. A corner you spent within 1.5 s behind the other car is
+suggested the same way, naming it: "You were 0.80 s behind the GR86". It is still a question, not a
+mark, because following a friend can be deliberate; this works with any number of laps. The other
+session needs a position and a time of day, which every GPS logger records.
+
 ### A plan for next session
 
 **Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
@@ -1518,7 +1525,9 @@ sectors, corner names and traffic marks the project has. `--traffic 312.5-330,12
 stretches as held up by traffic (or `:flag`) in seconds of the data file, and the corners they cover
 are left out of the coaching ([Traffic and flags](#traffic-and-flags)); `--suggest-traffic` lists
 every corner of the session the telemetry suggests was traffic, with its stretch of the data file,
-to check against the video. The method is in
+to check against the video. `--other-car friend.csv=GR86` reads another car's log from the same
+session as well, lists the stretches spent within 1.5 s behind it, and suggests the corners they
+cover; repeat it for more cars. The method is in
 [coaching.md](coaching.md).
 
 **Performance runs.** `onboard probe drag.vbo --performance` lists every standing start: 0–30,
