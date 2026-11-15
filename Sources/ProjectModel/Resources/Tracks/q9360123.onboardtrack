@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q9360123",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 52.4178,
+  "longitude": 16.8058,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Tor Poznań",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 19.5,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 52.420218,
+    "longitude": 16.806445
+  },
+  "turnNames": []
+}

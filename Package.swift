@@ -25,7 +25,9 @@ let package = Package(
     ],
     targets: [
         // MARK: Libraries
-        .target(name: "ProjectModel", dependencies: ["TelemetryKit"], swiftSettings: strict),
+        .target(
+            name: "ProjectModel", dependencies: ["TelemetryKit"], resources: [.copy("Resources/Tracks")],
+            swiftSettings: strict),
         .target(name: "TelemetryKit", resources: [.copy("Resources/circuits.csv")], swiftSettings: strict),
         .target(name: "GPMFKit", dependencies: ["TelemetryKit"], swiftSettings: strict),
         .target(name: "Importers", dependencies: ["TelemetryKit", "GPMFKit"], swiftSettings: strict),

@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q12290726",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 42.34166,
+  "longitude": 24.73507,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Dracon",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 26.3,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 42.3410335,
+    "longitude": 24.7343515
+  },
+  "turnNames": []
+}

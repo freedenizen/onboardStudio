@@ -700,6 +700,16 @@ filled in, so you set a venue up once rather than once a session. Opening a proj
 earlier never applies them: a project renders the way you left it, whatever the app has learned
 since.
 
+**Some circuits come set up.** Onboard Studio ships with the start/finish line — and at a few, the
+sectors — of over a hundred European circuits, from [LapViz](https://github.com/lapviz/LapViz.Telemetry),
+and with any circuit a driver has contributed. A file added at one of them starts with that line
+as if you had saved it yourself, and the Track section says where the settings came from. At a
+circuit with several layouts — Silverstone's Grand Prix, International and National — choose the
+one you drove in **Configuration** and its line comes with it. Your own saved settings always come
+first: saving yours takes their place, and **Forget Saved Settings** brings theirs back. They name
+no turns; name those on the circuit's card. To share a circuit you have set up, see
+[Contributing a circuit](tracks-and-sectors.md#contributing-a-circuit-584).
+
 ### Overlays
 
 ![A tachometer selected on the preview with handles around it, its label, position, size and scale in the inspector](images/inspector-gauge.jpg)

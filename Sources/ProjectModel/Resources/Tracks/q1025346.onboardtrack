@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q1025346",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 53.3089,
+  "longitude": -0.06306,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Cadwell Park",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 18.8,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 53.3102715,
+    "longitude": -0.0594725
+  },
+  "turnNames": []
+}

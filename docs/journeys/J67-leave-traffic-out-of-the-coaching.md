@@ -30,7 +30,7 @@ to be found by watching the video.*
 
 Tests: `CoachingTrafficUITests.testACornerHeldUpByTrafficIsLeftOutOfTheCoaching`,
 `CoachingTrafficUITests.testTheTelemetrysTrafficSuggestionsAreTakenOrDismissed`,
-`CoachingTrafficUITests.testTheVideoIsReadForTrafficOnRequest`. Model:
+`CoachingVideoTrafficUITests.testTheVideoIsReadForTrafficOnRequest`. Model:
 `TrafficTests`, `TrafficSuggestionsTests`, `CarsAheadTests`, `VideoTrafficTests`,
 `LogbookReferencesTests.theSessionsThatCouldShareTheTrackAreThoseOnTheClockBeforeItEnded`,
 `CoachingSettingsTests.dismissedSuggestionsRoundTripApplyToTheirInputAndAreAbsentInOlderSettings`, `CoachingSettingsTests.trafficMarksRoundTripApplyToTheirInputAndAreAbsentInOlderSettings`,

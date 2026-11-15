@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 3
 /// J66: name a circuit's turns from its card in the Logbook (#550). The sheet draws the circuit
 /// from the best lap there with a field for each corner; a name typed there is kept for the
 /// circuit, and Edit ▸ Undo Name Turns takes it back.
