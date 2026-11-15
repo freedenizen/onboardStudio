@@ -116,6 +116,19 @@ import UniformTypeIdentifiers
         }
     }
 
+    /// Reads the sector times and speeds of a session entered before they were kept (#557), once,
+    /// off the main thread, and writes them with no step of Undo: they are the file's, not an
+    /// edit, and Undo of an edit made before puts back laps that are read again when next shown.
+    /// A session whose file cannot be found is left as it was.
+    func readSplits(of entry: LogbookEntry) async {
+        guard entry.needsSplitReading, let session = await session(for: entry),
+            var latest = AppLogbook.shared.entry(id: entry.id), latest.needsSplitReading
+        else { return }
+        latest.readSplits(of: session)
+        try? AppLogbook.shared.save(latest)
+        if let index = entries.firstIndex(where: { $0.id == latest.id }) { entries[index] = latest }
+    }
+
     // MARK: - Into a project
 
     /// A new project with the session's data file, its clips and `template` (#394), showing
@@ -425,7 +438,8 @@ struct LogbookWindow: View {
             renameCourse: { name in entry.course.map { model.renameCourse($0.id, to: name, undo: undoManager) } },
             joinCourse: { model.move([entry.id], toCourse: $0, undo: undoManager) },
             separateCourse: { model.separateCourse([entry.id], undo: undoManager) },
-            measurePerformance: { await model.measurePerformance($0, of: entry, undo: undoManager) }
+            measurePerformance: { await model.measurePerformance($0, of: entry, undo: undoManager) },
+            readSplits: { await model.readSplits(of: entry) }
         )
     }
 

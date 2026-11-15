@@ -32,7 +32,14 @@ logbooks first and analysers second.
 - **the laps** — number, time and completeness for each, and the session's best (with its number),
   optimal (`SessionStats.optimalLap`, the best sectors spliced) and **fastest rolling lap**
   (`CoachingReference.fastestRolling`), and the top speed in m/s; and which reading the laps are
-  from (`lapMeasurement`, #498, below);
+  from (`lapMeasurement`, #498, below). Each lap also keeps its sector times, `nil` for a sector
+  it did not time, and its top and lowest speed in m/s (#557, `LogbookEntry+Laps.swift`). They come
+  from the session's own `SectorAnalysis`, the one its optimal lap is made of. The lap the
+  recording began during has none, because its first sector would start wherever the logger was
+  switched on. `splitsMeasurement` says which reading they are from; an entry from before #557
+  reads 0, and the Logbook reads its file for them the first time the session is shown
+  (`LogbookModel.readSplits`), with no step of Undo, because they are the file's numbers and not
+  an edit;
 - **words** — notes and tags now; weather, track condition, temperature, tyres and setup come with
   #348, as optional keys the decoder already tolerates;
 - **the projects** made from it, by path and name (#349 fills them in);
@@ -57,9 +64,8 @@ stamps `modified`, unreadable files are skipped rather than failing the list). S
 the tracks are, so a season can be copied, backed up, diffed or handed over as files; a selection
 export and a merge-by-hash import are #350. **Local only: nothing is uploaded.**
 
-What is deliberately not here: samples (the file has them; an entry is a card, not a copy),
-sector times per lap (read from the file when the detail pane wants them, #347), and anything a
-later build might compute differently from the same file — an entry records what the app read
+What is deliberately not here: samples (the file has them; an entry is a card, not a copy), and
+anything a later build might compute differently from the same file — an entry records what the app read
 when it was added, like a project does, and is re-read only when the user asks.
 
 ## Adding a track day (#346)
