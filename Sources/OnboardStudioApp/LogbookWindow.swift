@@ -439,7 +439,8 @@ struct LogbookWindow: View {
             joinCourse: { model.move([entry.id], toCourse: $0, undo: undoManager) },
             separateCourse: { model.separateCourse([entry.id], undo: undoManager) },
             measurePerformance: { await model.measurePerformance($0, of: entry, undo: undoManager) },
-            readSplits: { await model.readSplits(of: entry) }
+            readSplits: { await model.readSplits(of: entry) },
+            markLap: { number, reason in await model.markLap(number, of: entry.id, as: reason, undo: undoManager) }
         )
     }
 

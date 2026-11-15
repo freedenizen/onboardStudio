@@ -84,4 +84,24 @@ struct CoachingSettingsTests {
         #expect(older.coaching?.dismissedTraffic.isEmpty == true)
         #expect(older.coaching?.lap == 2)
     }
+
+    @Test func lapsLeftOutRoundTripApplyToTheirInputAndAreAbsentInOlderSettings() throws {
+        let data = Input(label: "Data", source: MediaReference(path: "/tmp/s.csv"), kind: .data(DataInputSettings()))
+        let other = Input(label: "Other", source: MediaReference(path: "/tmp/o.csv"), kind: .data(DataInputSettings()))
+        var project = Project(inputs: [data, other])
+        let marks = [LapMark(time: 130.5, reason: .offTrack), LapMark(time: 260, reason: .flag)]
+        project.coaching = CoachingSettings(dataInputID: data.id, lap: 2, lapMarks: marks)
+        let reopened = try Project.decode(try project.encoded())
+        #expect(reopened.coaching?.lapMarks == marks)
+        #expect(reopened.coaching?.lapMarks(for: data.id) == marks)
+        #expect(reopened.coaching?.lapMarks(for: other.id).isEmpty == true)
+        // Settings saved before #554 have no key: every lap counts.
+        var json = try #require(try JSONSerialization.jsonObject(with: try project.encoded()) as? [String: Any])
+        var coaching = try #require(json["coaching"] as? [String: Any])
+        coaching["lapMarks"] = nil
+        json["coaching"] = coaching
+        let older = try Project.decode(try JSONSerialization.data(withJSONObject: json))
+        #expect(older.coaching?.lapMarks.isEmpty == true)
+        #expect(older.coaching?.lap == 2)
+    }
 }

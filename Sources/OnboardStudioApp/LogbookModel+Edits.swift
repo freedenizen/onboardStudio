@@ -1,5 +1,6 @@
 import ProjectModel
 import SwiftUI
+import TelemetryKit
 
 /// The Logbook's edits, each one step of Edit ▸ Undo in the Logbook window, named for what it did
 /// (#454). Logbook files are not a document, and every edit used to go straight to disk with no way
@@ -73,6 +74,31 @@ extension LogbookModel {
             }
             try logbook.addToGarage(name)
         }
+    }
+
+    // MARK: - Laps that do not count (#554)
+
+    /// Leaves lap `number` of the session out for `reason`, or counts it again when `reason` is
+    /// `nil`, and reads its best, optimal and rolling laps and its corners again without it: one
+    /// step of Undo, "Leave Lap 7 Out" or "Count Lap 7". `false` when the session's file could not
+    /// be read, which the figures need.
+    @discardableResult
+    func markLap(_ number: Int, of entryID: UUID, as reason: LapMark.Reason?, undo: UndoManager?) async -> Bool {
+        guard let entry = entry(id: entryID), let session = await session(for: entry) else {
+            return false
+        }
+        // The entry as it is now: reading the file may have taken long enough for another edit.
+        guard var changed = AppLogbook.shared.entry(id: entryID) else { return false }
+        guard changed.markLap(number, as: reason, in: session) else { return true }
+        let name = reason == nil ? "Count Lap \(number)" : "Leave Lap \(number) Out"
+        edit(name, undo: undo) { try $0.save(changed) }
+        return true
+    }
+
+    /// The entry with `id`, from the logbook as last shown, or from its file when the Logbook has
+    /// not been read yet — a project opened on its own.
+    func entry(id: UUID) -> LogbookEntry? {
+        hasLoaded ? entries.first { $0.id == id } : AppLogbook.shared.entry(id: id)
     }
 
     // MARK: - Courses (#552)

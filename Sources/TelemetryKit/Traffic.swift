@@ -121,11 +121,13 @@ extension [TrafficSpan] {
 }
 
 extension [Lap] {
-    /// The quickest of these laps other than lap `excluded`, preferring one no traffic mark
-    /// touches (#571): a lap that was held up is a poor lap to coach by default.
+    /// The quickest of these laps other than lap `excluded`, preferring one that counts (#554)
+    /// and that no traffic mark touches (#571): a lap that was held up is a poor lap to coach by
+    /// default.
     public func quickest(excluding excluded: Int?, in session: TelemetrySession) -> Lap? {
         let byTime = filter { $0.number != excluded }.sorted { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }
-        return byTime.first { session.isClearOfTraffic($0) } ?? byTime.first
+        return byTime.first { session.counts($0) && session.isClearOfTraffic($0) }
+            ?? byTime.first { session.counts($0) } ?? byTime.first
     }
 }
 

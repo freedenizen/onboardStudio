@@ -95,6 +95,9 @@ struct CoachingSelection: Hashable, Sendable {
     var traffic: [TrafficSpan] = []
     /// The stretches whose traffic suggestions were dismissed (#572); a dismissal re-reads it.
     var dismissedTraffic: [LapProfile.Window] = []
+    /// The laps that do not count (#554), wherever the source keeps them; a mark re-reads it.
+    /// Not part of `settings`: the source keeps them itself.
+    var lapMarks: [LapMark] = []
     /// Moves on when a video has been read for traffic (#573), so the lap is read again with it.
     var videoReadings = 0
 
@@ -102,6 +105,15 @@ struct CoachingSelection: Hashable, Sendable {
         CoachingSettings(
             dataInputID: input.id, lap: lapNumber, reference: reference, alignByPosition: alignByPosition,
             traffic: traffic, dismissedTraffic: dismissedTraffic)
+    }
+
+    /// `session` with the marks chosen here: traffic, dismissed suggestions, laps left out.
+    func marking(_ session: TelemetrySession) -> TelemetrySession {
+        var marked = session
+        marked.traffic = traffic
+        marked.dismissedTraffic = dismissedTraffic
+        marked.lapMarks = lapMarks
+        return marked
     }
 
     /// The analysis options the choices amount to: the window offers the telemetry's traffic

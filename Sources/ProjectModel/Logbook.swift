@@ -37,10 +37,13 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         /// The fastest and slowest the lap went (#557), m/s.
         public var topSpeed: Double?
         public var minSpeed: Double?
+        /// Why the driver said the lap does not count (#554), from the entry's `lapMarks` as the
+        /// laps were last read; `nil` for a lap that counts.
+        public var notCounted: LapMark.Reason?
 
         public init(
             number: Int, seconds: Double?, isComplete: Bool, cones: Int = 0, offCourse: Bool = false,
-            sectors: [Double?] = [], topSpeed: Double? = nil, minSpeed: Double? = nil
+            sectors: [Double?] = [], topSpeed: Double? = nil, minSpeed: Double? = nil, notCounted: LapMark.Reason? = nil
         ) {
             self.number = number
             self.seconds = seconds
@@ -50,7 +53,11 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
             self.sectors = sectors
             self.topSpeed = topSpeed
             self.minSpeed = minSpeed
+            self.notCounted = notCounted
         }
+
+        /// Whether the lap counts towards the best, the optimal, the consistency and the Trends.
+        public var counts: Bool { notCounted == nil }
 
         /// Never reached the finish, or went off course on the way: a run with no time to count.
         public var isDNF: Bool { !isComplete || offCourse }
@@ -138,6 +145,13 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     public var performance: PerformanceRuns.Result?
     /// Seconds a cone adds to a run (#552), as its track day says; `nil` is the usual 2 s.
     public var penaltyPerCone: Double?
+    /// Laps the driver said do not count (#554), pinned to a moment inside each in the file's own
+    /// time. The best, optimal and rolling laps, the corners and the consistency are read without
+    /// them. Absent before #554, as no marks: every lap counted.
+    public var lapMarks: [LapMark] = []
+    /// The laps the optimal lap is spliced from, in lap order (#554); empty until the laps are
+    /// read by a build that keeps them.
+    public var optimalSources: [Int] = []
     public var added: Date
     public var modified: Date
 
@@ -254,6 +268,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         case cornerMeasurement, lapMeasurement, splitsMeasurement, trackDayID, durationSeconds, coaching, added,
             modified
         case runLines, course, coursePath, penaltyPerCone, measuresPerformance, performance
+        case lapMarks, optimalSources
     }
 
     public init(from decoder: any Decoder) throws {
@@ -296,6 +311,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         measuresPerformance = try c.decodeIfPresent(Bool.self, forKey: .measuresPerformance)
         performance = try? c.decodeIfPresent(PerformanceRuns.Result.self, forKey: .performance)
         penaltyPerCone = try c.decodeIfPresent(Double.self, forKey: .penaltyPerCone)
+        lapMarks = try c.decodeIfPresent([LapMark].self, forKey: .lapMarks) ?? []
+        optimalSources = try c.decodeIfPresent([Int].self, forKey: .optimalSources) ?? []
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }
@@ -326,30 +343,6 @@ extension LogbookEntry {
         return entry
     }
 
-    /// Reads the laps of `session` into the entry with this build's reading, and with them what
-    /// is worked out from the laps: the best, the optimal and the fastest rolling lap, and the
-    /// corners of the best lap, which may be another lap now. Nothing the driver wrote — the car,
-    /// the conditions, the notes — is touched.
-    public mutating func readLaps(of session: TelemetrySession) {
-        let stats = SessionStats(session: session)
-        // Cones and an off-course are the driver's (#552): a run keeps them when its file is read again.
-        let penalties = Dictionary(laps.map { ($0.number, ($0.cones, $0.offCourse)) }, uniquingKeysWith: { a, _ in a })
-        laps = session.laps.listed.map { lap in
-            let kept = penalties[lap.number]
-            return LapRecord(
-                number: lap.number, seconds: lap.duration, isComplete: lap.isComplete, cones: kept?.0 ?? 0,
-                offCourse: kept?.1 ?? false)
-        }
-        bestLap = stats.bestLap?.seconds
-        bestLapNumber = stats.bestLap?.number
-        optimalLap = stats.optimalLap
-        fastestRollingLap = CoachingReference.fastestRolling.resolve(in: session)?.duration
-        lapMeasurement = Self.lapMeasurement
-        applyPenalties()
-        readSplits(of: session)
-        readCorners(of: session)
-        readPerformance(of: session)
-    }
 }
 
 /// A car in the garage (#345): a name and whatever the owner wants to say about it.
@@ -467,7 +460,7 @@ public struct Logbook: Sendable {
 
 extension LogbookEntry.LapRecord {
     private enum CodingKeys: String, CodingKey {
-        case number, seconds, isComplete, cones, offCourse, sectors, topSpeed, minSpeed
+        case number, seconds, isComplete, cones, offCourse, sectors, topSpeed, minSpeed, notCounted
     }
 
     public init(from decoder: any Decoder) throws {
@@ -483,6 +476,8 @@ extension LogbookEntry.LapRecord {
             // Absent before #557: read again when the session is next shown.
             sectors: try c.decodeIfPresent([Double?].self, forKey: .sectors) ?? [],
             topSpeed: try c.decodeIfPresent(Double.self, forKey: .topSpeed),
-            minSpeed: try c.decodeIfPresent(Double.self, forKey: .minSpeed))
+            minSpeed: try c.decodeIfPresent(Double.self, forKey: .minSpeed),
+            // Absent before #554: every lap counted.
+            notCounted: try? c.decodeIfPresent(LapMark.Reason.self, forKey: .notCounted))
     }
 }

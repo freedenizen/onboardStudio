@@ -92,6 +92,8 @@ public enum LogbookEditName {
             return marked ? "Mark Off Course" : "Mark Run Finished"
         }
         if old.laps.map(\.cones) != new.laps.map(\.cones) { return "Change Cones" }
+        // A lap left out of the figures, or counted again (#554).
+        if old.lapMarks != new.lapMarks { return lapMarking(old.laps, new.laps) }
         var changed: [String] = []
         if old.car != new.car { changed.append("Car") }
         if old.driver != new.driver { changed.append("Driver") }
@@ -102,6 +104,14 @@ public enum LogbookEditName {
         if old.tags != new.tags { changed.append("Tags") }
         if old.trackDayID != new.trackDayID { changed.append("Track Day") }
         return changed.count == 1 ? "Change \(changed[0])" : "Change Session"
+    }
+
+    /// "Leave Lap 7 Out", "Count Lap 7": what changed between the laps as they were and are.
+    public static func lapMarking(_ old: [LogbookEntry.LapRecord], _ new: [LogbookEntry.LapRecord]) -> String {
+        let before = Dictionary(old.map { ($0.number, $0.notCounted) }, uniquingKeysWith: { a, _ in a })
+        guard let changed = new.first(where: { before[$0.number] != nil && before[$0.number] != $0.notCounted })
+        else { return "Change Laps" }
+        return changed.counts ? "Count Lap \(changed.number)" : "Leave Lap \(changed.number) Out"
     }
 
     public static func of(_ old: TrackDay, _ new: TrackDay) -> String {

@@ -9,7 +9,7 @@ public struct SessionStats: Sendable, Equatable {
         public let seconds: Double
     }
 
-    /// The quickest complete lap of the session.
+    /// The quickest complete lap of the session that counts (#554).
     public let bestLap: LapTime?
     /// The lap the stats are for, when they are for one lap rather than the session.
     public let lap: LapTime?
@@ -17,26 +17,30 @@ public struct SessionStats: Sendable, Equatable {
     public let deltaToBest: Double?
     /// The highest speed, in the speed channel's own unit (m/s), over the session or the lap.
     public let topSpeed: Double?
-    /// The best sectors spliced into one lap, when the session has sectors.
+    /// The best sectors of the laps that count spliced into one lap, when the session has sectors.
     public let optimalLap: Double?
+    /// The laps `optimalLap` is spliced from, in lap order; empty without one.
+    public let optimalSources: [Int]
     /// How many complete laps the session has.
     public let completeLaps: Int
 
     /// The whole session.
     public init(session: TelemetrySession) {
         let complete = session.laps.filter(\.isComplete)
-        bestLap = Self.best(of: complete)
+        bestLap = Self.best(of: complete.counting(in: session))
         lap = nil
         deltaToBest = nil
         topSpeed = session[.speed]?.maxValue
-        optimalLap = session.sectors?.theoreticalLapTime
+        let sectors = session.countedSectors
+        optimalLap = sectors?.theoreticalLapTime
+        optimalSources = sectors?.optimalSources ?? []
         completeLaps = complete.count
     }
 
     /// One lap of the session: its time, its top speed and how it compares with the best.
     public init(lap: Lap, in session: TelemetrySession) {
         let complete = session.laps.filter(\.isComplete)
-        let best = Self.best(of: complete)
+        let best = Self.best(of: complete.counting(in: session))
         bestLap = best
         self.lap = lap.isComplete ? lap.duration.map { LapTime(number: lap.number, seconds: $0) } : nil
         deltaToBest = zip2(self.lap?.seconds, best?.seconds).map { $0 - $1 }
@@ -44,7 +48,9 @@ public struct SessionStats: Sendable, Equatable {
         topSpeed = session[.speed].flatMap { channel in
             zip(channel.times, channel.values).filter { $0.0 >= lap.start && $0.0 <= end }.map(\.1).max()
         }
-        optimalLap = session.sectors?.theoreticalLapTime
+        let sectors = session.countedSectors
+        optimalLap = sectors?.theoreticalLapTime
+        optimalSources = sectors?.optimalSources ?? []
         completeLaps = complete.count
     }
 

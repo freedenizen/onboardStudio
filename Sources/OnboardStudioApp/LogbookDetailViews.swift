@@ -145,6 +145,9 @@ struct LogbookDetail: View {
     /// Reads the sector times and speeds of a session entered before they were kept (#557).
     var readSplits: () async -> Void = {}
     @State private var readingSplits = false
+    /// Leaves a lap out for a reason, or counts it again when the reason is `nil` (#554), and reads
+    /// the figures again without it; `false` when the file could not be read.
+    var markLap: (Int, LapMark.Reason?) async -> Bool = { _, _ in false }
     /// The template the last New Project used; the next one uses it too.
     @AppStorage("logbook.projectTemplate") private var templateName = "Classic Dash"
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
@@ -173,8 +176,10 @@ struct LogbookDetail: View {
                     }
                     row(
                         "Best \(noun)", entry.bestLap.map { TimeParsing.lapTimeString($0) },
-                        detail: entry.bestLapNumber.map { "\(noun) \($0)" })
-                    row("Optimal \(noun)", entry.optimalLap.map { TimeParsing.lapTimeString($0) })
+                        detail: entry.bestLapNumber.map { "\(noun) \($0)" }, identifier: "logbook.detail.best")
+                    row(
+                        "Optimal \(noun)", entry.optimalLap.map { TimeParsing.lapTimeString($0) },
+                        detail: LapCountsMenu.sources(of: entry, noun: noun), identifier: "logbook.detail.optimal")
                     // A run's course ends at the finish: there is no rolling lap (#552).
                     if !entry.isRuns {
                         row("Fastest rolling lap", entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) })
@@ -197,7 +202,8 @@ struct LogbookDetail: View {
                         }
                     }
                 } else if !entry.laps.isEmpty {
-                    SessionLapTable(entry: entry, speedUnit: speedUnit, readingSplits: readingSplits)
+                    SessionLapTable(
+                        entry: entry, speedUnit: speedUnit, readingSplits: readingSplits, markLap: markLap)
                 }
                 SessionPerformanceSection(entry: entry, metric: speedUnit != .mph, measure: measurePerformance)
                 if !clips.isEmpty {
@@ -370,7 +376,10 @@ struct LogbookDetail: View {
         ]
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
+}
 
+// Outside the type's body, which the session's rows fill.
+extension LogbookDetail {
     @ViewBuilder private func row(
         _ label: String, _ value: String?, detail: String? = nil, identifier: String = ""
     ) -> some View {
@@ -379,7 +388,10 @@ struct LogbookDetail: View {
                 Text(label).foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     Text(value).monospacedDigit().accessibilityIdentifier(identifier)
-                    if let detail { Text(detail).foregroundStyle(.secondary) }
+                    if let detail {
+                        Text(detail).foregroundStyle(.secondary)
+                            .accessibilityIdentifier(identifier.isEmpty ? "" : identifier + ".detail")
+                    }
                 }
             }
         }

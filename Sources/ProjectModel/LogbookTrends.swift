@@ -96,11 +96,13 @@ public enum LogbookTrends {
     }
 
     /// How consistent a session was: the standard deviation of its flying laps — complete laps
-    /// within `tolerance` of the best — in seconds; `nil` with fewer than three.
+    /// that count (#554) within `tolerance` of the best — in seconds; `nil` with fewer than three.
     public static func lapSpread(of entry: LogbookEntry, tolerance: Double = 0.10) -> Double? {
         guard let best = entry.bestLap else { return nil }
         let flying = entry.laps.compactMap { lap -> Double? in
-            guard lap.isComplete, let seconds = lap.seconds, seconds <= best * (1 + tolerance) else { return nil }
+            guard lap.isComplete, lap.counts, let seconds = lap.seconds, seconds <= best * (1 + tolerance) else {
+                return nil
+            }
             return seconds
         }
         guard flying.count >= 3 else { return nil }

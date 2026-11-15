@@ -49,6 +49,7 @@ public enum RollingLap {
         guard !lengths.isEmpty else { return nil }
         let length = lengthMeters ?? lengths[lengths.count / 2]
         guard length > 0 else { return nil }
+        let marked = session.lapMarks.isEmpty ? [] : session.laps.filter { !session.counts($0) }
 
         let times = distance.times
         let values = distance.values
@@ -66,6 +67,11 @@ public enum RollingLap {
             let fraction = span > 0 ? (target - values[previous]) / span : 1
             let endTime = times[previous] + (times[end] - times[previous]) * fraction
             let duration = endTime - times[start]
+            // A window through a lap that does not count is not a lap the driver drove (#554).
+            if marked.contains(where: { $0.start < endTime && times[start] < ($0.end ?? .infinity) }) {
+                start += 1
+                continue
+            }
             // A later window must be quicker by more than rounding to take over, so steady laps
             // give the first lap rather than wherever floating point happened to dip.
             if best == nil || duration < (best?.duration ?? .infinity) - 1e-3 {
@@ -140,9 +146,15 @@ extension CoachingReference {
         case .fastestRolling:
             return RollingLap.profile(in: session, stepMeters: stepMeters)
         case .compositeOptimal:
-            let analysis =
-                session.sectors ?? Sectors.analyse(mode: .cornerAware(count: SectorMode.defaultCount), session: session)
-            return analysis.flatMap { CompositeLap.optimal(in: session, analysis: $0, stepMeters: stepMeters) }
+            return Self.optimalAnalysis(in: session)
+                .flatMap { CompositeLap.optimal(in: session, analysis: $0, stepMeters: stepMeters) }
         }
+    }
+
+    /// The sectors the optimal lap is spliced from: the session's own when it has them, so it
+    /// agrees with the Sector Times panel, corner-aware ones otherwise; only the laps that count.
+    public static func optimalAnalysis(in session: TelemetrySession) -> SectorAnalysis? {
+        (session.sectors ?? Sectors.analyse(mode: .cornerAware(count: SectorMode.defaultCount), session: session))?
+            .counting(in: session)
     }
 }

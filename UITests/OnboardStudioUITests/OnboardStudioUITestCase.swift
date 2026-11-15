@@ -136,12 +136,14 @@ class OnboardStudioUITestCase: XCTestCase {
 
     /// Chooses an item in a pop-up found by identifier rather than by the value it happens to
     /// show, which `choose(_:inPopUpShowing:)` needs and a table of near-identical pop-ups cannot
-    /// give.
+    /// give. An item may say more after its name, as the Coaching window's laps do once they are
+    /// read ("Lap 2 — 0:44.60 — possibly traffic", #554): `item` then matches its beginning.
     func choosePopUpItem(_ item: String, in popUp: XCUIElement) {
         XCTAssertTrue(popUp.waitForExistence(timeout: Self.timeout), "No pop-up to choose “\(item)” in")
         reveal(popUp)
         popUp.click()
-        let entry = popUp.menus.menuItems[item]
+        let named = NSPredicate(format: "title == %@ OR title BEGINSWITH %@", item, item + " — ")
+        let entry = popUp.menus.menuItems.matching(named).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: Self.timeout), "No pop-up item “\(item)”")
         entry.click()
     }

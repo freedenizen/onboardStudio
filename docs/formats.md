@@ -295,8 +295,12 @@ One JSON file per session in `~/Library/Application Support/OnboardStudio/Logboo
 by `Logbook.write` with ISO 8601 dates and sorted keys: `id`, `file` (`path`, `bookmark` as
 base64, `contentHash` SHA-256 hex, `byteCount`, `importerID`), `circuitID`, `trackName`,
 `configuration` (the layout driven, #549; absent = the circuit's usual layout), `date`,
-`car`, `driver`, `laps` (`[{ number, seconds, isComplete }]`), `bestLap`, `bestLapNumber`,
-`optimalLap`, `fastestRollingLap`, `topSpeed` (m/s), `distanceMeters` (#355), `notes`, `tags`, `conditions`
+`car`, `driver`, `laps` (`[{ number, seconds, isComplete, cones, offCourse, notCounted }]`, `notCounted`
+being why the driver left the lap out — `traffic|flag|offTrack|other`, #554 — absent when it counts),
+`lapMarks` (the laps left out, `[{ id, time, reason }]` with `time` a moment inside the lap in the
+file's seconds, #554; absent = none), `bestLap`, `bestLapNumber`, `optimalLap`, `optimalSources`
+(the lap numbers the optimal lap is spliced from, #554; absent until the laps are read again),
+`fastestRollingLap`, `topSpeed` (m/s), `distanceMeters` (#355), `notes`, `tags`, `conditions`
 (`{ weather: sunny|cloudy|overcast|rain|mixed, track: dry|damp|wet|drying|greasy, ambientCelsius, tyres, setup }`,
 every key optional, #348), `projects` and `exports` (`[{ path, name }]`, #349), `corners`
 (`[{ index, label, brakePointMeters, minimumSpeed, exitSpeed, timeInCorner }]`, the best lap's, #353),

@@ -11,6 +11,10 @@ struct SessionLapTable: View {
     let speedUnit: SpeedDisplayUnit
     /// The file is being read for the sectors and speeds of a session entered before they were kept.
     var readingSplits = false
+    /// Leaves a lap out of the figures for a reason, or counts it again (#554); `false` when the
+    /// file could not be read.
+    var markLap: ((Int, LapMark.Reason?) async -> Bool)?
+    @State private var markFailed = false
 
     private var sectorCount: Int { entry.sectorCount }
     private var hasSpeeds: Bool { entry.laps.contains { $0.topSpeed != nil } }
@@ -31,6 +35,11 @@ struct SessionLapTable: View {
                     }
                 }
                 ScrollView(.horizontal) { table(speeds: hasSpeeds) }
+            }
+            if markFailed {
+                Text("The session's file could not be read, so the lap was not changed. It may have moved.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if readingSplits {
                 HStack(spacing: 6) {
@@ -68,8 +77,9 @@ struct SessionLapTable: View {
             .font(.caption.bold()).foregroundStyle(.secondary)
             ForEach(entry.laps, id: \.number) { lap in
                 GridRow {
-                    Text("Lap \(lap.number)").accessibilityIdentifier("logbook.lap.\(lap.number)")
+                    lapCell(lap)
                     timeCell(lap)
+                        .contextMenu { lapMarkItems(lap) }
                     gapCell(lap)
                     ForEach(0..<sectorCount, id: \.self) { index in
                         sectorCell(lap, index, best: bestSectors[index])
@@ -87,11 +97,31 @@ struct SessionLapTable: View {
 
     // MARK: - Cells
 
+    /// The lap's number: a menu to leave it out or count it again (#554), where the Logbook can.
+    @ViewBuilder private func lapCell(_ lap: LogbookEntry.LapRecord) -> some View {
+        if let markLap {
+            LapCountsMenu(lap: lap, markLap: markLap) { markFailed = !$0 }
+                .contextMenu { lapMarkItems(lap) }
+        } else {
+            Text("Lap \(lap.number)").accessibilityIdentifier("logbook.lap.\(lap.number)")
+        }
+    }
+
+    /// The lap's right-click menu: leave it out, or count it again (#554).
+    @ViewBuilder private func lapMarkItems(_ lap: LogbookEntry.LapRecord) -> some View {
+        if let markLap {
+            LapCountsMenu.items(for: lap) { reason in
+                Task { markFailed = !(await markLap(lap.number, reason)) }
+            }
+        }
+    }
+
     private func timeCell(_ lap: LogbookEntry.LapRecord) -> some View {
         let isBest = lap.number == entry.bestLapNumber
         let text = lap.seconds.map { TimeParsing.lapTimeString($0) } ?? "—"
         return Text(text)
-            .foregroundStyle(isBest ? Color.accentColor : .primary)
+            // A lap left out (#554) is still listed, in secondary text.
+            .foregroundStyle(isBest ? Color.accentColor : lap.counts ? .primary : .secondary)
             .fontWeight(isBest ? .semibold : nil)
             .accessibilityLabel("Lap \(lap.number) \(text)\(isBest ? ", the best lap" : "")")
             .accessibilityIdentifier("logbook.lap.\(lap.number).time")
@@ -102,6 +132,11 @@ struct SessionLapTable: View {
             Text("partial").foregroundStyle(.secondary)
                 .help("Not driven from line to line: the recording began or ended during it")
                 .accessibilityIdentifier("logbook.lap.\(lap.number).gap")
+        } else if let reason = lap.notCounted {
+            // Left out (#554): why, in place of a gap to a best it cannot be.
+            Text("left out: \(reason.word)").foregroundStyle(.secondary)
+                .help("Left out of the best, optimal and rolling laps, consistency and Trends")
+                .accessibilityIdentifier("logbook.lap.\(lap.number).leftOut")
         } else if let gap = entry.gapToBest(lap), lap.number != entry.bestLapNumber {
             Text(String(format: "+%.2f", gap))
                 .accessibilityLabel(String(format: "%.2f seconds off the best", gap))

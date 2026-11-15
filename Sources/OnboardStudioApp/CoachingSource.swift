@@ -47,6 +47,11 @@ enum CoachingSourceKind: Hashable {
     var problem: String? { get }
     var settings: CoachingSettings? { get }
     func setSettings(_ settings: CoachingSettings, undoName: String)
+    /// The laps of the session the driver said do not count (#554): the Logbook entry's when the
+    /// session has one, so the Logbook and the project read the same marks.
+    var lapMarks: [LapMark] { get }
+    /// Leaves `lap` out for `reason`, or counts it again when `reason` is `nil`: one step of Undo.
+    func markLap(_ lap: Lap, as reason: LapMark.Reason?, undo: UndoManager?) async
     /// The project behind the reading; `nil` for a logbook session, which has no playhead, no
     /// picture and no plan.
     var editor: EditorModel? { get }
@@ -105,7 +110,35 @@ enum CoachingSourceKind: Hashable {
     var settings: CoachingSettings? { model.project.coaching }
 
     func setSettings(_ settings: CoachingSettings, undoName: String) {
+        var settings = settings
+        // The window's choices do not carry the laps left out; keep them for the input (#554).
+        settings.lapMarks = model.project.coaching?.lapMarks(for: settings.dataInputID) ?? []
         model.edit(undoName) { $0.coaching = settings }
+    }
+
+    /// The Logbook entry the input was entered as, while it is still in the Logbook.
+    private var logbookEntry: LogbookEntry? {
+        input?.dataSettings?.logbookEntryID.flatMap { LogbookModel.shared.entry(id: $0) }
+    }
+
+    var lapMarks: [LapMark] {
+        if let entry = logbookEntry { return entry.lapMarks }
+        guard let input else { return [] }
+        return model.project.coaching?.lapMarks(for: input.id) ?? []
+    }
+
+    func markLap(_ lap: Lap, as reason: LapMark.Reason?, undo: UndoManager?) async {
+        let name = reason == nil ? "Count \(lap.title)" : "Leave \(lap.title) Out"
+        // A session in the Logbook keeps its marks there, where its figures are read with them.
+        if let entry = logbookEntry {
+            await LogbookModel.shared.markLap(lap.number, of: entry.id, as: reason, undo: undo)
+            return
+        }
+        guard let input else { return }
+        var settings = model.project.coaching ?? CoachingSettings(dataInputID: input.id)
+        guard settings.dataInputID == input.id, settings.lapMarks.mark(of: lap)?.reason != reason else { return }
+        settings.lapMarks = settings.lapMarks.marking(lap, as: reason)
+        model.edit(name) { $0.coaching = settings }
     }
 
     func circuitKey(for session: TelemetrySession) -> String {
@@ -145,6 +178,14 @@ enum CoachingSourceKind: Hashable {
         guard var session = loaded else { return nil }
         session.traffic = entry.coaching?.traffic(for: InputID(entry.id)) ?? []
         return session
+    }
+
+    var lapMarks: [LapMark] { entry.lapMarks }
+
+    func markLap(_ lap: Lap, as reason: LapMark.Reason?, undo: UndoManager?) async {
+        let logbook = LogbookModel.shared
+        await logbook.markLap(lap.number, of: entry.id, as: reason, undo: undo)
+        if let changed = logbook.entry(id: entry.id) { entry = changed }
     }
     private(set) var problem: String?
     var message: String?
