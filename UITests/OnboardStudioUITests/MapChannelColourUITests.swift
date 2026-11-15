@@ -18,7 +18,9 @@ final class MapChannelColourUITests: OnboardStudioUITestCase {
         let legend = app.switches["trackMap.legend"]
         XCTAssertFalse(legend.exists, "A legend before there is anything to explain")
 
-        choosePopUpItem("Speed", in: channel)
+        // By typing its name: the pop-up sits at the foot of CI's 768-point screen, where its menu
+        // opens cut off and scrolls under a click, which then lands on the item below.
+        typeSelect("Speed", in: channel)
         expect(channel, toRead: "Speed")
         XCTAssertTrue(legend.waitForExistence(timeout: Self.timeout), "No legend toggle once a channel paints the lap")
         XCTAssertEqual(legend.value as? Int, 1, "The legend shows by default")
@@ -50,5 +52,15 @@ final class MapChannelColourUITests: OnboardStudioUITestCase {
             let well = app.descendants(matching: .any).matching(identifier: "settings.mapRamp.\(index)").firstMatch
             XCTAssertTrue(well.exists, "No well for the \(name.lowercased()) colour")
         }
+    }
+
+    /// Opens `popUp` and chooses `item` by typing it, as a menu lets a person do.
+    @MainActor
+    private func typeSelect(_ item: String, in popUp: XCUIElement) {
+        reveal(popUp)
+        popUp.click()
+        XCTAssertTrue(popUp.menus.firstMatch.waitForExistence(timeout: Self.timeout), "The pop-up did not open")
+        app.typeText(item)
+        app.typeKey(.return, modifierFlags: [])
     }
 }
