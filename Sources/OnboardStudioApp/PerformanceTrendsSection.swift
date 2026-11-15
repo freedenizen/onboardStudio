@@ -55,7 +55,10 @@ struct PerformanceTrendsSection: View {
                 .font(.caption.bold())
                 ForEach(PerformanceTrends.bests(in: points)) { car in
                     GridRow {
+                        // On the name alone: on the row it would be every cell's too.
                         Text(car.car.isEmpty ? "No car" : car.car)
+                            .accessibilityIdentifier(
+                                "logbook.trends.performance.car.\(car.car.isEmpty ? "none" : car.car)")
                         best(car.launch, measure: launchLabel) { PerformanceWording.seconds($0.value) }
                         best(car.quarterMile, measure: "Quarter mile") {
                             PerformanceWording.mark($0.value, trap: $0.trap, metric: metric)
@@ -65,7 +68,6 @@ struct PerformanceTrendsSection: View {
                         }
                     }
                     .font(.callout.monospacedDigit())
-                    .accessibilityIdentifier("logbook.trends.performance.car.\(car.car.isEmpty ? "none" : car.car)")
                 }
             }
             Text("Click a best to open the session that set it.").font(.caption).foregroundStyle(.secondary)

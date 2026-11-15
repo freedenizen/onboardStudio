@@ -66,7 +66,8 @@ final class PerformanceUITests: OnboardStudioUITestCase {
         // A straight-line log names no circuit, and its runs are shown all the same: the car's.
         let section = app.descendants(matching: .any).matching(identifier: "logbook.trends.performance").firstMatch
         XCTAssertTrue(section.waitForExistence(timeout: Self.timeout * 3), "No performance runs in Trends")
-        let best = section.buttons.matching(
+        // A best is a link to its session.
+        let best = section.links.matching(
             NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "0–60 mph 5.36 s", "0–100 km/h 5.56 s")
         ).firstMatch
         XCTAssertTrue(best.waitForExistence(timeout: Self.timeout), "No personal best of 5.36 s (or 5.56 s)")
