@@ -51,6 +51,7 @@ struct SettingsView: View {
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }
+            MapColourRampSettings()
             Section("Editing") {
                 Picker("Arrow keys move objects by", selection: $nudgeStep) {
                     Text("1 px").tag(1.0)

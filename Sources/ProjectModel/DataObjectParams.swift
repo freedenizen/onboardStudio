@@ -87,6 +87,11 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
     /// lines through each corner across the session, so where to be is seen rather than inferred.
     public var showLineSpread: Bool
     public var spreadColor: RGBAColor
+    /// Paints the lap being driven by a channel's value (#561), a role identifier, on the ramp set in
+    /// Settings from the session's low to its high. `nil` leaves the line its colour.
+    public var colorChannel: String?
+    /// A gradient bar along the map's foot naming the channel and its low and high values.
+    public var showChannelLegend: Bool
 
     public init(
         lineColor: RGBAColor = .white,
@@ -113,7 +118,8 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         showBrakeMarks: Bool = false,
         followCorner: Bool = false,
         showLineSpread: Bool = false,
-        spreadColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.35)
+        spreadColor: RGBAColor = RGBAColor(red: 1, green: 1, blue: 1, alpha: 0.35),
+        colorChannel: String? = nil, showChannelLegend: Bool = true
     ) {
         self.lineColor = lineColor
         self.lineWidth = lineWidth
@@ -140,6 +146,8 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         self.followCorner = followCorner
         self.showLineSpread = showLineSpread
         self.spreadColor = spreadColor
+        self.colorChannel = colorChannel
+        self.showChannelLegend = showChannelLegend
     }
 
     /// Whether any option reads the coaching analysis.
@@ -160,7 +168,7 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         case background, secondInputID, secondDotColor
         case trace, colorBySector, sectorColors, showSectorTicks, showCornerNumbers, labelColor, labelScale
         case showReferenceLine, referenceLineColor, colorByDelta, gainColor, lossColor, showBrakeMarks, followCorner
-        case showLineSpread, spreadColor
+        case showLineSpread, spreadColor, colorChannel, showChannelLegend
     }
 
     public init(from decoder: any Decoder) throws {
@@ -200,6 +208,9 @@ public struct TrackMapParams: Hashable, Codable, Sendable {
         followCorner = try c.decodeIfPresent(Bool.self, forKey: .followCorner) ?? d.followCorner
         showLineSpread = try c.decodeIfPresent(Bool.self, forKey: .showLineSpread) ?? d.showLineSpread
         spreadColor = try c.decodeIfPresent(RGBAColor.self, forKey: .spreadColor) ?? d.spreadColor
+        // #561: absent from every older map, which paints no channel; so the legend's default reaches none.
+        colorChannel = try c.decodeIfPresent(String.self, forKey: .colorChannel)
+        showChannelLegend = try c.decodeIfPresent(Bool.self, forKey: .showChannelLegend) ?? d.showChannelLegend
     }
 }
 

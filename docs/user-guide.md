@@ -777,7 +777,7 @@ no turns; name those on the circuit's card. To share a circuit you have set up, 
 
 Speedometer, tachometer, custom gauge (the *Gauge Designer*: needle styles, sweep, ticks, colour
 zones, face images), bar/level, 2D graph (against time, distance, the lap with a best-lap ghost, or another channel — see below),
-g-force plot, track map (with a second vehicle and Apple Maps imagery), steering wheel, gear, lap counter, timers
+g-force plot, track map (with a second vehicle, Apple Maps imagery and the lap coloured by any channel — see below), steering wheel, gear, lap counter, timers
 (current/last/best lap, session, project time, time of day, delta to best), a **timing panel** (best,
 previous and current lap with lap numbers plus speed-vs-best and time-vs-best lanes), a **stat card**
 (the headline numbers — see below), **indicator
@@ -789,6 +789,24 @@ Wherever the inspector asks for a channel it lists the file's channels by the at
 *Lateral G*, *Brake pressure (front)* — and a channel the file named itself by that name, with
 where it came from: `analog_1 (CAN bus)`. Hover over a control whose one-word label does not say
 enough, such as a needle's *Tail* or *Hub*, for a short explanation.
+
+#### A track map coloured by a channel
+
+A **Track Map** can paint the lap being driven by any channel the file has: **Lap Colour ▸ Colour
+by** in its inspector. Speed shows where you were slow and fast all the way round, the brake
+pressure where the brakes went on, the throttle where you were flat, lateral G how hard you were
+cornering. The line goes from the session's lowest value to its highest across the whole session,
+so a colour means the same speed on every lap: a lap that never reaches red never reached the speed
+the others did. The slow out-lap and the pit lane do not stretch the scale. As each new lap starts,
+the map paints that lap; outside a lap the outline stays its own colour.
+
+A **legend** along the map's foot names the channel and its range in the unit the object shows it
+in, such as *Speed 61–182 km/h*; the circuit is drawn above it, and **Legend** hides it on a small
+map. Colouring by time gained and lost (in the map's Coaching section) paints the same line, so
+choosing one turns the other off.
+
+The colours are the same on every map: blue, green, yellow and red, lowest to highest, unless you
+change them in **Settings ▸ Maps**. **Restore Default Colours** puts them back.
 
 Every slider in the inspector has a box beside it holding its exact value, in the unit shown after
 it: a crop of `12` %, a smoothing of `1.5` s, a lens yaw of `-90` °. Type a value and press Return
