@@ -250,18 +250,6 @@ struct Coach: AsyncParsableCommand {
         return (profile, LogbookReferences.phrase(for: entry, lap: nil))
     }
 
-    private func parseReference() throws -> CoachingReference {
-        let text = reference.lowercased()
-        switch text {
-        case "best": return .sessionBest
-        case "rolling": return .fastestRolling
-        case "optimal": return .compositeOptimal
-        default:
-            if text.hasPrefix("lap:"), let number = Int(text.dropFirst(4)) { return .lap(number) }
-            throw ValidationError("--reference must be best, rolling, optimal, lap:N, or logbook:pb|last|<date>.")
-        }
-    }
-
     // MARK: - Text report
 
     private func printReport(_ analysis: CoachingAnalysis, lapNumber: Int, units: CoachingUnits) {
@@ -305,6 +293,18 @@ struct Coach: AsyncParsableCommand {
 }
 
 extension Coach {
+    private func parseReference() throws -> CoachingReference {
+        let text = reference.lowercased()
+        switch text {
+        case "best": return .sessionBest
+        case "rolling": return .fastestRolling
+        case "optimal": return .compositeOptimal
+        default:
+            if text.hasPrefix("lap:"), let number = Int(text.dropFirst(4)) { return .lap(number) }
+            throw ValidationError("--reference must be best, rolling, optimal, lap:N, or logbook:pb|last|<date>.")
+        }
+    }
+
     /// A data file read by the importer that recognises it, or `--format`'s.
     func importFile(_ url: URL) throws -> TelemetrySession {
         let candidates = try FormatDetector.candidates(for: url)

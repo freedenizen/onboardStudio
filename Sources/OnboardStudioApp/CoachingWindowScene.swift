@@ -107,6 +107,15 @@ struct CoachingSelection: Hashable, Sendable {
             traffic: traffic, dismissedTraffic: dismissedTraffic)
     }
 
+    /// `session` with the marks chosen here: traffic, dismissed suggestions, laps left out.
+    func marking(_ session: TelemetrySession) -> TelemetrySession {
+        var marked = session
+        marked.traffic = traffic
+        marked.dismissedTraffic = dismissedTraffic
+        marked.lapMarks = lapMarks
+        return marked
+    }
+
     /// The analysis options the choices amount to: the window offers the telemetry's traffic
     /// suggestions (#572).
     var options: CoachingOptions {

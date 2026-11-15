@@ -384,10 +384,7 @@ extension CoachingContent {
 
     func analyse(_ selection: CoachingSelection, session read: TelemetrySession) async {
         // The marks as chosen, not as the last compile left them on the session.
-        var marked = read
-        marked.traffic = selection.traffic
-        marked.dismissedTraffic = selection.dismissedTraffic
-        marked.lapMarks = selection.lapMarks
+        var marked = selection.marking(read)
         isAnalysing = true
         defer { isAnalysing = false }
         // Other cars' logs from the same session, and what the video showed, for the suggestions
