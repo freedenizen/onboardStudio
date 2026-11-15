@@ -145,6 +145,47 @@ struct TrafficSuggestionsTests {
         #expect(slowed.sentence(units: .metric) == "You slowed for 25 m where most of your other laps did not")
     }
 
+    /// One picture a second through the session, with a car ahead where `ahead` says.
+    static func pictures(of session: TelemetrySession, ahead: (Double) -> Bool) -> [PictureSample] {
+        let range = session.timeRange ?? 0...0
+        return stride(from: range.lowerBound, through: range.upperBound, by: 1).map {
+            PictureSample(time: $0, carAhead: ahead($0))
+        }
+    }
+
+    @Test func aCarAheadInTheVideoSuggestsTheCornersItCovers() throws {
+        var session = CoachingFixture.session(
+            drivings: Array(repeating: CoachingFixture.fast, count: 4), pedals: true)
+        let lap = session.laps[2]
+        let end = try #require(lap.end)
+        session.pictureSamples = Self.pictures(of: session) { (lap.start...end).contains($0) }
+        let suggestions = try Self.find(in: session)
+        #expect(suggestions.map(\.lapNumber) == [3, 3])
+        #expect(suggestions.map(\.corner) == [0, 1])
+        for suggestion in suggestions {
+            #expect(suggestion.evidence == [.inPicture(share: 1)])
+        }
+        let sentence = suggestions.first?.sentence(units: .metric)
+        #expect(sentence == "The video shows a car close ahead through 100 % of the corner")
+        // Too few laps to say what is usual does not stop the video.
+        var options = CoachingOptions()
+        options.trafficSuggestions.minimumLaps = 5
+        let corners = try Self.corners(of: session)
+        #expect(TrafficSuggestions.find(in: session, corners: corners, options: options).count == 2)
+    }
+
+    @Test func aStrayPictureOrAGlimpseIsNoCarAhead() throws {
+        var session = CoachingFixture.session(
+            drivings: Array(repeating: CoachingFixture.fast, count: 4), pedals: true)
+        let lap = session.laps[2]
+        // One picture of the lap: never two in a row.
+        session.pictureSamples = Self.pictures(of: session) { abs($0 - (lap.start + 5)) < 0.5 }
+        #expect(try Self.find(in: session).isEmpty)
+        // Every third picture: in a row nowhere, and under half of any corner.
+        session.pictureSamples = Self.pictures(of: session) { Int($0) % 3 == 0 }
+        #expect(try Self.find(in: session).isEmpty)
+    }
+
     @Test func runsBridgeShortGaps() {
         let flags = [false, true, true, false, true, false, false, false, true]
         #expect(TrafficSuggestions.runs(of: flags, bridging: 1) == [1...4, 8...8])

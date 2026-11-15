@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q1074573",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 54.45583,
+  "longitude": -1.56278,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Croft Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 19.1,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 54.455396,
+    "longitude": -1.5555425
+  },
+  "turnNames": []
+}

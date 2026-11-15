@@ -1,0 +1,23 @@
+{
+  "circuitID": "Q172876",
+  "configuration": "Grand Prix",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 46.86395,
+  "longitude": 3.16231,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Circuit de Nevers Magny-Cours",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 21.1,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 46.8640595,
+    "longitude": 3.1637265
+  },
+  "turnNames": []
+}

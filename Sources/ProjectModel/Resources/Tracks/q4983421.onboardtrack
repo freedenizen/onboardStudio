@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q4983421",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 51.3431,
+  "longitude": 0.50139,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Buckmore Park Kart Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 12.0,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 51.3425505,
+    "longitude": 0.5010885
+  },
+  "turnNames": []
+}

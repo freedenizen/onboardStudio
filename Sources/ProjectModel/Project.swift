@@ -89,7 +89,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 4
+    public static let currentSchemaVersion = 6
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -187,6 +187,16 @@ public struct Project: Hashable, Codable, Sendable {
     public var videoInputs: [Input] { inputs.filter(\.kind.isVideo) }
     public var dataInputs: [Input] { inputs.filter(\.kind.isData) }
 
+    /// The camera that filmed a data input: the video it shares a clock with — embedded telemetry
+    /// and a sidecar log follow their video — else the video in the same place in the list.
+    public func camera(for dataInputID: InputID) -> InputID? {
+        let videos = videoInputs
+        guard let data = input(dataInputID), !videos.isEmpty else { return nil }
+        if let shared = videos.first(where: { $0.sync == data.sync }) { return shared.id }
+        let index = dataInputs.firstIndex { $0.id == dataInputID } ?? 0
+        return videos[min(index, videos.count - 1)].id
+    }
+
     // MARK: - Serialisation
 
     public static func decode(_ data: Data) throws -> Project {
@@ -223,14 +233,31 @@ public struct Project: Hashable, Codable, Sendable {
         if schemaVersion < 4 {
             // 3 → 4 (#477): a RaceChrono archive's first lap ran from the start of the log, and a
             // lap column that was blank until the first crossing gave an incomplete first lap.
-            for index in inputs.indices {
-                guard case .data(var data) = inputs[index].kind else { continue }
-                data.legacyFirstLap = true
-                inputs[index].kind = .data(data)
-            }
+            onEveryDataInput { $0.legacyFirstLap = true }
             schemaVersion = 4
         }
+        if schemaVersion < 5 {
+            // 4 → 5 (#585): every corner the reference lap found was a corner, a kink only that lap
+            // found among them, on the map, in corner-aware sectors and in the coaching.
+            onEveryDataInput { $0.legacyCornersPerLap = true }
+            schemaVersion = 5
+        }
+        if schemaVersion < 6 {
+            // 5 → 6 (#598): the session's laps only took corners away from the reference lap; a
+            // corner most laps found and the reference lap drove through was not one.
+            onEveryDataInput { $0.legacyCornersOnlyDropped = true }
+            schemaVersion = 6
+        }
         schemaVersion = Self.currentSchemaVersion
+    }
+
+    /// Changes the settings of every data input, the way a migration step pins what its build did.
+    private mutating func onEveryDataInput(_ change: (inout DataInputSettings) -> Void) {
+        for index in inputs.indices {
+            guard case .data(var data) = inputs[index].kind else { continue }
+            change(&data)
+            inputs[index].kind = .data(data)
+        }
     }
 }
 

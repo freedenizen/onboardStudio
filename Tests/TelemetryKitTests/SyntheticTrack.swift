@@ -64,7 +64,13 @@ enum SyntheticTrack {
         /// Setting it to a bend's apex puts a corner on the line, which is the case a lap-at-a-
         /// time corner detector gets wrong unless it treats the lap as a loop.
         startOffset: Double = 0,
-        speedInSector: (_ lap: Int, _ distanceIntoLap: Double) -> Double = { _, _ in 1 }
+        speedInSector: (_ lap: Int, _ distanceIntoLap: Double) -> Double = { _, _ in 1 },
+        /// How far a lap steps sideways on the start straight, metres: a smooth sidestep and back
+        /// over `jogSpan`, starting `jogStart` metres after the line — the kink one lap finds and
+        /// the next does not (#585). 0, the default, drives the plain straight.
+        jog: (_ lap: Int) -> Double = { _ in 0 },
+        jogStart: Double = 60,
+        jogSpan: Double = 80
     ) -> TelemetrySession {
         let g = Geometry(straight: straight, radius: radius)
         // A whole number of samples per lap, so every lap is exactly one lap long and the lap
@@ -82,8 +88,12 @@ enum SyntheticTrack {
 
         func emit(_ into: Double, lap: Int) {
             let point = point(at: into + startOffset, geometry: g)
+            var sideways = 0.0
+            if lap < lapCount, (jogStart...(jogStart + jogSpan)).contains(into) {
+                sideways = jog(lap) * (1 - cos(2 * .pi * (into - jogStart) / jogSpan)) / 2
+            }
             times.append(now)
-            latitudes.append(origin.latitude + flip * point.y / 110_540)
+            latitudes.append(origin.latitude + flip * (point.y + sideways) / 110_540)
             longitudes.append(origin.longitude + point.x / metersPerDegreeEast)
             distances.append(Double(lap) * g.lapLength + into)
         }

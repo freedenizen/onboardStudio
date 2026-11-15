@@ -1,12 +1,18 @@
 import Foundation
 
-/// A corner of one lap the telemetry says may have been traffic (#572): a place for the driver to
-/// look, never a verdict. A lift where the other laps are flat out looks the same whether a car
+/// A corner of one lap the telemetry says may have been traffic (#572), or another car's log puts
+/// a car close ahead in (#574): a place for the driver to look, never a verdict. A lift where the other laps are flat out looks the same whether a car
 /// was in the way or the driver made a mistake, so a suggestion changes nothing in the coaching
 /// until the driver marks the corner; dismissing it is remembered.
 public struct TrafficSuggestion: Sendable, Hashable, Codable, Identifiable {
     /// What the telemetry saw.
     public enum Evidence: Sendable, Hashable, Codable {
+        /// Another car's log from the same session puts `car` close ahead through the corner, at
+        /// best `seconds` ahead (#574).
+        case following(car: String, seconds: Double)
+        /// The onboard video shows a car close ahead in `share` (0–1) of the pictures read through
+        /// the corner (#573).
+        case inPicture(share: Double)
         /// The lap lifted for `meters` where most of the session's other laps were flat out; read
         /// from the throttle channel, or without one, the lap slowed where the others did not.
         case lift(meters: Double, fromThrottle: Bool)
@@ -40,6 +46,10 @@ public struct TrafficSuggestion: Sendable, Hashable, Codable, Identifiable {
         let format = CoachingNotes.Formatter(units: units)
         let parts = evidence.map { evidence -> String in
             switch evidence {
+            case .following(let car, let seconds):
+                "you were \(format.seconds(seconds)) behind the \(car)"
+            case .inPicture(let share):
+                "the video shows a car close ahead through \(Int((share * 100).rounded())) % of the corner"
             case .lift(let meters, true):
                 "you lifted for \(format.metres(meters)) where most of your other laps were flat out"
             case .lift(let meters, false):
@@ -80,11 +90,16 @@ public enum TrafficSuggestions {
         public var maximumLapTolerance: Double
         /// Fewer laps than this say nothing about what is usual.
         public var minimumLaps: Int
+        /// The video suggests a corner when a car is ahead in at least this share of its pictures…
+        public var pictureShare: Double
+        /// …and in this many pictures in a row, so one stray frame is never a car (#573).
+        public var picturesInARow: Int
 
         public init(
             minimumLiftMeters: Double = 20, liftFraction: Double = 0.5, fullThrottleFraction: Double = 0.9,
             slowingG: Double = 0.1, minimumSlowSeconds: Double = 0.5, spreadMultiple: Double = 2,
-            maximumLapTolerance: Double = 0.5, minimumLaps: Int = 3
+            maximumLapTolerance: Double = 0.5, minimumLaps: Int = 3, pictureShare: Double = 0.5,
+            picturesInARow: Int = 2
         ) {
             self.minimumLiftMeters = max(0, minimumLiftMeters)
             self.liftFraction = min(max(liftFraction, 0), 1)
@@ -94,13 +109,17 @@ public enum TrafficSuggestions {
             self.spreadMultiple = max(0, spreadMultiple)
             self.maximumLapTolerance = max(0, maximumLapTolerance)
             self.minimumLaps = max(2, minimumLaps)
+            self.pictureShare = min(max(pictureShare, 0), 1)
+            self.picturesInARow = max(1, picturesInARow)
         }
     }
 
     /// Every suggestion in `session`, by lap and then corner, leaving out any corner a traffic mark
     /// already covers a quarter of (as a mark leaves a corner out) and any the driver dismissed.
     /// `corners` are the reference's, read on every lap at the same distance, as
-    /// `ConsistencyStats` reads them.
+    /// `ConsistencyStats` reads them. A car ahead (`session.carsAhead`) through a quarter of a
+    /// corner is suggested however few laps there are; the rest needs `minimumLaps` to say what
+    /// is usual.
     public static func find(
         in session: TelemetrySession, corners: [Corner], options: CoachingOptions = CoachingOptions()
     ) -> [TrafficSuggestion] {
@@ -110,27 +129,32 @@ public enum TrafficSuggestions {
         guard let best = complete.compactMap(\.duration).min(), !corners.isEmpty else { return [] }
         let profiles = complete.filter { ($0.duration ?? .infinity) <= best * (1 + settings.maximumLapTolerance) }
             .compactMap { LapProfile(lap: $0, in: session, stepMeters: options.stepMeters) }
-        guard profiles.count >= settings.minimumLaps else { return [] }
+        let readsLaps = profiles.count >= settings.minimumLaps
+        guard readsLaps || !session.carsAhead.isEmpty || !session.pictureSamples.isEmpty else { return [] }
         let labels = session.cornerNames(for: corners).map(\.label)
         guard let quickest = profiles.min(by: { $0.duration < $1.duration }) else { return [] }
         let bounds = boundaries(of: corners, on: quickest, options: options)
-        let lifts = lifts(in: profiles, options: settings, step: options.stepMeters)
-        let slow = slowCorners(in: profiles, bounds: bounds, options: settings)
+        let lifts =
+            readsLaps ? lifts(in: profiles, options: settings, step: options.stepMeters) : profiles.map { _ in [] }
+        let slow =
+            readsLaps
+            ? slowCorners(in: profiles, bounds: bounds, options: settings)
+            : profiles.map { _ in corners.map { _ in nil } }
         var suggestions: [TrafficSuggestion] = []
         for (lap, profile) in profiles.enumerated() {
             guard let number = profile.pieces.first?.lapNumber else { continue }
             for corner in corners.indices {
                 let from = bounds[corner] * profile.lengthMeters
                 let to = bounds[corner + 1] * profile.lengthMeters
-                var evidence: [TrafficSuggestion.Evidence] = []
+                let window = LapProfile.Window(
+                    start: profile.sessionTime(atDistance: from), end: profile.sessionTime(atDistance: to))
+                var evidence = following(in: window, of: session) + inPicture(window, of: session, options: settings)
                 let inside = lifts[lap].filter { from <= $0.counted && $0.counted < to }
                 if let fromThrottle = inside.first?.fromThrottle {
                     evidence.append(.lift(meters: inside.reduce(0) { $0 + $1.meters }, fromThrottle: fromThrottle))
                 }
                 if let seconds = slow[lap][corner] { evidence.append(.slow(seconds: seconds)) }
                 guard !evidence.isEmpty else { continue }
-                let window = LapProfile.Window(
-                    start: profile.sessionTime(atDistance: from), end: profile.sessionTime(atDistance: to))
                 guard !answered(window, in: session) else { continue }
                 suggestions.append(
                     TrafficSuggestion(
@@ -140,6 +164,28 @@ public enum TrafficSuggestions {
             }
         }
         return suggestions
+    }
+
+    /// The car close ahead through a quarter of `window`, at its closest: the nearest car when
+    /// two were.
+    static func following(in window: LapProfile.Window, of session: TelemetrySession) -> [TrafficSuggestion.Evidence] {
+        let ahead = session.carsAhead.filter { shared($0.window.start...$0.window.end, window) >= window.duration / 4 }
+        guard let nearest = ahead.min(by: { $0.closestGap < $1.closestGap }) else { return [] }
+        return [.following(car: nearest.car, seconds: nearest.closestGap)]
+    }
+
+    /// The share of the pictures through `window` with a car close ahead, when it is enough and
+    /// some of them come in a row (#573).
+    static func inPicture(
+        _ window: LapProfile.Window, of session: TelemetrySession, options: Options
+    ) -> [TrafficSuggestion.Evidence] {
+        let samples = session.pictureSamples.filter { window.start <= $0.time && $0.time < window.end }
+        guard samples.count >= options.picturesInARow else { return [] }
+        let seen = samples.filter(\.carAhead).count
+        let share = Double(seen) / Double(samples.count)
+        let longest = runs(of: samples.map(\.carAhead), bridging: 0).map(\.count).max() ?? 0
+        guard share >= options.pictureShare, longest >= options.picturesInARow else { return [] }
+        return [.inPicture(share: share)]
     }
 
     /// Whether the driver has already said what `window` was: a mark covering a quarter of it, as

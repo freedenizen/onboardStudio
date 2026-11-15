@@ -316,7 +316,7 @@ struct TrackMapMarks: Sendable {
             }
         }
         if params.showCornerNumbers {
-            let found = CornerDetector.corners(of: reference, in: session)
+            let found = session.agreedCorners(of: reference)
             // A corner the driver left unnamed among named ones is not one of the circuit's turns
             // — a kink one lap finds and the next does not — and a number on it would be a turn
             // the circuit does not have (#548).

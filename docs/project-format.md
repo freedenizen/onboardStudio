@@ -79,6 +79,17 @@ resolves to the old values.
   partial. Every data input of a project at schema 3 or earlier is given `legacyFirstLap` true,
   so its lap numbers, counts, best lap and deltas stay as they were. A data file added to such a
   project afterwards is a new input and is read the new way.
+- **Schema 5 (#585).** Only the corners most of a session's complete laps agree on are corners: a
+  kink the reference lap finds and most laps do not is not numbered on the track map, does not
+  split a corner-aware sector, and is not coached. Before, every corner the reference lap found
+  was one. Every data input of a project at schema 4 or earlier is given `legacyCornersPerLap`
+  true, so its map, sectors and coaching keep the corners they had.
+- **Schema 6 (#598).** A corner most of a session's laps find is a corner of the reference lap too,
+  placed where that lap drove the bend, though the reference lap did not turn enough there to find
+  it. At schema 5 the laps only took corners away. Every data input of a project at schema 5 is
+  given `legacyCornersOnlyDropped` true, so its corners stay as they were; one older still has
+  `legacyCornersPerLap` from schema 5's step, which reads every corner as the reference lap finds
+  it.
 
 ### This covers `project.json` only
 
@@ -116,7 +127,7 @@ can carry; the answer is a migration pinning the old value, never regenerating t
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 6,
   "settings": { "outputWidth": 1920, "outputHeight": 1080, "frameRate": 30, "duration": null,
                 "framing": { "zoom": 1, "centerX": 0.5, "centerY": 0.5, "crop": { "top": 0, "left": 0, "bottom": 0, "right": 0 } },
                 "overlayOpacity": 1, "speedUnit": "automatic", "attributeMappings": {},
@@ -190,7 +201,7 @@ those builds did. A file that recorded mph or km/h is shown in its own unit eith
 |---|---|
 | `id` | UUID, referenced by display objects |
 | `source.path` | file path, relative to the package or absolute |
-| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … , "logbookEntryID": <uuid> } } }` — `logbookEntryID` (optional, #349) is the logbook entry the file was entered as when it was added; absent before the logbook existed or with the preference off; bookkeeping that changes no render. `legacyFirstLap` (always written, #477): `true` on the inputs of a project saved before schema 4, whose first lap is read as those builds read it; `false` on every input added since |
+| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … , "logbookEntryID": <uuid> } } }` — `logbookEntryID` (optional, #349) is the logbook entry the file was entered as when it was added; absent before the logbook existed or with the preference off; bookkeeping that changes no render. `legacyFirstLap` (always written, #477): `true` on the inputs of a project saved before schema 4, whose first lap is read as those builds read it; `false` on every input added since. `legacyCornersPerLap` (always written, #585): `true` on the inputs of a project saved before schema 5, which number every corner the reference lap finds; `false` on every input added since, which number only the corners most of the session's laps agree on. `legacyCornersOnlyDropped` (always written, #598): `true` on the inputs of a project saved at schema 5, whose laps only take corners away from the reference lap; `false` on every input since, which also gain a corner most laps find and the reference lap drove through |
 | `sync` | `startPositionInInput`, `offsetInProject`, `playSpeed` — `inputTime = (t − offsetInProject) × playSpeed + startPositionInInput` |
 
 Data input settings (all optional):

@@ -8,7 +8,12 @@ import TelemetryKit
 
 extension TrackLibrary {
     /// The app's circuits: the user's own, or the UI tests' scratch folder.
-    static var app: TrackLibrary { TrackLibrary(directory: UITestSupport.tracksDirectory) }
+    static var app: TrackLibrary {
+        // The definitions that ship with the app sit behind the driver's own (#584); a UI test
+        // reads none, so what ships cannot change what a test finds at a fixture's circuit.
+        TrackLibrary(
+            directory: UITestSupport.tracksDirectory, builtIn: UITestSupport.isActive ? nil : TrackLibrary.bundled)
+    }
 }
 
 extension EditorModel {
@@ -217,7 +222,7 @@ extension EditorModel {
     /// The corners this data input's reference lap has, for naming them.
     func corners(for id: InputID) -> [Corner] {
         guard let session = sessions[id], let reference = Sectors.referenceLap(in: session) else { return [] }
-        return CornerDetector.corners(of: reference, in: session)
+        return session.agreedCorners(of: reference)
     }
 
     /// Names the `index`-th corner of `id`'s lap, pinning the name to where the corner is (#548).

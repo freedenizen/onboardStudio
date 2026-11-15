@@ -1,3 +1,4 @@
+import MediaKit
 import ProjectModel
 import SwiftUI
 import TelemetryKit
@@ -34,6 +35,28 @@ extension CoachingContent {
             settings.dismissedTraffic.append(suggestion.window)
             source.setSettings(settings, undoName: "Dismiss Traffic Suggestion")
         }
+    }
+
+    /// Where another car's log in the Logbook puts it close ahead (#574): every session that could
+    /// have shared the track with this one, read against it.
+    func carsAhead(in session: TelemetrySession, input: Input) async -> [CarAhead] {
+        guard session.hasPosition, let range = session.timeRange,
+            let start = session.epoch(forSessionTime: range.lowerBound),
+            let end = session.epoch(forSessionTime: range.upperBound)
+        else { return [] }
+        let logbook = LogbookModel.shared
+        let others = LogbookReferences.sharingTheTrack(
+            at: source.circuitKey(for: session), during: start...end, in: logbook.entries,
+            excluding: source.ownContentHash, path: input.source.path)
+        var found: [CarAhead] = []
+        for entry in others {
+            guard let other = await logbook.session(for: entry), other.hasAbsoluteTime else { continue }
+            let car = entry.car.isEmpty ? "other car" : entry.car
+            found += await Task.detached(priority: .userInitiated) {
+                CarsAhead.following(in: session, behind: other, car: car)
+            }.value
+        }
+        return found
     }
 
     static func undoName(for kind: TrafficSpan.Kind?) -> String {

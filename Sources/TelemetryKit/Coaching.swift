@@ -176,7 +176,12 @@ public struct CoachingAnalysis: Sendable {
             self.profile = profile
             self.phrase = phrase
             self.sameSession = sameSession
-            corners = CornerDetector.corners(of: profile, options: options.corners)
+            // The session's laps vote on a reference of its own; a reference from another session
+            // is read as it is, its own laps not being here (#585).
+            corners =
+                sameSession
+                ? session.agreedCorners(of: profile, options: options.corners)
+                : CornerDetector.corners(of: profile, options: options.corners)
             metrics = CornerMetrics.measure(corners: corners, of: profile, options: options.metrics)
             consistency = sameSession ? ConsistencyStats.measure(in: session, corners: corners, options: options) : nil
             suggestions =

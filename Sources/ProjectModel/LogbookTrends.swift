@@ -29,8 +29,10 @@ public struct CornerRecord: Hashable, Codable, Sendable {
 extension LogbookEntry {
     /// The corner measurement this build makes; step it when a fix changes what is measured, so
     /// entries read before it are offered a fresh reading (#438). 2: braking that begins after a
-    /// corner has ended is the next corner's.
-    public static let cornerMeasurement = 2
+    /// corner has ended is the next corner's. 3: a corner most of the session's laps do not find
+    /// is not one of its corners (#585). 4: a corner most of them find is one, though the best lap
+    /// drove through it (#598).
+    public static let cornerMeasurement = 4
 
     /// Whether Trends should offer to read this entry's corners: none kept yet, or kept from a
     /// measurement since corrected.
@@ -47,7 +49,7 @@ extension LogbookEntry {
         guard let best = LapDeltas.sessionBest(in: session), let profile = LapProfile(lap: best, in: session) else {
             return []
         }
-        let corners = CornerDetector.corners(of: profile)
+        let corners = session.agreedCorners(of: profile)
         let metrics = CornerMetrics.measure(corners: corners, of: profile)
         let names = session.cornerNames(for: corners)
         return metrics.enumerated().map { index, metric in
@@ -206,21 +208,7 @@ public enum LogbookTrends {
     public static func chartLayout(of points: [Point], calendar: Calendar = .current, dayGap: Double = 1)
         -> TrendsChartLayout
     {
-        var positions: [Double] = []
-        var days: [TrendsChartLayout.Day] = []
-        var next = 0.0
-        for point in points {
-            let day = calendar.startOfDay(for: point.date)
-            if let current = days.last, current.date == day {
-                days[days.count - 1].last = next
-            } else {
-                if !days.isEmpty { next += dayGap }
-                days.append(TrendsChartLayout.Day(date: day, first: next, last: next))
-            }
-            positions.append(next)
-            next += 1
-        }
-        return TrendsChartLayout(positions: positions, days: days)
+        TrendsChartLayout(dates: points.map(\.date), calendar: calendar, dayGap: dayGap)
     }
 
     public static func lapTime(_ seconds: Double) -> String { TimeParsing.lapTimeString(seconds) }
@@ -243,6 +231,26 @@ public struct TrendsChartLayout: Hashable, Sendable {
     /// One position per point, in the points' order.
     public var positions: [Double]
     public var days: [Day]
+
+    /// Sessions driven on `dates`, oldest first.
+    public init(dates: [Date], calendar: Calendar = .current, dayGap: Double = 1) {
+        var positions: [Double] = []
+        var days: [Day] = []
+        var next = 0.0
+        for date in dates {
+            let day = calendar.startOfDay(for: date)
+            if let current = days.last, current.date == day {
+                days[days.count - 1].last = next
+            } else {
+                if !days.isEmpty { next += dayGap }
+                days.append(Day(date: day, first: next, last: next))
+            }
+            positions.append(next)
+            next += 1
+        }
+        self.positions = positions
+        self.days = days
+    }
 
     /// The x domain, half a slot either side of the sessions.
     public var domain: ClosedRange<Double> {

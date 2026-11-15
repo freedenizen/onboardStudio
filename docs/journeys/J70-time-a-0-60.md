@@ -15,7 +15,13 @@ log had to work them out by hand to tell whether a change made the car quicker i
 4. In a project, the same switch is under **Laps** in the data file's inspector. A Stat Card's
    **0–60 time**, **Quarter mile** and **60–0 braking distance** rows show the best, or the start
    at the playhead.
+5. Switch to **Trends**. With no circuit chosen, its **Performance** section is still there:
+   **Personal bests by car** lists the best 0–60, quarter mile and 60–0 of each car, with the day.
+   Clicking a best opens its session. Two measured sessions or more add a 0–60 chart and a quarter
+   mile chart with a line per car. Choosing a car in the sidebar narrows Trends to it, and the
+   car's card lists the same bests under **Bests**.
 
-Tests: `PerformanceUITests.testAStraightLineLogIsTimedLikeAPerformanceMeter`. Model:
+Tests: `PerformanceUITests.testAStraightLineLogIsTimedLikeAPerformanceMeter`,
+`PerformanceUITests.testTrendsKeepsTheCarsPersonalBests`. Model:
 `PerformanceRunsTests`, `PerformanceResultsTests`, `PerformanceImportTests`, `PerformanceEntryTests`,
-`StatCardTests.theSessionCardShowsTheBestLaunchQuarterMileAndStop`.
+`StatCardTests.theSessionCardShowsTheBestLaunchQuarterMileAndStop`, `PerformanceTrendsTests`.

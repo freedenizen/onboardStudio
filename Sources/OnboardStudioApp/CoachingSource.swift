@@ -72,6 +72,10 @@ enum CoachingSourceKind: Hashable {
     func watchClips(
         for comparison: CornerComparison, analysis: CoachingAnalysis, selection: CoachingSelection
     ) async -> [WatchClip]
+    /// The video files that show `input`'s session, each recording's first then its chapters (#573).
+    func trafficVideoFiles(for input: Input) -> [URL]
+    /// What they showed ahead, in the session's time; `nil` until they have been read for traffic.
+    func pictureSamples(for input: Input, session: TelemetrySession) -> [PictureSample]?
 }
 
 /// The front project, as the window has always read it.

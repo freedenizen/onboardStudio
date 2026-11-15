@@ -1,0 +1,23 @@
+{
+  "circuitID": "Q2654550",
+  "configuration": "National, anticlockwise",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 52.515,
+  "longitude": -0.6575,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Rockingham Motor Speedway",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 21.4,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 52.5147615,
+    "longitude": -0.6623385
+  },
+  "turnNames": []
+}

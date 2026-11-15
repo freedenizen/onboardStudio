@@ -46,6 +46,15 @@ public struct TelemetrySession: Sendable {
     /// The circuit's turn names, each pinned to its apex (#548). When there are any they are used
     /// and `cornerLabels` is not: read both through `cornerNames(for:)`.
     public var turnNames: [TurnName] = []
+    /// Every corner the reference lap finds is a corner, as builds before #585 read them; `false`
+    /// keeps only the corners most of the session's laps agree on (`agreedCorners(of:)`). Set
+    /// from the data input of a project saved before that, so its map, sectors and coaching
+    /// number the corners they always did.
+    public var legacyCornersPerLap = false
+    /// The session's laps only take corners away from the reference lap, as builds between #585
+    /// and #598 read them; `false` also adds the corners most laps find that it does not. Set
+    /// from the data input of a project saved by one of those builds.
+    public var legacyCornersOnlyDropped = false
     /// Stretches the driver marked as held up by traffic or a flag (#571), in session time. Not
     /// read from the file: whoever reads the session for coaching puts the marks the project or
     /// the logbook keeps here first, so every reading of it leaves the same corners out.
@@ -53,6 +62,12 @@ public struct TelemetrySession: Sendable {
     /// Stretches where the driver said a traffic suggestion was wrong (#572), in session time: a
     /// suggestion they cover is not offered again.
     public var dismissedTraffic: [LapProfile.Window] = []
+    /// What the onboard video showed ahead (#573), one sample a second in session time: read from
+    /// the clips by whoever reads this session for coaching, when they have been read for traffic.
+    public var pictureSamples: [PictureSample] = []
+    /// Stretches another car's log puts it close ahead of this one (#574), in session time: read
+    /// from the Logbook's sessions on the same clock by whoever reads this one for coaching.
+    public var carsAhead: [CarAhead] = []
     /// The unit a channel was *recorded* in, for every role the builder converted to its canonical
     /// unit. `channels[.speed].unit` is always m/s by the time anyone reads it, so this is the
     /// only record of whether the file said mph or kph — which is what *Automatic* in the speed

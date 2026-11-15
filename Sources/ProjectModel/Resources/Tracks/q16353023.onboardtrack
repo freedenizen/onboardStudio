@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q16353023",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 56.9664,
+  "longitude": 24.2215,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Biķernieki Complex Sports Base",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 22.2,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 56.9649725,
+    "longitude": 24.228993
+  },
+  "turnNames": []
+}

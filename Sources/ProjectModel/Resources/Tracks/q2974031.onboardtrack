@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q2974031",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 43.34815,
+  "longitude": 6.33281,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Circuit du Luc",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 28.5,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 43.3483195,
+    "longitude": 6.333542
+  },
+  "turnNames": []
+}

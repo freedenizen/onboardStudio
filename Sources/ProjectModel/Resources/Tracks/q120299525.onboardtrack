@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q120299525",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 46.55432,
+  "longitude": 5.32922,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Circuit de Bresse",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 26.0,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 46.5516585,
+    "longitude": 5.328607
+  },
+  "turnNames": []
+}

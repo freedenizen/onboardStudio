@@ -1,0 +1,46 @@
+name: Rerun after a runner hang
+# A UI test shard whose runner's WindowServer deadlocked cannot recover on that machine (#588).
+# The watchdog in CI's "Run XCUITests" step stops it and leaves an annotation titled
+# "Runner WindowServer hang". This reruns that CI run's failed jobs on fresh runners, once:
+# only a first attempt is rerun, so a second hang stays red for someone to look at.
+#
+# It reads the run and reruns it and nothing else. It checks out no code and runs nothing
+# from the pull request, so it is as safe for a fork's run as for a branch of this repository.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+permissions:
+  actions: write
+  checks: read
+jobs:
+  rerun:
+    name: Rerun a hung shard
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Rerun the failed jobs when a runner hung
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          # The title and message are the ones CI's "Run XCUITests" step writes: keep them in step.
+          # Either one is enough, so a change in how GitHub reports titles cannot hide a hang.
+          title="Runner WindowServer hang"
+          message="The runner's WindowServer stopped answering"
+          failed=$(gh api "repos/$GH_REPO/actions/runs/$RUN_ID/jobs?per_page=100" \
+            --jq '.jobs[] | select(.conclusion == "failure") | "\(.id)\t\(.name)"')
+          while IFS=$'\t' read -r job name; do
+            [ -n "$job" ] || continue
+            hits=$(gh api "repos/$GH_REPO/check-runs/$job/annotations" \
+              | jq --arg t "$title" --arg m "$message" \
+                '[.[] | select(.title == $t or (.message | startswith($m)))] | length')
+            if [ "$hits" -gt 0 ]; then
+              echo "::notice::$name stopped because its runner's WindowServer hung; rerunning the failed jobs of run $RUN_ID."
+              gh run rerun "$RUN_ID" --failed
+              exit 0
+            fi
+          done <<< "$failed"
+          echo "No failed job of run $RUN_ID was stopped by a runner hang; nothing rerun."

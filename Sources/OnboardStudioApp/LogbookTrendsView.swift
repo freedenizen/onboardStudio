@@ -13,12 +13,14 @@ struct LogbookTrendsView: View {
     let circuitTitle: String
     /// The goals set at the circuit (#461), drawn as dashed lines on the charts.
     var goals: [Goal] = []
+    /// The car chosen in the sidebar, which narrows the performance runs to it (#553).
+    var sidebarCar: String?
     let onOpen: (UUID) -> Void
-    @State private var car = ""
+    @State var car = ""
     @State private var readingCorners = false
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
     @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
-    private var speedSetting: SpeedUnitSetting { SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic }
+    var speedSetting: SpeedUnitSetting { SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic }
     /// The corner table's units (#544): the speed unit, and Coaching's distance for it.
     private var cornerFormat: LogbookTrends.CornerFormat { .init(setting: speedSetting) }
 
@@ -33,6 +35,7 @@ struct LogbookTrendsView: View {
     }
 
     var body: some View {
+        let performance = performance
         if let circuitKey {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -50,11 +53,17 @@ struct LogbookTrendsView: View {
                         Divider()
                         CarVersusCarSection(entries: entries, circuitKey: circuitKey, cars: cars)
                     }
+                    if !performance.isEmpty {
+                        Divider()
+                        performanceSection(performance)
+                    }
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .accessibilityIdentifier("logbook.trends")
+        } else if !performance.isEmpty {
+            performanceWithoutACircuit(performance)
         } else {
             ContentUnavailableView(
                 "Choose a Circuit", systemImage: "chart.line.uptrend.xyaxis",
@@ -105,7 +114,7 @@ struct LogbookTrendsView: View {
             Text("Lap times by session").font(.subheadline.weight(.semibold))
             let layout = layout
             Chart {
-                dayRules(layout)
+                layout.dayRules
                 ForEach(lapGoals, id: \.id) { goal in
                     RuleMark(y: .value("Goal", goal.target.value))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
@@ -119,7 +128,7 @@ struct LogbookTrendsView: View {
                 }
             }
             .chartXScale(domain: layout.domain)
-            .chartXAxis { dayAxis(layout) }
+            .chartXAxis { layout.dayAxis }
             .chartYScale(domain: .automatic(includesZero: false))
             .chartYAxis {
                 AxisMarks { value in
@@ -154,10 +163,7 @@ struct LogbookTrendsView: View {
     private func open(
         nearest location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy, layout: TrendsChartLayout
     ) {
-        guard let plot = proxy.plotFrame else { return }
-        let x = location.x - geometry[plot].origin.x
-        guard let position: Double = proxy.value(atX: x), let index = layout.nearestIndex(to: position),
-            points.indices.contains(index)
+        guard let index = layout.index(at: location, proxy: proxy, geometry: geometry), points.indices.contains(index)
         else { return }
         onOpen(points[index].entryID)
     }
@@ -290,39 +296,6 @@ extension LogbookTrendsView {
         }
     }
 
-    /// "12 Jun", with the year when the visits span more than one.
-    private func dayLabel(_ date: Date, in layout: TrendsChartLayout) -> String {
-        let calendar = Calendar.current
-        let years = Set(layout.days.map { calendar.component(.year, from: $0.date) })
-        return years.count > 1
-            ? date.formatted(.dateTime.day().month(.abbreviated).year(.twoDigits))
-            : date.formatted(.dateTime.day().month(.abbreviated))
-    }
-
-    /// One label per track day under the middle of its sessions; every few days when there are
-    /// more than fit.
-    private func dayAxis(_ layout: TrendsChartLayout) -> some AxisContent {
-        let step = max(1, Int((Double(layout.days.count) / 8).rounded(.up)))
-        let shown = stride(from: 0, to: layout.days.count, by: step).map { layout.days[$0] }
-        return AxisMarks(values: shown.map(\.center)) { value in
-            AxisTick()
-            AxisValueLabel(anchor: .top) {
-                if let center = value.as(Double.self), let day = shown.first(where: { abs($0.center - center) < 0.01 })
-                {
-                    Text(dayLabel(day.date, in: layout))
-                }
-            }
-        }
-    }
-
-    @ChartContentBuilder private func dayRules(_ layout: TrendsChartLayout) -> some ChartContent {
-        ForEach(layout.boundaries, id: \.self) { boundary in
-            RuleMark(x: .value("Between days", boundary))
-                .foregroundStyle(Color.secondary.opacity(0.4))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
-        }
-    }
-
     // MARK: - Consistency
 
     var consistency: some View {
@@ -335,7 +308,7 @@ extension LogbookTrendsView {
             } else {
                 // One bar per session at the lap chart's positions; by day, a day's bars stacked (#424).
                 Chart {
-                    dayRules(layout)
+                    layout.dayRules
                     ForEach(spreads, id: \.0.entryID) { point, position in
                         BarMark(
                             x: .value("Session", position), y: .value("Spread", point.spread ?? 0), width: .fixed(10)
@@ -349,7 +322,7 @@ extension LogbookTrendsView {
                     }
                 }
                 .chartXScale(domain: layout.domain)
-                .chartXAxis { dayAxis(layout) }
+                .chartXAxis { layout.dayAxis }
                 .chartYAxis {
                     AxisMarks { value in
                         AxisGridLine()
@@ -363,7 +336,7 @@ extension LogbookTrendsView {
                 .accessibilityLabel("Consistency by visit")
                 .accessibilityValue(
                     spreads.map { point, _ in
-                        "\(dayLabel(point.date, in: layout)) \(String(format: "%.2f", point.spread ?? 0)) seconds"
+                        "\(layout.label(point.date)) \(String(format: "%.2f", point.spread ?? 0)) seconds"
                     }
                     .joined(separator: ", "))
                 Text("Lower is steadier: the standard deviation of the laps within ten percent of the best.")
@@ -399,6 +372,38 @@ extension LogbookTrendsView {
         }
         if comparison.previous == nil { text += " The next track day here is compared with this one." }
         return text
+    }
+}
+
+// MARK: - Performance runs (#553)
+
+extension LogbookTrendsView {
+    /// The measured sessions in the sidebar's car, else the car picked here, else every car.
+    var performance: [PerformanceTrends.Point] {
+        PerformanceTrends.points(for: entries, car: sidebarCar ?? (car.isEmpty ? nil : car), metric: metric)
+    }
+
+    /// km/h measures rather than mph, as the Logbook shows speed.
+    var metric: Bool { speedSetting.shown(in: .current) != .mph }
+
+    func performanceSection(_ points: [PerformanceTrends.Point]) -> some View {
+        PerformanceTrendsSection(points: points, metric: metric, onOpen: onOpen)
+    }
+
+    /// A straight-line log names no circuit: its runs are the car's, so they are shown without one,
+    /// and the lap charts wait for a circuit.
+    func performanceWithoutACircuit(_ points: [PerformanceTrends.Point]) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                performanceSection(points)
+                Divider()
+                Text("Lap times read across the visits to one circuit: pick one in the sidebar.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityIdentifier("logbook.trends")
     }
 }
 

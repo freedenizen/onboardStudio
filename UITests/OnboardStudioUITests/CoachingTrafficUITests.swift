@@ -1,11 +1,11 @@
 import XCTest
 
-// ci-shard: 4
-/// J67: leave traffic out of the coaching (#571, #572). A corner where another car held the driver
-/// up is marked from the walkthrough or the corner's detail; the coaching stops calling it an
-/// opportunity, says how much of the lap's loss it was, and the mark is one undo step. The
+// ci-shard: 5
+/// J67: leave traffic out of the coaching (#571, #572). A corner where another car held the
+/// driver up is marked from the walkthrough or the corner's detail; the coaching stops calling it
+/// an opportunity, says how much of the lap's loss it was, and the mark is one undo step. The
 /// telemetry points at corners that may have been traffic, and each suggestion is taken or
-/// dismissed.
+/// dismissed. Reading the video for traffic is `CoachingVideoTrafficUITests`.
 final class CoachingTrafficUITests: OnboardStudioUITestCase {
     @MainActor
     func testACornerHeldUpByTrafficIsLeftOutOfTheCoaching() throws {

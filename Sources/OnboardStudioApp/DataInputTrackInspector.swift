@@ -29,11 +29,7 @@ extension DataInputInspector {
                 Button("Save Start/Finish, Sectors and Corner Names for This Track") {
                     editor.saveTrackDefinition(for: input.id)
                 }
-                if let key = editor.trackKey(for: input.id), editor.trackLibrary.definition(id: key) != nil {
-                    Button("Forget Saved Settings") { editor.forgetTrackDefinition(for: input.id) }
-                    Text("A file added at this circuit starts with these — a project already saved is untouched.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                savedSettingsRow
                 Button("Not This Circuit") { setCircuit(nil) }
             } else {
                 Text("No circuit recognised. The bundled list holds 1,290 venues; search for yours.")
@@ -49,6 +45,33 @@ extension DataInputInspector {
             sharingRow
         }
         cornerSection
+    }
+
+    /// What is kept for the circuit, and whose it is: the driver's own, which can be forgotten, or
+    /// one that ships with the app (#584), which the driver's own replaces.
+    @ViewBuilder var savedSettingsRow: some View {
+        if let key = editor.trackKey(for: input.id) {
+            switch editor.trackLibrary.source(of: key) {
+            case .yours:
+                Button("Forget Saved Settings") { editor.forgetTrackDefinition(for: input.id) }
+                Text(
+                    editor.trackLibrary.shipsDefinition(id: key)
+                        ? "A file added at this circuit starts with these — a project already saved is untouched. "
+                            + "Forgetting them brings back the ones that come with the app."
+                        : "A file added at this circuit starts with these — a project already saved is untouched."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            case .builtIn:
+                let credit = editor.trackLibrary.definition(id: key)?.credit.map { " (\($0))" } ?? ""
+                Text(
+                    "Onboard Studio comes with settings for this circuit\(credit): a file added here starts with "
+                        + "them. Saving your own takes their place."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            case nil:
+                EmptyView()
+            }
+        }
     }
 
     /// Which of the circuit's configurations the file drove (#549), with the ones already named.

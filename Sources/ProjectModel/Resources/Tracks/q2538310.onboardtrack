@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q2538310",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 48.213,
+  "longitude": 15.3276,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Wachauring",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 26.9,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 48.2127165,
+    "longitude": 15.327584
+  },
+  "turnNames": []
+}

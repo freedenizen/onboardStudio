@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q173083",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 52.38829,
+  "longitude": 4.54301,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Circuit Zandvoort",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 33.5,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 52.389465,
+    "longitude": 4.541175
+  },
+  "turnNames": []
+}
