@@ -154,7 +154,7 @@ struct LogbookTrendsTests {
             !visit("new", day: 1, best: 110, corners: [corner("1", brake: 80, minimum: 27, time: 3.9)])
                 .needsCornerReading)
         #expect(visit("none", day: 1, best: 110).needsCornerReading)
-        #expect(LogbookEntry.cornerMeasurement == 3, "3: only the corners the laps agree on (#585)")
+        #expect(LogbookEntry.cornerMeasurement == 4, "4: the corners the laps agree on, added too (#598)")
     }
 
     @Test func cornersAreComparedWithTheLastVisitAndThePersonalBest() {
