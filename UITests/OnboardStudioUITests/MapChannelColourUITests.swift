@@ -1,7 +1,7 @@
 import XCTest
 
 // ci-shard: 4
-/// J72: colour the map by a channel (#561). A Track Map paints the lap being driven by speed,
+/// J73: colour the map by a channel (#561). A Track Map paints the lap being driven by speed,
 /// brake, throttle or any channel the data has, with a legend; delta colouring and channel
 /// colouring take turns, and the colours are set once in Settings ▸ Maps.
 final class MapChannelColourUITests: OnboardStudioUITestCase {

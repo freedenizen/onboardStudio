@@ -1,4 +1,4 @@
-# J72 — Colour the map by a channel
+# J73 — Colour the map by a channel
 
 **Who:** a driver who wants to see on the map where they braked, where they were flat and where
 they were slow, lap after lap.
