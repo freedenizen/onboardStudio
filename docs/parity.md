@@ -46,7 +46,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Font per object | ✅ | Font, typeface and text size on every object that draws text, plus a project-wide font objects follow until they choose their own |
 | Video, Audio Only | ◐ | Video ✅; audio-only inputs mix without an object (an `.audio` input) |
 | Shape, Text, Embedded Image (data-driven rotation/opacity/flash) | ✅ | |
-| Track Map (+ map background, two-vehicle) | ✅ | Apple Maps imagery (map/satellite/hybrid), second vehicle |
+| Track Map (+ map background, two-vehicle) | ✅ | Apple Maps imagery (map/satellite/hybrid), second vehicle; the lap being driven coloured by any channel with a legend, which RaceRender cannot do (#561) |
 | Speedometer, Tachometer, Gauge (Gauge Designer) | ✅ | |
 | Bar / Level, 2D Graph (vs time/distance/channel), G-Force Plot | ✅ | Graph vs time, distance, lap (with a best-lap ghost) or any channel (X-Y, with a fading trail); time and distance graphs can show what is coming as well as what has been |
 | Gear, Lap Counter, Timer (all modes), Text Data (formatting) | ✅ | Timer: current/last/best/session/project/time-of-day/delta-to-best, plus *Projected lap* (not in RaceRender); a delta or projection can compare with the compared lap of a lap comparison |

@@ -25,15 +25,25 @@ public struct TrackMapRenderer: OverlayDrawing {
     /// Sector colouring, ticks and corner numbers, worked out once. All of it is empty unless
     /// the matching option is on, so a plain map costs exactly what it used to.
     let marks: TrackMapMarks
+    /// The colours a channel is painted in (#561), set once in Settings for every map.
+    public let ramp: ColorRamp
+    /// The channel the lap being driven is painted by, with the low and high the ramp spans; `nil`
+    /// when none is chosen or the data has no such channel.
+    let channelScale: ChannelScale?
 
     public init(
-        context: ObjectContext, params: TrackMapParams, second: SecondVehicle? = nil, background: MapBackground? = nil
+        context: ObjectContext, params: TrackMapParams, second: SecondVehicle? = nil, background: MapBackground? = nil,
+        ramp: ColorRamp = .standard
     ) {
         self.context = context
         self.params = params
         self.second = second
         self.background = background
+        self.ramp = ramp
         let session = context.sampler?.session
+        channelScale = params.colorChannel.flatMap { identifier in
+            session.flatMap { ChannelScale(session: $0, identifier: identifier) }
+        }
         let built = session.flatMap { TrackProjection(session: $0, params: params) }
         projection = built
         marks = session.map { TrackMapMarks(session: $0, params: params, projection: built) } ?? TrackMapMarks()
@@ -45,20 +55,24 @@ public struct TrackMapRenderer: OverlayDrawing {
         cg.setAlpha(context.opacity)
         // The coaching reading at this moment (#324): which lap is being driven and, when the map
         // follows the corner in play, which corner. The cached image is per lap and per corner.
-        let reading = coachingReading(at: context.inputTime(time))
+        let inputTime = context.inputTime(time)
+        var reading = coachingReading(at: inputTime)
+        reading.channelLap = channelLap(atInputTime: inputTime)
         let projection = reading.projection ?? whole
         let key = context.cacheKey(
-            "trackmap|\(params.hashValue)|\(background?.request.hashValue ?? 0)|\(reading.cacheSuffix)", size: size)
+            "trackmap|\(params.hashValue)|\(ramp.hashValue)|\(background?.request.hashValue ?? 0)|"
+                + reading.cacheSuffix, size: size)
         if let trace = context.cache.image(
             for: key, size: rect.size,
             draw: { traceContext, traceSize in
                 drawTrace(in: traceContext, size: traceSize, projection: projection)
                 drawCoaching(reading, in: traceContext, size: traceSize, projection: projection)
+                drawChannelLegend(in: traceContext, size: traceSize)
             })
         {
             context.cache.drawImage(trace, in: rect, context: cg)
         }
-        let bounds = CGRect(origin: .zero, size: rect.size)
+        let bounds = plotBounds(in: rect.size)
         let radius = params.dotRadius * max(0.5, min(rect.width, rect.height) / 300)
         if let second, let lat = second.sampler.sample(at: second.sync.inputTime(forProjectTime: time))[.latitude],
             let lon = second.sampler.sample(at: second.sync.inputTime(forProjectTime: time))[.longitude]
@@ -96,17 +110,19 @@ public struct TrackMapRenderer: OverlayDrawing {
     }
 
     func drawTrace(in cg: CGContext, size: CGSize, projection: TrackProjection) {
-        let bounds = CGRect(origin: .zero, size: size)
+        let frame = CGRect(origin: .zero, size: size)
+        // Where the circuit is fitted: the whole object, less a legend's band at its foot.
+        let bounds = plotBounds(in: size)
         let radius = min(size.width, size.height) * 0.05
         if let background {
             cg.saveGState()
-            cg.addPath(CGPath(roundedRect: bounds, cornerWidth: radius, cornerHeight: radius, transform: nil))
+            cg.addPath(CGPath(roundedRect: frame, cornerWidth: radius, cornerHeight: radius, transform: nil))
             cg.clip()
             drawBackground(background, in: cg, bounds: bounds, projection: projection)
             cg.restoreGState()
         }
         if params.backgroundColor.alpha > 0 {
-            cg.fillRoundedRect(bounds, radius: radius, color: params.backgroundColor.cgColor)
+            cg.fillRoundedRect(frame, radius: radius, color: params.backgroundColor.cgColor)
         }
         let points = projection.points.map { projection.point(x: $0.x, y: $0.y, in: bounds) }
         guard points.count > 1 else { return }

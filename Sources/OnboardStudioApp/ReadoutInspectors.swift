@@ -314,6 +314,18 @@ struct TrackMapInspector: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
+        Section("Lap Colour") {
+            lapColourPicker
+            if params.colorChannel != nil {
+                Toggle("Legend", isOn: field(\.showChannelLegend, "Map Legend"))
+                    .accessibilityIdentifier("trackMap.legend")
+                Text(
+                    "The lap being driven is painted from the session's lowest value to its highest, in the "
+                        + "colours set in Settings ▸ Maps. A colour means the same value on every lap."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
+        }
         Section("Map Background") {
             Picker("Imagery", selection: field(\.background, "Map Background")) {
                 ForEach(MapBackgroundStyle.allCases, id: \.self) { Text($0.displayName).tag($0) }
@@ -325,7 +337,19 @@ struct TrackMapInspector: View {
         }
         Section("Coaching") {
             Toggle("Reference lap's line", isOn: field(\.showReferenceLine, "Reference Line"))
-            Toggle("Colour the lap by time gained and lost", isOn: field(\.colorByDelta, "Delta Colouring"))
+            Toggle(
+                "Colour the lap by time gained and lost",
+                isOn: Binding(
+                    get: { params.colorByDelta },
+                    set: { on in
+                        // One colouring of the lap at a time: the two would paint the same line.
+                        update("Delta Colouring") {
+                            $0.colorByDelta = on
+                            if on { $0.colorChannel = nil }
+                        }
+                    })
+            )
+            .accessibilityIdentifier("trackMap.colorByDelta")
             Toggle("Brake points and slowest points", isOn: field(\.showBrakeMarks, "Brake Marks"))
             Toggle("Follow the corner in play", isOn: field(\.followCorner, "Follow Corner"))
             Toggle("Every lap's line, the quickest brighter", isOn: field(\.showLineSpread, "Line Spread"))
@@ -360,6 +384,41 @@ struct TrackMapInspector: View {
                 Text("Positions come from that input's own sync settings, so both cars share project time.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+        }
+    }
+
+    /// Which channel paints the lap being driven (#561), from the object's own data input.
+    @ViewBuilder var lapColourPicker: some View {
+        let session = object.inputID.flatMap { editor.sessions[$0] }
+        let available = session?.orderedChannels.map(\.role.identifier) ?? []
+        let chosen = params.colorChannel
+        let missing = chosen.map { !available.isEmpty && !available.contains($0) } ?? false
+        Picker(
+            "Colour by",
+            selection: Binding(
+                get: { params.colorChannel },
+                set: { channel in
+                    update("Channel Colouring") {
+                        $0.colorChannel = channel
+                        // One colouring of the lap at a time: the two would paint the same line.
+                        if channel != nil { $0.colorByDelta = false }
+                    }
+                })
+        ) {
+            Text("Nothing").tag(String?.none)
+            if missing, let chosen {
+                Text(ChannelRole.pickerTitle(forIdentifier: chosen)).tag(String?.some(chosen))
+            }
+            ForEach(available, id: \.self) { Text(ChannelRole.pickerTitle(forIdentifier: $0)).tag(String?.some($0)) }
+        }
+        .accessibilityIdentifier("trackMap.colorChannel")
+        if missing, let chosen {
+            Label(
+                "\(ChannelRole.pickerTitle(forIdentifier: chosen)) is not in this data file, so the lap is not "
+                    + "painted.",
+                systemImage: "exclamationmark.triangle.fill"
+            )
+            .foregroundStyle(.yellow).font(.caption)
         }
     }
 

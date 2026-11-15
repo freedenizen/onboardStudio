@@ -82,6 +82,12 @@ public enum Preferences {
     /// is not one. `AttributeMappingTable(json:)` reads it.
     public static let attributeMappings = Preference(key: "attributeMappings", unset: "")
 
+    // MARK: - Maps
+
+    /// The colours every Track Map paints a channel in, lowest to highest (#561), as
+    /// `ColorRamp.preferenceText`. Empty is `ColorRamp.standard`.
+    public static let mapColorRamp = Preference(key: "mapColorRamp", unset: "")
+
     // MARK: - Editing
 
     /// How far one arrow-key press moves the selected object, in pixels of the exported frame.
@@ -118,6 +124,7 @@ public enum Preferences {
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
         logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
+        mapColorRamp.key,
     ]
 }
 

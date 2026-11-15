@@ -8,6 +8,7 @@ struct EditorView: View {
     @Environment(\.openWindow) private var openWindow
     @AppStorage(Preferences.tourSeen.key) private var tourSeen = false
     @AppStorage(Preferences.attributeMappings.key) private var globalMappings = Preferences.attributeMappings.unset
+    @AppStorage(Preferences.mapColorRamp.key) private var mapColorRamp = Preferences.mapColorRamp.unset
 
     init(document: ProjectDocument, fileURL: URL?) {
         _editor = State(initialValue: EditorModel(document: document, fileURL: fileURL))
@@ -108,6 +109,8 @@ struct EditorView: View {
         // The mapping for all projects lives in preferences, not in this document, so no edit of
         // the project notices it change; without this an open project kept its old channels (#214).
         .onChange(of: globalMappings) { editor.scheduleCompile() }
+        // Every map paints its channel in these colours (#561), so the preview follows a change.
+        .onChange(of: mapColorRamp) { editor.scheduleCompile() }
     }
 
     /// A session opened from the logbook (#347, #394, #396): the template, its clips, then its

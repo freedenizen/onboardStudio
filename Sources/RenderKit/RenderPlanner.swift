@@ -160,7 +160,8 @@ public enum RenderPlanner {
         lapComparison: LapTimeWarp? = nil,
         coaching: [InputID: CoachingTrack] = [:],
         personalBests: [InputID: LapProfile] = [:],
-        extraDetails: [String: String] = [:]
+        extraDetails: [String: String] = [:],
+        mapColorRamp: ColorRamp = .standard
     ) -> [any OverlayDrawing] {
         let details = extraDetails.isEmpty ? project.details : project.details.adding(extraDetails)
         return (objects ?? project.displayObjects).compactMap { object -> (any OverlayDrawing)? in
@@ -196,8 +197,8 @@ public enum RenderPlanner {
                     return SecondVehicle(sampler: TelemetrySampler(session: session), sync: input.sync)
                 }
                 return TrackMapRenderer(
-                    context: context, params: params, second: second, background: request.flatMap { mapBackgrounds[$0] }
-                )
+                    context: context, params: params, second: second,
+                    background: request.flatMap { mapBackgrounds[$0] }, ramp: mapColorRamp)
             }
             return renderer(for: object.kind.filling(details), context: context, image: image)
         }

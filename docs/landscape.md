@@ -188,7 +188,7 @@ summary; a next-session plan carried to the circuit. These remain Onboard Studio
 | Niche | Shift lights | Covered by Indicator lights and segmented Bars |
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
-| Common | Track line coloured by any channel (speed, brake, throttle, G) | No — by sector or delta only (#561) |
+| Common | Track line coloured by any channel (speed, brake, throttle, G) | Yes — the lap being driven, on one ramp set in Settings, with a legend (#561) |
 | Moderate | Friction-circle / combined-G use read per corner | No — the G-force object draws it, nothing reads it (#558) |
 | Moderate | Point-to-point runs (autocross, hill climb, stage) | No — laps need one start/finish line (#552) |
 | Moderate | Performance runs: 0–60, ¼ mile, braking distance | No (#553) |
@@ -230,19 +230,19 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
     does: rank the corners by time lost, say which phase and what to try. Milestones v0.29.0,
     v0.30.0 and v0.31.0 (#315–#335); design in `docs/coaching.md`.
 
-**Filed 2026-11-13, from the analysis survey below** (none started; most need a design first)
+**Filed 2026-11-13, from the analysis survey below** (most need a design first; the ones marked *shipped* are done)
 
 - #552 point-to-point runs: autocross, hill climb, rally stage, with penalties and a course that
-  changes every event
-- #553 performance runs from a standstill: 0–60, ¼ mile, trap speed, braking distance
+  changes every event — *shipped*
+- #553 performance runs from a standstill: 0–60, ¼ mile, trap speed, braking distance — *shipped*
 - #554 a lap that should not count (traffic, a flag, an off), and which laps an optimal lap came from
 - #555 how good the GPS data is, and how far its brake points can be trusted
 - #556 laps as data without building a video: linked traces, delta-T, map and picture
-- #557 a session's lap table: sector splits per lap, best sectors, speeds
+- #557 a session's lap table: sector splits per lap, best sectors, speeds — *shipped*
 - #558 grip use: combined braking and turning, time near the limit, and its trend
 - #559 judging a tyre, pressure or setup change: structured pressures, Trends split by conditions
 - #560 weather filled in from the session's time and place (the first network read for analysis)
-- #561 the track line coloured by any channel
+- #561 the track line coloured by any channel — *shipped*
 - #562 a second logger (an ECU CSV) lined up with the first by a shared channel
 - #563 a lap or session's telemetry exported as CSV, GPX, KML or VBO
 

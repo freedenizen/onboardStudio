@@ -17,11 +17,14 @@ extension TrackMapRenderer {
         var corner: CornerComparison?
         /// The projection framing the followed corner; `nil` keeps the whole map.
         var projection: TrackProjection?
+        /// The lap painted by a channel (#561), which needs no coaching reference.
+        var channelLap: Lap?
 
         /// Distinguishes the cached images: one per lap, and one per followed corner.
         var cacheSuffix: String {
             var parts: [String] = []
             if let lap { parts.append("lap\(lap.number)") }
+            if let channelLap { parts.append("channel\(channelLap.number)") }
             if let corner { parts.append("corner\(corner.index)") }
             return parts.joined(separator: "|")
         }
@@ -53,7 +56,7 @@ extension TrackMapRenderer {
     }
 
     func drawCoaching(_ reading: CoachingReading, in cg: CGContext, size: CGSize, projection: TrackProjection) {
-        let bounds = CGRect(origin: .zero, size: size)
+        let bounds = plotBounds(in: size)
         let scale = max(0.5, min(size.width, size.height) / 300)
         cg.setLineJoin(.round)
         cg.setLineCap(.round)
@@ -75,6 +78,10 @@ extension TrackMapRenderer {
                 cg.setStrokeColor((run.isLoss ? params.lossColor : params.gainColor).cgColor)
                 stroke(points, in: cg)
             }
+        }
+        // Over the outline and the reference, under the marks, as the delta's colours are.
+        if let lap = reading.channelLap {
+            drawChannel(on: lap, in: cg, size: size, projection: projection)
         }
         if params.showBrakeMarks {
             let radius = max(3, params.dotRadius * scale * 0.55)

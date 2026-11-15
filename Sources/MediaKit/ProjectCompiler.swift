@@ -259,7 +259,9 @@ public enum ProjectCompiler {
                 globalAttributeMappings: AttributeMappingTable(
                     json: UserDefaults.standard.value(for: Preferences.attributeMappings)),
                 lapComparison: lapComparison, coaching: loaded.coaching, personalBests: loaded.personalBests,
-                extraDetails: loaded.derivedDetails)
+                extraDetails: loaded.derivedDetails,
+                // Every map's channel colours (#561), read here for the same reason.
+                mapColorRamp: ColorRamp(preferenceText: UserDefaults.standard.value(for: Preferences.mapColorRamp)))
             let layers = RenderPlanner.videoLayers(
                 for: project, objects: objects, trackIDs: trackIDs, sourceTransforms: sourceTransforms,
                 comparedTrackID: comparedTrackID, stabilisationPaths: stabilisationPaths, lapComparison: lapComparison)
