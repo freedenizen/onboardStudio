@@ -53,12 +53,58 @@ struct CornerAgreementTests {
         #expect(session.agreedCorners(of: session.laps[0]).count == kinked.count)
     }
 
-    @Test func aLapWithoutTheKinkGainsNothing() throws {
-        // The other way round is not this fix's: a bend the reference drove straight through has
-        // no apex on that lap to measure (see `CornerAgreement`).
+    /// #598: the other way round. The lap without the kink is given it, where that lap drove it.
+    @Test func aCornerMostLapsFindIsAddedToALapThatMissedIt() throws {
         let session = Self.session(kinked: [0, 1, 2, 4])
         let plain = CornerDetector.corners(of: session.laps[3], in: session)
+        let kinked = CornerDetector.corners(of: session.laps[0], in: session)
+        let agreed = session.agreedCorners(of: session.laps[3])
+        try #require(kinked.count == plain.count + 1)
+        #expect(agreed.count == kinked.count)
+        // On the same bend, turning the same way, and in driving order.
+        for (corner, expected) in zip(agreed, kinked) {
+            #expect(abs(corner.apexDistance - expected.apexDistance) < 20)
+            #expect(corner.turnsRight == expected.turnsRight)
+        }
+        #expect(agreed.map(\.apexDistance) == agreed.map(\.apexDistance).sorted())
+        // Pinned names reach it: it sits on the plain lap's own path, with a bend to match.
+        let added = try #require(
+            agreed.first { corner in !plain.contains { abs($0.apexDistance - corner.apexDistance) < 20 } })
+        #expect(!added.trace.isEmpty)
+        #expect(added.startDistance < added.apexDistance && added.apexDistance < added.endDistance)
+    }
+
+    @Test func aCornerFewLapsFindIsNotAdded() throws {
+        let session = Self.session(kinked: [0])
+        let plain = CornerDetector.corners(of: session.laps[1], in: session)
+        #expect(session.agreedCorners(of: session.laps[1]).count == plain.count)
+    }
+
+    @Test func aProjectSavedBetweenTheTwoFixesAddsNothing() throws {
+        var session = Self.session(kinked: [0, 1, 2, 4])
+        session.legacyCornersOnlyDropped = true
+        let plain = CornerDetector.corners(of: session.laps[3], in: session)
         #expect(session.agreedCorners(of: session.laps[3]).count == plain.count)
+    }
+
+    @Test func aProfileOfALapThatMissedTheCornerGetsIt() throws {
+        let session = Self.session(kinked: [0, 1, 2, 4])
+        let profile = try #require(LapProfile(lap: session.laps[3], in: session))
+        let kinked = CornerDetector.corners(of: session.laps[0], in: session)
+        #expect(session.agreedCorners(of: profile).count == kinked.count)
+    }
+
+    /// Two bends the reference drove as one long corner stay one: a corner the others find inside
+    /// it is not added on top of it.
+    @Test func aCornerInsideOneTheReferenceHasIsNotAdded() throws {
+        let session = Self.session(kinked: [])
+        let plain = CornerDetector.corners(of: session.laps[0], in: session)
+        let path = try #require(CornerDetector.Path(lap: session.laps[0], session: session, step: 5))
+        let first = try #require(plain.first)
+        // Each other lap finds the first bend twice over, as two corners in the one bend.
+        let others = Array(repeating: plain + [first], count: 4)
+        let result = CornerAgreement.addingMissing(to: plain, from: others, includesReference: true, along: path)
+        #expect(result.count == plain.count)
     }
 
     @Test func twoLapsAreNotEnoughToVote() throws {

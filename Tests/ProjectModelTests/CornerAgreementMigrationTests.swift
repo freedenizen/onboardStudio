@@ -20,6 +20,7 @@ struct CornerAgreementMigrationTests {
         func strip(_ value: Any) -> Any {
             if var dictionary = value as? [String: Any] {
                 dictionary["legacyCornersPerLap"] = nil
+                dictionary["legacyCornersOnlyDropped"] = nil
                 return dictionary.mapValues(strip)
             }
             if let array = value as? [Any] { return array.map(strip) }
@@ -39,6 +40,21 @@ struct CornerAgreementMigrationTests {
         #expect(opened.videoInputs.count == 1, "nothing else about the inputs is touched")
         let again = try Project.decode(try opened.encoded())
         #expect(again.dataInputs.first?.dataSettings?.legacyCornersPerLap == true)
+    }
+
+    /// #598 adds the corners most laps find that the reference lap drove through. A project saved
+    /// at schema 5 keeps #585's reading, which only took corners away.
+    @Test func aProjectSavedAtSchema5OnlyDropsCorners() throws {
+        var root = try #require(
+            try JSONSerialization.jsonObject(with: try savedAtSchema4(try project.encoded())) as? [String: Any])
+        root["schemaVersion"] = 5
+        let opened = try Project.decode(try JSONSerialization.data(withJSONObject: root))
+        #expect(opened.schemaVersion == Project.currentSchemaVersion)
+        #expect(opened.dataInputs.first?.dataSettings?.legacyCornersOnlyDropped == true)
+        #expect(opened.dataInputs.first?.dataSettings?.legacyCornersPerLap == false, "schema 5 already agreed")
+        #expect(project.dataInputs.first?.dataSettings?.legacyCornersOnlyDropped == false)
+        let json = try #require(String(data: try project.encoded(), encoding: .utf8))
+        #expect(json.contains("\"legacyCornersOnlyDropped\" : false"))
     }
 
     @Test func aProjectMadeSinceNumbersTheCornersTheLapsAgreeOn() throws {

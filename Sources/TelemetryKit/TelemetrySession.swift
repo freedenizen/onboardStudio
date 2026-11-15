@@ -51,6 +51,10 @@ public struct TelemetrySession: Sendable {
     /// from the data input of a project saved before that, so its map, sectors and coaching
     /// number the corners they always did.
     public var legacyCornersPerLap = false
+    /// The session's laps only take corners away from the reference lap, as builds between #585
+    /// and #598 read them; `false` also adds the corners most laps find that it does not. Set
+    /// from the data input of a project saved by one of those builds.
+    public var legacyCornersOnlyDropped = false
     /// Stretches the driver marked as held up by traffic or a flag (#571), in session time. Not
     /// read from the file: whoever reads the session for coaching puts the marks the project or
     /// the logbook keeps here first, so every reading of it leaves the same corners out.
