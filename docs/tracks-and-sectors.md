@@ -314,14 +314,21 @@ counted, every lap that had only the turn "found" the kink too and it was never 
 - **The reference votes for its own corners** when it is one of the session's laps; a rolling lap
   or a lap spliced from several is only voted on. A reference from another session is read as it
   is: its own laps are not there to vote.
-- **Only the reference's extra corners go.** A corner most laps find and the reference drove
-  straight through is not added: the reference's own distances are what corners are measured
-  along, and a bend that lap did not turn has no apex on it.
+- **A corner most laps find is added when the reference missed it** (#598). The best lap is the
+  likeliest to straighten a gentle bend, so it was the lap most likely to be a corner short. The
+  other laps' corners that pair with none of the reference's are grouped bend by bend the same
+  way, one to one, and a group found on more than half the laps is placed on the reference lap
+  where it drove that bend: entry, apex and exit are the reference path's nearest points to the
+  group's most central corner, looked for only around the apex so a parallel straight cannot take
+  them, and the corner keeps that lap's turn. It is not added where the reference lap passes no
+  nearer than 40 m, nor inside a corner the reference already has — two bends it drove as one stay
+  one.
 
 It changes which corners a project numbers, so it applies to projects created after it: a project
-saved before schema 5 keeps every corner its reference lap finds (`legacyCornersPerLap`,
-`docs/project-format.md`). The Logbook's corner readings step to measurement 3, so Trends offers
-to read the corners of sessions entered before it again. Replay's kerbs are left as they were:
+saved before schema 5 keeps every corner its reference lap finds (`legacyCornersPerLap`), and one
+saved at schema 5, between #585 and #598, keeps corners only being taken away
+(`legacyCornersOnlyDropped`; `docs/project-format.md`). The Logbook's corner readings step to
+measurement 4, so Trends offers to read the corners of sessions entered before it again. Replay's kerbs are left as they were:
 they are drawn where the lap turns, and a real kink there is a real kink.
 
 ### A circuit's configurations (#549)

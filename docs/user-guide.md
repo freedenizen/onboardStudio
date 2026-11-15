@@ -685,7 +685,8 @@ counts on one lap and not the next — and a name is kept where the turn is, not
 corner", so a lap with an extra kink does not move 3a onto turn 4. And a kink only a few of the
 session's laps find is not a corner at all: the corners are the ones most of your laps agree on,
 so your best lap having one kink more than the rest does not give the map, the sectors or Coaching
-a corner the circuit does not have. (With fewer than three laps there is nothing to agree, and
+a corner the circuit does not have — and your best lap smoothing a gentle bend that the rest turn
+through does not take one away. (With fewer than three laps there is nothing to agree, and
 every corner counts. A project made before this keeps the corners it had.) A corner you leave
 blank among named ones is not numbered on the map, and Coaching and Trends call it by the turns
 either side of it, such as *3a–4*. Clear a name to take it off a turn.
@@ -1399,7 +1400,8 @@ above the table names the laps it reads, and a comparison's columns appear only 
 to make: none against the personal best when the latest day set it. Sessions entered before
 corners were kept offer **Read Their Corners**, as do sessions whose corners were measured before
 a correction to how the app measures them — braking that belongs to the next corner (#438), and a
-kink few of the session's laps find no longer counted as a corner (#585) — so a fixed reading
+kink few of the session's laps find no longer counted as a corner (#585), a bend most of them turn
+through counted though the best lap smoothed it (#598) — so a fixed reading
 reaches sessions already in the logbook.
 
 ### Car against car

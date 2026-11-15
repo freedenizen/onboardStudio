@@ -9,9 +9,9 @@ import Foundation
 /// coaching and in the naming sheet, and every count after it is one more than on the other laps.
 ///
 /// So a corner of the reference lap is kept when most of the session's laps find a corner on the
-/// same bend, and dropped when only a few do. The other way round — a corner most laps find and
-/// the reference lap does not — is left as it is: the reference lap's own distances are what the
-/// corners are measured along, and a bend that lap drove straight through has no apex on it.
+/// same bend, and dropped when only a few do; and a corner most laps find that the reference lap
+/// did not is added to it, placed where the reference lap drove that bend (#598,
+/// `addingMissing(to:from:includesReference:along:)`).
 public enum CornerAgreement {
     /// The fewest complete laps, the reference among them, for a vote to mean anything: with two,
     /// a kink on one is as much the circuit as its absence on the other.
@@ -58,23 +58,35 @@ public enum CornerAgreement {
 }
 
 extension TelemetrySession {
-    /// The corners of `reference`, one of this session's laps, that the session's laps agree on
-    /// (#585); every corner the lap finds in a project saved before that (`legacyCornersPerLap`).
+    /// The corners of `reference`, one of this session's laps, that the session's laps agree on:
+    /// its own that most laps find (#585), and those most laps find that it does not (#598).
+    /// Every corner the lap finds in a project saved before #585 (`legacyCornersPerLap`), and none
+    /// added in one saved before #598 (`legacyCornersOnlyDropped`).
     public func agreedCorners(of reference: Lap, options: CornerDetector.Options = .init()) -> [Corner] {
         let corners = CornerDetector.corners(of: reference, in: self, options: options)
         guard !legacyCornersPerLap else { return corners }
         let others = CornerAgreement.cornersOfOtherLaps(in: self, excluding: reference.number, options: options)
-        return CornerAgreement.agreed(corners, by: others)
+        let path = CornerDetector.Path(lap: reference, session: self, step: options.stepMeters)
+        return agreeing(corners, with: others, includesReference: true, along: path)
     }
 
-    /// The corners of `profile`, read from this session, that the session's laps agree on (#585).
-    /// A profile of one of the session's laps votes for its own corners; a spliced or re-based one
-    /// is only voted on.
+    /// The corners of `profile`, read from this session, that the session's laps agree on (#585,
+    /// #598). A profile of one of the session's laps votes for its own corners; a spliced or
+    /// re-based one is only voted on.
     public func agreedCorners(of profile: LapProfile, options: CornerDetector.Options = .init()) -> [Corner] {
         let corners = CornerDetector.corners(of: profile, options: options)
         guard !legacyCornersPerLap else { return corners }
         let lap = profile.isSpliced ? nil : profile.pieces.first.map(\.lapNumber).flatMap { $0 == 0 ? nil : $0 }
         let others = CornerAgreement.cornersOfOtherLaps(in: self, excluding: lap, options: options)
-        return CornerAgreement.agreed(corners, by: others, includesReference: lap != nil)
+        let path = CornerDetector.Path(profile: profile, step: options.stepMeters)
+        return agreeing(corners, with: others, includesReference: lap != nil, along: path)
+    }
+
+    private func agreeing(
+        _ corners: [Corner], with others: [[Corner]], includesReference: Bool, along path: CornerDetector.Path?
+    ) -> [Corner] {
+        let kept = CornerAgreement.agreed(corners, by: others, includesReference: includesReference)
+        guard !legacyCornersOnlyDropped, let path else { return kept }
+        return CornerAgreement.addingMissing(to: kept, from: others, includesReference: includesReference, along: path)
     }
 }

@@ -30,8 +30,9 @@ extension LogbookEntry {
     /// The corner measurement this build makes; step it when a fix changes what is measured, so
     /// entries read before it are offered a fresh reading (#438). 2: braking that begins after a
     /// corner has ended is the next corner's. 3: a corner most of the session's laps do not find
-    /// is not one of its corners (#585).
-    public static let cornerMeasurement = 3
+    /// is not one of its corners (#585). 4: a corner most of them find is one, though the best lap
+    /// drove through it (#598).
+    public static let cornerMeasurement = 4
 
     /// Whether Trends should offer to read this entry's corners: none kept yet, or kept from a
     /// measurement since corrected.
