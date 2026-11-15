@@ -217,7 +217,7 @@ extension EditorModel {
     /// The corners this data input's reference lap has, for naming them.
     func corners(for id: InputID) -> [Corner] {
         guard let session = sessions[id], let reference = Sectors.referenceLap(in: session) else { return [] }
-        return CornerDetector.corners(of: reference, in: session)
+        return session.agreedCorners(of: reference)
     }
 
     /// Names the `index`-th corner of `id`'s lap, pinning the name to where the corner is (#548).

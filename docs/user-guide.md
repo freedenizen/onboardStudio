@@ -682,9 +682,13 @@ type the real names into *Corners* once — or name them on the circuit's card i
 
 Each name stays on its own turn. A lap does not always find the same corners — a kink near the line
 counts on one lap and not the next — and a name is kept where the turn is, not as "the fourth
-corner", so a lap with an extra kink does not move 3a onto turn 4. A corner you leave blank among
-named ones is not numbered on the map, and Coaching and Trends call it by the turns either side of
-it, such as *3a–4*. Clear a name to take it off a turn.
+corner", so a lap with an extra kink does not move 3a onto turn 4. And a kink only a few of the
+session's laps find is not a corner at all: the corners are the ones most of your laps agree on,
+so your best lap having one kink more than the rest does not give the map, the sectors or Coaching
+a corner the circuit does not have. (With fewer than three laps there is nothing to agree, and
+every corner counts. A project made before this keeps the corners it had.) A corner you leave
+blank among named ones is not numbered on the map, and Coaching and Trends call it by the turns
+either side of it, such as *3a–4*. Clear a name to take it off a turn.
 
 A circuit with more than one layout keeps each one's settings apart: the **Configuration** field
 under the circuit says which this file drove, and choosing one uses the start/finish, sectors and
@@ -1394,8 +1398,9 @@ and in metres otherwise, as Coaching gives them; the line under the table names 
 above the table names the laps it reads, and a comparison's columns appear only when there is one
 to make: none against the personal best when the latest day set it. Sessions entered before
 corners were kept offer **Read Their Corners**, as do sessions whose corners were measured before
-a correction to how the app measures them (#438), so a fixed reading reaches sessions already in
-the logbook.
+a correction to how the app measures them — braking that belongs to the next corner (#438), and a
+kink few of the session's laps find no longer counted as a corner (#585) — so a fixed reading
+reaches sessions already in the logbook.
 
 ### Car against car
 

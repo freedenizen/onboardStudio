@@ -64,6 +64,7 @@ extension ProjectCompiler {
             cornerLabels: settings.cornerLabels,
             trimStart: settings.trim.start, trimEnd: settings.trim.end, legacyFirstLap: settings.legacyFirstLap)
         options.turnNames = settings.turnNames
+        options.legacyCornersPerLap = settings.legacyCornersPerLap
         var session: TelemetrySession
         if let importerID = settings.importerID {
             guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {

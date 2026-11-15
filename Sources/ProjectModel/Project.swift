@@ -89,7 +89,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 4
+    public static let currentSchemaVersion = 5
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -229,6 +229,16 @@ public struct Project: Hashable, Codable, Sendable {
                 inputs[index].kind = .data(data)
             }
             schemaVersion = 4
+        }
+        if schemaVersion < 5 {
+            // 4 → 5 (#585): every corner the reference lap found was a corner, a kink only that lap
+            // found among them, on the map, in corner-aware sectors and in the coaching.
+            for index in inputs.indices {
+                guard case .data(var data) = inputs[index].kind else { continue }
+                data.legacyCornersPerLap = true
+                inputs[index].kind = .data(data)
+            }
+            schemaVersion = 5
         }
         schemaVersion = Self.currentSchemaVersion
     }

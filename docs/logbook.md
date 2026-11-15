@@ -230,7 +230,8 @@ Corners*). Each entry records which measurement read its corners (`cornerMeasure
 `LogbookEntry.cornerMeasurement` is the build's): when a fix changes what is measured the number
 steps, and Trends offers the same button for entries read by an earlier one, so a corrected
 reading reaches the sessions already in the logbook. 2 is the first correction: braking that
-begins after a corner has ended is the next corner's. `LogbookTrends` (`ProjectModel/LogbookTrends.swift`) turns the entries at a circuit key
+begins after a corner has ended is the next corner's. 3 (#585): a corner most of the session's
+laps do not find is not one of its corners. `LogbookTrends` (`ProjectModel/LogbookTrends.swift`) turns the entries at a circuit key
 into dated points (best, optimal, rolling, and the spread of flying laps as consistency), a
 sentence for the summary and VoiceOver, and per-corner trends: the latest visit against the one
 before and the personal best's session, matched by the corner's label. The window's Trends view

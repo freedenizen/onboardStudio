@@ -77,7 +77,7 @@ public enum ConfigurationMatch {
         guard named.contains(where: { $0.configuration != nil }),
             let best = LapDeltas.sessionBest(in: session), let profile = LapProfile(lap: best, in: session)
         else { return nil }
-        let corners = CornerDetector.corners(of: profile)
+        let corners = session.agreedCorners(of: profile)
         let scored = named.map { definition in
             (definition.configuration, agreement(of: corners, with: definition.turnNames))
         }

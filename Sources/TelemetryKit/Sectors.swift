@@ -195,7 +195,7 @@ public enum Sectors {
         case .equalDistance(let count):
             boundaries = equalBoundaries(count: count, length: length)
         case .cornerAware(let count):
-            let corners = CornerDetector.corners(of: reference, in: session, options: cornerOptions)
+            let corners = session.agreedCorners(of: reference, options: cornerOptions)
             boundaries = cornerAwareBoundaries(
                 count: count, length: length, straights: CornerDetector.straightMidpoints(between: corners))
         case .manual(let lines):

@@ -145,7 +145,7 @@ struct TurnNamingSheet: View {
             return
         }
         // The same lap and the same corners the logbook reads the session's corners from.
-        let found = CornerDetector.corners(of: profile)
+        let found = session.agreedCorners(of: profile)
         guard !found.isEmpty else {
             phase = .noCorners
             return
