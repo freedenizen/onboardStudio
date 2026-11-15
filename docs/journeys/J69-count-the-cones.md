@@ -1,4 +1,4 @@
-# J67 Count the cones
+# J69 Count the cones
 *Source: #552 — an autocross run's time counts with its cones, and a run that went off course
 counts not at all, but the Logbook kept only the clock's time, so the best run, the personal best
 and Trends could be a run that never counted.*
