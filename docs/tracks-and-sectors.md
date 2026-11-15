@@ -282,7 +282,7 @@ accurate names ahead of time, checked on 2026-11-13:
 | **LapViz `circuits.json`** (found 2026-11-14) | Start/finish and sector gates, two end points each, for 196 layouts: European, many of them kart tracks, no US circuit but MSR Houston; **no turns** | **Used** (#584), under MIT with Mengal SRL's notice. Its owner says the lines came from satellite imagery or recorded sessions; not verified against laps |
 | **OpenStreetMap corner names** (and what is built on them: raceline, kruslim's visualiser) | Named corner points at some venues — Spa fully, most others few or none — names but no turn numbers | **Not used**: ODbL share-alike, so a bundled folder of them would have to stay ODbL; the user chose not to (2026-11-14) |
 | **apex-tracks, PitLogger/tracks** | The right fields under MIT or CC0: start/finish with heading and width, sectors, numbered corners | Empty when checked (2026-11-14); worth watching, and a natural home for the CC0 definitions contributed here |
-| **Agreement across laps** | A corner list that does not change from lap to lap: keep the corners found on most laps of the session, drop a kink found on one | Worth doing: it removes most `3a–4` labels before anyone sees them. It changes which corners a project's map numbers, so it applies to projects created after it (`Project.migrateIfNeeded()`) |
+| **Agreement across laps** (#585, done) | A corner list that does not change from lap to lap: keep the corners found on most laps of the session, drop a kink found on one | Removes most `3a–4` labels before anyone sees them. It changes which corners a project's map numbers, so it applies to projects created after it (schema 5) |
 | **Numbering help in the naming sheet** | Typing `3a` on a corner offers to call the ones after it 4, 4a… or 4, 5… | Cheap, and it is the step a driver repeats at every new circuit |
 | **A circuit's official list typed in** (turn labels only, no positions) | `1, 2, 3, 3a, 4, …` per configuration, offered in order as the driver names corners | Half a route: still needs positions, so it only shortens the typing. Facts from a circuit's own map may be typed in; copying the map or a site's text may not |
 | **Wikidata** | Circuit name and position | **No turns.** No property for a turn count or for turns exists, and its 213 layout items cover about fifteen F1 circuits' historical layouts, without geometry |
@@ -295,6 +295,37 @@ accurate names ahead of time, checked on 2026-11-13:
 So the ranked plan is: pinned names (#548), naming from the circuit card with numbering help
 (#550), configurations so each layout keeps its own (#549), then the bundled contributed library
 and agreement across laps. Nothing here fetches anything at run time.
+
+### Corners the laps agree on (#585)
+
+Everything that numbers corners — the track map, corner-aware sectors, Coaching, Trends, the
+naming sheet, `onboard probe --corners` — reads them off one reference lap, the best one usually.
+The detector reads each lap on its own, and the laps of a session do not all find the same
+corners: a slight kink after the line, or a lift near the end of the lap, is a corner on some laps
+and not on others. When the reference lap was one of those, the kink was a corner everywhere, the
+counts after it were one more than on the other laps, and a named circuit showed it as *3a–4*.
+
+So a corner of the reference lap is kept only when **more than half** of the session's complete
+laps find a corner on the same bend (`CornerAgreement`, `TelemetrySession.agreedCorners(of:)`).
+"The same bend" is the test pinned names use (#548): within 40 m of the bend, and **one to one,
+closest pairs first** for each lap. One to one matters: on a real session the kink sat a few
+metres before a real turn, within reach of that turn's bend, and while any corner within reach
+counted, every lap that had only the turn "found" the kink too and it was never dropped.
+
+- **At least three laps vote.** With two, a kink on one is as much the circuit as its absence on
+  the other, and every corner is kept. Laps without a position do not vote.
+- **The reference votes for its own corners** when it is one of the session's laps; a rolling lap
+  or a lap spliced from several is only voted on. A reference from another session is read as it
+  is: its own laps are not there to vote.
+- **Only the reference's extra corners go.** A corner most laps find and the reference drove
+  straight through is not added: the reference's own distances are what corners are measured
+  along, and a bend that lap did not turn has no apex on it.
+
+It changes which corners a project numbers, so it applies to projects created after it: a project
+saved before schema 5 keeps every corner its reference lap finds (`legacyCornersPerLap`,
+`docs/project-format.md`). The Logbook's corner readings step to measurement 3, so Trends offers
+to read the corners of sessions entered before it again. Replay's kerbs are left as they were:
+they are drawn where the lap turns, and a real kink there is a real kink.
 
 ### Definitions that ship with the app (#584)
 

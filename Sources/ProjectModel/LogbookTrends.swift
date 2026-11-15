@@ -29,8 +29,9 @@ public struct CornerRecord: Hashable, Codable, Sendable {
 extension LogbookEntry {
     /// The corner measurement this build makes; step it when a fix changes what is measured, so
     /// entries read before it are offered a fresh reading (#438). 2: braking that begins after a
-    /// corner has ended is the next corner's.
-    public static let cornerMeasurement = 2
+    /// corner has ended is the next corner's. 3: a corner most of the session's laps do not find
+    /// is not one of its corners (#585).
+    public static let cornerMeasurement = 3
 
     /// Whether Trends should offer to read this entry's corners: none kept yet, or kept from a
     /// measurement since corrected.
@@ -47,7 +48,7 @@ extension LogbookEntry {
         guard let best = LapDeltas.sessionBest(in: session), let profile = LapProfile(lap: best, in: session) else {
             return []
         }
-        let corners = CornerDetector.corners(of: profile)
+        let corners = session.agreedCorners(of: profile)
         let metrics = CornerMetrics.measure(corners: corners, of: profile)
         let names = session.cornerNames(for: corners)
         return metrics.enumerated().map { index, metric in

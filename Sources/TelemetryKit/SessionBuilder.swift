@@ -44,6 +44,8 @@ public enum SessionBuilder {
         /// The circuit's turn names pinned to their apexes (#548); used instead of `cornerLabels`
         /// when there are any.
         public var turnNames: [TurnName] = []
+        /// Read every corner of the reference lap, as before #585 (`TelemetrySession.legacyCornersPerLap`).
+        public var legacyCornersPerLap = false
         /// Ignore samples before this point in the file's own time (`nil` = from the beginning).
         ///
         /// Applied before anything else, so the session behaves as if the recording had started
@@ -157,6 +159,8 @@ public enum SessionBuilder {
         // Pit-lane fragments cannot be the best lap, and every object can read the deltas to it.
         session.laps = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
         for channel in LapDeltas.channels(for: session) { session.add(channel) }
+        // Before the sectors, whose corner-aware boundaries are placed between its corners.
+        session.legacyCornersPerLap = options.legacyCornersPerLap
         // After the demotion, so an out-lap cannot be the lap the sectors are measured on.
         session.sectors = Sectors.analyse(mode: options.sectorMode, session: session)
         session.cornerLabels = options.cornerLabels

@@ -64,6 +64,14 @@ struct Coach: AsyncParsableCommand {
             """)
     var suggestTraffic = false
 
+    @Option(
+        name: .long,
+        help: """
+            Another car's log from the same session, as file[=name] (friend.csv=GR86): the corners spent within \
+            1.5 s behind it are suggested as traffic. Repeat for more cars. Implies --suggest-traffic.
+            """)
+    var otherCar: [String] = []
+
     @Option(name: .long, help: "Force a specific importer id for a file instead of auto-detecting.")
     var format: String?
 
@@ -133,7 +141,10 @@ struct Coach: AsyncParsableCommand {
             print(sheet.markdown)
         } else {
             printReport(analysis, lapNumber: chosen.number, units: units)
-            if suggestTraffic { printSuggestions(analysis, session: session, units: units) }
+            if suggestTraffic || !otherCar.isEmpty {
+                printCarsAhead(session)
+                printSuggestions(analysis, session: session, units: units)
+            }
         }
     }
 
@@ -159,30 +170,7 @@ struct Coach: AsyncParsableCommand {
             }
             return session
         }
-        let candidates = try FormatDetector.candidates(for: url)
-        let chosen: FormatDetector.Candidate
-        if let format {
-            guard let match = candidates.first(where: { $0.id == format }) else {
-                throw ValidationError("Importer '\(format)' cannot read this file. Candidates: \(candidates.map(\.id))")
-            }
-            chosen = match
-        } else {
-            guard let best = candidates.first else { throw ValidationError("Unrecognised file format.") }
-            chosen = best
-        }
-        var options = SessionBuilder.Options()
-        if let lapLine {
-            let parts = lapLine.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
-            guard parts.count >= 2 else { throw ValidationError("--lap-line expects lat,lon[,heading[,halfWidth]].") }
-            options.finishLine = FinishLine(
-                latitude: parts[0], longitude: parts[1], headingDegrees: parts.count > 2 ? parts[2] : nil,
-                halfWidthMeters: parts.count > 3 ? parts[3] : 25)
-            options.ignoreFirstCrossings = ignoreFirst
-        }
-        options.sectorMode = cornerAware ? .cornerAware(count: sectors) : .equalDistance(count: sectors)
-        var session = try chosen.importer.importSession(at: url, options: options)
-        if session.info.sourceFileName == nil { session.info.sourceFileName = url.lastPathComponent }
-        return session
+        return try importFile(url)
     }
 
     /// Without `--lap`: the quickest lap that is not the reference itself, so the comparison has
@@ -291,10 +279,48 @@ struct Coach: AsyncParsableCommand {
 }
 
 extension Coach {
+    /// A data file read by the importer that recognises it, or `--format`'s.
+    func importFile(_ url: URL) throws -> TelemetrySession {
+        let candidates = try FormatDetector.candidates(for: url)
+        let chosen: FormatDetector.Candidate
+        if let format {
+            guard let match = candidates.first(where: { $0.id == format }) else {
+                throw ValidationError("Importer '\(format)' cannot read this file. Candidates: \(candidates.map(\.id))")
+            }
+            chosen = match
+        } else {
+            guard let best = candidates.first else { throw ValidationError("Unrecognised file format.") }
+            chosen = best
+        }
+        var options = SessionBuilder.Options()
+        if let lapLine {
+            let parts = lapLine.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+            guard parts.count >= 2 else { throw ValidationError("--lap-line expects lat,lon[,heading[,halfWidth]].") }
+            options.finishLine = FinishLine(
+                latitude: parts[0], longitude: parts[1], headingDegrees: parts.count > 2 ? parts[2] : nil,
+                halfWidthMeters: parts.count > 3 ? parts[3] : 25)
+            options.ignoreFirstCrossings = ignoreFirst
+        }
+        options.sectorMode = cornerAware ? .cornerAware(count: sectors) : .equalDistance(count: sectors)
+        var session = try chosen.importer.importSession(at: url, options: options)
+        if session.info.sourceFileName == nil { session.info.sourceFileName = url.lastPathComponent }
+        return session
+    }
+
     /// The session with `--traffic`'s marks, when given, in place of any the project had.
     func markedSession() async throws -> TelemetrySession {
         var session = try await loadSession()
         if let traffic { session.traffic = try Self.parseTraffic(traffic) }
+        for item in otherCar {
+            let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
+            let url = URL(fileURLWithPath: parts[0])
+            let other = try importFile(url)
+            guard other.hasAbsoluteTime, other.hasPosition else {
+                throw ValidationError("--other-car: '\(parts[0])' has no position or no time of day to line it up by.")
+            }
+            let name = parts.count > 1 ? parts[1] : url.deletingPathExtension().lastPathComponent
+            session.carsAhead += CarsAhead.following(in: session, behind: other, car: name)
+        }
         return session
     }
 
@@ -346,10 +372,21 @@ extension Coach {
         }
     }
 
+    /// The stretches spent close behind each `--other-car` (#574), in the data file's seconds.
+    func printCarsAhead(_ session: TelemetrySession) {
+        guard !otherCar.isEmpty else { return }
+        print("\nClose behind another car" + (session.carsAhead.isEmpty ? ": never." : ""))
+        for ahead in session.carsAhead {
+            let window = String(format: "%.1f–%.1f s", ahead.window.start, ahead.window.end)
+            let gap = String(format: "%.2f", ahead.closestGap)
+            print("  The \(ahead.car): \(window), \(gap) s behind at the closest.")
+        }
+    }
+
     /// What `--align` and `--suggest-traffic` ask of the reading.
     func coachingOptions() throws -> CoachingOptions {
         var options = CoachingOptions()
-        options.suggestsTraffic = suggestTraffic
+        options.suggestsTraffic = suggestTraffic || !otherCar.isEmpty
         switch align?.lowercased() {
         case nil: break
         case "distance": options.alignment = .distance

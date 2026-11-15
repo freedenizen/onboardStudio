@@ -282,6 +282,11 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// `Project.migrateIfNeeded()` on the inputs of a project saved by an earlier build, so its
     /// lap numbers, counts and deltas stay as they were; `false` for every input added since.
     public var legacyFirstLap: Bool
+    /// Every corner the reference lap finds is numbered, as builds before schema 5 numbered them
+    /// (#585), rather than only those most of the session's laps agree on. Set by
+    /// `Project.migrateIfNeeded()` on the inputs of a project saved by an earlier build, so its
+    /// map, corner-aware sectors and coaching keep their corners; `false` for every input since.
+    public var legacyCornersPerLap = false
 
     public init(
         importerID: String? = nil,
@@ -326,7 +331,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, runFinishLine, sectors, circuitID
         case cornerLabels, turnNames, configuration, trim
-        case logbookEntryID, legacyFirstLap, measuresPerformance
+        case logbookEntryID, legacyFirstLap, legacyCornersPerLap, measuresPerformance
     }
 
     public init(from decoder: any Decoder) throws {
@@ -364,6 +369,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         // Absent before schema 4. This decoder cannot see the schema, so it does not decide: the
         // migration sets it on the inputs of a project saved by an earlier build.
         legacyFirstLap = try c.decodeIfPresent(Bool.self, forKey: .legacyFirstLap) ?? false
+        // Absent before schema 5, and left to the migration for the same reason.
+        legacyCornersPerLap = try c.decodeIfPresent(Bool.self, forKey: .legacyCornersPerLap) ?? false
     }
 }
 

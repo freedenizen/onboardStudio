@@ -347,14 +347,14 @@ extension CoachingContent {
 
     func analyse(_ selection: CoachingSelection, session read: TelemetrySession) async {
         // The marks as chosen, not as the last compile left them on the session.
-        let session = {
-            var session = read
-            session.traffic = selection.traffic
-            session.dismissedTraffic = selection.dismissedTraffic
-            return session
-        }()
+        var marked = read
+        marked.traffic = selection.traffic
+        marked.dismissedTraffic = selection.dismissedTraffic
         isAnalysing = true
         defer { isAnalysing = false }
+        // Other cars' logs from the same session, for the suggestions (#574).
+        marked.carsAhead = await carsAhead(in: marked, input: selection.input)
+        let session = marked
         guard let lap = session.laps.first(where: { $0.number == selection.lapNumber }) else {
             analysis = nil
             analysed = selection

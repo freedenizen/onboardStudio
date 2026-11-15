@@ -71,6 +71,11 @@ Local run ≈ 5 min for 13 tests.
   `addTeardownBlock` (`LogbookColumnsUITests.widen(by:)`), which runs even when the test fails.
 - `UITestSupport.editorAppeared` activates the app, fits windows to the screen and remembers the
   last editor as a `FocusedValue` fallback (Sparkle's first-launch panel used to steal key window).
+- **"Application … does not have a process ID", then a retry that hangs** is the CI runner's
+  WindowServer deadlocked in Apple's paravirtualized GPU driver (#588): the spindump XCTest takes
+  shows the app blocked in `NSApplication init` waiting on WindowServer. Nothing on that runner
+  recovers. `Scripts/windowserver-watchdog.sh` stops the shard within about three minutes and
+  `rerun-runner-hang.yml` reruns it on a fresh runner, once. Do not debug the test.
 - **"Timed out while enabling automation mode" / "Failed to activate application" means the
   display is asleep** (displaysleep is 120 s; check `ioreg -c IOHIDSystem` `HIDIdleTime`). After a
   wake, 1Password's SSH agent also refuses signing until unlocked.

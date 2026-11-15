@@ -21,6 +21,23 @@ public enum LogbookReferences {
         }
     }
 
+    /// Other cars' sessions that could have shared the track with one that ran over `span`
+    /// (seconds since 1970) at `circuitKey` (#574): those that began in the half day before it
+    /// ended, the only ones whose logs can overlap it. The session itself — by its bytes or its
+    /// path — is not another car.
+    public static func sharingTheTrack(
+        at circuitKey: String, during span: ClosedRange<Double>, in entries: [LogbookEntry],
+        excluding ownHash: String?, path ownPath: String?
+    ) -> [LogbookEntry] {
+        guard !circuitKey.isEmpty else { return [] }
+        return entries.filter { entry in
+            guard entry.file.contentHash != ownHash, entry.file.path != ownPath,
+                LogbookFilter.circuitKey(of: entry) == circuitKey, let began = entry.date?.timeIntervalSince1970
+            else { return false }
+            return began > span.lowerBound - 12 * 3600 && began < span.upperBound
+        }
+    }
+
     /// The personal best among `candidates` (the quickest complete lap), and the last visit (the
     /// newest dated session); `nil` where there is none.
     public static func personalBest(in candidates: [LogbookEntry]) -> LogbookEntry? {

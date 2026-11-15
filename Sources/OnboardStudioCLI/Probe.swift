@@ -235,7 +235,7 @@ struct Probe: ParsableCommand {
 
     private func printCorners(_ session: TelemetrySession) {
         guard let reference = Sectors.referenceLap(in: session) else { return }
-        let found = CornerDetector.corners(of: reference, in: session)
+        let found = session.agreedCorners(of: reference)
         let names = session.cornerNames(for: found)
         print("\nCorners on lap \(reference.number) (\(found.count)):")
         for (index, corner) in found.enumerated() {

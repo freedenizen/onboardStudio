@@ -682,9 +682,13 @@ type the real names into *Corners* once — or name them on the circuit's card i
 
 Each name stays on its own turn. A lap does not always find the same corners — a kink near the line
 counts on one lap and not the next — and a name is kept where the turn is, not as "the fourth
-corner", so a lap with an extra kink does not move 3a onto turn 4. A corner you leave blank among
-named ones is not numbered on the map, and Coaching and Trends call it by the turns either side of
-it, such as *3a–4*. Clear a name to take it off a turn.
+corner", so a lap with an extra kink does not move 3a onto turn 4. And a kink only a few of the
+session's laps find is not a corner at all: the corners are the ones most of your laps agree on,
+so your best lap having one kink more than the rest does not give the map, the sectors or Coaching
+a corner the circuit does not have. (With fewer than three laps there is nothing to agree, and
+every corner counts. A project made before this keeps the corners it had.) A corner you leave
+blank among named ones is not numbered on the map, and Coaching and Trends call it by the turns
+either side of it, such as *3a–4*. Clear a name to take it off a turn.
 
 A circuit with more than one layout keeps each one's settings apart: the **Configuration** field
 under the circuit says which this file drove, and choosing one uses the start/finish, sectors and
@@ -1258,6 +1262,13 @@ steps (**Undo Mark Traffic**, **Undo Dismiss Traffic Suggestion**). Laps more th
 again as your best, such as a cool-down lap, are left out, and a session needs three laps for
 anything to be usual.
 
+**Another car's log.** When the Logbook holds another car's session at the same circuit from the
+same time — a friend's logger in your run group — the window reads the two together and knows the
+gap between you at every moment. A corner you spent within 1.5 s behind the other car is
+suggested the same way, naming it: "You were 0.80 s behind the GR86". It is still a question, not a
+mark, because following a friend can be deliberate; this works with any number of laps. The other
+session needs a position and a time of day, which every GPS logger records.
+
 ### A plan for next session
 
 **Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
@@ -1404,8 +1415,9 @@ and in metres otherwise, as Coaching gives them; the line under the table names 
 above the table names the laps it reads, and a comparison's columns appear only when there is one
 to make: none against the personal best when the latest day set it. Sessions entered before
 corners were kept offer **Read Their Corners**, as do sessions whose corners were measured before
-a correction to how the app measures them (#438), so a fixed reading reaches sessions already in
-the logbook.
+a correction to how the app measures them — braking that belongs to the next corner (#438), and a
+kink few of the session's laps find no longer counted as a corner (#585) — so a fixed reading
+reaches sessions already in the logbook.
 
 ### Car against car
 
@@ -1521,7 +1533,9 @@ sectors, corner names and traffic marks the project has. `--traffic 312.5-330,12
 stretches as held up by traffic (or `:flag`) in seconds of the data file, and the corners they cover
 are left out of the coaching ([Traffic and flags](#traffic-and-flags)); `--suggest-traffic` lists
 every corner of the session the telemetry suggests was traffic, with its stretch of the data file,
-to check against the video. The method is in
+to check against the video. `--other-car friend.csv=GR86` reads another car's log from the same
+session as well, lists the stretches spent within 1.5 s behind it, and suggests the corners they
+cover; repeat it for more cars. The method is in
 [coaching.md](coaching.md).
 
 **Performance runs.** `onboard probe drag.vbo --performance` lists every standing start: 0–30,
