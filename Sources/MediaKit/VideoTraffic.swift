@@ -1,4 +1,5 @@
 import AVFoundation
+import Accelerate
 import CoreGraphics
 import CoreML
 import CryptoKit
@@ -151,15 +152,24 @@ public enum VideoTraffic {
             image, in: CGRect(x: 0, y: (Double(side) - height) / 2, width: Double(side), height: height))
         guard let data = context.data else { return nil }
         let pixels = data.bindMemory(to: UInt8.self, capacity: side * side * 4)
-        let array = try MLMultiArray(shape: [1, 3, NSNumber(value: side), NSNumber(value: side)], dataType: .float16)
         let plane = side * side
-        array.withUnsafeMutableBufferPointer(ofType: Float16.self) { buffer, _ in
-            for index in 0..<plane {
-                let pixel = index * 4
-                buffer[index] = Float16(pixels[pixel + 2])
-                buffer[plane + index] = Float16(pixels[pixel + 1])
-                buffer[2 * plane + index] = Float16(pixels[pixel])
-            }
+        var planes = [Float](repeating: 0, count: 3 * plane)
+        for index in 0..<plane {
+            let pixel = index * 4
+            planes[index] = Float(pixels[pixel + 2])
+            planes[plane + index] = Float(pixels[pixel + 1])
+            planes[2 * plane + index] = Float(pixels[pixel])
+        }
+        // The model takes half precision. Converted by vImage rather than through Swift's `Float16`,
+        // which macOS 26's SDK resolves to another type.
+        let array = try MLMultiArray(shape: [1, 3, NSNumber(value: side), NSNumber(value: side)], dataType: .float16)
+        let total = planes.count
+        planes.withUnsafeMutableBytes { source in
+            var from = vImage_Buffer(
+                data: source.baseAddress, height: 1, width: vImagePixelCount(total), rowBytes: total * 4)
+            var to = vImage_Buffer(
+                data: array.dataPointer, height: 1, width: vImagePixelCount(total), rowBytes: total * 2)
+            vImageConvert_PlanarFtoPlanar16F(&from, &to, vImage_Flags(kvImageNoFlags))
         }
         return array
     }
@@ -168,26 +178,29 @@ public enum VideoTraffic {
     /// scores], on strides 8, 16 and 32), in fractions of the picture the crop came from, after
     /// non-maximum suppression within each class.
     static func detections(head: MLMultiArray, crop: CGRect, picture: CGSize, minimumScore: Double = 0.15) -> [Box] {
-        let strides = head.strides.map(\.intValue)
         let count = head.shape[1].intValue
         let fields = head.shape[2].intValue
-        // The head as plain numbers, anchor by anchor; Core ML pads its rows.
-        var numbers = [Double](repeating: 0, count: count * fields)
-        func copy<Element: BinaryFloatingPoint & MLShapedArrayScalar>(_ type: Element.Type) {
-            head.withUnsafeBufferPointer(ofType: type) { buffer in
-                for anchor in 0..<count {
-                    for field in 0..<fields {
-                        numbers[anchor * fields + field] = Double(buffer[anchor * strides[1] + field * strides[2]])
-                    }
-                }
+        let strides = head.strides.map(\.intValue)
+        let stored = head.shape[0].intValue * strides[0]
+        // The head as stored, in single precision: half converted by vImage, as the input was.
+        var raw = [Float](repeating: 0, count: stored)
+        if head.dataType == .float16 {
+            raw.withUnsafeMutableBytes { target in
+                var from = vImage_Buffer(
+                    data: head.dataPointer, height: 1, width: vImagePixelCount(stored), rowBytes: stored * 2)
+                var to = vImage_Buffer(
+                    data: target.baseAddress, height: 1, width: vImagePixelCount(stored), rowBytes: stored * 4)
+                vImageConvert_Planar16FtoPlanarF(&from, &to, vImage_Flags(kvImageNoFlags))
             }
+        } else {
+            for index in 0..<stored { raw[index] = head[index].floatValue }
         }
-        switch head.dataType {
-        case .float16: copy(Float16.self)
-        case .float32: copy(Float.self)
-        default: copy(Double.self)
+        // Anchor by anchor, without Core ML's row padding.
+        var numbers = [Float](repeating: 0, count: count * fields)
+        for anchor in 0..<count {
+            for field in 0..<fields { numbers[anchor * fields + field] = raw[anchor * strides[1] + field * strides[2]] }
         }
-        let value: (Int, Int) -> Double = { anchor, field in numbers[anchor * fields + field] }
+        let value: (Int, Int) -> Double = { anchor, field in Double(numbers[anchor * fields + field]) }
         // Letterbox pixels to picture fractions.
         let scale = crop.width / Double(inputSize)
         let top = (Double(inputSize) - crop.height / scale) / 2
