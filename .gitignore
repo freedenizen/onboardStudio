@@ -18,3 +18,7 @@ CLAUDE.local.md
 
 # Unsaved edits kept aside beside a project opened from the checkout (#300)
 *(Autosaved).onboardproj
+
+# Python bytecode from running Scripts/*.py (#604)
+__pycache__/
+*.pyc
