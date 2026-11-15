@@ -151,6 +151,20 @@ enum UITestSupport {
         }
     }
 
+    static func forgetSectors() {
+        let logbook = AppLogbook.shared
+        for var entry in logbook.entries() {
+            for index in entry.laps.indices {
+                entry.laps[index].sectors = []
+                entry.laps[index].topSpeed = nil
+                entry.laps[index].minSpeed = nil
+            }
+            entry.splitsMeasurement = 0
+            try? logbook.save(entry)
+        }
+        LogbookModel.shared.reload()
+    }
+
     /// The editor that appeared last. Headless CI runners do not always give the document window
     /// key status, which leaves `@FocusedValue(\.editor)` empty; the Testing menu falls back to this.
     static weak var currentEditor: EditorModel?
@@ -285,6 +299,8 @@ struct UITestCommands: Commands {
             // A RaceChrono session as a build before #477 entered it: its first lap called partial,
             // and no note of a later reading (#498).
             Button("Add Fixture Session Read Before the Lap Fix") { UITestSupport.addSessionReadBeforeTheLapFix() }
+            // Every session as a build before #557 entered it: laps without sectors or speeds.
+            Button("Forget Every Session's Sectors") { UITestSupport.forgetSectors() }
             Button("Add Fixture Second Visit") {
                 guard let fixture = UITestSupport.fixture("coaching-laps.csv"),
                     let text = try? String(contentsOf: fixture, encoding: .utf8)

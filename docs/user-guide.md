@@ -47,8 +47,8 @@ with a synthetic log if you just want to poke around.
    says what happened to every file, and how the day went against your last visit.
    ([Adding a day's files](#adding-a-days-files))
 3. **Say what was driven** if the sheet asks: on a first import there is no car to take it from.
-4. **Choose a session** in the table. Its detail lists its laps with the best marked, its clips,
-   and at its foot what can be done with it.
+4. **Choose a session** in the table. Its detail lists its laps with their sector times and
+   speeds, the best of each marked, its clips, and at its foot what can be done with it.
 5. **New Project** — the button at the foot of the detail, or the toolbar's menu, which names the
    session it will use — opens a project with the session's data, its clips and gauges already
    laid out, the data lined up with the video by the clocks in the files when they have them.
@@ -338,6 +338,33 @@ archive it ran from the start of the log, out-lap and all — so a best lap can 
 of complete laps can go up by one. A session whose file is not where the logbook has it is named in
 the line and left as it was; it is offered again once the file is back.
 
+### A session's laps
+
+The detail lists a session's laps as a timing screen does, one row a lap:
+
+- **Time**, the best lap's in the accent colour.
+- **Gap**, how far the lap was off the best, *partial* for a lap not driven from line to line, or
+  why a lap you left out does not count (*left out: traffic*; see
+  [Laps that don't count](#laps-that-dont-count)).
+- **S1**, **S2**, **S3**, the lap's time in each sector.
+- **Top** and **Min**, its top speed and its lowest, in the unit Settings ▸ Units ▸ Speed shows.
+  They need a wider detail than the others: at its usual width a line under the laps says so, and
+  dragging the detail's left edge brings them in.
+
+The quickest of each column is in the accent colour, so you can see which lap had the best S3 and
+whether S2 came down over the session. A sector the lap did not time is a dash: the recording ended
+during it, or the lap ended in the pit lane. The out-lap has no sector times, because it did not
+start at the line. The highest minimum is the one picked out, since it means the slowest corner was
+taken quicker. An unfinished lap's speeds are never the best, and a lap you left out is never the
+best time or the best sector.
+
+The sectors are the ones the session's **Optimal lap** is made of. If the session was added from a
+project, they are that project's. Otherwise the lap is divided into three equal distances. A
+session added before the Logbook kept sector times has them read from its file the first time you
+choose it, with a line under the laps while that happens. If the file has moved, the session's laps
+are listed without them. Runs on a point-to-point course keep their list of cones and DNFs
+([Runs and courses](#runs-and-courses)) and show no sector table.
+
 ### What you can do with a session
 
 What can be done with the session stays at the foot of its detail, in view however many laps are
@@ -366,11 +393,11 @@ and the next time the app opens).
 A lap behind traffic, under a yellow, with a point-by or an off is still a lap you drove, but its
 time says nothing true about your driving — and a lap that cut a corner can be quicker than any
 you really drove. Leave such a lap out and every figure the app reads from the session leaves it
-out too. In a session's detail, each lap has a **⋯** menu (or right-click the lap): **Leave Lap 7
-Out** with a reason — **Traffic**, **Flag**, **Off Track** or **Other** — and **Count Lap 7** to put
-it back. A lap left out:
+out too. In a session's lap table, click a lap's number — or right-click its number or time — for
+**Leave Lap 7 Out** with a reason — **Traffic**, **Flag**, **Off Track** or **Other** — and
+**Count Lap 7** to put it back. A lap left out:
 
-- keeps its time in the list, in grey, with the reason beside it ("left out: off track");
+- keeps its time in the table, in grey, with the reason in the Gap column ("left out: off track");
 - is never the session's **best lap** and is never part of the **optimal lap** or the **fastest
   rolling lap**, so those, the **personal best** at the circuit, **Trends**, **goals**, the
   **Season** and the circuit card all move to the laps that count;

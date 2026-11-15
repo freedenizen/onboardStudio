@@ -142,6 +142,9 @@ struct LogbookDetail: View {
     /// Measures its standing starts and stops, or stops (#553); `false` when the file could not be
     /// read.
     var measurePerformance: (Bool) async -> Bool = { _ in false }
+    /// Reads the sector times and speeds of a session entered before they were kept (#557).
+    var readSplits: () async -> Void = {}
+    @State private var readingSplits = false
     /// Leaves a lap out for a reason, or counts it again when the reason is `nil` (#554), and reads
     /// the figures again without it; `false` when the file could not be read.
     var markLap: (Int, LapMark.Reason?) async -> Bool = { _, _ in false }
@@ -176,7 +179,7 @@ struct LogbookDetail: View {
                         detail: entry.bestLapNumber.map { "\(noun) \($0)" }, identifier: "logbook.detail.best")
                     row(
                         "Optimal \(noun)", entry.optimalLap.map { TimeParsing.lapTimeString($0) },
-                        detail: LogbookLapRow.sources(of: entry, noun: noun), identifier: "logbook.detail.optimal")
+                        detail: LapCountsMenu.sources(of: entry, noun: noun), identifier: "logbook.detail.optimal")
                     // A run's course ends at the finish: there is no rolling lap (#552).
                     if !entry.isRuns {
                         row("Fastest rolling lap", entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) })
@@ -191,17 +194,16 @@ struct LogbookDetail: View {
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                 }
                 .font(.callout)
-                if !entry.laps.isEmpty {
+                if entry.isRuns, !entry.laps.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.isRuns ? "Runs" : "Laps").font(.subheadline.weight(.semibold))
+                        Text("Runs").font(.subheadline.weight(.semibold))
                         ForEach(entry.laps, id: \.number) { lap in
-                            if entry.isRuns {
-                                RunPenaltyRow(entry: entry, lap: lap, save: save)
-                            } else {
-                                LogbookLapRow(entry: entry, lap: lap, markLap: markLap)
-                            }
+                            RunPenaltyRow(entry: entry, lap: lap, save: save)
                         }
                     }
+                } else if !entry.laps.isEmpty {
+                    SessionLapTable(
+                        entry: entry, speedUnit: speedUnit, readingSplits: readingSplits, markLap: markLap)
                 }
                 SessionPerformanceSection(entry: entry, metric: speedUnit != .mph, measure: measurePerformance)
                 if !clips.isEmpty {
@@ -251,6 +253,12 @@ struct LogbookDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("logbook.detail")
+        .task(id: entry.id) {
+            guard entry.needsSplitReading else { return }
+            readingSplits = true
+            await readSplits()
+            readingSplits = false
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) { actions }
     }
 
@@ -368,7 +376,10 @@ struct LogbookDetail: View {
         ]
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
+}
 
+// Outside the type's body, which the session's rows fill.
+extension LogbookDetail {
     @ViewBuilder private func row(
         _ label: String, _ value: String?, detail: String? = nil, identifier: String = ""
     ) -> some View {

@@ -3,11 +3,11 @@
 be the session's best, feed the optimal lap and the personal best, and widen the consistency
 figures; and the driver could not see which laps the optimal lap came from.*
 
-1. Select a session in the Logbook. Its detail lists every lap with a **⋯** menu, and the
+1. Select a session in the Logbook. Each lap's number in its lap table is a menu, and the
    **Optimal lap** row names the laps it is spliced from.
-2. On the best lap, choose **⋯ ▸ Off Track** (or right-click it): the lap reads "left out: off
-   track" in grey, and **Best lap** moves to the quickest lap that counts. The optimal and rolling
-   laps, the personal best, Trends, goals and consistency follow.
+2. Click the best lap's number and choose **Off Track** (or right-click the lap): its Gap column reads "left out:
+   off track", its time turns grey, and **Best lap** moves to the quickest lap that counts. The
+   optimal and rolling laps, the personal best, Trends, goals and consistency follow.
 3. **Edit ▸ Undo Leave Lap 7 Out** counts it again, and the best lap is what it was.
 4. In the Coaching window, the picker beside **Lap** does the same for the lap being read: from
    **Counts** to **Left Out: Traffic**, **Flag**, **Off Track** or **Other**. When the telemetry

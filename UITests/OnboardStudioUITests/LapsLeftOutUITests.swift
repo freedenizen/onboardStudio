@@ -26,7 +26,7 @@ final class LapsLeftOutUITests: OnboardStudioUITestCase {
         let best = text(of: bestLap)
         let number = try XCTUnwrap(best.split(separator: " ").last.map(String.init), "Best lap reads '\(best)'")
 
-        // Leave it out: it was off the track.
+        // Leave it out: it was off the track. The lap's number is the menu.
         let counts = app.menuButtons["logbook.lap.\(number).counts"]
         reveal(counts)
         XCTAssertTrue(counts.waitForExistence(timeout: Self.timeout), "No way to leave lap \(number) out")

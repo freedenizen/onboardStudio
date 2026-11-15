@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import TelemetryKit
 
@@ -32,19 +31,28 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         public var cones: Int
         /// The driver says the run went off course: a DNF, though it crossed the finish.
         public var offCourse: Bool
+        /// Seconds in each of the session's sectors (#557), `nil` where the lap did not time one;
+        /// empty when the session has no sectors, or before they were read.
+        public var sectors: [Double?]
+        /// The fastest and slowest the lap went (#557), m/s.
+        public var topSpeed: Double?
+        public var minSpeed: Double?
         /// Why the driver said the lap does not count (#554), from the entry's `lapMarks` as the
         /// laps were last read; `nil` for a lap that counts.
         public var notCounted: LapMark.Reason?
 
         public init(
             number: Int, seconds: Double?, isComplete: Bool, cones: Int = 0, offCourse: Bool = false,
-            notCounted: LapMark.Reason? = nil
+            sectors: [Double?] = [], topSpeed: Double? = nil, minSpeed: Double? = nil, notCounted: LapMark.Reason? = nil
         ) {
             self.number = number
             self.seconds = seconds
             self.isComplete = isComplete
             self.cones = cones
             self.offCourse = offCourse
+            self.sectors = sectors
+            self.topSpeed = topSpeed
+            self.minSpeed = minSpeed
             self.notCounted = notCounted
         }
 
@@ -110,6 +118,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// `LogbookEntry.lapMeasurement`, the file was read by a build since corrected, and the Logbook
     /// offers to read it again.
     public var lapMeasurement: Int
+    /// Which reading put the sector times and speeds on `laps` (#557); 0 before they were read.
+    public var splitsMeasurement: Int
     /// The track day the session belongs to (#392); `nil` only until `Logbook.ensureDays` runs.
     public var trackDayID: UUID?
     /// How long the file runs, from its first sample to its last (#392), so a clip can be matched
@@ -176,6 +186,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.corners = corners
         self.cornerMeasurement = Self.cornerMeasurement
         self.lapMeasurement = Self.lapMeasurement
+        self.splitsMeasurement = 0
         self.trackDayID = trackDayID
         self.durationSeconds = durationSeconds
         self.coaching = coaching
@@ -254,7 +265,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, configuration, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
-        case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
+        case cornerMeasurement, lapMeasurement, splitsMeasurement, trackDayID, durationSeconds, coaching, added,
+            modified
         case runLines, course, coursePath, penaltyPerCone, measuresPerformance, performance
         case lapMarks, optimalSources
     }
@@ -286,6 +298,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         cornerMeasurement = try c.decodeIfPresent(Int.self, forKey: .cornerMeasurement) ?? 1
         // Absent in entries written before #498: their laps came from the first reading.
         lapMeasurement = try c.decodeIfPresent(Int.self, forKey: .lapMeasurement) ?? 1
+        // Absent before #557: the laps were read without their sectors and speeds.
+        splitsMeasurement = try c.decodeIfPresent(Int.self, forKey: .splitsMeasurement) ?? 0
         trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
         durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
         coaching = try? c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
@@ -329,19 +343,6 @@ extension LogbookEntry {
         return entry
     }
 
-    /// SHA-256 of the file, streamed, and its length.
-    public static func hash(of url: URL) throws -> (hex: String, byteCount: Int) {
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        var hasher = SHA256()
-        var total = 0
-        while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty {
-            hasher.update(data: chunk)
-            total += chunk.count
-        }
-        let digest = hasher.finalize()
-        return (digest.map { String(format: "%02x", $0) }.joined(), total)
-    }
 }
 
 /// A car in the garage (#345): a name and whatever the owner wants to say about it.
@@ -458,7 +459,9 @@ public struct Logbook: Sendable {
 }
 
 extension LogbookEntry.LapRecord {
-    private enum CodingKeys: String, CodingKey { case number, seconds, isComplete, cones, offCourse, notCounted }
+    private enum CodingKeys: String, CodingKey {
+        case number, seconds, isComplete, cones, offCourse, sectors, topSpeed, minSpeed, notCounted
+    }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -470,6 +473,10 @@ extension LogbookEntry.LapRecord {
             number: number, seconds: seconds, isComplete: isComplete,
             cones: try c.decodeIfPresent(Int.self, forKey: .cones) ?? 0,
             offCourse: try c.decodeIfPresent(Bool.self, forKey: .offCourse) ?? false,
+            // Absent before #557: read again when the session is next shown.
+            sectors: try c.decodeIfPresent([Double?].self, forKey: .sectors) ?? [],
+            topSpeed: try c.decodeIfPresent(Double.self, forKey: .topSpeed),
+            minSpeed: try c.decodeIfPresent(Double.self, forKey: .minSpeed),
             // Absent before #554: every lap counted.
             notCounted: try? c.decodeIfPresent(LapMark.Reason.self, forKey: .notCounted))
     }
