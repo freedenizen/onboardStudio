@@ -73,6 +73,55 @@ The forward camera sees exactly what matters: a car ahead and how fast the gap i
 - **Cost.** Analysed once per clip, in the background, with progress, and cached beside the clip
   as `PictureMotion` is.
 
+#### The spike (#593)
+
+Run locally on the reference session's two GoPro chapters (HERO13, 2.7K at 120 fps, helmet camera
+in a closed car) on an Apple M4. YOLOX-Nano and YOLOX-Tiny (Megvii, Apache-2.0, COCO) were
+converted to Core ML ML Programs in FP16 with `coremltools`; the network's raw head is the model's
+output, and decoding and non-maximum suppression are a few lines after it. Stretches of a
+few minutes were hand-labelled, one label every 4 s: a car close ahead on the circuit, clear
+track, or the pit queue. They included the corners the telemetry and the video already showed
+were traffic, the best lap, a lap spent behind one car, and the paddock. No value from that session
+is recorded here.
+
+- **Verdict: go, with YOLOX-Nano at 640 px on a crop.** Nano at a 640-px input, fed a
+  native-resolution crop of the middle of the picture (about 70 % of its width, from an eighth to
+  three-fifths of its height), found every labelled stretch with a car ahead. On the clear stretches
+  its only hit was a car leaving the edge of the picture at the end of a labelled stretch. The
+  Core ML model is **1.9 MB** (Tiny 9.8 MB); the size answers the open question below.
+- **The input size and the crop matter more than the model.** Nano at 416 px missed many
+  stretches on the crop, and more on the whole frame. Tiny holds up at 416 px and on the whole
+  frame, for five times the size. Pixels on the car ahead are what count.
+- **What counts as a car ahead.** COCO *car*, *truck*, *bus* or *motorcycle* at a score (class ×
+  objectness) of 0.4 or more; a box 30 to 600 px wide in a 2,704-px frame; its centre in the middle
+  three-fifths of the width; its bottom below the top 30 % of the height; seen on consecutive
+  samples for 1.5 s. The **upper width limit is the rule that matters most**: COCO's *car* fires on
+  the car's own cabin (the dashboard, the windscreen frame and the mirror as one huge box) on nearly
+  every frame, and without the cut almost every clear stretch was a car ahead. Every number is a
+  parameter.
+- **The horizon cannot be fixed.** A helmet camera pans and tilts through every corner, and the
+  horizon moves across a third of the picture's height. A generous fixed band worked better than
+  any tighter guess; the gravity vector from `GRAV`/`CORI` remains the way to follow it, if a later
+  version needs to.
+- **What it cannot tell.** The pit queue and the paddock are cars directly ahead, and every
+  setting detects them: the telemetry's speed and lap gate them out, as for another car's log
+  (#574). The rear-view mirror shows the cars behind; one got through at Tiny's weakest margin
+  and none at Nano's. Rejecting boxes that touch the crop's edge removes the stray single frames,
+  mostly the mirror and the A-pillar. Box width puts a car ahead at very roughly 45 to 90 m: enough
+  to say *a car ahead*, not to measure the gap the way another car's log does.
+- **Decoding is the cost, and keyframes remove it.** At 120 fps every frame must be decoded to
+  sample five a second: about 40 s for each minute of footage with VideoToolbox, two-thirds of real
+  time, whichever decoder. Inference is small beside it: 12 ms a frame for Nano at 640 px on the
+  Neural Engine (6 ms at 416, Tiny 7 and 15 ms). A GoPro writes a keyframe every second, and
+  decoding only those costs under a second per minute of footage. Sampling the detections at one
+  keyframe a second and asking for two in a row kept nearly every stretch, at every phase offset,
+  for no more false positives. **One frame a second from keyframes** puts a whole session within a
+  minute of work.
+- **Per corner.** Like the telemetry's, a video suggestion belongs to a corner: the share of
+  the corner's keyframes with a car ahead, half or more, is steadier than one run of hits.
+
+Not measured: a 4K clip, a windscreen or roll-bar mount, night or rain, and other cameras.
+
 ### 3. Telemetry: candidates, not verdicts
 
 Cheap, works for any logger, but cannot tell traffic from a mistake. It finds the stretches to
@@ -212,14 +261,13 @@ an old project reads as it did until the driver turns it on.
    detection at all, and it is what every detector feeds.
 2. **Telemetry candidates** as low-confidence suggestions, on synthetic fixtures with an invented
    car ahead (#572, built).
-3. **Video spike.** Convert one Apache-2.0 detector, run it over local clips, measure recall and
-   false positives against hand marks, and measure time per minute of 2.7K and 4K footage. Go or
-   no-go on bundling, and which model.
+3. **Video spike** (#593, done): go, with YOLOX-Nano at 640 px on a crop, 1.9 MB, one keyframe a
+   second. See *The spike* above.
 4. **Video detection** in the app and the CLI, cached per clip.
 5. **Another car's log** from the logbook.
 
 ## Open questions
 
 - Should video suggestions apply without confirmation by default, or wait for the driver?
-- How large a bundled model is acceptable (a few MB versus tens of MB)?
+- How large a bundled model is acceptable? Answered by the spike: the model that holds up is 1.9 MB.
 - Should a flag count the same as traffic everywhere, or be shown differently in the Logbook?
