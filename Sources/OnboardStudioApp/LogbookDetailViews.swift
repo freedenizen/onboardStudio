@@ -68,6 +68,8 @@ struct LogbookTable<RowMenu: View>: View {
             Text(entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
         }
         .width(min: 70, ideal: 80)
+        TableColumn("GPS", value: \.gpsRank) { entry in GPSRatingBadge(entry: entry) }
+            .width(min: 34, ideal: 40)
         TableColumn("Conditions", value: \.conditions.summary).width(min: 90, ideal: 140)
     }
 }
@@ -192,6 +194,7 @@ struct LogbookDetail: View {
                         "\(entry.completeLapCount) \(entry.isRuns ? "finished" : "complete") of \(entry.laps.count)",
                         identifier: "logbook.detail.laps")
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
+                    if let gps = entry.gps { GPSQualityGridRow(gps: gps) }
                 }
                 .font(.callout)
                 if entry.isRuns, !entry.laps.isEmpty {
@@ -254,8 +257,8 @@ struct LogbookDetail: View {
         }
         .accessibilityIdentifier("logbook.detail")
         .task(id: entry.id) {
-            guard entry.needsSplitReading else { return }
-            readingSplits = true
+            guard entry.needsSplitReading || entry.needsGPSReading else { return }
+            readingSplits = entry.needsSplitReading
             await readSplits()
             readingSplits = false
         }

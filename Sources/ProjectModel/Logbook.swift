@@ -120,6 +120,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     public var lapMeasurement: Int
     /// Which reading put the sector times and speeds on `laps` (#557); 0 before they were read.
     public var splitsMeasurement: Int
+    /// How far the file's positions can be trusted (#555), and which reading said so (0: not yet).
+    public var gps: GPSQuality?
+    public var gpsMeasurement: Int
     /// The track day the session belongs to (#392); `nil` only until `Logbook.ensureDays` runs.
     public var trackDayID: UUID?
     /// How long the file runs, from its first sample to its last (#392), so a clip can be matched
@@ -187,6 +190,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.cornerMeasurement = Self.cornerMeasurement
         self.lapMeasurement = Self.lapMeasurement
         self.splitsMeasurement = 0
+        self.gpsMeasurement = 0
         self.trackDayID = trackDayID
         self.durationSeconds = durationSeconds
         self.coaching = coaching
@@ -268,7 +272,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         case cornerMeasurement, lapMeasurement, splitsMeasurement, trackDayID, durationSeconds, coaching, added,
             modified
         case runLines, course, coursePath, penaltyPerCone, measuresPerformance, performance
-        case lapMarks, optimalSources
+        case lapMarks, optimalSources, gps, gpsMeasurement
     }
 
     public init(from decoder: any Decoder) throws {
@@ -300,6 +304,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         lapMeasurement = try c.decodeIfPresent(Int.self, forKey: .lapMeasurement) ?? 1
         // Absent before #557: the laps were read without their sectors and speeds.
         splitsMeasurement = try c.decodeIfPresent(Int.self, forKey: .splitsMeasurement) ?? 0
+        // Absent before #555: the positions were never judged.
+        gps = try? c.decodeIfPresent(GPSQuality.self, forKey: .gps)
+        gpsMeasurement = try c.decodeIfPresent(Int.self, forKey: .gpsMeasurement) ?? 0
         trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
         durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
         coaching = try? c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)

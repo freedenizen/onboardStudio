@@ -116,15 +116,16 @@ import UniformTypeIdentifiers
         }
     }
 
-    /// Reads the sector times and speeds of a session entered before they were kept (#557), once,
-    /// off the main thread, and writes them with no step of Undo: they are the file's, not an
-    /// edit, and Undo of an edit made before puts back laps that are read again when next shown.
-    /// A session whose file cannot be found is left as it was.
+    /// Reads the sector times and speeds (#557) and the GPS quality (#555) of a session entered
+    /// before they were kept, once, off the main thread, and writes them with no step of Undo:
+    /// they are the file's, not an edit, and Undo of an edit made before puts back laps that are
+    /// read again when next shown. A session whose file cannot be found is left as it was.
     func readSplits(of entry: LogbookEntry) async {
-        guard entry.needsSplitReading, let session = await session(for: entry),
-            var latest = AppLogbook.shared.entry(id: entry.id), latest.needsSplitReading
+        guard entry.needsSplitReading || entry.needsGPSReading, let session = await session(for: entry),
+            var latest = AppLogbook.shared.entry(id: entry.id), latest.needsSplitReading || latest.needsGPSReading
         else { return }
-        latest.readSplits(of: session)
+        if latest.needsSplitReading { latest.readSplits(of: session) }
+        if latest.needsGPSReading { latest.readGPS(of: session) }
         try? AppLogbook.shared.save(latest)
         if let index = entries.firstIndex(where: { $0.id == latest.id }) { entries[index] = latest }
     }

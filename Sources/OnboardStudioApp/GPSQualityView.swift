@@ -63,3 +63,53 @@ struct GPSQualityView: View {
             .joined(separator: ". ")
     }
 }
+
+/// The GPS column of the Logbook's table (#555): the rating's symbol, with what counts against
+/// it in the help tag.
+struct GPSRatingBadge: View {
+    let entry: LogbookEntry
+
+    var body: some View {
+        if let gps = entry.gps {
+            Image(systemName: gps.rating.symbol)
+                .foregroundStyle(gps.rating == .good ? AnyShapeStyle(.secondary) : AnyShapeStyle(gps.rating.tint))
+                .help(Self.help(gps))
+                .accessibilityLabel("GPS \(gps.rating.title)")
+        } else if entry.needsGPSReading {
+            Text("—").foregroundStyle(.tertiary)
+                .help("Not judged yet: select the session and its file is read")
+                .accessibilityLabel("GPS not judged yet")
+        }
+    }
+
+    static func help(_ gps: GPSQuality, units: CoachingUnits = .app) -> String {
+        (["GPS \(gps.rating.title.lowercased()): \(gps.measurements(units: units))"] + gps.messages(units: units))
+            .joined(separator: "\n")
+    }
+}
+
+/// The GPS row of a session's details in the Logbook (#555).
+struct GPSQualityGridRow: View {
+    let gps: GPSQuality
+    var units: CoachingUnits = .app
+
+    var body: some View {
+        GridRow(alignment: .firstTextBaseline) {
+            Text("GPS").foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Image(systemName: gps.rating.symbol).foregroundStyle(gps.rating.tint).accessibilityHidden(true)
+                    Text(gps.rating.title)
+                }
+                Text(gps.measurements(units: units)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(gps.messages(units: units), id: \.self) { message in
+                    Text(message).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(GPSRatingBadge.help(gps, units: units).replacing("\n", with: ". "))
+            .accessibilityIdentifier("logbook.detail.gps")
+        }
+    }
+}

@@ -68,7 +68,9 @@ public enum TrackDayImport {
             case .added(let entry):
                 let day = dayLabel.map { ", in \($0)" } ?? ""
                 let noted = notes.isEmpty ? "" : " (\(notes.joined(separator: "; ")))"
-                return "\(name) — added: \(Self.describe(entry))\(day)\(noted)"
+                // Poor positions are worth knowing before reading a brake point from them (#555).
+                let gps = entry.gps.flatMap { $0.rating == .good ? nil : ", GPS \($0.rating.title.lowercased())" } ?? ""
+                return "\(name) — added: \(Self.describe(entry))\(gps)\(day)\(noted)"
             case .alreadyThere(let entry): return "\(name) — already in the logbook as \(Self.describe(entry))"
             case .sameSession(let entry):
                 let file = URL(fileURLWithPath: entry.file.path).lastPathComponent
