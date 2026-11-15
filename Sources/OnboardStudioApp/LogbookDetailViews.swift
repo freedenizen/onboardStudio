@@ -142,6 +142,9 @@ struct LogbookDetail: View {
     /// Measures its standing starts and stops, or stops (#553); `false` when the file could not be
     /// read.
     var measurePerformance: (Bool) async -> Bool = { _ in false }
+    /// Leaves a lap out for a reason, or counts it again when the reason is `nil` (#554), and reads
+    /// the figures again without it; `false` when the file could not be read.
+    var markLap: (Int, LapMark.Reason?) async -> Bool = { _, _ in false }
     /// The template the last New Project used; the next one uses it too.
     @AppStorage("logbook.projectTemplate") private var templateName = "Classic Dash"
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
@@ -170,8 +173,10 @@ struct LogbookDetail: View {
                     }
                     row(
                         "Best \(noun)", entry.bestLap.map { TimeParsing.lapTimeString($0) },
-                        detail: entry.bestLapNumber.map { "\(noun) \($0)" })
-                    row("Optimal \(noun)", entry.optimalLap.map { TimeParsing.lapTimeString($0) })
+                        detail: entry.bestLapNumber.map { "\(noun) \($0)" }, identifier: "logbook.detail.best")
+                    row(
+                        "Optimal \(noun)", entry.optimalLap.map { TimeParsing.lapTimeString($0) },
+                        detail: LogbookLapRow.sources(of: entry, noun: noun), identifier: "logbook.detail.optimal")
                     // A run's course ends at the finish: there is no rolling lap (#552).
                     if !entry.isRuns {
                         row("Fastest rolling lap", entry.fastestRollingLap.map { TimeParsing.lapTimeString($0) })
@@ -193,7 +198,7 @@ struct LogbookDetail: View {
                             if entry.isRuns {
                                 RunPenaltyRow(entry: entry, lap: lap, save: save)
                             } else {
-                                lapRow(lap)
+                                LogbookLapRow(entry: entry, lap: lap, markLap: markLap)
                             }
                         }
                     }
@@ -247,18 +252,6 @@ struct LogbookDetail: View {
         }
         .accessibilityIdentifier("logbook.detail")
         .safeAreaInset(edge: .bottom, spacing: 0) { actions }
-    }
-
-    /// A circuit lap: its number and time, the best in the accent colour.
-    private func lapRow(_ lap: LogbookEntry.LapRecord) -> some View {
-        HStack {
-            Text("Lap \(lap.number)")
-            Spacer()
-            Text(lap.seconds.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
-                .foregroundStyle(lap.number == entry.bestLapNumber ? Color.accentColor : .primary)
-            if !lap.isComplete { Text("partial").foregroundStyle(.secondary) }
-        }
-        .font(.callout)
     }
 
     /// What can be done with the session. Under the detail rather than at the end of it, so the
@@ -384,7 +377,10 @@ struct LogbookDetail: View {
                 Text(label).foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     Text(value).monospacedDigit().accessibilityIdentifier(identifier)
-                    if let detail { Text(detail).foregroundStyle(.secondary) }
+                    if let detail {
+                        Text(detail).foregroundStyle(.secondary)
+                            .accessibilityIdentifier(identifier.isEmpty ? "" : identifier + ".detail")
+                    }
                 }
             }
         }

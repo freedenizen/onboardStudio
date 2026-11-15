@@ -21,6 +21,7 @@ struct CoachingContent: View {
     /// The walkthrough or every corner, as the driver last left it (#458); under the UI tests, in
     /// a store emptied at launch, so every test opens on the walkthrough.
     @AppStorage("coaching.mode", store: UITestSupport.paneDefaults) private var mode = CoachingMode.walkthrough
+    @Environment(\.undoManager) private var undoManager
 
     /// The app's units; a project saved before the region decided *Automatic* (#464) keeps the
     /// metric notes its video is rendered with, so the window and the picture agree.
@@ -65,12 +66,18 @@ struct CoachingContent: View {
     }
 
     /// The lap to read without a choice: the lap at the playhead when it is a complete lap and
-    /// not the reference, else the quickest lap that is not the reference, preferring one with no
-    /// traffic mark (#571).
+    /// not the reference, else the quickest lap that is not the reference, preferring one that
+    /// counts (#554) with no traffic mark (#571).
     private func defaultLap(in laps: [Lap], input: Input, reference: CoachingSettings.Reference) -> Lap? {
+        // The laps left out (#554) are neither the best to exclude nor a good lap to read.
+        var marked = source.session
+        marked?.lapMarks = source.lapMarks
         let excluded: Int?
         switch reference {
-        case .sessionBest: excluded = laps.min { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }?.number
+        case .sessionBest:
+            excluded =
+                laps.filter { marked?.counts($0) ?? true }
+                .min { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }?.number
         case .lap(let number): excluded = number
         case .fastestRolling, .compositeOptimal, .otherInput, .logbook: excluded = nil
         }
@@ -82,7 +89,7 @@ struct CoachingContent: View {
         {
             return atPlayhead
         }
-        return source.session.flatMap { laps.quickest(excluding: excluded, in: $0) }
+        return marked.flatMap { laps.quickest(excluding: excluded, in: $0) }
             ?? laps.sorted { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }.first { $0.number != excluded }
     }
 
@@ -98,7 +105,7 @@ struct CoachingContent: View {
         return CoachingSelection(
             input: input, lapNumber: lap.number, reference: reference, alignByPosition: saved?.alignByPosition ?? false,
             sessionStamp: stamp, traffic: saved?.traffic(for: input.id) ?? [],
-            dismissedTraffic: saved?.dismissedTraffic(for: input.id) ?? [],
+            dismissedTraffic: saved?.dismissedTraffic(for: input.id) ?? [], lapMarks: source.lapMarks,
             videoReadings: TrafficVideoJobs.shared.generation)
     }
 
@@ -139,16 +146,7 @@ struct CoachingContent: View {
 
     private func choices(selection: CoachingSelection, laps: [Lap]) -> some View {
         HStack(spacing: 16) {
-            Picker(
-                laps.noun,
-                selection: Binding(
-                    get: { selection.lapNumber }, set: { setLap($0, selection: selection) })
-            ) {
-                ForEach(laps, id: \.number) { lap in
-                    Text(Self.lapTitle(lap)).tag(lap.number)
-                }
-            }
-            .accessibilityIdentifier("coaching.lap")
+            lapChoice(selection: selection, laps: laps)
             Picker(
                 "Compared with",
                 selection: Binding(
@@ -164,7 +162,7 @@ struct CoachingContent: View {
                     Text(CoachingReference.compositeOptimal.displayName)
                         .tag(CoachingSettings.Reference.compositeOptimal)
                     ForEach(laps.filter { $0.number != selection.lapNumber }, id: \.number) { lap in
-                        Text(Self.lapTitle(lap)).tag(CoachingSettings.Reference.lap(lap.number))
+                        Text(lapTitle(lap, selection: selection)).tag(CoachingSettings.Reference.lap(lap.number))
                     }
                 }
                 if let editor = source.editor {
@@ -201,11 +199,42 @@ struct CoachingContent: View {
         .padding()
     }
 
+    /// The lap to read, and whether it counts (#554).
+    @ViewBuilder
+    private func lapChoice(selection: CoachingSelection, laps: [Lap]) -> some View {
+        Picker(
+            laps.noun,
+            selection: Binding(
+                get: { selection.lapNumber }, set: { setLap($0, selection: selection) })
+        ) {
+            ForEach(laps, id: \.number) { lap in
+                Text(lapTitle(lap, selection: selection)).tag(lap.number)
+            }
+        }
+        .accessibilityIdentifier("coaching.lap")
+        if let lap = laps.first(where: { $0.number == selection.lapNumber }) {
+            LapCountsPicker(lapTitle: lap.title, reason: selection.lapMarks.mark(of: lap)?.reason) {
+                markLap(lap.number, as: $0, undo: undoManager)
+            }
+        }
+    }
+
     /// The laps a reference profile was cut from: one for a lap, several for a splice.
     static func lapNumbers(in reference: LapProfile) -> [Int] { reference.pieces.map(\.lapNumber) }
 
     static func lapTitle(_ lap: Lap) -> String {
         "\(lap.title) — \(TimeParsing.lapTimeString(lap.duration ?? 0, decimals: 2))"
+    }
+
+    /// "Lap 7 — 1:43.21", with what is known about whether it counts (#554): "— left out
+    /// (traffic)", or "— possibly traffic" when the telemetry suggests a corner of it was (#572).
+    private func lapTitle(_ lap: Lap, selection: CoachingSelection) -> String {
+        let title = Self.lapTitle(lap)
+        if let mark = selection.lapMarks.mark(of: lap) { return title + " — left out (\(mark.reason.word))" }
+        if analysis?.suggestions.contains(where: { $0.lapNumber == lap.number }) == true {
+            return title + " — possibly traffic"
+        }
+        return title
     }
 }
 
@@ -222,6 +251,10 @@ extension CoachingContent {
                 },
                 markTraffic: { setTraffic($1, corner: $0.index, analysis: analysis, selection: selection) },
                 answerSuggestion: { answer($0, isTraffic: $1, analysis: analysis, selection: selection) },
+                lapMarking: LapMarking(
+                    reason: laps.first { $0.number == selection.lapNumber }
+                        .flatMap { selection.lapMarks.mark(of: $0) }?.reason,
+                    mark: { markLap(selection.lapNumber, as: $0, undo: undoManager) }),
                 change: { choices(selection: selection, laps: laps) }
             )
             .id(selection)
@@ -354,6 +387,7 @@ extension CoachingContent {
         var marked = read
         marked.traffic = selection.traffic
         marked.dismissedTraffic = selection.dismissedTraffic
+        marked.lapMarks = selection.lapMarks
         isAnalysing = true
         defer { isAnalysing = false }
         // Other cars' logs from the same session, and what the video showed, for the suggestions

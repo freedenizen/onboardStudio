@@ -28,10 +28,11 @@ public enum LapDeltas {
         }
     }
 
-    /// The quickest complete lap of the whole session (short laps excluded), if any.
+    /// The quickest complete lap of the whole session (short laps excluded), if any; never a lap
+    /// the driver said does not count (#554).
     public static func sessionBest(in session: TelemetrySession) -> Lap? {
         demotingShortLaps(session.laps, distance: session[.distance])
-            .filter { $0.isComplete && $0.duration != nil }
+            .filter { $0.isComplete && $0.duration != nil && session.counts($0) }
             .min { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }
     }
 

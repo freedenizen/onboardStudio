@@ -42,10 +42,15 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
     /// the window does not offer a suggestion they cover again. Absent before #572; suggestions
     /// change nothing in a reading, so none dismissed reads as every reading did then.
     public var dismissedTraffic: [LapProfile.Window]
+    /// Laps of the same session the driver said do not count (#554), for a data input with no
+    /// Logbook entry: one that has an entry keeps them on the entry, so the Logbook and the
+    /// project read the same marks. Only the Coaching window reads them; a project never renders
+    /// with them. Absent before #554, as none: every lap counted.
+    public var lapMarks: [LapMark]
 
     public init(
         dataInputID: InputID, lap: Int? = nil, reference: Reference = .sessionBest, alignByPosition: Bool = false,
-        traffic: [TrafficSpan] = [], dismissedTraffic: [LapProfile.Window] = []
+        traffic: [TrafficSpan] = [], dismissedTraffic: [LapProfile.Window] = [], lapMarks: [LapMark] = []
     ) {
         self.dataInputID = dataInputID
         self.lap = lap
@@ -53,10 +58,14 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
         self.alignByPosition = alignByPosition
         self.traffic = traffic
         self.dismissedTraffic = dismissedTraffic
+        self.lapMarks = lapMarks
     }
 
     /// The marks that apply to `input`'s session: none for an input the settings do not name.
     public func traffic(for input: InputID) -> [TrafficSpan] { input == dataInputID ? traffic : [] }
+
+    /// The laps of `input`'s session that do not count, as the settings keep them.
+    public func lapMarks(for input: InputID) -> [LapMark] { input == dataInputID ? lapMarks : [] }
 
     /// The dismissed suggestions that apply to `input`'s session.
     public func dismissedTraffic(for input: InputID) -> [LapProfile.Window] {
@@ -64,7 +73,7 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case dataInputID, lap, reference, alignByPosition, traffic, dismissedTraffic
+        case dataInputID, lap, reference, alignByPosition, traffic, dismissedTraffic, lapMarks
     }
 
     public init(from decoder: any Decoder) throws {
@@ -75,5 +84,6 @@ public struct CoachingSettings: Hashable, Codable, Sendable {
         alignByPosition = try c.decodeIfPresent(Bool.self, forKey: .alignByPosition) ?? false
         traffic = try c.decodeIfPresent([TrafficSpan].self, forKey: .traffic) ?? []
         dismissedTraffic = try c.decodeIfPresent([LapProfile.Window].self, forKey: .dismissedTraffic) ?? []
+        lapMarks = try c.decodeIfPresent([LapMark].self, forKey: .lapMarks) ?? []
     }
 }

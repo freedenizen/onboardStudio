@@ -499,6 +499,22 @@ its laps. `venueKey` is the circuit without the course — what a track day's ci
 with, since a day is at a place, not on a layout. `title` is *Lot 4 – Course of 13 Nov 2026*, or
 the course's name alone where nothing names the venue.
 
+**Laps that do not count** (#554). `LogbookEntry.lapMarks` is the laps the driver left out
+(`LapMark`: a moment inside the lap in the file's own time, and a reason — traffic, flag, off
+track, other), pinned by time rather than number so a mark stays on its driving when the laps are
+read again from another line. `readLaps` puts them on the session (`TelemetrySession.lapMarks`)
+before reading anything from it, so `bestLap`, `optimalLap` (and `optimalSources`, the laps it is
+spliced from), `fastestRollingLap` and the best lap's `corners` are read without those laps, and
+each `LapRecord.notCounted` says why; `LogbookTrends.lapSpread` leaves them out of the flying
+laps. Everything else — personal bests, Trends, goals, the Season, the circuit card, the import
+report, the logbook references Coaching offers — reads those stored figures and follows without
+knowing of the marks. `markLap(_:as:in:)` changes a mark and reads the figures again from the
+session as the Logbook loads it; the Logbook window and the Coaching window (for a session, or
+for a project whose data input has a Logbook entry) both go through it, one step of Undo. An
+entry with no marks reads exactly as before, so no measurement is stepped: `optimalSources` fills
+in the next time the laps are read. The project compile never applies marks, so a rendered video
+counts every lap.
+
 A run's `LapRecord` carries the driver's `cones` and `offCourse`. `isDNF` is a run that never
 reached the finish or went off course; `officialSeconds(perCone:)` is the clock plus the cones,
 `nil` for a DNF. For a session in runs `applyPenalties` makes `bestLap` and `bestLapNumber` the

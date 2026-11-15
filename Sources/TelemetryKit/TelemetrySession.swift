@@ -68,6 +68,12 @@ public struct TelemetrySession: Sendable {
     /// Stretches another car's log puts it close ahead of this one (#574), in session time: read
     /// from the Logbook's sessions on the same clock by whoever reads this one for coaching.
     public var carsAhead: [CarAhead] = []
+    /// Laps the driver said do not count (#554): traffic, a flag, an off. Not read from the file,
+    /// and never put on the session a project renders, so the video's overlays count every lap;
+    /// whoever reads the session for analysis — the Logbook, the Coaching window, `onboard
+    /// coach` — puts the marks here first, and the best, optimal and rolling laps and the
+    /// consistency figures then leave those laps out.
+    public var lapMarks: [LapMark] = []
     /// The unit a channel was *recorded* in, for every role the builder converted to its canonical
     /// unit. `channels[.speed].unit` is always m/s by the time anyone reads it, so this is the
     /// only record of whether the file said mph or kph — which is what *Automatic* in the speed

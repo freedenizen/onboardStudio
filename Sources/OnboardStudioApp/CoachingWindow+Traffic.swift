@@ -209,10 +209,28 @@ struct TrafficSuggestionNote: View {
 /// The corners of the lap the telemetry suggests were traffic (#572), said under the lap's sentence.
 struct SuggestedCorners: View {
     let analysis: CoachingAnalysis
+    var lapNumber = 0
+    /// Leaves the whole lap out as traffic (#554), for a lap spent behind another car; `nil` once
+    /// it is left out, or where it cannot be.
+    var leaveLapOut: (() -> Void)?
 
     var body: some View {
         let suggested = analysis.corners.filter { $0.suggestion != nil }
         if !suggested.isEmpty {
+            suggestion(suggested)
+            if let leaveLapOut {
+                Button("Leave Lap \(lapNumber) Out") { leaveLapOut() }
+                    .help(
+                        "The lap was spent behind traffic: leave it out of the best, optimal and rolling laps and "
+                            + "the consistency figures"
+                    )
+                    .accessibilityIdentifier("coaching.walkthrough.leaveLapOut")
+            }
+        }
+    }
+
+    private func suggestion(_ suggested: [CornerComparison]) -> some View {
+        Group {
             Label {
                 Text(
                     (suggested.count == 1 ? "Possibly traffic: " : "Possibly traffic in ")

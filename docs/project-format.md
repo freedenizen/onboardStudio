@@ -172,6 +172,15 @@ migration pins anything.
 suggestion the driver answered **Not Traffic**: `[{ "start": 210.0, "end": 224.5 }]`, in the same
 seconds. The Coaching window does not suggest a corner again when a dismissed stretch covers half of
 it. Suggestions change no reading and no render, so absent (none dismissed) needs no migration.
+`lapMarks` (optional, #554, default empty) is the laps of `dataInputID`'s session the driver said do not
+count, for a data input with no Logbook entry (`logbookEntryID`); one that has an entry keeps them on
+the entry, so the Logbook and the project read the same marks:
+`[{ "id": <uuid>, "time": 123.4, "reason": "traffic" | "flag" | "offTrack" | "other" }]`, `time` being a
+moment inside the lap (its middle when marked) in seconds of the data file's own time, so the mark stays
+with its driving when the laps are found again from another line. Only the Coaching window and
+`onboard coach` read them: the best, optimal and rolling laps, the consistency and the default lap
+leave those laps out. The compile never puts them on the session it renders, so a project's video
+counts every lap whatever the marks say, and absent (none) needs no migration.
 `lap` absent follows the playhead. It is kept with the project so the same analysis comes back on
 reopening; the reference and `traffic` are also what the Corner Callout, the Track Map's coaching
 options and the corner exports read. Absent means the window has not been opened for this project.

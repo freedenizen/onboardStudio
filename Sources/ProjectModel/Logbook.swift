@@ -32,14 +32,24 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         public var cones: Int
         /// The driver says the run went off course: a DNF, though it crossed the finish.
         public var offCourse: Bool
+        /// Why the driver said the lap does not count (#554), from the entry's `lapMarks` as the
+        /// laps were last read; `nil` for a lap that counts.
+        public var notCounted: LapMark.Reason?
 
-        public init(number: Int, seconds: Double?, isComplete: Bool, cones: Int = 0, offCourse: Bool = false) {
+        public init(
+            number: Int, seconds: Double?, isComplete: Bool, cones: Int = 0, offCourse: Bool = false,
+            notCounted: LapMark.Reason? = nil
+        ) {
             self.number = number
             self.seconds = seconds
             self.isComplete = isComplete
             self.cones = cones
             self.offCourse = offCourse
+            self.notCounted = notCounted
         }
+
+        /// Whether the lap counts towards the best, the optimal, the consistency and the Trends.
+        public var counts: Bool { notCounted == nil }
 
         /// Never reached the finish, or went off course on the way: a run with no time to count.
         public var isDNF: Bool { !isComplete || offCourse }
@@ -125,6 +135,13 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     public var performance: PerformanceRuns.Result?
     /// Seconds a cone adds to a run (#552), as its track day says; `nil` is the usual 2 s.
     public var penaltyPerCone: Double?
+    /// Laps the driver said do not count (#554), pinned to a moment inside each in the file's own
+    /// time. The best, optimal and rolling laps, the corners and the consistency are read without
+    /// them. Absent before #554, as no marks: every lap counted.
+    public var lapMarks: [LapMark] = []
+    /// The laps the optimal lap is spliced from, in lap order (#554); empty until the laps are
+    /// read by a build that keeps them.
+    public var optimalSources: [Int] = []
     public var added: Date
     public var modified: Date
 
@@ -239,6 +256,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
         case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
         case runLines, course, coursePath, penaltyPerCone, measuresPerformance, performance
+        case lapMarks, optimalSources
     }
 
     public init(from decoder: any Decoder) throws {
@@ -279,6 +297,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         measuresPerformance = try c.decodeIfPresent(Bool.self, forKey: .measuresPerformance)
         performance = try? c.decodeIfPresent(PerformanceRuns.Result.self, forKey: .performance)
         penaltyPerCone = try c.decodeIfPresent(Double.self, forKey: .penaltyPerCone)
+        lapMarks = try c.decodeIfPresent([LapMark].self, forKey: .lapMarks) ?? []
+        optimalSources = try c.decodeIfPresent([Int].self, forKey: .optimalSources) ?? []
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }
@@ -307,46 +327,6 @@ extension LogbookEntry {
             durationSeconds: session.duration > 0 ? session.duration : nil)
         entry.readLaps(of: session)
         return entry
-    }
-
-    /// The reading the laps of an entry are from. 2 (#477): a RaceChrono file's first lap begins
-    /// at the first crossing of the line and is a whole lap — read from an `.rcz` archive it had
-    /// swallowed the out-lap, and from a CSV it was called partial.
-    public static let lapMeasurement = 2
-
-    /// Whether the Logbook should offer to read this entry's file again (#498): it was read
-    /// before the first lap was corrected, and it is one the correction can change — an archive,
-    /// or a file whose first lap was called partial. A file it cannot change is not offered:
-    /// reading it again would cost the time and move nothing. Laps that begin at lap 0 are not
-    /// the file's own count but the app's, from a start/finish line; the correction is not about
-    /// them, and read again without that line they would be lost.
-    public var needsLapReading: Bool {
-        guard lapMeasurement < Self.lapMeasurement, let first = laps.first, first.number != 0 else { return false }
-        return file.importerID == "racechrono-rcz" || !first.isComplete
-    }
-
-    /// Reads the laps of `session` into the entry with this build's reading, and with them what
-    /// is worked out from the laps: the best, the optimal and the fastest rolling lap, and the
-    /// corners of the best lap, which may be another lap now. Nothing the driver wrote — the car,
-    /// the conditions, the notes — is touched.
-    public mutating func readLaps(of session: TelemetrySession) {
-        let stats = SessionStats(session: session)
-        // Cones and an off-course are the driver's (#552): a run keeps them when its file is read again.
-        let penalties = Dictionary(laps.map { ($0.number, ($0.cones, $0.offCourse)) }, uniquingKeysWith: { a, _ in a })
-        laps = session.laps.listed.map { lap in
-            let kept = penalties[lap.number]
-            return LapRecord(
-                number: lap.number, seconds: lap.duration, isComplete: lap.isComplete, cones: kept?.0 ?? 0,
-                offCourse: kept?.1 ?? false)
-        }
-        bestLap = stats.bestLap?.seconds
-        bestLapNumber = stats.bestLap?.number
-        optimalLap = stats.optimalLap
-        fastestRollingLap = CoachingReference.fastestRolling.resolve(in: session)?.duration
-        lapMeasurement = Self.lapMeasurement
-        applyPenalties()
-        readCorners(of: session)
-        readPerformance(of: session)
     }
 
     /// SHA-256 of the file, streamed, and its length.
@@ -478,7 +458,7 @@ public struct Logbook: Sendable {
 }
 
 extension LogbookEntry.LapRecord {
-    private enum CodingKeys: String, CodingKey { case number, seconds, isComplete, cones, offCourse }
+    private enum CodingKeys: String, CodingKey { case number, seconds, isComplete, cones, offCourse, notCounted }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -489,6 +469,8 @@ extension LogbookEntry.LapRecord {
         self.init(
             number: number, seconds: seconds, isComplete: isComplete,
             cones: try c.decodeIfPresent(Int.self, forKey: .cones) ?? 0,
-            offCourse: try c.decodeIfPresent(Bool.self, forKey: .offCourse) ?? false)
+            offCourse: try c.decodeIfPresent(Bool.self, forKey: .offCourse) ?? false,
+            // Absent before #554: every lap counted.
+            notCounted: try? c.decodeIfPresent(LapMark.Reason.self, forKey: .notCounted))
     }
 }

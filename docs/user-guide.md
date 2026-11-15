@@ -361,6 +361,34 @@ and the next time the app opens).
 - **Show in Finder** shows its file; **Remove from Logbook** takes it out
   ([Putting mistakes right](#putting-mistakes-right)).
 
+### Laps that don't count
+
+A lap behind traffic, under a yellow, with a point-by or an off is still a lap you drove, but its
+time says nothing true about your driving — and a lap that cut a corner can be quicker than any
+you really drove. Leave such a lap out and every figure the app reads from the session leaves it
+out too. In a session's detail, each lap has a **⋯** menu (or right-click the lap): **Leave Lap 7
+Out** with a reason — **Traffic**, **Flag**, **Off Track** or **Other** — and **Count Lap 7** to put
+it back. A lap left out:
+
+- keeps its time in the list, in grey, with the reason beside it ("left out: off track");
+- is never the session's **best lap** and is never part of the **optimal lap** or the **fastest
+  rolling lap**, so those, the **personal best** at the circuit, **Trends**, **goals**, the
+  **Season** and the circuit card all move to the laps that count;
+- does not count towards **consistency**: the spread of flying laps in Trends and in Coaching;
+- is not the lap Coaching reads by default, nor the best lap it compares with.
+
+The figures are read again from the session's file when you leave a lap out, so the file must be
+where the Logbook has it. Each change is one step of **Edit ▸ Undo** ("Undo Leave Lap 7 Out").
+The **Optimal lap** row says which laps it is spliced from ("laps 4, 6 and 7"); a session added
+before this shows that once a lap of it has been left out or its laps are read again.
+
+The mark is kept with the session in the Logbook, so a project made from the session and the
+Coaching window read the same laps as left out. A video counts every lap as it was driven: the
+overlays' best lap, deltas, Lap Panel, Stat Card and Sector Times are unchanged by a lap left out.
+Telemetry and another car's log only *suggest* traffic ([Traffic and flags](#traffic-and-flags));
+a suggested lap counts until you leave it out. A whole lap is for a lap that should not count at
+all; when only one corner was held up, mark the corner instead and the rest of the lap still counts.
+
 ### Projects and the Logbook
 
 A data file added to a project goes into the logbook as well (Settings ▸ Logbook turns this off):
@@ -1253,6 +1281,17 @@ coaching choices (or with the session, from the Logbook), and each one is an und
 with no marks reads exactly as it did. `onboard coach --traffic 312.5-330,1204-1215:flag` does the
 same from the command line, in seconds of the data file.
 
+**A whole lap that doesn't count.** When the lap as a whole should not count — spent behind a car,
+under a full-course yellow, or with an off or a cut — choose it in **Lap** and set the picker beside
+it from **Counts** to **Left Out: Traffic**, **Flag**, **Off Track** or **Other** (in the
+walkthrough, under **Change…**). The walkthrough's first step then says the lap is left out, the
+lap menus read "left out (traffic)", and the session's best, optimal and rolling laps and its
+consistency are read without it, in the Logbook too ([Laps that don't count](#laps-that-dont-count)).
+When the telemetry suggests traffic on the lap, the first step offers **Leave Lap 7 Out** beside the
+suggestion, and the Lap menu reads "possibly traffic" on every lap it suggests traffic on. For a
+project, the mark is kept with the session in the Logbook when the project's data file was entered
+there, and in the project otherwise.
+
 **Suggestions from the telemetry.** The window also points at corners that may have been traffic,
 so you know which ones to check in the video. A corner is suggested on a lap when you lifted for
 20 m or more where most of your other laps were flat out (or, without a throttle channel, slowed
@@ -1569,8 +1608,10 @@ session as well, lists the stretches spent within 1.5 s behind it, and suggests 
 cover; repeat it for more cars. `--detect-traffic` reads a project's onboard video for a car close
 ahead (any file not read before) and suggests the corners with one. `onboard traffic GX010037.MP4`
 reads videos on their own and lists the stretches of each with a car close ahead, in the file's
-seconds; `--again` reads a file afresh. The method is in
-[coaching.md](coaching.md).
+seconds; `--again` reads a file afresh. `--leave-out 5,9:flag` leaves laps out of the best, optimal
+and rolling laps and the consistency ([Laps that don't count](#laps-that-dont-count)), with
+`:traffic` (the default), `:flag`, `:offtrack` or `:other`; a project's own marks apply without it.
+The method is in [coaching.md](coaching.md).
 
 **Performance runs.** `onboard probe drag.vbo --performance` lists every standing start: 0–30,
 0–60, 0–100 and 60–130 mph, 0–50, 0–100, 0–200 and 100–200 km/h, then 60 ft, 330 ft, ⅛ mile,

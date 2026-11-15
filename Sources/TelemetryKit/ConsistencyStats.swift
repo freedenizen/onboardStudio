@@ -26,8 +26,8 @@ public struct ConsistencyStats: Sendable, Equatable, Codable {
 
     public func spread(ofCorner index: Int) -> CornerSpread? { corners.first { $0.index == index } }
 
-    /// Over the session's flying laps: complete laps (short ones excluded) within
-    /// `options.flyingLapTolerance` of the best. `nil` with fewer than three, which is too few
+    /// Over the session's flying laps: complete laps (short ones excluded, and those the driver
+    /// said do not count) within `options.flyingLapTolerance` of the best. `nil` with fewer than three, which is too few
     /// to call anything a pattern.
     ///
     /// Traffic marks (#571) are read corner by corner: a corner a mark covers is left out of that
@@ -37,8 +37,10 @@ public struct ConsistencyStats: Sendable, Equatable, Codable {
     public static func measure(
         in session: TelemetrySession, corners: [Corner], options: CoachingOptions = CoachingOptions()
     ) -> ConsistencyStats? {
+        // A lap the driver said does not count (#554) is no lap to judge consistency by, and no
+        // best to measure the flying laps from.
         let complete = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
-            .filter { $0.isComplete && $0.duration != nil }
+            .filter { $0.isComplete && $0.duration != nil && session.counts($0) }
         guard let best = complete.min(by: { ($0.duration ?? .infinity) < ($1.duration ?? .infinity) }),
             let bestTime = best.duration
         else { return nil }

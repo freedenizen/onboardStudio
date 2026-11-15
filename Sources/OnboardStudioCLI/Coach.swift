@@ -56,6 +56,15 @@ struct Coach: AsyncParsableCommand {
             """)
     var traffic: String?
 
+    @Option(
+        name: .long,
+        help: """
+            Laps that do not count, by number: lap[:traffic|flag|offtrack|other], comma-separated (5,9:flag). \
+            They are never the best, the optimal or the rolling lap, nor in the consistency. A project's own \
+            marks apply without it.
+            """)
+    var leaveOut: String?
+
     @Flag(
         name: .long,
         help: """
@@ -180,9 +189,11 @@ struct Coach: AsyncParsableCommand {
             } else {
                 picked = inputs[0]
             }
-            guard let session = loaded.sessions[picked.id] else {
+            guard var session = loaded.sessions[picked.id] else {
                 throw ValidationError("The data input '\(picked.label)' did not load.")
             }
+            // The compile renders every lap; coaching reads without the ones left out (#554).
+            session.lapMarks = loaded.project.coaching?.lapMarks(for: picked.id) ?? []
             return Read(session: session, project: loaded, input: picked)
         }
         return Read(session: try importFile(url))
@@ -333,6 +344,7 @@ extension Coach {
             session.pictureSamples = try await Self.pictureSamples(for: input, in: loaded)
         }
         if let traffic { session.traffic = try Self.parseTraffic(traffic) }
+        if let leaveOut { session.lapMarks = try Self.parseLapMarks(leaveOut, in: session) }
         for item in otherCar {
             let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
             let url = URL(fileURLWithPath: parts[0])
@@ -356,6 +368,25 @@ extension Coach {
                 throw ValidationError("--traffic expects start-end[:flag] in seconds, comma-separated; got '\(item)'.")
             }
             return TrafficSpan(start: bounds[0], end: bounds[1], kind: kind)
+        }
+    }
+
+    /// `lap[:reason]`, comma-separated, as `--leave-out` takes it: each lap of `session` pinned at
+    /// its middle, as the app pins a mark.
+    static func parseLapMarks(_ text: String, in session: TelemetrySession) throws -> [LapMark] {
+        try text.split(separator: ",").map { item in
+            let parts = item.trimmingCharacters(in: .whitespaces).split(separator: ":")
+            let reason: LapMark.Reason? =
+                parts.count > 1
+                ? LapMark.Reason.allCases.first { $0.rawValue.lowercased() == parts[1].lowercased() } : .traffic
+            guard parts.count <= 2, let number = parts.first.flatMap({ Int($0) }), let reason else {
+                throw ValidationError(
+                    "--leave-out expects lap[:traffic|flag|offtrack|other], comma-separated; got '\(item)'.")
+            }
+            guard let lap = session.laps.first(where: { $0.number == number && $0.isListed }) else {
+                throw ValidationError("--leave-out: the session has no lap \(number).")
+            }
+            return LapMark(lap: lap, reason: reason)
         }
     }
 

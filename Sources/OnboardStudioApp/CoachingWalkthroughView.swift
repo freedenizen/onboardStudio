@@ -34,6 +34,8 @@ struct CoachingWalkthroughView<Change: View>: View {
     var markTraffic: ((CornerComparison, TrafficSpan.Kind) -> Void)?
     /// Answers the telemetry's traffic suggestion for a corner (#572): traffic, or not.
     var answerSuggestion: ((TrafficSuggestion, Bool) -> Void)?
+    /// Whether the lap being read counts, and the way to leave it out (#554).
+    var lapMarking: LapMarking?
 
     @State private var step: CoachingWalkthrough.Step = .lap
     /// The corners the driver means to try next time, by index: all of them to begin with.
@@ -42,25 +44,6 @@ struct CoachingWalkthroughView<Change: View>: View {
     @State private var showingChange = false
     /// The circuit the plan was kept for, once it has been; empty when kept in the project alone.
     @State private var savedFor: String?
-
-    init(
-        analysis: CoachingAnalysis, lapNumber: Int, units: CoachingUnits, others: [LapProfile],
-        source: any CoachingSource, watch: @escaping (CornerComparison) async -> [WatchClip],
-        markTraffic: ((CornerComparison, TrafficSpan.Kind) -> Void)? = nil,
-        answerSuggestion: ((TrafficSuggestion, Bool) -> Void)? = nil,
-        @ViewBuilder change: @escaping () -> Change
-    ) {
-        self.markTraffic = markTraffic
-        self.answerSuggestion = answerSuggestion
-        self.analysis = analysis
-        self.lapNumber = lapNumber
-        self.units = units
-        self.others = others
-        self.source = source
-        self.change = change
-        self.watch = watch
-        _chosen = State(initialValue: Set(analysis.top.map(\.corner.index)))
-    }
 
     private var walkthrough: CoachingWalkthrough { CoachingWalkthrough(analysis: analysis) }
 
@@ -119,7 +102,7 @@ struct CoachingWalkthroughView<Change: View>: View {
                 }
             }
             LeftOutCorners(analysis: analysis)
-            SuggestedCorners(analysis: analysis)
+            LapTrafficNotes(analysis: analysis, lapNumber: lapNumber, marking: lapMarking)
         }
     }
 
@@ -304,5 +287,29 @@ struct CoachingWalkthroughView<Change: View>: View {
         guard let destination else { return }
         if destination == .plan { makeDraft() }
         step = destination
+    }
+}
+
+// Outside the type's body, which is long enough with the steps in it.
+extension CoachingWalkthroughView {
+    init(
+        analysis: CoachingAnalysis, lapNumber: Int, units: CoachingUnits, others: [LapProfile],
+        source: any CoachingSource, watch: @escaping (CornerComparison) async -> [WatchClip],
+        markTraffic: ((CornerComparison, TrafficSpan.Kind) -> Void)? = nil,
+        answerSuggestion: ((TrafficSuggestion, Bool) -> Void)? = nil,
+        lapMarking: LapMarking? = nil,
+        @ViewBuilder change: @escaping () -> Change
+    ) {
+        self.markTraffic = markTraffic
+        self.answerSuggestion = answerSuggestion
+        self.lapMarking = lapMarking
+        self.analysis = analysis
+        self.lapNumber = lapNumber
+        self.units = units
+        self.others = others
+        self.source = source
+        self.change = change
+        self.watch = watch
+        _chosen = State(initialValue: Set(analysis.top.map(\.corner.index)))
     }
 }

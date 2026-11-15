@@ -85,6 +85,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Camera switching, PIP, split, quad | ✅ | Layout presets |
 | Two laps side by side | ✅ | Not in RaceRender: **Compare Laps** retimes the second lap's video to stay level by distance, from one session or two, with the delta between them |
 | Coaching | ✅ | Not in RaceRender: **Project ▸ Coaching…** reads a lap against the best lap, the fastest rolling lap, the spliced optimal lap, another lap or another file's lap — corners ranked by time lost, the phase, what happened and what to try; `onboard coach` on the command line; **Export Coaching Debrief…** writes the session as one video of cards and corner clips; **Export Coaching Sheet** writes the debrief as a one-page PDF or Markdown |
+| Laps that don't count | ➕ | Not in RaceRender: a lap left out in the Logbook or the Coaching window for traffic, a flag or an off is never the best, optimal or rolling lap, nor in the consistency, personal bests or Trends; the Logbook names the laps the optimal lap is spliced from. The video still counts every lap |
 
 ## Output
 

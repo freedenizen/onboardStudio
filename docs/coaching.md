@@ -271,6 +271,19 @@ marked stretches driven at the best lap's pace, and leaves marked laps out of th
 the default lap is the quickest no mark touches. No marks reads exactly as before, so nothing is
 pinned for older projects.
 
+**Laps that do not count** (#554, `Sources/TelemetryKit/LapMarks.swift`). A whole lap the driver
+left out — traffic, a flag, an off or a cut — is a `LapMark` (a moment inside the lap, in session
+time, and a reason) on `TelemetrySession.lapMarks`, put there by whoever reads the session for
+analysis: the Logbook's `readLaps`, the Coaching window (from the Logbook entry when the session
+has one, else the project's `CoachingSettings.lapMarks`) and `onboard coach --leave-out`. Never
+by the compile, so the video counts every lap. With marks, `LapDeltas.sessionBest`,
+`SessionStats.bestLap`, the optimal lap (`TelemetrySession.countedSectors`,
+`CoachingReference.optimalAnalysis`), the rolling lap (no window through a marked lap),
+`ConsistencyStats` (neither the best its flying limit is measured from nor a flying lap) and the
+default lap (`quickest(excluding:in:)`) leave those laps out. A corner's traffic mark (#571) leaves
+its lap counting; telemetry and another car's log only suggest, and the window offers *Leave Lap 7
+Out* beside a suggestion. No marks reads exactly as before.
+
 **Traffic suggestions** (#572, `Sources/TelemetryKit/TrafficSuggestions.swift`). Read only when
 `CoachingOptions.suggestsTraffic` (the Coaching window, `onboard coach --suggest-traffic`), once per
 reference reading, from the session's complete laps no more than 50 % slower than the best (three
