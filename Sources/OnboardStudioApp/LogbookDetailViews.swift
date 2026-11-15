@@ -142,6 +142,9 @@ struct LogbookDetail: View {
     /// Measures its standing starts and stops, or stops (#553); `false` when the file could not be
     /// read.
     var measurePerformance: (Bool) async -> Bool = { _ in false }
+    /// Reads the sector times and speeds of a session entered before they were kept (#557).
+    var readSplits: () async -> Void = {}
+    @State private var readingSplits = false
     /// The template the last New Project used; the next one uses it too.
     @AppStorage("logbook.projectTemplate") private var templateName = "Classic Dash"
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
@@ -186,17 +189,15 @@ struct LogbookDetail: View {
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                 }
                 .font(.callout)
-                if !entry.laps.isEmpty {
+                if entry.isRuns, !entry.laps.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.isRuns ? "Runs" : "Laps").font(.subheadline.weight(.semibold))
+                        Text("Runs").font(.subheadline.weight(.semibold))
                         ForEach(entry.laps, id: \.number) { lap in
-                            if entry.isRuns {
-                                RunPenaltyRow(entry: entry, lap: lap, save: save)
-                            } else {
-                                lapRow(lap)
-                            }
+                            RunPenaltyRow(entry: entry, lap: lap, save: save)
                         }
                     }
+                } else if !entry.laps.isEmpty {
+                    SessionLapTable(entry: entry, speedUnit: speedUnit, readingSplits: readingSplits)
                 }
                 SessionPerformanceSection(entry: entry, metric: speedUnit != .mph, measure: measurePerformance)
                 if !clips.isEmpty {
@@ -246,19 +247,13 @@ struct LogbookDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("logbook.detail")
-        .safeAreaInset(edge: .bottom, spacing: 0) { actions }
-    }
-
-    /// A circuit lap: its number and time, the best in the accent colour.
-    private func lapRow(_ lap: LogbookEntry.LapRecord) -> some View {
-        HStack {
-            Text("Lap \(lap.number)")
-            Spacer()
-            Text(lap.seconds.map { TimeParsing.lapTimeString($0) } ?? "—").monospacedDigit()
-                .foregroundStyle(lap.number == entry.bestLapNumber ? Color.accentColor : .primary)
-            if !lap.isComplete { Text("partial").foregroundStyle(.secondary) }
+        .task(id: entry.id) {
+            guard entry.needsSplitReading else { return }
+            readingSplits = true
+            await readSplits()
+            readingSplits = false
         }
-        .font(.callout)
+        .safeAreaInset(edge: .bottom, spacing: 0) { actions }
     }
 
     /// What can be done with the session. Under the detail rather than at the end of it, so the
