@@ -545,3 +545,9 @@ switch on in the detail reads the file again off the main thread (`LogbookModel.
 and saves the entry as one step of the Logbook's Undo. An entry written before has neither field: it
 is automatic, with nothing measured until its file is read again.
 
+Personal bests in a straight line are kept per car, not per circuit, and nothing extra is stored for
+them: `PerformanceTrends.points` reads every entry's `performance` (the launch and stop of the speed
+unit shown, and the quarter mile with its trap), and `PerformanceTrends.bests` takes each car's
+quickest, cars matched as `Garage.same` matches them and the first session to reach a best keeping
+it. Trends draws the points; the garage card shows the bests.
+

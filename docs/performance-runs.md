@@ -1,7 +1,8 @@
 # Performance runs: 0–60, the quarter mile and stops (#553) — design
 
-**Status:** step 1 (measuring, `PerformanceRuns`, and `onboard probe --performance`) and step 2
-(the Logbook, the project's switch and the Stat Card rows) are built; step 3, Trends, is to come.
+**Status:** built. Step 1 is the measuring (`PerformanceRuns` and `onboard probe --performance`),
+step 2 the Logbook, the project's switch and the Stat Card rows, and step 3 Trends and the personal
+bests per car.
 
 Draft of 2026-11-13. The user decided four things that day:
 
@@ -96,9 +97,12 @@ car quicker in a straight line.
   and read again with it.
 - `LogbookEntry.measuresPerformance: Bool?` holds the switch. `nil` is automatic: on for a session
   with no laps and no runs.
-- Personal bests per measure are kept per car, not per circuit (step 3, with Trends). A straight line is the car's, not
-  the venue's.
-- Trends adds a performance chart keyed on the car, beside the circuit's lap charts.
+- Personal bests per measure are kept per car, not per circuit. A straight line is the car's, not
+  the venue's. They are read from the entries' `performance` (`PerformanceTrends`), not stored.
+- Trends has a **Performance** section keyed on the car: below the circuit's lap charts, or on its
+  own when no circuit is chosen, since a straight-line log seldom names one. It lists each car's
+  bests and charts the 0–60 and the quarter mile with a line per car. The car's garage card lists
+  the same bests.
 
 ### In a project
 
