@@ -161,6 +161,18 @@ struct GPSQualityTests {
         #expect(rate.value(at: 23) == 0)
     }
 
+    @Test func aTimeAnAgeAwayAsksForNoMoreReadingsThanPositions() throws {
+        // A corrupt file: one position a third of a year after the rest.
+        let latitude = Channel(
+            role: .latitude, name: "lat", unit: .degrees, times: [0, 0.1, 0.2, 0.3, 1e7],
+            values: [38, 38.00001, 38.00002, 38.00003, 38.00004])
+        let longitude = Channel(
+            role: .longitude, name: "lon", unit: .degrees, times: latitude.times,
+            values: [-122, -122, -122, -122, -122])
+        let rate = try #require(GPSQuality.rateChannel(latitude: latitude, longitude: longitude))
+        #expect(rate.count <= 4 * latitude.count)
+    }
+
     // MARK: - What the logger says about itself
 
     @Test func theLoggersOwnAccuracySatellitesAndHDOPCount() throws {
