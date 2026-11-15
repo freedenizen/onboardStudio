@@ -105,7 +105,9 @@ struct AttributeMappingWindow: View {
         switch tab {
         case .report:
             if let session = selectedSession {
-                ImportReportTable(report: session.importReport, filter: filter, showEverything: $showEveryColumn)
+                ImportReportTable(
+                    report: session.importReport, gps: session.gpsQuality, filter: filter,
+                    showEverything: $showEveryColumn)
             } else {
                 noDataFile(
                     "The import report says what became of each column of a data file. Add one to this "

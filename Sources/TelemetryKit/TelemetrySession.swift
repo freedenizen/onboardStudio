@@ -94,6 +94,9 @@ public struct TelemetrySession: Sendable {
     /// Its standing starts and stops (#553), when whoever read it asked for them to be measured or
     /// it has no laps of its own; `nil` when they were not measured.
     public var performance: PerformanceRuns.Result?
+    /// How far the positions can be trusted (#555), measured from the file's own positions before
+    /// any resampling; `nil` without positions.
+    public var gpsQuality: GPSQuality?
 
     public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info
@@ -150,6 +153,7 @@ public struct TelemetrySession: Sendable {
     private static let standardOrder: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .speed, .heading, .distance, .lap,
         .longitudinalG, .lateralG, .rpm, .gear, .throttle, .brake, .lapDelta, .speedDelta, .projectedLap, .accuracy,
+        .gpsRate,
         .gpsUpdate,
         .gpsDelay,
     ]
