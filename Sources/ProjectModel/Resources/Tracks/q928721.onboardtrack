@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q928721",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 47.95372,
+  "longitude": 0.21078,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Bugatti Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 33.8,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 47.9511775,
+    "longitude": 0.2075885
+  },
+  "turnNames": []
+}

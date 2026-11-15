@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q7161930",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 51.7056,
+  "longitude": -4.32056,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Pembrey Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 17.2,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 51.705895,
+    "longitude": -4.3238785
+  },
+  "turnNames": []
+}

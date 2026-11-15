@@ -1,0 +1,23 @@
+{
+  "circuitID": "Q171402",
+  "configuration": "National",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 52.075,
+  "longitude": -1.01667,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Silverstone Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 18.2,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 52.078838,
+    "longitude": -1.015217
+  },
+  "turnNames": []
+}

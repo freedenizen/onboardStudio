@@ -1,0 +1,37 @@
+{
+  "circuitID": "Q7488996",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 44.2254,
+  "longitude": -77.16,
+  "modified": "2026-10-21T07:33:14Z",
+  "name": "Shannonville Motorsport Park",
+  "sectors": {
+    "count": 3,
+    "lines": [
+      {
+        "halfWidthMeters": 15.0,
+        "headingToleranceDegrees": 60,
+        "ignoreFirstCrossings": 0,
+        "latitude": 44.2272,
+        "longitude": -77.1594345
+      },
+      {
+        "halfWidthMeters": 15.0,
+        "headingToleranceDegrees": 60,
+        "ignoreFirstCrossings": 0,
+        "latitude": 44.2272,
+        "longitude": -77.1674455
+      }
+    ],
+    "mode": "manual"
+  },
+  "startFinish": {
+    "halfWidthMeters": 14.9,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 44.2293155,
+    "longitude": -77.1625
+  },
+  "turnNames": []
+}

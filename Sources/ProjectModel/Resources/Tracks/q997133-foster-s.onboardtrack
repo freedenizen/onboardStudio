@@ -1,0 +1,23 @@
+{
+  "circuitID": "Q997133",
+  "configuration": "Foster's",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 53.17758,
+  "longitude": -2.61436,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Oulton Park",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 19.8,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 53.180023,
+    "longitude": -2.6128095
+  },
+  "turnNames": []
+}

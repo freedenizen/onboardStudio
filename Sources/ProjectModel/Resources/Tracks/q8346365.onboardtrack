@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q8346365",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 41.61933,
+  "longitude": 0.39889,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Circuit d'Alcarràs",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 18.6,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 41.6192795,
+    "longitude": 0.4029085
+  },
+  "turnNames": []
+}
