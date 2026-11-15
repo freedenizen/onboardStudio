@@ -106,6 +106,10 @@ struct FindTrafficBar: View {
                         .accessibilityIdentifier("coaching.findTraffic.done")
                     Spacer()
                 }
+            } else {
+                // Something on screen to hang the task on: a Group with nothing in it never
+                // appears, so its task would never look for the unread video.
+                Color.clear.frame(height: 0).accessibilityHidden(true)
             }
         }
         .task(id: [source.id, input.id.rawValue.uuidString, "\(jobs.generation)"]) {
