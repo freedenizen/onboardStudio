@@ -54,7 +54,7 @@ extension LogbookWindow {
         if let car = selectedCar {
             CarHeader(
                 name: car, summary: Garage.summary(of: car, entries: model.entries, days: model.days),
-                notes: Garage.car(named: car, in: model.cars)?.notes ?? "",
+                notes: Garage.car(named: car, in: model.cars)?.notes ?? "", entries: model.entries,
                 saveNotes: { model.saveNotes($0, forCar: car, undo: undoManager) },
                 rename: { renamingCar = CarRename(name: car) }, remove: { removeCar(car) }
             )

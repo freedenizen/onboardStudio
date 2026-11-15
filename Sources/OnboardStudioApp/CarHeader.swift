@@ -8,9 +8,14 @@ struct CarHeader: View {
     let name: String
     let summary: Garage.Summary
     let notes: String
+    /// The logbook's sessions, for the car's performance bests (#553).
+    var entries: [LogbookEntry] = []
     let saveNotes: (String) -> Void
     let rename: () -> Void
     let remove: () -> Void
+    /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
+    @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
+    private var metric: Bool { (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown() != .mph }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -37,6 +42,14 @@ struct CarHeader: View {
                     .accessibilityIdentifier("car.header.remove")
             }
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+                if let bests = Self.bests(of: name, in: entries, metric: metric) {
+                    GridRow(alignment: .firstTextBaseline) {
+                        Text("Bests").foregroundStyle(.secondary)
+                        Text(bests)
+                            .help("The car's best standing starts and stops, from every session; Trends charts them")
+                            .accessibilityIdentifier("car.header.bests")
+                    }
+                }
                 GridRow(alignment: .firstTextBaseline) {
                     Text("Notes").foregroundStyle(.secondary)
                     CommittingTextField(
@@ -51,6 +64,27 @@ struct CarHeader: View {
             .font(.callout)
         }
         .padding()
+    }
+
+    /// "0–60 mph 5.36 s · quarter mile 12.34 s @ 108 mph · 60–0 mph 118 ft" (#553): the car's
+    /// personal bests across the logbook, or `nil` when none of its sessions was measured.
+    static func bests(of car: String, in entries: [LogbookEntry], metric: Bool) -> String? {
+        let points = PerformanceTrends.points(for: entries, car: car, metric: metric)
+        guard let bests = PerformanceTrends.bests(in: points).first else { return nil }
+        let parts = [
+            bests.launch.map {
+                "\(PerformanceWording.launch(metric: metric).label) \(PerformanceWording.seconds($0.value))"
+            },
+            bests.quarterMile.map {
+                "quarter mile \(PerformanceWording.mark($0.value, trap: $0.trap, metric: metric))"
+            },
+            bests.stop.map {
+                let braking = PerformanceWording.braking(metric: metric).label
+                return "\(braking) \(PerformanceWording.distance($0.value, metric: metric))"
+            },
+        ]
+        let text = parts.compactMap(\.self).joined(separator: " · ")
+        return text.isEmpty ? nil : text
     }
 
     /// "12 sessions on 4 days at 2 circuits, Mar – Nov 2026", or what a car with none is.

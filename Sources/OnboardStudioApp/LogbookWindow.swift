@@ -363,7 +363,7 @@ struct LogbookWindow: View {
         } else if view == .trends {
             LogbookTrendsView(
                 entries: model.entries, circuitKey: trendsCircuit?.id, circuitTitle: trendsCircuit?.title ?? "",
-                goals: model.goals, onOpen: show)
+                goals: model.goals, sidebarCar: selectedCar, onOpen: show)
         } else {
             VStack(spacing: 0) {
                 if let day = selectedDay {
