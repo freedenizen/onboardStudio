@@ -288,6 +288,18 @@ suggested. The suggestion hangs on the lap's `CornerComparison.suggestion` and c
 else: the corner is ranked and noted as before. Off-line detection and the video are in
 [traffic.md](traffic.md).
 
+**Another car's log** (#574, `Sources/TelemetryKit/CarsAhead.swift`). With a second session on the
+same clock (`TelemetrySession.epoch(forSessionTime:)`), the gap is read every 0.2 s as how long ago
+the other car passed the place this one is at: its trace over the last 1.5 s is searched for the
+point nearest this car's position (within 12 m, the width of a line and GPS's error), so a lapped
+car counts and one on another part of the circuit never does. Under 0.2 s is alongside, or the same
+recording, and below 8 m/s is the pit lane or the grid; neither counts. Runs of following, bridged
+across a second, of at least 2 s become `TelemetrySession.carsAhead`, and a corner a quarter covered
+by one gets `.following(car:seconds:)` evidence, first in its sentence, without the three-lap
+minimum the other signals need. The Coaching window reads every Logbook session at the same
+circuit that began in the half day before this one ended (`LogbookReferences.sharingTheTrack`);
+the CLI takes `--other-car`.
+
 **Notes** are deterministic phrase templates filled from the numbers, in the units asked for
 (km/h and metres, or mph and feet): a headline ("Turn 4: 0.31 s lost on entry"), the evidence
 that applies ("Braked 18 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later",

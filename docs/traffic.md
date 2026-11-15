@@ -146,6 +146,23 @@ Telemetry suggestions, read on demand and never applied on their own.
 - No `source`, `confidence` or `state` on `TrafficSpan` yet: a suggestion is a separate type until a
   detector can apply itself (#573), and a confirmed suggestion is a mark like any other.
 
+## What was built (#574)
+
+Another car's log, read whenever the Coaching window reads a session.
+
+- `CarsAhead.following` (`Sources/TelemetryKit/CarsAhead.swift`) puts both GPS traces on one plane
+  and, every 0.2 s, asks how long ago the other car passed this one's position, searching its last
+  1.5 s for the nearest point. Nearest point rather than distance along a lap, so it needs no shared
+  start line, counts a lapped car, and ignores a car on the other side of the circuit or in the pit
+  lane. Under 0.2 s is alongside (or the same file read twice); under 8 m/s is a queue.
+- Runs of 2 s or more become `TelemetrySession.carsAhead`, and feed the same per-corner suggestions
+  as the telemetry, as their first piece of evidence. Following a friend can be deliberate, so it
+  is still a suggestion, but it needs no three laps to say what is usual.
+- The window finds the other sessions in the Logbook: the same circuit key, begun within the half
+  day before this session ended, not this session's own file
+  (`LogbookReferences.sharingTheTrack`). `onboard coach --other-car file[=name]` does the same from
+  a file. Nothing is saved: the gaps are read again each time, like the other suggestions.
+
 ## The model
 
 A `TrafficSpan` in `TelemetryKit`: a stretch of session time, with
@@ -216,7 +233,7 @@ an old project reads as it did until the driver turns it on.
    false positives against hand marks, and measure time per minute of 2.7K and 4K footage. Go or
    no-go on bundling, and which model.
 4. **Video detection** in the app and the CLI, cached per clip.
-5. **Another car's log** from the logbook.
+5. **Another car's log** from the logbook (#574, built).
 
 ## Open questions
 
