@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q6717891",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 29.27811,
+  "longitude": -95.42244,
+  "modified": "2026-10-30T14:30:12Z",
+  "name": "MSR Houston",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 12.3,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 29.2790775,
+    "longitude": -95.422398
+  },
+  "turnNames": []
+}

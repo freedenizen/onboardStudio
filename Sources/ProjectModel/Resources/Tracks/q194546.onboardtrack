@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q194546",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 56.33722,
+  "longitude": 10.68333,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Ring Djursland",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 19.1,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 56.3372455,
+    "longitude": 10.6824235
+  },
+  "turnNames": []
+}

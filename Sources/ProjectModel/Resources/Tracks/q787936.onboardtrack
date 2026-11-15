@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q787936",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 45.38258,
+  "longitude": 14.50867,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Automotodrom Grobnik",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 25.3,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 45.382761,
+    "longitude": 14.5093765
+  },
+  "turnNames": []
+}

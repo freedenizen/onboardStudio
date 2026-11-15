@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q110822362",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 53.50656,
+  "longitude": -2.63267,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Three Sisters Race Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 12.0,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 53.506285,
+    "longitude": -2.6329855
+  },
+  "turnNames": []
+}

@@ -1,0 +1,23 @@
+{
+  "circuitID": "Q813859",
+  "configuration": "GT",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 52.2336,
+  "longitude": -0.47222,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Bedford Autodrome",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 16.5,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 52.235146,
+    "longitude": -0.4742985
+  },
+  "turnNames": []
+}

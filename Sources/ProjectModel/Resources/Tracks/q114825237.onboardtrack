@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q114825237",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 44.7785,
+  "longitude": 26.4724,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Motorpark Romania",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 15.4,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 44.7793755,
+    "longitude": 26.4727445
+  },
+  "turnNames": []
+}
