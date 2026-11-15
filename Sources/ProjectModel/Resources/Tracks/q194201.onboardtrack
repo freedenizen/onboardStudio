@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q194201",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 54.86861,
+  "longitude": 9.27472,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Padborg Park",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 13.9,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 54.8691175,
+    "longitude": 9.275721
+  },
+  "turnNames": []
+}

@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q2630372",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 51.1164,
+  "longitude": -0.54146,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Top Gear test track",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 16.3,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 51.1186825,
+    "longitude": -0.5364105
+  },
+  "turnNames": []
+}

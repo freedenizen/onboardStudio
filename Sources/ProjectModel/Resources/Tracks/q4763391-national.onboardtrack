@@ -1,0 +1,23 @@
+{
+  "circuitID": "Q4763391",
+  "configuration": "National",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 53.19004,
+  "longitude": -4.49766,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Anglesey Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 16.3,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 53.189844,
+    "longitude": -4.4977125
+  },
+  "turnNames": []
+}

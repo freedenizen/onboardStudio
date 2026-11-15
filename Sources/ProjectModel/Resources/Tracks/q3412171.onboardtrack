@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q3412171",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 44.1551,
+  "longitude": 4.07116,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Pôle Mécanique Alès Cévennes",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 23.0,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 44.155054,
+    "longitude": 4.0714725
+  },
+  "turnNames": []
+}
