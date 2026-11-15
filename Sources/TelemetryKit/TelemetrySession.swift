@@ -46,6 +46,11 @@ public struct TelemetrySession: Sendable {
     /// The circuit's turn names, each pinned to its apex (#548). When there are any they are used
     /// and `cornerLabels` is not: read both through `cornerNames(for:)`.
     public var turnNames: [TurnName] = []
+    /// Every corner the reference lap finds is a corner, as builds before #585 read them; `false`
+    /// keeps only the corners most of the session's laps agree on (`agreedCorners(of:)`). Set
+    /// from the data input of a project saved before that, so its map, sectors and coaching
+    /// number the corners they always did.
+    public var legacyCornersPerLap = false
     /// Stretches the driver marked as held up by traffic or a flag (#571), in session time. Not
     /// read from the file: whoever reads the session for coaching puts the marks the project or
     /// the logbook keeps here first, so every reading of it leaves the same corners out.
