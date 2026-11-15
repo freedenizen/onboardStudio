@@ -1,0 +1,23 @@
+{
+  "circuitID": "Q172880",
+  "configuration": "Indy",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 51.35667,
+  "longitude": 0.2625,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Brands Hatch",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 16.1,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 53.460006,
+    "longitude": -0.6886455
+  },
+  "turnNames": []
+}

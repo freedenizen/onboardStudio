@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q2973985",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 49.0269,
+  "longitude": 5.89111,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Circuit de Chambley",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 25.7,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 49.0269365,
+    "longitude": 5.89186
+  },
+  "turnNames": []
+}

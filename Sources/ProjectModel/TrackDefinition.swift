@@ -36,6 +36,9 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
     /// What the driver planned to try next time here (#330), kept so the next project at this
     /// circuit opens knowing it.
     public var plan: NextSessionPlan?
+    /// Who made a definition that ships with the app, and under what licence (#584): "LapViz
+    /// (Mengal SRL), MIT". `nil` for the driver's own and for every file saved before.
+    public var credit: String?
 
     public init(
         circuitID: String? = nil,
@@ -102,7 +105,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case circuitID, configuration, name, latitude, longitude, startFinish, sectors, cornerLabels, turnNames,
-            modified, plan
+            modified, plan, credit
     }
 
     public init(from decoder: any Decoder) throws {
@@ -118,6 +121,7 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
         turnNames = try c.decodeIfPresent([TurnName].self, forKey: .turnNames) ?? []
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? Date(timeIntervalSince1970: 0)
         plan = try c.decodeIfPresent(NextSessionPlan.self, forKey: .plan)
+        credit = try c.decodeIfPresent(String.self, forKey: .credit)
     }
 }
 
@@ -125,39 +129,79 @@ public struct TrackDefinition: Hashable, Codable, Sendable, Identifiable {
 ///
 /// Deliberately a directory of separate files rather than one database: a definition is meant to
 /// be handed to another driver, and a file you can attach to a message is the whole point.
+///
+/// Behind the driver's own folder there can be a second, read-only one: the definitions that ship
+/// with the app (#584), contributed by drivers who know those circuits. The driver's own always
+/// wins. Whatever is written — a plan, a name, a saved line — goes into the driver's folder,
+/// starting from the shipped definition when that is all there was, and removing a definition
+/// removes only the driver's copy, so the shipped one shows through again.
 public struct TrackLibrary: Sendable {
     public static let fileExtension = "onboardtrack"
 
     public let directory: URL
+    /// The definitions that ship with the app, read-only; `nil` for none.
+    public let builtIn: URL?
 
     /// Defaults to `~/Library/Application Support/OnboardStudio/Tracks`. Tests pass their own.
-    public init(directory: URL? = nil) {
+    /// `builtIn` is none unless asked for: the app asks for `TrackLibrary.bundled`.
+    public init(directory: URL? = nil, builtIn: URL? = nil) {
         self.directory =
             directory
             ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appending(path: "OnboardStudio/Tracks")
             ?? URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: "OnboardStudio/Tracks")
+        self.builtIn = builtIn
     }
+
+    /// The folder of definitions that ship with the app (#584).
+    public static var bundled: URL? { Bundle.module.url(forResource: "Tracks", withExtension: nil) }
 
     public func url(for id: String) -> URL {
         directory.appending(path: "\(TrackDefinition.slug(id)).\(Self.fileExtension)")
     }
 
-    /// The definition filed under `id`, or `nil`. Never throws: a library that cannot be read is
-    /// a library with nothing in it, not a reason to fail opening a project.
+    /// The definition filed under `id`, the driver's own before the app's, or `nil`. Never throws:
+    /// a library that cannot be read is a library with nothing in it, not a reason to fail opening
+    /// a project.
     public func definition(id: String) -> TrackDefinition? {
-        try? Self.read(from: url(for: id))
+        (try? Self.read(from: url(for: id))) ?? builtInDefinition(id: id)
     }
 
-    /// Every definition, newest first. Unreadable files are skipped.
+    /// Where the definition filed under `id` comes from.
+    public enum Source: Sendable, Equatable {
+        /// The driver's own: saved, imported or changed here.
+        case yours
+        /// One that ships with the app, which the driver has not changed.
+        case builtIn
+    }
+
+    /// Whose the definition filed under `id` is; `nil` when there is none.
+    public func source(of id: String) -> Source? {
+        if (try? Self.read(from: url(for: id))) != nil { return .yours }
+        return builtInDefinition(id: id) == nil ? nil : .builtIn
+    }
+
+    /// Every definition, the driver's own and the app's that the driver has not replaced, newest
+    /// first. Unreadable files are skipped.
     public func all() -> [TrackDefinition] {
-        let contents =
-            (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
-        return
-            contents
-            .filter { $0.pathExtension == Self.fileExtension }
-            .compactMap { try? Self.read(from: $0) }
-            .sorted { $0.modified > $1.modified }
+        let yours = Self.definitions(in: directory)
+        let ids = Set(yours.map(\.id))
+        let shipped = builtIn.map(Self.definitions(in:))?.filter { !ids.contains($0.id) } ?? []
+        return (yours + shipped).sorted { $0.modified > $1.modified }
+    }
+
+    /// Whether a definition filed under `id` ships with the app, whether or not the driver has one.
+    public func shipsDefinition(id: String) -> Bool { builtInDefinition(id: id) != nil }
+
+    private func builtInDefinition(id: String) -> TrackDefinition? {
+        guard let builtIn else { return nil }
+        return try? Self.read(
+            from: builtIn.appending(path: "\(TrackDefinition.slug(id)).\(Self.fileExtension)"))
+    }
+
+    private static func definitions(in folder: URL) -> [TrackDefinition] {
+        let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+        return contents.filter { $0.pathExtension == fileExtension }.compactMap { try? read(from: $0) }
     }
 
     /// Keeps `plan` on the definition saved as `id`, or on `fresh()` when there is none — a circuit
@@ -189,6 +233,8 @@ public struct TrackLibrary: Sendable {
         try Self.write(stamped, to: url(for: definition.id))
     }
 
+    /// Removes the driver's own definition filed under `id`; one that ships with the app, if any,
+    /// is what `definition(id:)` gives from then on.
     public func remove(id: String) throws {
         let file = url(for: id)
         guard FileManager.default.fileExists(atPath: file.path) else { return }

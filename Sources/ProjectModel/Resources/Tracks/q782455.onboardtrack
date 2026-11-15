@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q782455",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 43.9975,
+  "longitude": 11.37194,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Mugello Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 20.3,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 43.997601,
+    "longitude": 11.371465
+  },
+  "turnNames": []
+}

@@ -1,7 +1,7 @@
 import XCTest
 
 // ci-shard: 2
-/// J70: a 0–60 and a quarter mile from a straight-line log, in the Logbook (#553).
+/// J70: a 0–60 and a quarter mile from a straight-line log, in the Logbook and in Trends (#553).
 final class PerformanceUITests: OnboardStudioUITestCase {
     @MainActor
     func testAStraightLineLogIsTimedLikeAPerformanceMeter() throws {
@@ -46,5 +46,37 @@ final class PerformanceUITests: OnboardStudioUITestCase {
         menu("Edit", "Undo Turn Off Performance Runs")
         XCTAssertTrue(
             detail.staticTexts["Start 2"].waitForExistence(timeout: Self.timeout), "Undo did not bring them back")
+    }
+
+    @MainActor
+    func testTrendsKeepsTheCarsPersonalBests() throws {
+        launch()
+        testing("Add Fixture Drag Runs to Logbook")
+        let done = app.buttons["trackday.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: Self.timeout * 3), "No Add Track Day sheet")
+        done.click()
+
+        menu("Window", "Logbook")
+        let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch
+        XCTAssertTrue(table.waitForExistence(timeout: Self.timeout), "No Logbook window")
+        let trends = app.radioButtons["Trends"].exists ? app.radioButtons["Trends"] : app.buttons["Trends"]
+        XCTAssertTrue(trends.waitForExistence(timeout: Self.timeout))
+        trends.click()
+
+        // A straight-line log names no circuit, and its runs are shown all the same: the car's.
+        let section = app.descendants(matching: .any).matching(identifier: "logbook.trends.performance").firstMatch
+        XCTAssertTrue(section.waitForExistence(timeout: Self.timeout * 3), "No performance runs in Trends")
+        // A best is a link to its session.
+        let best = section.links.matching(
+            NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "0–60 mph 5.36 s", "0–100 km/h 5.56 s")
+        ).firstMatch
+        XCTAssertTrue(best.waitForExistence(timeout: Self.timeout), "No personal best of 5.36 s (or 5.56 s)")
+
+        // A best opens the session that set it.
+        reveal(best)
+        best.click()
+        let detail = app.descendants(matching: .any).matching(identifier: "logbook.detail").firstMatch
+        XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "The best did not open its session")
+        XCTAssertTrue(detail.staticTexts["Start 2"].waitForExistence(timeout: Self.timeout), "Not the drag session")
     }
 }

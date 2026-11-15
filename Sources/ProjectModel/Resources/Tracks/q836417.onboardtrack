@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q836417",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 52.02722,
+  "longitude": 11.27861,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Motorsport Arena Oschersleben",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 32.4,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 52.0270935,
+    "longitude": 11.2803365
+  },
+  "turnNames": []
+}

@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q4696439",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 61.00205,
+  "longitude": 24.42115,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Ahvenisto Race Circuit",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 19.7,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 61.0036015,
+    "longitude": 24.4180195
+  },
+  "turnNames": []
+}

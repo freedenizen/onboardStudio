@@ -215,7 +215,8 @@ finds it. Nothing is required.
 
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
 sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
-worth keeping. **Rename…** changes the name on every day and session at once; type another car's
+worth keeping. A car with [performance runs](#performance-runs-060-the-quarter-mile-and-stops)
+lists its best 0–60, quarter mile and 60–0 under **Bests**. **Rename…** changes the name on every day and session at once; type another car's
 name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
 added to the garage the first time its name is typed anywhere, and a name put right on the day or
 the session leaves it again. A car with notes stays when nothing names it any more: it is listed
@@ -286,6 +287,10 @@ second shows as *5 Hz: times ±0.1 s*.
 The same switch is in a project, under **Laps** in the data file's inspector, for a
 [Stat Card](#stat-card-and-the-social-template)'s 0–60, quarter mile and braking rows. Set to
 neither, it says what it does by itself.
+
+Personal bests in a straight line are the car's, not the venue's, so they are kept per car, across
+every session wherever it was driven. A car's card in the [garage](#the-garage-your-cars) lists them
+under **Bests**, and **Trends** charts them ([Performance in Trends](#performance-in-trends)).
 
 ### Putting mistakes right
 
@@ -709,7 +714,8 @@ counts on one lap and not the next — and a name is kept where the turn is, not
 corner", so a lap with an extra kink does not move 3a onto turn 4. And a kink only a few of the
 session's laps find is not a corner at all: the corners are the ones most of your laps agree on,
 so your best lap having one kink more than the rest does not give the map, the sectors or Coaching
-a corner the circuit does not have. (With fewer than three laps there is nothing to agree, and
+a corner the circuit does not have — and your best lap smoothing a gentle bend that the rest turn
+through does not take one away. (With fewer than three laps there is nothing to agree, and
 every corner counts. A project made before this keeps the corners it had.) A corner you leave
 blank among named ones is not numbered on the map, and Coaching and Trends call it by the turns
 either side of it, such as *3a–4*. Clear a name to take it off a turn.
@@ -723,6 +729,16 @@ circuit and configuration. The next data file you *add* from the same place star
 filled in, so you set a venue up once rather than once a session. Opening a project you saved
 earlier never applies them: a project renders the way you left it, whatever the app has learned
 since.
+
+**Some circuits come set up.** Onboard Studio ships with the start/finish line — and at a few, the
+sectors — of over a hundred European circuits, from [LapViz](https://github.com/lapviz/LapViz.Telemetry),
+and with any circuit a driver has contributed. A file added at one of them starts with that line
+as if you had saved it yourself, and the Track section says where the settings came from. At a
+circuit with several layouts — Silverstone's Grand Prix, International and National — choose the
+one you drove in **Configuration** and its line comes with it. Your own saved settings always come
+first: saving yours takes their place, and **Forget Saved Settings** brings theirs back. They name
+no turns; name those on the circuit's card. To share a circuit you have set up, see
+[Contributing a circuit](tracks-and-sectors.md#contributing-a-circuit-584).
 
 ### Overlays
 
@@ -1430,8 +1446,21 @@ above the table names the laps it reads, and a comparison's columns appear only 
 to make: none against the personal best when the latest day set it. Sessions entered before
 corners were kept offer **Read Their Corners**, as do sessions whose corners were measured before
 a correction to how the app measures them — braking that belongs to the next corner (#438), and a
-kink few of the session's laps find no longer counted as a corner (#585) — so a fixed reading
+kink few of the session's laps find no longer counted as a corner (#585), a bend most of them turn
+through counted though the best lap smoothed it (#598) — so a fixed reading
 reaches sessions already in the logbook.
+
+### Performance in Trends
+
+When any session in the logbook has [performance runs](#performance-runs-060-the-quarter-mile-and-stops),
+**Trends** has a **Performance** section: it is below the lap charts with a circuit chosen, and on its
+own without one, since a drag strip or a test road is seldom a circuit the logbook knows. A sentence
+says how far each car's 0–60 (0–100 km/h) has come from its first measured session to its best.
+**Personal bests by car** lists each car's best 0–60, quarter mile with its trap speed, and 60–0
+(100–0) stopping distance, with the day each was set; click one to open that session. Below it, with
+two measured sessions or more, a chart of the 0–60 and one of the quarter mile have a line per car,
+grouped by track day like the lap charts, so a new tyre, a tune or a better launch shows as a step.
+Choose a car in the sidebar to see only its sessions.
 
 ### Car against car
 

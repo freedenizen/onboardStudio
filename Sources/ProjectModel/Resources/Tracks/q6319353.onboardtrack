@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q6319353",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 56.17556,
+  "longitude": 9.66083,
+  "modified": "2026-10-18T14:18:41Z",
+  "name": "Jyllands-Ringen",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 22.6,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 56.176323,
+    "longitude": 9.6605245
+  },
+  "turnNames": []
+}

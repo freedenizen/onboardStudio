@@ -1,0 +1,22 @@
+{
+  "circuitID": "Q114929865",
+  "cornerLabels": [],
+  "credit": "LapViz (Mengal SRL), MIT",
+  "latitude": 47.24639,
+  "longitude": 19.37944,
+  "modified": "2026-10-28T17:46:12Z",
+  "name": "Kakucs Ring",
+  "sectors": {
+    "count": 3,
+    "lines": [],
+    "mode": "equalDistance"
+  },
+  "startFinish": {
+    "halfWidthMeters": 14.4,
+    "headingToleranceDegrees": 60,
+    "ignoreFirstCrossings": 0,
+    "latitude": 47.246326,
+    "longitude": 19.3780075
+  },
+  "turnNames": []
+}

@@ -237,7 +237,8 @@ Corners*). Each entry records which measurement read its corners (`cornerMeasure
 steps, and Trends offers the same button for entries read by an earlier one, so a corrected
 reading reaches the sessions already in the logbook. 2 is the first correction: braking that
 begins after a corner has ended is the next corner's. 3 (#585): a corner most of the session's
-laps do not find is not one of its corners. `LogbookTrends` (`ProjectModel/LogbookTrends.swift`) turns the entries at a circuit key
+laps do not find is not one of its corners. 4 (#598): a corner most of them find is one, though
+the best lap drove through it. `LogbookTrends` (`ProjectModel/LogbookTrends.swift`) turns the entries at a circuit key
 into dated points (best, optimal, rolling, and the spread of flying laps as consistency), a
 sentence for the summary and VoiceOver, and per-corner trends: the latest visit against the one
 before and the personal best's session, matched by the corner's label. The window's Trends view
@@ -549,4 +550,10 @@ measured in the reading itself (`ProjectCompiler.measurePerformance`) and not tw
 switch on in the detail reads the file again off the main thread (`LogbookModel.measurePerformance`)
 and saves the entry as one step of the Logbook's Undo. An entry written before has neither field: it
 is automatic, with nothing measured until its file is read again.
+
+Personal bests in a straight line are kept per car, not per circuit, and nothing extra is stored for
+them: `PerformanceTrends.points` reads every entry's `performance` (the launch and stop of the speed
+unit shown, and the quarter mile with its trap), and `PerformanceTrends.bests` takes each car's
+quickest, cars matched as `Garage.same` matches them and the first session to reach a best keeping
+it. Trends draws the points; the garage card shows the bests.
 

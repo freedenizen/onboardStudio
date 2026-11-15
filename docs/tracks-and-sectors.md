@@ -278,7 +278,10 @@ accurate names ahead of time, checked on 2026-11-13:
 | Route | What it would give | Verdict |
 |---|---|---|
 | **Pinned names** (#548, done) | Names that stay on their turns across laps, sessions and drivers | The precondition for every route below: a bundled or shared name is worthless if it slides |
-| **A bundled library of contributed definitions** | Turn names, start/finish and sectors for the circuits contributors have driven, shipped with the app | **Recommended next.** The contributor's own laps place the turns, the circuit's published map gives the numbering, and a numbering is a fact, not a work — so a definition can be dedicated CC0 by the person who made it. The `.onboardtrack` file already carries everything; what is missing is a folder in the repository that the build bundles and a read-only "built in" source under `TrackLibrary` that a driver's own definition overrides |
+| **A bundled library of contributed definitions** (#584, done) | Turn names, start/finish and sectors for the circuits contributors have driven, shipped with the app | The contributor's own laps place the turns, the circuit's published map gives the numbering, and a numbering is a fact, not a work — so a definition can be dedicated CC0 by the person who made it. Shipped with LapViz's European start/finish and sector lines (MIT) to begin with; see "Definitions that ship with the app" below |
+| **LapViz `circuits.json`** (found 2026-11-14) | Start/finish and sector gates, two end points each, for 196 layouts: European, many of them kart tracks, no US circuit but MSR Houston; **no turns** | **Used** (#584), under MIT with Mengal SRL's notice. Its owner says the lines came from satellite imagery or recorded sessions; not verified against laps |
+| **OpenStreetMap corner names** (and what is built on them: raceline, kruslim's visualiser) | Named corner points at some venues — Spa fully, most others few or none — names but no turn numbers | **Not used**: ODbL share-alike, so a bundled folder of them would have to stay ODbL; the user chose not to (2026-11-14) |
+| **apex-tracks, PitLogger/tracks** | The right fields under MIT or CC0: start/finish with heading and width, sectors, numbered corners | Empty when checked (2026-11-14); worth watching, and a natural home for the CC0 definitions contributed here |
 | **Agreement across laps** (#585, done) | A corner list that does not change from lap to lap: keep the corners found on most laps of the session, drop a kink found on one | Removes most `3a–4` labels before anyone sees them. It changes which corners a project's map numbers, so it applies to projects created after it (schema 5) |
 | **Numbering help in the naming sheet** | Typing `3a` on a corner offers to call the ones after it 4, 4a… or 4, 5… | Cheap, and it is the step a driver repeats at every new circuit |
 | **A circuit's official list typed in** (turn labels only, no positions) | `1, 2, 3, 3a, 4, …` per configuration, offered in order as the driver names corners | Half a route: still needs positions, so it only shortens the typing. Facts from a circuit's own map may be typed in; copying the map or a site's text may not |
@@ -314,15 +317,82 @@ counted, every lap that had only the turn "found" the kink too and it was never 
 - **The reference votes for its own corners** when it is one of the session's laps; a rolling lap
   or a lap spliced from several is only voted on. A reference from another session is read as it
   is: its own laps are not there to vote.
-- **Only the reference's extra corners go.** A corner most laps find and the reference drove
-  straight through is not added: the reference's own distances are what corners are measured
-  along, and a bend that lap did not turn has no apex on it.
+- **A corner most laps find is added when the reference missed it** (#598). The best lap is the
+  likeliest to straighten a gentle bend, so it was the lap most likely to be a corner short. The
+  other laps' corners that pair with none of the reference's are grouped bend by bend the same
+  way, one to one, and a group found on more than half the laps is placed on the reference lap
+  where it drove that bend: entry, apex and exit are the reference path's nearest points to the
+  group's most central corner, looked for only around the apex so a parallel straight cannot take
+  them, and the corner keeps that lap's turn. It is not added where the reference lap passes no
+  nearer than 40 m, nor inside a corner the reference already has — two bends it drove as one stay
+  one.
 
 It changes which corners a project numbers, so it applies to projects created after it: a project
-saved before schema 5 keeps every corner its reference lap finds (`legacyCornersPerLap`,
-`docs/project-format.md`). The Logbook's corner readings step to measurement 3, so Trends offers
-to read the corners of sessions entered before it again. Replay's kerbs are left as they were:
+saved before schema 5 keeps every corner its reference lap finds (`legacyCornersPerLap`), and one
+saved at schema 5, between #585 and #598, keeps corners only being taken away
+(`legacyCornersOnlyDropped`; `docs/project-format.md`). The Logbook's corner readings step to
+measurement 4, so Trends offers to read the corners of sessions entered before it again. Replay's kerbs are left as they were:
 they are drawn where the lap turns, and a real kink there is a real kink.
+
+### Definitions that ship with the app (#584)
+
+`TrackLibrary` reads two folders: the driver's own, and behind it a read-only one bundled with the
+app (`Sources/ProjectModel/Resources/Tracks`, `TrackLibrary.bundled`). For any circuit and
+configuration **the driver's own always wins**. Everything that writes — a plan, a turn name,
+*Save Start/Finish, Sectors and Corner Names*, an import — writes the driver's folder, starting from
+the shipped definition when that is all there was; *Forget Saved Settings* removes only the driver's
+copy, and the shipped one shows through again. A copy, once made, does not follow later versions of
+the shipped file: the driver's settings are the driver's. Under UI tests the app reads no shipped
+folder, so what ships cannot change what a test finds at a fixture's circuit; a plain
+`TrackLibrary(directory:)` reads none either, for the same reason in unit tests.
+
+A shipped definition is used where a driver's saved one already was, and nowhere else: a data file
+*added* at the circuit starts with its start/finish and sectors, a Logbook import of a file with no
+laps of its own is read again with its line, its turn names name the corners, and its
+configurations are offered in the Configuration menu. **Opening a saved project applies nothing**,
+as before, so no project changes how it renders.
+
+**What ships today** is LapViz's start/finish and sector gates (MIT, © Mengal SRL; its licence
+ships beside them as `LICENSE-LapViz.md`) for the layouts at circuits the catalogue knows, written
+by `Scripts/import-lapviz-tracks.py`, each with `credit` "LapViz (Mengal SRL), MIT":
+
+- **A gate becomes a line with no heading**: its midpoint, and half its length as the half-width
+  (at least 12 m). A line with no heading lies across the track wherever the lap crosses it
+  (`FinishLine`), so the direction of travel, which LapViz does not give, is never guessed — and
+  one line serves a circuit driven either way.
+- **Matching a layout to a catalogue circuit**, best first: a circuit within 3 km sharing a word of
+  the layout's name; else one within 400 m whatever the catalogue calls it (the catalogue knows
+  Donington by a Japanese label and Brno as the Masaryk Circuit); else one within 3 km sharing a
+  word of its town. Distance alone never beats a name — the catalogue has an entry a few metres
+  from Tor Poznań under another name. A kart track matches only a catalogue venue that is a kart
+  track itself, so a kart circuit beside a car circuit never hands the car circuit its line.
+- **Configurations**: a circuit's only LapViz layout is its usual one (a bracket on a lone layout
+  names a place more often than a layout: "(Imola)", "(Le Mans)"). At a circuit with several, the
+  bracket is the configuration — Silverstone's Grand Prix, International and National — and so are
+  an unbracketed name's own words beyond the circuit's, Nürburgring's Nordschleife. Where every
+  layout is bracketed there is no usual one, so nothing is filled in until the driver says which
+  configuration a file drove; choosing it in the Configuration field brings its lines in.
+- **No turn names.** LapViz has none, and the only positioned names published anywhere are ODbL.
+  Turns are still named by drivers, and contributed.
+
+### Contributing a circuit (#584)
+
+A contributed definition is a `.onboardtrack` file the contributor dedicates to the public domain
+under CC0, so the app can ship it and anyone can reuse it. Only what you can dedicate goes in:
+
+1. **Drive it and set it up in the app**: place the start/finish on your own laps, set the sectors,
+   and name the turns on the circuit's card (*Name Turns…*) with the circuit's own numbering — a
+   fact, readable from its published map. Never trace positions from map imagery or a circuit's map
+   drawing, and never copy a map's or a site's text.
+2. **Export it** from the editor's Track section (*Export Track Definition…*).
+3. **Open a pull request** adding it to `Sources/ProjectModel/Resources/Tracks`, named by its id as
+   the app names it, with a row in that folder's README saying who made it and how, and a line in
+   the pull request dedicating it to CC0. `TrackLibraryBundleTests` checks that it reads, is filed
+   under its own id, is at a circuit the catalogue knows, says something about the circuit, carries
+   no plan, and is in the README.
+
+A contributed definition of a layout LapViz also covers replaces LapViz's file, and the importer
+does not write that layout again while it is there.
 
 ### A circuit's configurations (#549)
 
