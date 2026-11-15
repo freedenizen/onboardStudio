@@ -247,6 +247,12 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
 
     /// Whether the file is timed in runs: both a start and a finish line are set.
     public var timesRuns: Bool { lapLine != nil && runFinishLine != nil }
+    // swiftlint:disable discouraged_optional_boolean
+    /// Whether its standing starts and stops are measured (#553): 0–60, the quarter mile, 60–0.
+    /// `nil`, as in every project saved before, is automatic: measured when the file has no laps
+    /// and no runs. Nothing drew these numbers before, so measuring cannot change a saved render.
+    public var measuresPerformance: Bool?
+    // swiftlint:enable discouraged_optional_boolean
     /// How each lap is divided for sector times.
     public var sectors: SectorSpec
     /// The circuit this file was recorded at, as a Wikidata id (`Q112563`) or a track-definition
@@ -320,7 +326,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, runFinishLine, sectors, circuitID
         case cornerLabels, turnNames, configuration, trim
-        case logbookEntryID, legacyFirstLap
+        case logbookEntryID, legacyFirstLap, measuresPerformance
     }
 
     public init(from decoder: any Decoder) throws {
@@ -340,6 +346,7 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         lapLine = try c.decodeIfPresent(LapLineSpec.self, forKey: .lapLine)
         // Absent before runs (#552): every such project was timed in laps, which nil keeps.
         runFinishLine = try c.decodeIfPresent(LapLineSpec.self, forKey: .runFinishLine)
+        measuresPerformance = try c.decodeIfPresent(Bool.self, forKey: .measuresPerformance)
         // Absent in projects saved before sectors existed. Nothing drew a sector time then, so
         // measuring them now cannot change how such a project renders.
         sectors = try c.decodeIfPresent(SectorSpec.self, forKey: .sectors) ?? SectorSpec()

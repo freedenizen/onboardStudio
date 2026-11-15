@@ -29,6 +29,19 @@ struct StatCardInspector: View {
             Toggle("Optimal lap", isOn: field(\.showOptimalLap, "Optimal Lap"))
                 .help("The best sectors of the session spliced into one lap; shown when the data has sectors")
             if params.scope == .session { Toggle("Laps completed", isOn: field(\.showLapCount, "Laps Completed")) }
+            Toggle("0–60 time", isOn: field(\.showLaunch, "0–60 Time"))
+                .help("The quickest launch from standing still: 0–60 mph, or 0–100 km/h in km/h")
+                .accessibilityIdentifier("statCard.showLaunch")
+            Toggle("Quarter mile", isOn: field(\.showQuarterMile, "Quarter Mile"))
+                .help("The quickest quarter mile with its trap speed, timed with a 1-ft rollout as a timeslip")
+                .accessibilityIdentifier("statCard.showQuarterMile")
+            Toggle("60–0 braking distance", isOn: field(\.showStop, "Braking Distance"))
+                .help("The shortest stop to standing still: from 60 mph, or from 100 km/h in km/h")
+                .accessibilityIdentifier("statCard.showStop")
+            if (params.showLaunch || params.showQuarterMile || params.showStop) && !measured {
+                Text("Turn on Performance runs for this card's data file, under Laps in its inspector.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Text(
                 params.scope == .session
                     ? "Numbers for the whole session, from the data file this card reads."
@@ -41,6 +54,12 @@ struct StatCardInspector: View {
             ColorPicker("Labels", selection: color(\.labelColor, "Label Colour"))
             ColorPicker("Background", selection: color(\.backgroundColor, "Background Colour"))
         }
+    }
+
+    /// Whether the data file the card reads has its performance runs measured.
+    private var measured: Bool {
+        let input = object.inputID ?? editor.project.dataInputs.first?.id
+        return input.flatMap { editor.sessions[$0]?.performance } != nil
     }
 
     func field<T>(_ keyPath: WritableKeyPath<StatCardParams, T>, _ name: String) -> Binding<T> {

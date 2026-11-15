@@ -323,7 +323,9 @@ extension Probe {
         if let slope, abs(slope) > PerformanceRuns.Options.notableSlope {
             notes.append(String(format: "%.1f %% %@", abs(slope) * 100, slope > 0 ? "uphill" : "downhill"))
         }
-        if let hertz, hertz < PerformanceRuns.Options.notableRate { notes.append(String(format: "%.0f Hz", hertz)) }
+        if let hertz, hertz.rounded() < PerformanceRuns.Options.notableRate {
+            notes.append(String(format: "%.0f Hz", hertz))
+        }
         return notes.isEmpty ? "" : "  (" + notes.joined(separator: "; ") + ")"
     }
 }

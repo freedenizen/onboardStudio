@@ -31,6 +31,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | Calculated fields | ✅ | Expression language |
 | Lap detection (line by lat/lon or "position at this time", tolerances, ignore first N, sub-sample precision) | ✅ | Map pick, heading tolerance, half width, ignore-first-N, interpolated crossing |
 | Point-to-point runs (autocross, hill climb, stage) | ➕ | Not in RaceRender (TrackAddict's *Segment* mode): **Timing ▸ Runs** times each run from a start line to a separate finish line, runs told apart by the car stopping; a VBO file's finish gate does it on its own (#552) |
+| 0–60, quarter mile, 60–0 (performance runs) | ➕ | Not in RaceRender (TrackAddict's *Drag* mode, Dragy, a VBOX Performance Box): every standing start and stop, with a timeslip's 1-ft rollout and trap speeds, in the Logbook and on a Stat Card; measured on its own for a log with no laps (#553). No live drag tree yet |
 | Data Sync Wizard | ✅ | Plus timestamp auto-sync and motion (audio) auto-sync, which RaceRender lacks |
 
 ## Display objects

@@ -22,7 +22,7 @@ import Foundation
 /// start too. The caller asks.
 public enum PerformanceRuns {
     /// One standing start and what it reached.
-    public struct Attempt: Sendable, Equatable {
+    public struct Attempt: Sendable, Hashable, Codable {
         /// Session seconds: when the car started moving, and when the attempt ended.
         public let start: Double
         public let end: Double
@@ -46,7 +46,7 @@ public enum PerformanceRuns {
     }
 
     /// One stop from a braking speed to standing still.
-    public struct Stop: Sendable, Equatable {
+    public struct Stop: Sendable, Hashable, Codable {
         public let from: BrakingSpeed
         /// Session seconds: speed falling through `from`, and the car standing still.
         public let start: Double
@@ -56,7 +56,7 @@ public enum PerformanceRuns {
         public var seconds: Double { end - start }
     }
 
-    public struct Result: Sendable, Equatable {
+    public struct Result: Sendable, Hashable, Codable {
         public var attempts: [Attempt] = []
         public var stops: [Stop] = []
     }

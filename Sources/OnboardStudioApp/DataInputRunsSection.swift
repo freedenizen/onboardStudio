@@ -126,4 +126,31 @@ extension DataInputInspector {
             Text(settings.timesRuns ? "No runs found." : "No laps found.").foregroundStyle(.secondary)
         }
     }
+
+    /// Whether the file's standing starts and stops are measured (#553), for a Stat Card's 0–60,
+    /// quarter mile and 60–0. Shows what is in force: on by itself for a file with no laps and no
+    /// runs.
+    @ViewBuilder var performanceToggle: some View {
+        let automatic = PerformanceRuns.isMeasured(asked: nil, laps: session?.laps ?? [])
+        Toggle(
+            "Performance runs",
+            isOn: Binding(
+                get: { settings.measuresPerformance ?? automatic },
+                set: { on in
+                    update(on ? "Turn On Performance Runs" : "Turn Off Performance Runs") {
+                        $0.measuresPerformance = on
+                    }
+                })
+        )
+        .accessibilityIdentifier("data.measuresPerformance")
+        .help("Time every standing start and every stop: 0–60, the quarter mile, 60–0, for a Stat Card")
+        if settings.measuresPerformance == nil {
+            Text(
+                automatic
+                    ? "Automatic: on, as the file has no laps and no runs."
+                    : "Automatic: off, as the file has laps. Turn it on to time its standing starts too."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+        }
+    }
 }

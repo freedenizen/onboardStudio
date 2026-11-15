@@ -139,6 +139,9 @@ struct LogbookDetail: View {
     var renameCourse: (String) -> Void = { _ in }
     var joinCourse: (CourseTag) -> Void = { _ in }
     var separateCourse: () -> Void = {}
+    /// Measures its standing starts and stops, or stops (#553); `false` when the file could not be
+    /// read.
+    var measurePerformance: (Bool) async -> Bool = { _ in false }
     /// The template the last New Project used; the next one uses it too.
     @AppStorage("logbook.projectTemplate") private var templateName = "Classic Dash"
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
@@ -195,6 +198,7 @@ struct LogbookDetail: View {
                         }
                     }
                 }
+                SessionPerformanceSection(entry: entry, metric: speedUnit != .mph, measure: measurePerformance)
                 if !clips.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Video").font(.subheadline.weight(.semibold))

@@ -70,6 +70,9 @@ public struct TelemetrySession: Sendable {
     /// Start/finish and sector gates the file carried (#71). Empty for the formats that carry
     /// none, which is all of them but Racelogic's VBO.
     public var lapGeometry = LapGeometry()
+    /// Its standing starts and stops (#553), when whoever read it asked for them to be measured or
+    /// it has no laps of its own; `nil` when they were not measured.
+    public var performance: PerformanceRuns.Result?
 
     public init(info: SessionInfo, channels: [Channel], laps: [Lap] = [], sectors: SectorAnalysis? = nil) {
         self.info = info
