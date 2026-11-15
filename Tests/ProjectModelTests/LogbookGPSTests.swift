@@ -43,3 +43,32 @@ struct LogbookGPSTests {
         #expect(entry.gpsRank == 3)
     }
 }
+
+/// #555: the thresholds GPS is rated against are the driver's, kept in Settings.
+@Suite("GPS thresholds in Settings (#555)")
+struct GPSThresholdsTests {
+    @Test func theDefaultsAreKeptAsNothing() {
+        #expect(GPSQuality.Options().preferenceText.isEmpty)
+        #expect(GPSQuality.Options(preferenceText: "") == GPSQuality.Options())
+        #expect(GPSQuality.Options(preferenceText: "not json") == GPSQuality.Options())
+    }
+
+    @Test func aChangedThresholdIsKeptAndReadBack() {
+        var options = GPSQuality.Options()
+        options.goodRateHertz = 20
+        options.poorSatellites = 4
+        #expect(options.preferenceText == #"{"goodRateHertz":20,"poorSatellites":4}"#)
+        #expect(GPSQuality.Options(preferenceText: options.preferenceText) == options)
+        #expect(Preferences.allKeys.contains(Preferences.gpsThresholds.key))
+    }
+
+    @Test func storedMeasurementsAreRatedAgainstTheThresholdsInForce() {
+        let measured = GPSQuality(rateHertz: 10, precisionMeters: 1)
+        #expect(measured.rated(with: .init()).rating == .good)
+        var strict = GPSQuality.Options()
+        strict.goodRateHertz = 20
+        let rated = measured.rated(with: strict)
+        #expect(rated.rating == .fair)
+        #expect(rated.messages(units: .metric) == ["Only 10 positions a second; corner-level advice needs 20 or more."])
+    }
+}

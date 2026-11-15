@@ -66,6 +66,7 @@ extension ProjectCompiler {
         options.turnNames = settings.turnNames
         options.legacyCornersPerLap = settings.legacyCornersPerLap
         options.legacyCornersOnlyDropped = settings.legacyCornersOnlyDropped
+        options.legacyExactDistances = settings.legacyExactDistances
         var session: TelemetrySession
         if let importerID = settings.importerID {
             guard let importer = FormatDetector.importers.first(where: { type(of: $0).id == importerID }) else {

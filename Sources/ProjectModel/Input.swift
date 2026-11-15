@@ -292,6 +292,10 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// Set by `Project.migrateIfNeeded()` on the inputs of a project saved at schema 5; `false`
     /// for every input since.
     public var legacyCornersOnlyDropped = false
+    /// Coaching gives distances to the metre whatever the GPS, and reads brake points through a
+    /// dropout, as builds before #555 did. Set by `Project.migrateIfNeeded()` on the inputs of a
+    /// project saved at schema 6 or earlier; `false` for every input since.
+    public var legacyExactDistances = false
 
     public init(
         importerID: String? = nil,
@@ -336,7 +340,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, runFinishLine, sectors, circuitID
         case cornerLabels, turnNames, configuration, trim
-        case logbookEntryID, legacyFirstLap, legacyCornersPerLap, legacyCornersOnlyDropped, measuresPerformance
+        case logbookEntryID, legacyFirstLap, legacyCornersPerLap, legacyCornersOnlyDropped, legacyExactDistances
+        case measuresPerformance
     }
 
     public init(from decoder: any Decoder) throws {
@@ -378,6 +383,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         legacyCornersPerLap = try c.decodeIfPresent(Bool.self, forKey: .legacyCornersPerLap) ?? false
         // Absent before schema 6; the migration sets it on a schema-5 project.
         legacyCornersOnlyDropped = try c.decodeIfPresent(Bool.self, forKey: .legacyCornersOnlyDropped) ?? false
+        // Absent before schema 7; the migration sets it on an older project.
+        legacyExactDistances = try c.decodeIfPresent(Bool.self, forKey: .legacyExactDistances) ?? false
     }
 }
 

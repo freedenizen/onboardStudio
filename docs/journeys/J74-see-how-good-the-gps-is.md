@@ -15,7 +15,12 @@ quoted brake points to the metre from either, so a driver could not tell a fact 
    (*added: Sonoma, 4 laps, best 0:41.20, GPS fair*).
 5. In the Logbook, the **GPS** column shows each session's rating, with the reasons in its help
    tag; choose a session and its details say the same beside **GPS**.
+6. Coach a lap from coarse data: the notes say "Braked ≈ 25 m earlier than your best lap" and
+   why, and a corner a dropout runs through gets no brake-point note.
+7. **Settings ▸ GPS Quality** changes what counts as good and poor; every rating follows.
 
 Tests: `GPSQualityUITests.testTheImportReportSaysHowGoodTheGPSIs`,
-`GPSQualityUITests.testTheLogbookSaysHowGoodEachSessionsGPSIs`. Model: `GPSQualityTests`,
-`LogbookGPSTests`, `TrackDayImportGPSTests`.
+`GPSQualityUITests.testTheLogbookSaysHowGoodEachSessionsGPSIs`,
+`GPSQualityUITests.testTheThresholdsInSettingsRateTheData`. Model: `GPSQualityTests`,
+`LogbookGPSTests`, `GPSThresholdsTests`, `TrackDayImportGPSTests`, `CoachingGPSPrecisionTests`,
+`ExactDistancesMigrationTests`.
