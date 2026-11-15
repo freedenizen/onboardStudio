@@ -163,6 +163,32 @@ Another car's log, read whenever the Coaching window reads a session.
   (`LogbookReferences.sharingTheTrack`). `onboard coach --other-car file[=name]` does the same from
   a file. Nothing is saved: the gaps are read again each time, like the other suggestions.
 
+## What was built (#573)
+
+The video, read on request and kept per file.
+
+- `VideoTraffic` (`Sources/MediaKit/VideoTraffic.swift`) reads the keyframe nearest each second
+  with `AVAssetImageGenerator`, so a 120-fps GoPro clip costs one decoded frame a second, crops it
+  and runs the bundled YOLOX-Nano. The rule is the spike's, in fractions of the picture so any
+  resolution works. The spike's per-file timing held up: in a release build a 2.7K chapter reads at
+  about 1.4 s per minute of footage on an M4; a debug build is five times slower.
+- The model is committed compiled (`TrafficDetector.mlmodelc`, 2 MB) with its Apache-2.0 licence
+  beside it, because SwiftPM does not compile Core ML models. `Scripts/make-traffic-detector.py`
+  rebuilds it from Megvii's weights (byte-identical weights when checked).
+- `VideoTraffic+Placing` puts the readings on the session's clock: through the project's syncs
+  for a project, through the recording time for the Logbook's clips. They become
+  `TelemetrySession.pictureSamples`, and a corner with a car ahead in half its pictures and two in
+  a row gets `.inPicture` evidence on the same per-corner suggestions as the telemetry and another
+  car's log. They wait for the driver.
+- The Coaching window offers **Find Traffic in Video** in a bar under the coaching while any of the
+  session's video is unread, with progress and Stop; the reading runs in `TrafficVideoJobs`, apart
+  from the window. `onboard traffic` reads clips on their own; `onboard coach --detect-traffic`
+  reads a project's.
+- Checked locally against the reference session: the stretches the spike labelled come out the
+  same, and the corners already known to be traffic are suggested from the video. Not built: the
+  gap from the box width, the horizon from `GRAV`/`CORI`, the edge test for the mirror, and video
+  in the track map or the Corner Callout.
+
 ## The model
 
 A `TrafficSpan` in `TelemetryKit`: a stretch of session time, with
@@ -232,11 +258,12 @@ an old project reads as it did until the driver turns it on.
 3. **Video spike.** Convert one Apache-2.0 detector, run it over local clips, measure recall and
    false positives against hand marks, and measure time per minute of 2.7K and 4K footage. Go or
    no-go on bundling, and which model.
-4. **Video detection** in the app and the CLI, cached per clip.
+4. **Video detection** in the app and the CLI, cached per clip (#573, built).
 5. **Another car's log** from the logbook (#574, built).
 
 ## Open questions
 
-- Should video suggestions apply without confirmation by default, or wait for the driver?
+- Should video suggestions apply without confirmation by default, or wait for the driver? They
+  wait (#573): a car the driver chose to follow looks the same as one in the way.
 - How large a bundled model is acceptable (a few MB versus tens of MB)?
 - Should a flag count the same as traffic everywhere, or be shown differently in the Logbook?

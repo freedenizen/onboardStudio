@@ -187,6 +187,16 @@ public struct Project: Hashable, Codable, Sendable {
     public var videoInputs: [Input] { inputs.filter(\.kind.isVideo) }
     public var dataInputs: [Input] { inputs.filter(\.kind.isData) }
 
+    /// The camera that filmed a data input: the video it shares a clock with — embedded telemetry
+    /// and a sidecar log follow their video — else the video in the same place in the list.
+    public func camera(for dataInputID: InputID) -> InputID? {
+        let videos = videoInputs
+        guard let data = input(dataInputID), !videos.isEmpty else { return nil }
+        if let shared = videos.first(where: { $0.sync == data.sync }) { return shared.id }
+        let index = dataInputs.firstIndex { $0.id == dataInputID } ?? 0
+        return videos[min(index, videos.count - 1)].id
+    }
+
     // MARK: - Serialisation
 
     public static func decode(_ data: Data) throws -> Project {

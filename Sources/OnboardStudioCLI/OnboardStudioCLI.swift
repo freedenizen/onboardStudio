@@ -7,6 +7,9 @@ struct OnboardStudio: AsyncParsableCommand {
         commandName: "onboard",
         abstract: "Headless tools for Onboard Studio projects: probe data, render, sync, upload, bench.",
         version: OnboardStudioVersion.marketing,
-        subcommands: [Probe.self, Coach.self, Render.self, Sync.self, Upload.self, Bench.self, LogbookCommand.self]
+        subcommands: [
+            Probe.self, Coach.self, TrafficCommand.self, Render.self, Sync.self, Upload.self, Bench.self,
+            LogbookCommand.self,
+        ]
     )
 }

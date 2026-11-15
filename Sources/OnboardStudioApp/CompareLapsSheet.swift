@@ -38,13 +38,7 @@ extension EditorModel {
 
     /// The camera that filmed a data input: the video it shares a clock with — embedded telemetry
     /// and a sidecar log follow their video — else the video in the same place in the list.
-    func camera(for dataInputID: InputID) -> InputID? {
-        let videos = project.videoInputs
-        guard let data = project.input(dataInputID), !videos.isEmpty else { return nil }
-        if let shared = videos.first(where: { $0.sync == data.sync }) { return shared.id }
-        let index = project.dataInputs.firstIndex { $0.id == dataInputID } ?? 0
-        return videos[min(index, videos.count - 1)].id
-    }
+    func camera(for dataInputID: InputID) -> InputID? { project.camera(for: dataInputID) }
 }
 
 /// Project ▸ Compare Laps… (#154): which lap to play, which to compare it with, and how the two
