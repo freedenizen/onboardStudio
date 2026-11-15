@@ -48,6 +48,32 @@ public struct SessionStats: Sendable, Equatable {
         completeLaps = complete.count
     }
 
+    /// The slowest and fastest each lap went (#557), by lap number, in the speed channel's own
+    /// unit (m/s). A lap still running when the file ends is read to its end; a lap with no speed
+    /// sample is left out.
+    public static func speedRanges(of laps: [Lap], in session: TelemetrySession) -> [Int: ClosedRange<Double>] {
+        guard let speed = session[.speed], let last = session.timeRange?.upperBound ?? speed.lastTime else {
+            return [:]
+        }
+        var ranges: [Int: ClosedRange<Double>] = [:]
+        for lap in laps {
+            let end = lap.end ?? last
+            var index = speed.times.firstIndex(atOrAfter: lap.start)
+            var slowest = Double.infinity
+            var fastest = -Double.infinity
+            while index < speed.count, speed.times[index] <= end {
+                let value = speed.values[index]
+                if value.isFinite {
+                    slowest = min(slowest, value)
+                    fastest = max(fastest, value)
+                }
+                index += 1
+            }
+            if slowest <= fastest { ranges[lap.number] = slowest...fastest }
+        }
+        return ranges
+    }
+
     private static func best(of laps: [Lap]) -> LapTime? {
         laps.compactMap { lap in lap.duration.map { LapTime(number: lap.number, seconds: $0) } }
             .min { $0.seconds < $1.seconds }

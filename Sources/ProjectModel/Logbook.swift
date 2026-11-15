@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import TelemetryKit
 
@@ -32,13 +31,25 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         public var cones: Int
         /// The driver says the run went off course: a DNF, though it crossed the finish.
         public var offCourse: Bool
+        /// Seconds in each of the session's sectors (#557), `nil` where the lap did not time one;
+        /// empty when the session has no sectors, or before they were read.
+        public var sectors: [Double?]
+        /// The fastest and slowest the lap went (#557), m/s.
+        public var topSpeed: Double?
+        public var minSpeed: Double?
 
-        public init(number: Int, seconds: Double?, isComplete: Bool, cones: Int = 0, offCourse: Bool = false) {
+        public init(
+            number: Int, seconds: Double?, isComplete: Bool, cones: Int = 0, offCourse: Bool = false,
+            sectors: [Double?] = [], topSpeed: Double? = nil, minSpeed: Double? = nil
+        ) {
             self.number = number
             self.seconds = seconds
             self.isComplete = isComplete
             self.cones = cones
             self.offCourse = offCourse
+            self.sectors = sectors
+            self.topSpeed = topSpeed
+            self.minSpeed = minSpeed
         }
 
         /// Never reached the finish, or went off course on the way: a run with no time to count.
@@ -100,6 +111,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// `LogbookEntry.lapMeasurement`, the file was read by a build since corrected, and the Logbook
     /// offers to read it again.
     public var lapMeasurement: Int
+    /// Which reading put the sector times and speeds on `laps` (#557); 0 before they were read.
+    public var splitsMeasurement: Int
     /// The track day the session belongs to (#392); `nil` only until `Logbook.ensureDays` runs.
     public var trackDayID: UUID?
     /// How long the file runs, from its first sample to its last (#392), so a clip can be matched
@@ -159,6 +172,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         self.corners = corners
         self.cornerMeasurement = Self.cornerMeasurement
         self.lapMeasurement = Self.lapMeasurement
+        self.splitsMeasurement = 0
         self.trackDayID = trackDayID
         self.durationSeconds = durationSeconds
         self.coaching = coaching
@@ -237,7 +251,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, file, circuitID, trackName, configuration, date, car, driver, laps, bestLap, bestLapNumber, optimalLap
         case fastestRollingLap, topSpeed, distanceMeters, notes, tags, conditions, projects, exports, corners
-        case cornerMeasurement, lapMeasurement, trackDayID, durationSeconds, coaching, added, modified
+        case cornerMeasurement, lapMeasurement, splitsMeasurement, trackDayID, durationSeconds, coaching, added,
+            modified
         case runLines, course, coursePath, penaltyPerCone, measuresPerformance, performance
     }
 
@@ -268,6 +283,8 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         cornerMeasurement = try c.decodeIfPresent(Int.self, forKey: .cornerMeasurement) ?? 1
         // Absent in entries written before #498: their laps came from the first reading.
         lapMeasurement = try c.decodeIfPresent(Int.self, forKey: .lapMeasurement) ?? 1
+        // Absent before #557: the laps were read without their sectors and speeds.
+        splitsMeasurement = try c.decodeIfPresent(Int.self, forKey: .splitsMeasurement) ?? 0
         trackDayID = try c.decodeIfPresent(UUID.self, forKey: .trackDayID)
         durationSeconds = try c.decodeIfPresent(Double.self, forKey: .durationSeconds)
         coaching = try? c.decodeIfPresent(CoachingSettings.self, forKey: .coaching)
@@ -309,22 +326,6 @@ extension LogbookEntry {
         return entry
     }
 
-    /// The reading the laps of an entry are from. 2 (#477): a RaceChrono file's first lap begins
-    /// at the first crossing of the line and is a whole lap — read from an `.rcz` archive it had
-    /// swallowed the out-lap, and from a CSV it was called partial.
-    public static let lapMeasurement = 2
-
-    /// Whether the Logbook should offer to read this entry's file again (#498): it was read
-    /// before the first lap was corrected, and it is one the correction can change — an archive,
-    /// or a file whose first lap was called partial. A file it cannot change is not offered:
-    /// reading it again would cost the time and move nothing. Laps that begin at lap 0 are not
-    /// the file's own count but the app's, from a start/finish line; the correction is not about
-    /// them, and read again without that line they would be lost.
-    public var needsLapReading: Bool {
-        guard lapMeasurement < Self.lapMeasurement, let first = laps.first, first.number != 0 else { return false }
-        return file.importerID == "racechrono-rcz" || !first.isComplete
-    }
-
     /// Reads the laps of `session` into the entry with this build's reading, and with them what
     /// is worked out from the laps: the best, the optimal and the fastest rolling lap, and the
     /// corners of the best lap, which may be another lap now. Nothing the driver wrote — the car,
@@ -345,22 +346,9 @@ extension LogbookEntry {
         fastestRollingLap = CoachingReference.fastestRolling.resolve(in: session)?.duration
         lapMeasurement = Self.lapMeasurement
         applyPenalties()
+        readSplits(of: session)
         readCorners(of: session)
         readPerformance(of: session)
-    }
-
-    /// SHA-256 of the file, streamed, and its length.
-    public static func hash(of url: URL) throws -> (hex: String, byteCount: Int) {
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        var hasher = SHA256()
-        var total = 0
-        while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty {
-            hasher.update(data: chunk)
-            total += chunk.count
-        }
-        let digest = hasher.finalize()
-        return (digest.map { String(format: "%02x", $0) }.joined(), total)
     }
 }
 
@@ -478,7 +466,9 @@ public struct Logbook: Sendable {
 }
 
 extension LogbookEntry.LapRecord {
-    private enum CodingKeys: String, CodingKey { case number, seconds, isComplete, cones, offCourse }
+    private enum CodingKeys: String, CodingKey {
+        case number, seconds, isComplete, cones, offCourse, sectors, topSpeed, minSpeed
+    }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -489,6 +479,10 @@ extension LogbookEntry.LapRecord {
         self.init(
             number: number, seconds: seconds, isComplete: isComplete,
             cones: try c.decodeIfPresent(Int.self, forKey: .cones) ?? 0,
-            offCourse: try c.decodeIfPresent(Bool.self, forKey: .offCourse) ?? false)
+            offCourse: try c.decodeIfPresent(Bool.self, forKey: .offCourse) ?? false,
+            // Absent before #557: read again when the session is next shown.
+            sectors: try c.decodeIfPresent([Double?].self, forKey: .sectors) ?? [],
+            topSpeed: try c.decodeIfPresent(Double.self, forKey: .topSpeed),
+            minSpeed: try c.decodeIfPresent(Double.self, forKey: .minSpeed))
     }
 }
