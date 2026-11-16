@@ -79,7 +79,9 @@ struct BeforeAfterSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // On the title, not the stack: a stack's identifier would replace its children's.
             Text("Before and after").font(.subheadline.weight(.semibold))
+                .accessibilityIdentifier("logbook.trends.beforeAfter")
             if splits.isEmpty {
                 Text(
                     "Note the tyres, the setup or the conditions on the sessions here and this compares the "
@@ -96,7 +98,6 @@ struct BeforeAfterSection: View {
         .onAppear(perform: choose)
         .onChange(of: splits) { choose() }
         .onChange(of: split) { chooseValues() }
-        .accessibilityIdentifier("logbook.trends.beforeAfter")
     }
 
     private var pickers: some View {

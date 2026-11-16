@@ -30,6 +30,7 @@ final class SetupTrendsUITests: OnboardStudioUITestCase {
             rows.element(boundBy: index).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
             let tyres = app.textFields["logbook.tyres"]
             XCTAssertTrue(tyres.waitForExistence(timeout: Self.timeout), "No conditions editor")
+            reveal(tyres)
             tyres.click()
             tyres.typeText("\(set)\n")
             XCTAssertTrue(app.staticTexts[set].waitForExistence(timeout: Self.timeout), "\(set) not kept")
@@ -42,6 +43,10 @@ final class SetupTrendsUITests: OnboardStudioUITestCase {
         XCTAssertTrue(headline.waitForExistence(timeout: Self.timeout), "No Before and After")
         XCTAssertTrue(text(of: headline).contains("each session's best averaged"), text(of: headline))
         XCTAssertTrue(text(of: headline).contains("(1 session against 1)"), text(of: headline))
+        let shot = XCTAttachment(screenshot: app.windows["Logbook"].screenshot())
+        shot.name = "Before and after"
+        shot.lifetime = .keepAlways
+        add(shot)
 
         // Narrowed to one set, one visit is not a trend.
         let filter = app.popUpButtons["logbook.trends.filter.tyres"]
