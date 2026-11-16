@@ -17,6 +17,7 @@ struct ConditionsEditor: View {
     let subject: String
     let save: (SessionConditions, String) -> Void
     @State private var editingSetup = false
+    @Environment(\.undoManager) private var undoManager
     @State private var temperature = ""
     @State private var tyres = ""
     @State private var setup = ""
@@ -122,7 +123,9 @@ struct ConditionsEditor: View {
         // The sheet's Tyres line is this one.
         .onChange(of: conditions.tyres) { if focus != .tyres { tyres = conditions.tyres } }
         .sheet(isPresented: $editingSetup) {
-            SetupSheetEditor(subject: subject, car: car, conditions: conditions) { save($0, notes) }
+            SetupSheetEditor(
+                subject: subject, car: car, conditions: conditions, undoManager: undoManager
+            ) { save($0, notes) }
         }
         .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
     }

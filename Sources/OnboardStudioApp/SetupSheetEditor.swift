@@ -9,9 +9,10 @@ struct SetupSheetEditor: View {
     let subject: String
     let car: String
     let conditions: SessionConditions
+    /// The Logbook window's: a sheet's own environment has none of its own to take the steps.
+    let undoManager: UndoManager?
     let save: (SessionConditions) -> Void
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.undoManager) private var undoManager
     @AppStorage(Preferences.setupPressureUnit.key) private var pressureChoice = ""
     @State private var texts: [SetupItem: String] = [:]
     @State private var name = ""
