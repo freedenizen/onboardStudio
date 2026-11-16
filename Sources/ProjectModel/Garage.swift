@@ -153,6 +153,7 @@ extension Logbook {
         let names = (entries ?? self.entries()).map(\.car) + (days ?? self.days()).map(\.car)
         let kept = cars.filter { car in
             !car.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !car.setups.isEmpty
+                || car.gripAdjustment != 1
                 || names.contains { Garage.same($0, car.name) }
         }
         guard kept.count < cars.count else { return false }
