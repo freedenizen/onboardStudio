@@ -206,16 +206,32 @@ session's detail lists its clips under **Video**, and they go into a New Project
 ### Conditions and notes
 
 Under **Conditions** in the detail, note the weather, the surface (dry, damp, wet, drying, greasy),
-the air temperature, the tyres and the setup, and anything else under **Notes**: pickers and the
-temperature are kept as soon as set, text on Return or when you leave the field; the table's
-Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and the search
-finds it. Nothing is required.
+the air temperature, the tyres, what was changed on the car under **Changes**, and anything else
+under **Notes**: pickers and the temperature are kept as soon as set, text on Return or when you
+leave the field; the table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS · Base" with
+only what you filled in, and the search finds it. Nothing is required.
+
+### The setup sheet
+
+**Setup** under Conditions says what the session's setup sheet notes (*Base · 30/28 psi cold · 6
+more*); **Edit Setup…** opens it. Every value is optional: the tyre set; pressures at each corner,
+cold, hot and how much was bled, in psi, bar or kPa from the pop-up beside **Tyres**; camber; toe in
+mm, inches or degrees; ride height (inches with mph, millimetres otherwise); bump and rebound
+clicks; the anti-roll bars and the wing. **Done** keeps it as one step of **Edit ▸ Undo**.
+
+Setups are kept with the car. Name one and click **Save to Car**; **Saved Setups** loads it onto
+another session, and **Delete Setup** in the same menu takes one away. Saving under a name the car
+already has updates that setup. Tick **Start new sessions in the *car* with this setup** and it is
+the car's *starting setup*: a session added in the car later, with no tyres or setup of its own,
+starts with it, whether it comes from a file added to the Logbook, a project, or a car set in the
+import report. A track day has a sheet too, and a session added to the day starts with the day's.
+A session loaded from a saved setup keeps its values when the saved one changes or is deleted.
 
 ### The garage: your cars
 
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
 sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
-worth keeping. A car with [performance runs](#performance-runs-060-the-quarter-mile-and-stops)
+worth keeping, and the [setups](#the-setup-sheet) saved with it are kept with it. A car with [performance runs](#performance-runs-060-the-quarter-mile-and-stops)
 lists its best 0–60, quarter mile and 60–0 under **Bests**. **Rename…** changes the name on every day and session at once; type another car's
 name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
 added to the garage the first time its name is typed anywhere, and a name put right on the day or
