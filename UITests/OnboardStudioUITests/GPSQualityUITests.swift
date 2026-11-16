@@ -54,4 +54,29 @@ final class GPSQualityUITests: OnboardStudioUITestCase {
         XCTAssertTrue(gps.label.contains("5 positions a second"), "Not said what was measured: \(gps.label)")
         XCTAssertTrue(gps.label.contains("further away than the car could have got to"), "No jump: \(gps.label)")
     }
+
+    /// The thresholds are the driver's: with good from 2 positions a second, the same file is good.
+    /// Passed as a launch argument, so the test leaves this Mac's Settings as they were.
+    @MainActor
+    func testTheThresholdsInSettingsRateTheData() throws {
+        // A launch argument's value is read as a property list: quoted, the JSON stays a string.
+        launch(extraArguments: ["-gpsThresholds", #""{\"goodRateHertz\":2,\"poorRateHertz\":1}""#])
+        addFixtureData()
+        sidebarInput("racerender-basic").click()
+        menu("Project", "Show Import Report…")
+        expectAttributeWindow()
+        chooseScope("racerender-basic")
+        let tab = app.radioButtons["Import"].exists ? app.radioButtons["Import"] : app.buttons["Import"]
+        if tab.exists { tab.click() }
+        let gps = app.descendants(matching: .any).matching(identifier: "gps.quality").firstMatch
+        XCTAssertTrue(gps.waitForExistence(timeout: Self.timeout), "No GPS line in the import report")
+        XCTAssertTrue(gps.label.contains("GPS: Good"), "Not rated by the thresholds in Settings: \(gps.label)")
+
+        app.typeKey(",", modifierFlags: .command)
+        let good = app.textFields["settings.gps.goodRateHertz"]
+        XCTAssertTrue(good.waitForExistence(timeout: Self.timeout), "No GPS Quality section in Settings")
+        reveal(good)
+        XCTAssertEqual(good.value as? String, "2")
+        XCTAssertTrue(app.buttons["settings.gps.restore"].isEnabled, "Nothing to restore with changed thresholds")
+    }
 }

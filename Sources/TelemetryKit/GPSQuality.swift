@@ -87,7 +87,7 @@ public struct GPSQuality: Hashable, Sendable, Codable {
         /// The change of speed between two fixes beyond which a position is a jump (m/s², ≈ 3 g).
         public var jumpAcceleration = 30.0
         /// This many jumps make the data poor.
-        public var poorJumpCount = 5
+        public var poorJumpCount = 5.0
         /// Assumed error of a position when the file does not say (m).
         public var assumedNoiseMeters = 0.5
         /// Median logged accuracy at and below which it is no concern (m).
@@ -151,6 +151,13 @@ public struct GPSQuality: Hashable, Sendable, Codable {
     }
 
     static let steps: [Double] = [1, 2, 5, 10, 15, 20, 25, 50, 75, 100, 150, 200, 300]
+
+    /// The same measurements judged against other thresholds: a driver's own, from Settings.
+    public func rated(with options: Options) -> GPSQuality {
+        var rated = self
+        rated.findings = Self.findings(of: self, options: options)
+        return rated
+    }
 
     /// Whether a position is missing anywhere between `start` and `end`, so a distance measured
     /// across them is a guess.

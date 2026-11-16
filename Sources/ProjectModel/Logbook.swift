@@ -352,28 +352,6 @@ extension LogbookEntry {
 
 }
 
-/// A car in the garage (#345): a name and whatever the owner wants to say about it.
-public struct Car: Identifiable, Hashable, Codable, Sendable {
-    public var id: UUID
-    public var name: String
-    public var notes: String
-
-    public init(id: UUID = UUID(), name: String, notes: String = "") {
-        self.id = id
-        self.name = name
-        self.notes = notes
-    }
-
-    private enum CodingKeys: String, CodingKey { case id, name, notes }
-
-    public init(from decoder: any Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
-        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
-        notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
-    }
-}
-
 /// The logbook on disk: one `.onboardsession` JSON file per entry and a `garage.json`, in
 /// `~/Library/Application Support/OnboardStudio/Logbook` beside the track library — separate
 /// files, as the tracks are, so a season can be copied, backed up or handed over as files.

@@ -93,6 +93,12 @@ public enum Preferences {
     /// The Analysis view's panels (#556), as `AnalysisLayout.preferenceText`. Empty is the standard.
     public static let analysisLayout = Preference(key: "analysisLayout", unset: "")
 
+    // MARK: - Setups
+
+    /// The unit tyre pressures are typed and read in on a setup sheet (#559), as a
+    /// `SetupUnits.Pressure` raw value. Empty follows the speed: psi with miles an hour, else bar.
+    public static let setupPressureUnit = Preference(key: "setupPressureUnit", unset: "")
+
     // MARK: - Editing
 
     /// How far one arrow-key press moves the selected object, in pixels of the exported frame.
@@ -126,10 +132,11 @@ public enum Preferences {
     /// All of them, for the test that no two share a key.
     public static let allKeys: [String] = [
         defaultExportPreset.key, speedUnit.key, attributeMappings.key, nudgeStepPixels.key, ffmpegPath.key,
+        gpsThresholds.key,
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
         logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
-        mapColorRamp.key, analysisLayout.key,
+        mapColorRamp.key, analysisLayout.key, setupPressureUnit.key,
     ]
 }
 

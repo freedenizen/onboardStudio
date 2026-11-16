@@ -74,6 +74,12 @@ extension Logbook {
             try updateDay(day)
         }
         try addToGarage(name)
+        // Their sessions start from the car's setup, as they would have had it been named (#559).
+        for var entry in entries() where entry.trackDayID.map(ids.contains) ?? false && Garage.same(entry.car, name) {
+            let before = entry.conditions
+            applyStartingSetup(to: &entry.conditions, car: name)
+            if entry.conditions != before { try save(entry) }
+        }
     }
 
     /// Renames the car on every day and session that names it, and in the garage (#490): how a
@@ -109,6 +115,9 @@ extension Logbook {
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
             if notes.count == 2, notes[0] == notes[1] { notes.removeLast() }
             cars[target].notes = notes.joined(separator: "\n\n")
+            // Both cars' setups (#559); the one it is merged into keeps its starting setup.
+            cars[target].setups += cars[source].setups
+            if cars[target].startingSetup == nil { cars[target].startingSetupID = cars[source].startingSetupID }
             cars.remove(at: source)
         case (let source?, nil): cars[source].name = to
         case (nil, nil): cars.append(Car(name: to))
@@ -133,7 +142,7 @@ extension Logbook {
         return true
     }
 
-    /// Takes out of the garage the names that say nothing: no notes, and no day or session names
+    /// Takes out of the garage the names that say nothing: no notes or setups, and no day or session names
     /// them in any spelling — what a typo leaves once it is put right on the day or the session
     /// (#490), and what a Car field would otherwise go on offering. A car with notes stays, listed
     /// with no sessions, until it is removed. `entries` and `days` are the logbook's, when the
@@ -143,7 +152,7 @@ extension Logbook {
         let cars = cars()
         let names = (entries ?? self.entries()).map(\.car) + (days ?? self.days()).map(\.car)
         let kept = cars.filter { car in
-            !car.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            !car.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !car.setups.isEmpty
                 || names.contains { Garage.same($0, car.name) }
         }
         guard kept.count < cars.count else { return false }

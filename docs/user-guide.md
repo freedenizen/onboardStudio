@@ -206,16 +206,32 @@ session's detail lists its clips under **Video**, and they go into a New Project
 ### Conditions and notes
 
 Under **Conditions** in the detail, note the weather, the surface (dry, damp, wet, drying, greasy),
-the air temperature, the tyres and the setup, and anything else under **Notes**: pickers and the
-temperature are kept as soon as set, text on Return or when you leave the field; the table's
-Conditions column shows "Sunny · Dry · 24 °C · RE-71RS" with only what you filled in, and the search
-finds it. Nothing is required.
+the air temperature, the tyres, what was changed on the car under **Changes**, and anything else
+under **Notes**: pickers and the temperature are kept as soon as set, text on Return or when you
+leave the field; the table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS · Base" with
+only what you filled in, and the search finds it. Nothing is required.
+
+### The setup sheet
+
+**Setup** under Conditions says what the session's setup sheet notes (*Base · 30/28 psi cold · 6
+more*); **Edit Setup…** opens it. Every value is optional: the tyre set; pressures at each corner,
+cold, hot and how much was bled, in psi, bar or kPa from the pop-up beside **Tyres**; camber; toe in
+mm, inches or degrees; ride height (inches with mph, millimetres otherwise); bump and rebound
+clicks; the anti-roll bars and the wing. **Done** keeps it as one step of **Edit ▸ Undo**.
+
+Setups are kept with the car. Name one and click **Save to Car**; **Saved Setups** loads it onto
+another session, and **Delete Setup** in the same menu takes one away. Saving under a name the car
+already has updates that setup. Tick **Start new sessions in the *car* with this setup** and it is
+the car's *starting setup*: a session added in the car later, with no tyres or setup of its own,
+starts with it, whether it comes from a file added to the Logbook, a project, or a car set in the
+import report. A track day has a sheet too, and a session added to the day starts with the day's.
+A session loaded from a saved setup keeps its values when the saved one changes or is deleted.
 
 ### The garage: your cars
 
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
 sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
-worth keeping. A car with [performance runs](#performance-runs-060-the-quarter-mile-and-stops)
+worth keeping, and the [setups](#the-setup-sheet) saved with it are kept with it. A car with [performance runs](#performance-runs-060-the-quarter-mile-and-stops)
 lists its best 0–60, quarter mile and 60–0 under **Bests**. **Rename…** changes the name on every day and session at once; type another car's
 name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
 added to the garage the first time its name is typed anywhere, and a name put right on the day or
@@ -376,6 +392,13 @@ dropout, jump, poor figure or missed start/finish line. When you add files, a se
 fair or poor says so in its line of the report (*added: Sonoma, 12 laps, best 1:56.88, GPS poor*).
 A session added before the Logbook judged GPS shows a dash until you choose it, when its file is
 read once; sort the column to bring the poor ones together.
+
+**The thresholds are yours.** **Settings ▸ GPS Quality** sets what counts as good and poor:
+positions a second (good from 10, poor below 5), how long a dropout makes the data poor (3 s), how
+many jumps (5), the logger's accuracy (good within 2 m, poor beyond 5 m), HDOP (good up to 1.5,
+poor above 3) and satellites (good from 8, poor below 5). Between good and poor is fair. Changing
+one re-rates every session in the Logbook and the import report at once, without reading a file
+again; **Restore Default Thresholds** puts them back.
 
 ### What you can do with a session
 
@@ -1315,6 +1338,16 @@ cards, their advice in full: which turn, how much time and in which phase (braki
 0.49 s longer") and what to try next time, phrased as an experiment. A corner you drive
 differently every lap is told so, and asked for the same brake point first. **Show Me** puts the
 playhead where that corner's braking began on the lap being read, so the preview shows it.
+
+**As close as the GPS allows.** Coaching says a distance only as closely as the session's
+positions can place it ([How good the GPS is](#what-the-import-read)). From a logger that gives
+10 or more good positions a second the notes are to the metre. From a phone logging once a second
+they read "Braked ≈ 25 m earlier than your best lap", with a line saying distances are to the
+nearest 25 m and why. A brake point, slowest point or throttle pick-up closer to the reference's
+than that is not called earlier or later at all. A corner a GPS dropout runs through, on your lap
+or the reference, gets no brake-point note ("No brake point: the GPS dropped out through this
+corner"); its time lost is still counted. A project saved by an earlier build keeps its notes, and
+its Corner Callouts, to the metre.
 
 Every corner is in the table below, sortable by any column: time lost, the phase, and how the
 brake point, minimum speed and where it fell, exit speed and throttle pick-up compare with the
