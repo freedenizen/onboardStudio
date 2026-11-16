@@ -46,7 +46,9 @@ struct LapAnalysisView: View {
                     metresPerUnit: metresPerUnit, distanceSymbol: distanceSymbol)
                 HStack(alignment: .top, spacing: 12) {
                     ScrollView { traces(analysis) }
-                    if model.layout.showsMap || model.layout.showsFrictionCircle { sidePanels(analysis) }
+                    if model.layout.showsMap || model.layout.showsFrictionCircle || showsPicture {
+                        sidePanels(analysis)
+                    }
                 }
             }
             .padding(12)
@@ -124,6 +126,7 @@ struct LapAnalysisView: View {
 
     private func sidePanels(_ analysis: LapAnalysis) -> some View {
         VStack(spacing: 10) {
+            if showsPicture { AnalysisPicturePanel(model: model, analysis: analysis, colors: colors) }
             if model.layout.showsMap {
                 AnalysisMapPanel(analysis: analysis, colors: colors, cursor: model.cursor) {
                     model.zoom(toCornerAt: $0)
@@ -139,6 +142,9 @@ struct LapAnalysisView: View {
         }
         .frame(width: 260)
     }
+
+    /// The picture shows when asked for and a chosen lap has one.
+    private var showsPicture: Bool { model.layout.showsPicture && !model.footage.isEmpty }
 
     private func series(_ analysis: LapAnalysis, _ points: (LapAnalysis.Trace) -> [LapAnalysis.Point])
         -> [AnalysisSeries]
@@ -159,6 +165,7 @@ struct AnalysisPanelsMenu: View {
             Toggle("Speed", isOn: $model.layout.showsSpeed)
             Toggle("Track Map", isOn: $model.layout.showsMap)
             Toggle("Friction Circle", isOn: $model.layout.showsFrictionCircle)
+            Toggle("Picture", isOn: $model.layout.showsPicture)
             Divider()
             Menu("Add Trace") {
                 ForEach(model.traceableChannels.filter { !model.layout.channels.contains($0) }, id: \.self) { role in

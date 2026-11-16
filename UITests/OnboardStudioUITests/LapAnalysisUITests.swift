@@ -98,4 +98,28 @@ final class LapAnalysisUITests: OnboardStudioUITestCase {
         let reference = coaching.staticTexts["Reference"]
         XCTAssertTrue(reference.exists, "No reference lap marked")
     }
+
+    /// A project's laps with its video: the picture at the cursor, and Play moving the cursor.
+    @MainActor
+    func testAProjectsLapsShowTheirPicture() throws {
+        launch()
+        addFixtureVideo()
+        testing("Add Fixture Data (Coaching Laps)")
+        XCTAssertTrue(sidebarInput("coaching-laps").waitForExistence(timeout: Self.timeout), "Data not listed")
+        menu("Window", "Analysis")
+        let window = app.windows["Analysis"]
+        XCTAssertTrue(window.waitForExistence(timeout: Self.timeout), "No Analysis window")
+        // The player is AppKit's view, which carries no identifier of SwiftUI's; its Play button does.
+        let play = window.buttons["analysis.picture.play"]
+        XCTAssertTrue(play.waitForExistence(timeout: Self.timeout * 2), "No picture of the lap")
+        let cursor = window.staticTexts["analysis.cursor"]
+        XCTAssertTrue(text(of: cursor).hasPrefix("Move over"), text(of: cursor))
+        play.click()
+        let moving = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "NOT (value BEGINSWITH 'Move over') AND NOT (label BEGINSWITH 'Move over')"),
+            object: cursor)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [moving], timeout: Self.timeout), .completed, "Play did not move the cursor")
+        play.click()
+    }
 }

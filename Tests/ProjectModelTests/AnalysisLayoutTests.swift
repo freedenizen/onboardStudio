@@ -30,6 +30,7 @@ struct AnalysisLayoutTests {
         let layout = AnalysisLayout(preferenceText: #"{"traceHeight":5000,"showsMap":false}"#)
         #expect(layout.traceHeight == AnalysisLayout.traceHeights.upperBound)
         #expect(!layout.showsMap && layout.showsSpeed)
+        #expect(layout.showsPicture, "a layout from before the picture shows it")
     }
 
     @Test func anAuxChannelIsRemembered() {
