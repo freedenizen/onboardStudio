@@ -573,6 +573,14 @@ inspector says what it is: **Time range** shows when the log ran ("Mar 14, 2026,
 day it stands for and how far that is from the file's first sample — or, before anything is
 synchronized, the first sample's own number, which is the one to start from.
 
+**A second logger.** An ECU or CAN logger's file has RPM, throttle and pressures but often no GPS,
+and its clock seldom agrees with the GPS logger's. Select it: its *Synchronization* section offers
+**Line Up with *the first file*** and a menu of the channels both recorded, RPM first, then speed,
+throttle and G. Choose one and the file slides along until that channel reads as it does in the
+first, as one step of **Edit ▸ Undo**; the status line says where it now begins against the first
+and how well the two matched. When the match is not clear, nothing moves and it says so — try
+another channel, or set the offset by hand.
+
 **Clip sequences.** The *Clips* section lists the files that make up one continuous video: the
 recording's chapters, or any files you want played back to back. You can see the join without
 opening the inspector: the sidebar row says how many files the input is (`3840×2160, 1428 s ·
