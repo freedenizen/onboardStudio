@@ -343,6 +343,19 @@ first numerical dip, which put a constant-radius bend's apex a third of the way 
 corners were found on a profile rather than a lap; the median is the middle of a plateau and the
 peak of a point, and the track map's numbers did not move.
 
+### As close as the GPS allows (#555)
+
+`CoachingAnalysis.analyse` sets `CoachingOptions.distanceStepMeters` from the session's
+`GPSQuality`: the position's own error and half the distance the car covers between two fixes at
+speed, snapped up to a number a driver says (1, 2, 5, 10, 15, 20, 25, 50 m…). The brake-point,
+slowest-point and throttle tolerances become at least that step, and `CoachingNotes.Formatter`
+says distances as "≈ 25 m" with one closing line on why. `markGPSGaps` sets
+`CornerComparison.gpsGap` on a corner whose read span a dropout overlaps, on the lap or on a
+same-session reference: its brake difference is nil, so neither the classification nor the notes
+use it, and the evidence says so. A session from a project saved at schema 6 or earlier has
+`legacyExactDistances` and is read as before. The step comes from the lap's own session; a
+reference from another session is assumed no coarser.
+
 ## On the command line (#320)
 
 `onboard coach <file|project> [--lap N] [--reference best|rolling|optimal|lap:N] [--units metric|imperial] [--all] [--json]`

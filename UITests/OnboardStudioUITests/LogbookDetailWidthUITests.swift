@@ -50,14 +50,17 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
     func testTheDetailStaysAsWideAsItWasDragged() throws {
         launch(logbook: true)
         showASessionsDetail()
-        XCTAssertEqual(detailWidth, 320, accuracy: 2, "It starts at its narrowest")
+        let narrowest = detailWidth
+        XCTAssertEqual(narrowest, 320, accuracy: 2, "It starts at its narrowest")
 
-        // Its left edge, dragged 60 points to the left: wider, by no more than it was dragged.
+        // Its left edge, dragged 60 points to the left: wider, by no more than it was dragged. On
+        // CI's 1,024-point screen the sessions' minimum leaves the detail only some 15 points to
+        // grow (#621), so any widening counts.
         let grab = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         grab.click(forDuration: 0.3, thenDragTo: grab.withOffset(CGVector(dx: -60, dy: 0)))
         let dragged = detailWidth
-        XCTAssertGreaterThan(dragged, 335, "Dragging its edge did not widen it")
-        XCTAssertLessThanOrEqual(dragged, 383, "It went further than it was dragged")
+        XCTAssertGreaterThan(dragged, narrowest + 4, "Dragging its edge did not widen it")
+        XCTAssertLessThanOrEqual(dragged, narrowest + 63, "It went further than it was dragged")
 
         // Trends keeps the session beside it, as wide as it was left, and so do the sessions after.
         choose("Trends")
@@ -84,11 +87,13 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
         XCTAssertGreaterThanOrEqual(widest, dragged - 1, "Dragging further left made it narrower")
         XCTAssertLessThanOrEqual(widest, 422, "It can be dragged past its widest")
 
-        // Then a little narrower, to a width that is neither where it starts nor where it stops.
+        // Then a little narrower, to a width that is neither where it starts nor where it stops:
+        // by up to 20 points, and no more than half the room the window gives it.
+        let step = min(20, ((widest - narrowest) / 2).rounded(.down))
         let back = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        back.click(forDuration: 0.3, thenDragTo: back.withOffset(CGVector(dx: 20, dy: 0)))
+        back.click(forDuration: 0.3, thenDragTo: back.withOffset(CGVector(dx: step, dy: 0)))
         let left = detailWidth
-        XCTAssertEqual(left, widest - 20, accuracy: 4, "Dragging its edge right did not narrow it")
+        XCTAssertEqual(left, widest - step, accuracy: 4, "Dragging its edge right did not narrow it")
 
         // And the next time the app opens, it is as wide as it was left.
         app.terminate()

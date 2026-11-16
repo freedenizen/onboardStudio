@@ -55,6 +55,10 @@ public struct TelemetrySession: Sendable {
     /// and #598 read them; `false` also adds the corners most laps find that it does not. Set
     /// from the data input of a project saved by one of those builds.
     public var legacyCornersOnlyDropped = false
+    /// Coaching gives distances to the metre whatever the GPS, and reads a brake point through a
+    /// dropout, as builds before #555 did. Set from the data input of a project saved by one of
+    /// them, so its Corner Callouts keep their words.
+    public var legacyExactDistances = false
     /// Stretches the driver marked as held up by traffic or a flag (#571), in session time. Not
     /// read from the file: whoever reads the session for coaching puts the marks the project or
     /// the logbook keeps here first, so every reading of it leaves the same corners out.

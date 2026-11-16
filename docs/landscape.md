@@ -237,12 +237,13 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 - #553 performance runs from a standstill: 0–60, ¼ mile, trap speed, braking distance — *shipped*
 - #554 a lap that should not count (traffic, a flag, an off), and which laps an optimal lap came from
   (built: *Laps that don't count* in the guide; the video still counts every lap)
-- #555 how good the GPS data is, and how far its brake points can be trusted
+- #555 how good the GPS data is, and how far its brake points can be trusted — *shipped*
 - #556 laps as data without building a video: linked traces, delta-T, map and picture
   (built: the Analysis window, Coaching's Data view and the Logbook's Analysis; the picture next)
 - #557 a session's lap table: sector splits per lap, best sectors, speeds — *shipped*
 - #558 grip use: combined braking and turning, time near the limit, and its trend
 - #559 judging a tyre, pressure or setup change: structured pressures, Trends split by conditions
+  — *shipped*
 - #560 weather filled in from the session's time and place (the first network read for analysis)
 - #561 the track line coloured by any channel — *shipped*
 - #562 a second logger (an ECU CSV) lined up with the first by a shared channel

@@ -17,6 +17,8 @@ struct LogbookTrendsView: View {
     var sidebarCar: String?
     let onOpen: (UUID) -> Void
     @State var car = ""
+    /// The tyre set, setup, surface and weather Trends is narrowed to (#559).
+    @State var filter = TrendsFilter()
     @State private var readingCorners = false
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
     @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
@@ -31,7 +33,7 @@ struct LogbookTrendsView: View {
 
     private var points: [LogbookTrends.Point] {
         guard let circuitKey else { return [] }
-        return LogbookTrends.points(for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
+        return LogbookTrends.points(for: narrowed, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
     }
 
     var body: some View {
@@ -40,6 +42,8 @@ struct LogbookTrendsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    let choices = TrendsFilter.choices(in: circuitSessions)
+                    if TrendsFilterBar.isUseful(choices) { TrendsFilterBar(choices: choices, filter: $filter) }
                     if points.count < 2 {
                         ContentUnavailableView(
                             "Two Visits Make a Trend", systemImage: "chart.line.uptrend.xyaxis",
@@ -49,9 +53,13 @@ struct LogbookTrendsView: View {
                         consistency
                     }
                     corners(circuitKey: circuitKey)
+                    Divider()
+                    BeforeAfterSection(
+                        entries: LogbookTrends.entries(narrowed, at: circuitKey, car: car.isEmpty ? nil : car),
+                        format: cornerFormat)
                     if cars.count >= 2 {
                         Divider()
-                        CarVersusCarSection(entries: entries, circuitKey: circuitKey, cars: cars)
+                        CarVersusCarSection(entries: narrowed, circuitKey: circuitKey, cars: cars)
                     }
                     if !performance.isEmpty {
                         Divider()
@@ -69,12 +77,6 @@ struct LogbookTrendsView: View {
                 "Choose a Circuit", systemImage: "chart.line.uptrend.xyaxis",
                 description: Text("Trends read across the visits to one circuit: pick one in the sidebar."))
         }
-    }
-
-    private var emptyDescription: String {
-        let count = points.count == 1 ? "one session" : "no sessions"
-        let inCar = car.isEmpty ? "" : " in the \(car)"
-        return "The logbook has \(count) at \(circuitTitle)\(inCar). Add another track day there."
     }
 
     private var header: some View {
@@ -172,7 +174,7 @@ struct LogbookTrendsView: View {
 
     @ViewBuilder private func corners(circuitKey: String) -> some View {
         let comparison = LogbookTrends.cornerComparison(
-            for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
+            for: narrowed, circuitKey: circuitKey, car: car.isEmpty ? nil : car)
         let trends = comparison?.trends ?? []
         let unread = points.filter { point in
             entries.first { $0.id == point.entryID }?.needsCornerReading ?? point.corners.isEmpty
@@ -441,4 +443,26 @@ extension LogbookTrendsView {
 extension String {
     /// The string with its first letter lower case.
     fileprivate var lowercasedFirst: String { prefix(1).lowercased() + dropFirst() }
+}
+
+// MARK: - Narrowed by tyres, setup and conditions (#559)
+
+extension LogbookTrendsView {
+    /// Every session, less those the filters leave out.
+    private var narrowed: [LogbookEntry] { filter.isEmpty ? entries : entries.filter(filter.matches) }
+
+    /// The circuit's sessions in the car chosen, before the filters: what they can choose from.
+    private var circuitSessions: [LogbookEntry] {
+        guard let circuitKey else { return [] }
+        return LogbookTrends.entries(entries, at: circuitKey, car: car.isEmpty ? nil : car)
+    }
+
+    private var emptyDescription: String {
+        let count = points.count == 1 ? "one session" : "no sessions"
+        let inCar = car.isEmpty ? "" : " in the \(car)"
+        if !filter.isEmpty {
+            return "The logbook has \(count) at \(circuitTitle)\(inCar) driven this way. Show All to see the rest."
+        }
+        return "The logbook has \(count) at \(circuitTitle)\(inCar). Add another track day there."
+    }
 }

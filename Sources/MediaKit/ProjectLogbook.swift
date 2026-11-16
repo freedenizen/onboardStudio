@@ -64,6 +64,8 @@ public enum ProjectLogbook {
         }
         // Onto the day its date and circuit say, as a file added to the logbook itself is (#393).
         try logbook.assignDay(to: &entry)
+        // What the car usually runs, when nothing says otherwise (#559).
+        logbook.applyStartingSetup(to: &entry.conditions, car: entry.car)
         try logbook.save(entry)
         return Enrolment(entry: entry, isNew: true)
     }
