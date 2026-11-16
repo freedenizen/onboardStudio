@@ -105,7 +105,8 @@ extension GPSQuality {
         if !quality.jumps.isEmpty {
             found.append(
                 Finding(
-                    .jumps(count: quality.jumps.count), quality.jumps.count >= options.poorJumpCount ? .poor : .fair))
+                    .jumps(count: quality.jumps.count),
+                    Double(quality.jumps.count) >= options.poorJumpCount ? .poor : .fair))
         }
         if let meters = quality.accuracyMeters,
             let rating = rate(

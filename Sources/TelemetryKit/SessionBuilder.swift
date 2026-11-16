@@ -49,6 +49,8 @@ public enum SessionBuilder {
         /// Read every corner of the reference lap, as before #585, or only drop corners, as between
         /// #585 and #598 (`TelemetrySession.legacyCornersPerLap`, `.legacyCornersOnlyDropped`).
         public var legacyCornersPerLap = false, legacyCornersOnlyDropped = false
+        /// Coaching distances to the metre and through dropouts, as before #555.
+        public var legacyExactDistances = false
         /// Ignore samples before this point in the file's own time (`nil` = from the beginning).
         ///
         /// Applied before anything else, so the session behaves as if the recording had started
@@ -369,5 +371,6 @@ extension TelemetrySession {
     mutating func readCorners(as options: SessionBuilder.Options) {
         legacyCornersPerLap = options.legacyCornersPerLap
         legacyCornersOnlyDropped = options.legacyCornersOnlyDropped
+        legacyExactDistances = options.legacyExactDistances
     }
 }

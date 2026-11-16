@@ -127,6 +127,7 @@ public enum Preferences {
     /// All of them, for the test that no two share a key.
     public static let allKeys: [String] = [
         defaultExportPreset.key, speedUnit.key, attributeMappings.key, nudgeStepPixels.key, ffmpegPath.key,
+        gpsThresholds.key,
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
         logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
