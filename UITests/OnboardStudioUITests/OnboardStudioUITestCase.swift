@@ -49,6 +49,8 @@ class OnboardStudioUITestCase: XCTestCase {
             // Nor one that made a blank project from a session leave the next one's New Project
             // without its layout: the Logbook remembers the last template chosen (#394, #449).
             "-logbook.projectTemplate", "Classic Dash",
+            // GPS is rated against the default thresholds, whatever this Mac's Settings say (#555).
+            "-gpsThresholds", "",
         ]
         // The test's own arguments last, so that they override these.
         app.launchArguments += Self.firstRunArguments(tourSeen: tourSeen) + extraArguments

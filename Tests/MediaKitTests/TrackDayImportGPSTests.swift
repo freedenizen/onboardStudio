@@ -11,11 +11,9 @@ struct TrackDayImportGPSTests {
     func line(rating: GPSQuality.Rating?) -> String {
         var entry = LogbookEntry(file: .init(path: "/s.csv", contentHash: "s", byteCount: 1, importerID: "rc"))
         entry.trackName = "Sonoma"
-        entry.gps = rating.map { rating in
-            GPSQuality(
-                rateHertz: 1, precisionMeters: 15,
-                findings: rating == .good ? [] : [.init(.rate(hertz: 1, wanted: 10), rating)])
-        }
+        // Rated against the thresholds in Settings when shown: the measurements decide.
+        let hertz: [GPSQuality.Rating: Double] = [.good: 25, .fair: 7, .poor: 1]
+        entry.gps = rating.map { GPSQuality(rateHertz: hertz[$0] ?? 25, precisionMeters: 1) }
         return TrackDayImport.Report(url: URL(fileURLWithPath: "/s.csv"), outcome: .added(entry)).line
     }
 

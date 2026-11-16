@@ -204,6 +204,8 @@ extension TrackDayImport {
                 if batch.car == nil, !found.car.isEmpty { entry.car = found.car }
                 if batch.driver == nil, reading.fileDriver == nil, !found.driver.isEmpty { entry.driver = found.driver }
             }
+            // What the car usually runs, when nothing says otherwise (#559).
+            logbook.applyStartingSetup(to: &entry.conditions, car: entry.car)
             try logbook.save(entry)
             return Filed(outcome: .added(entry), tookDayCircuit: tookDayCircuit)
         } catch {

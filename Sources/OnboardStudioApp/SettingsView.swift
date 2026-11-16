@@ -96,6 +96,7 @@ struct SettingsView: View {
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }
+            GPSThresholdSettings()
             Section("Updates") {
                 Toggle("Check for updates automatically", isOn: automaticUpdates)
                 Button("Check Now") { updater.checkForUpdates() }.disabled(!updater.canCheckForUpdates)

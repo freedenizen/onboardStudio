@@ -15,6 +15,9 @@ public struct CoachingOptions: Sendable, Hashable {
     public var minimumLossSeconds = 0.03
     /// Brake points closer than this are "the same place".
     public var brakePointToleranceMeters = 5.0
+    /// The step distances are said to (#555): 1 m on good GPS, coarser as the session's positions
+    /// allow less. Set from the session by `analyse`; no difference finer than it is judged.
+    public var distanceStepMeters = 1.0
     /// A minimum speed lower than the reference's by less than this fraction is "the same".
     public var minimumSpeedToleranceFraction = 0.02
     /// A minimum speed this far after the reference's is "late".
@@ -207,6 +210,7 @@ public struct CoachingAnalysis: Sendable {
         lap: LapProfile, in session: TelemetrySession, against reading: ReferenceReading, units: CoachingUnits,
         options: CoachingOptions
     ) -> CoachingAnalysis? {
+        let options = options.withGPSPrecision(of: session)
         let reference = reading.profile
         let referencePhrase = reading.phrase
         let sameSession = reading.sameSession
@@ -231,6 +235,7 @@ public struct CoachingAnalysis: Sendable {
         // of the same session.
         markTraffic(&comparisons, lap: lap, reference: sameSession ? reference : nil, delta: delta, in: session)
         attach(reading.suggestions, to: &comparisons, lap: lap)
+        markGPSGaps(&comparisons, lap: lap, reference: sameSession ? reference : nil, delta: delta, in: session)
         var warnings: [CoachingWarning] = []
         if delta.confidence == 0 && alignment != delta.alignment { warnings.append(.approximateAlignment) }
         if lapMetrics.contains(where: { $0.brakeSource == .speedTrace }) { warnings.append(.pedalsFromSpeedTrace) }
@@ -345,7 +350,8 @@ public enum Coaching {
         init(_ comparison: CornerComparison, options: CoachingOptions) {
             let lap = comparison.lap
             let reference = comparison.reference
-            if let own = lap.brakePointMeters, let theirs = reference.brakePointMeters {
+            // A brake point read across a dropout is a guess (#555).
+            if !comparison.gpsGap, let own = lap.brakePointMeters, let theirs = reference.brakePointMeters {
                 brake = own - theirs
             } else {
                 brake = nil
@@ -377,28 +383,28 @@ public enum Coaching {
     }
 
     static func brakingKind(_ d: Differences, options: CoachingOptions) -> OpportunityKind {
-        if let brake = d.brake, brake > options.brakePointToleranceMeters { return .brakedEarly }
-        if let brake = d.brake, brake < -options.brakePointToleranceMeters { return .brakedLate }
+        if let brake = d.brake, brake > options.brakeTolerance { return .brakedEarly }
+        if let brake = d.brake, brake < -options.brakeTolerance { return .brakedLate }
         if d.softer { return .brakedSofter }
         return d.speedShortfall > options.minimumSpeedToleranceFraction ? .overSlowed : .line
     }
 
     static func entryKind(_ d: Differences, options: CoachingOptions) -> OpportunityKind {
         if d.speedShortfall > options.minimumSpeedToleranceFraction { return .overSlowed }
-        if d.minimumLate > options.minimumSpeedLateMeters { return .minimumTooLate }
-        if let brake = d.brake, brake > options.brakePointToleranceMeters { return .brakedEarly }
+        if d.minimumLate > options.lateTolerance { return .minimumTooLate }
+        if let brake = d.brake, brake > options.brakeTolerance { return .brakedEarly }
         return .line
     }
 
     static func apexKind(_ d: Differences, options: CoachingOptions) -> OpportunityKind {
-        if d.minimumLate > options.minimumSpeedLateMeters { return .minimumTooLate }
+        if d.minimumLate > options.lateTolerance { return .minimumTooLate }
         if d.coasting > options.coastingToleranceSeconds { return .coasting }
-        if d.throttleLate > options.throttleToleranceMeters { return .throttleLate }
+        if d.throttleLate > options.throttleTolerance { return .throttleLate }
         return d.speedShortfall > options.minimumSpeedToleranceFraction ? .overSlowed : .line
     }
 
     static func exitKind(_ d: Differences, options: CoachingOptions) -> OpportunityKind {
-        if d.throttleLate > options.throttleToleranceMeters { return .throttleLate }
+        if d.throttleLate > options.throttleTolerance { return .throttleLate }
         if d.coasting > options.coastingToleranceSeconds { return .coasting }
         return d.slowerExit ? .slowExit : .line
     }

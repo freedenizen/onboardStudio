@@ -34,10 +34,12 @@ public enum CoachingNotes {
 
         var lap: CornerMetrics { comparison.lap }
         var reference: CornerMetrics { comparison.reference }
-        var format: Formatter { Formatter(units: units) }
-        /// Metres the lap braked before the reference did; nil when either did not brake.
+        var format: Formatter { Formatter(units: units, stepMeters: options.distanceStepMeters) }
+        /// Metres the lap braked before the reference did; nil when either did not brake, or a
+        /// dropout through the corner leaves where unknown (#555).
         var brakeDifference: Double? {
-            guard let own = lap.brakePointMeters, let theirs = reference.brakePointMeters else { return nil }
+            guard !comparison.gpsGap, let own = lap.brakePointMeters, let theirs = reference.brakePointMeters
+            else { return nil }
             return own - theirs
         }
         var minimumLate: Double { lap.minimumSpeedMeters - reference.minimumSpeedMeters }
@@ -72,15 +74,7 @@ public enum CoachingNotes {
         let lap = context.lap
         let reference = context.reference
         let phrase = context.referencePhrase
-        var lines: [String] = []
-        if let difference = context.brakeDifference {
-            if abs(difference) > options.brakePointToleranceMeters {
-                let word = difference > 0 ? "earlier" : "later"
-                lines.append("Braked \(format.metres(abs(difference))) \(word) than \(phrase)")
-            }
-        } else if lap.brakePointMeters == nil, reference.brakePointMeters != nil {
-            lines.append("Did not brake where \(phrase) did")
-        }
+        var lines = [brakePoint(context)].compactMap { $0 }
         if let own = lap.peakBrakingG, let theirs = reference.peakBrakingG, theirs > 0,
             own < theirs * (1 - options.brakingEffortToleranceFraction)
         {
@@ -92,14 +86,14 @@ public enum CoachingNotes {
         if speedFraction > options.minimumSpeedToleranceFraction {
             let word = speedDifference > 0 ? "lower" : "higher"
             var sentence = "Minimum speed \(format.speed(abs(speedDifference))) \(word)"
-            if abs(late) > options.minimumSpeedLateMeters {
+            if abs(late) > options.lateTolerance {
                 sentence += ", \(format.metres(abs(late))) \(late > 0 ? "later" : "earlier")"
             }
             lines.append(sentence)
-        } else if late > options.minimumSpeedLateMeters {
+        } else if late > options.lateTolerance {
             lines.append("Slowest point \(format.metres(late)) later than \(phrase)'s")
         }
-        if let throttle = context.throttleLate, abs(throttle) > options.throttleToleranceMeters {
+        if let throttle = context.throttleLate, abs(throttle) > options.throttleTolerance {
             lines.append("Throttle \(format.metres(abs(throttle))) \(throttle > 0 ? "later" : "earlier")")
         }
         if let coasting = context.coastingMore, coasting > options.coastingToleranceSeconds {
@@ -112,7 +106,26 @@ public enum CoachingNotes {
         if lap.brakeSource == .speedTrace || lap.throttleSource == .speedTrace {
             lines.append("Pedals read from the speed trace")
         }
+        // Why a distance is rounded, once (#555).
+        if format.isRounded, lines.contains(where: { $0.contains("≈") }) {
+            lines.append("Distances to the nearest \(format.step), as close as this GPS allows")
+        }
         return lines
+    }
+
+    /// Where the lap braked against the reference, when that is worth saying.
+    static func brakePoint(_ context: Context) -> String? {
+        let phrase = context.referencePhrase
+        if context.comparison.gpsGap { return "No brake point: the GPS dropped out through this corner" }
+        if let difference = context.brakeDifference {
+            guard abs(difference) > context.options.brakeTolerance else { return nil }
+            let word = difference > 0 ? "earlier" : "later"
+            return "Braked \(context.format.metres(abs(difference))) \(word) than \(phrase)"
+        }
+        if context.lap.brakePointMeters == nil, context.reference.brakePointMeters != nil {
+            return "Did not brake where \(phrase) did"
+        }
+        return nil
     }
 
     public static func suggestion(_ context: Context) -> String {
@@ -152,12 +165,31 @@ public enum CoachingNotes {
     /// of a second, two of a g.
     public struct Formatter: Sendable {
         public let units: CoachingUnits
+        /// The step distances are rounded to (#555); 1 m says them to the metre.
+        public let stepMeters: Double
 
-        public init(units: CoachingUnits) { self.units = units }
+        public init(units: CoachingUnits, stepMeters: Double = 1) {
+            self.units = units
+            self.stepMeters = stepMeters
+        }
+
+        /// Whether distances are rounded coarser than whole metres or feet.
+        public var isRounded: Bool { stepMeters > 1 }
+
+        /// The step in the distance unit, snapped to a number a driver says: 15 m is 50 ft.
+        var stepInUnit: Double {
+            GPSQuality(rateHertz: 0, precisionMeters: stepMeters).distanceStep(in: units.distance)
+        }
+
+        /// "25 m", for the line that says why.
+        public var step: String { "\(Int(stepInUnit)) \(units.distance.symbol)" }
 
         public func metres(_ value: Double) -> String {
             let converted = TelemetryUnit.meters.convert(value, to: units.distance) ?? value
-            return "\(Int(converted.rounded())) \(units.distance.symbol)"
+            guard isRounded else { return "\(Int(converted.rounded())) \(units.distance.symbol)" }
+            let step = stepInUnit
+            let rounded = max(step, (converted / step).rounded() * step)
+            return "≈ \(Int(rounded)) \(units.distance.symbol)"
         }
 
         /// `value` in m/s, shown in the speed unit.

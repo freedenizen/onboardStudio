@@ -98,7 +98,7 @@ public enum LogbookEditName {
         if old.car != new.car { changed.append("Car") }
         if old.driver != new.driver { changed.append("Driver") }
         if old.notes != new.notes { changed.append("Notes") }
-        if old.conditions != new.conditions { changed.append("Conditions") }
+        if old.conditions != new.conditions { changed.append(conditionsChange(old.conditions, new.conditions)) }
         if old.circuitID != new.circuitID || old.trackName != new.trackName { changed.append("Circuit") }
         if old.configuration != new.configuration { changed.append("Configuration") }
         if old.tags != new.tags { changed.append("Tags") }
@@ -120,11 +120,19 @@ public enum LogbookEditName {
         if old.car != new.car { changed.append("Car") }
         if old.driver != new.driver { changed.append("Driver") }
         if old.notes != new.notes { changed.append("Notes") }
-        if old.conditions != new.conditions { changed.append("Conditions") }
+        if old.conditions != new.conditions { changed.append(conditionsChange(old.conditions, new.conditions)) }
         if old.circuitKey != new.circuitKey { changed.append("Circuit") }
         if old.date != new.date { changed.append("Date") }
         if old.penaltyPerCone != new.penaltyPerCone { changed.append("Penalty per Cone") }
         return changed.count == 1 ? "Change \(changed[0])" : "Change Track Day"
+    }
+
+    /// "Setup" when only the setup sheet changed (#559), else "Conditions".
+    static func conditionsChange(_ old: SessionConditions, _ new: SessionConditions) -> String {
+        var sheetOnly = old
+        sheetOnly.sheet = new.sheet
+        sheetOnly.tyres = new.tyres
+        return sheetOnly == new && old.sheet != new.sheet ? "Setup" : "Conditions"
     }
 
     /// "Remove Session", "Remove 3 Sessions".
