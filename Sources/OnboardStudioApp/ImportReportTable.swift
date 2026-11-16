@@ -9,6 +9,8 @@ import TelemetryKit
 /// view keeping Tab to itself costs nothing here.
 struct ImportReportTable: View {
     let report: ImportReport
+    /// How far the file's positions can be trusted (#555); `nil` for a file without them.
+    var gps: GPSQuality?
     /// What was typed in the window's filter field.
     let filter: String
     @Binding var showEverything: Bool
@@ -41,6 +43,18 @@ struct ImportReportTable: View {
                 .accessibilityIdentifier("import.clean")
             } else {
                 table
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let gps {
+                VStack(spacing: 0) {
+                    GPSQualityView(quality: gps)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.vertical, rowInset * 2)
+                    Divider()
+                }
+                .background(.bar)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

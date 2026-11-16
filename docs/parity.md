@@ -108,6 +108,7 @@ the M14 audit. ✅ done, ◐ partial, ❌ not implemented.
 | RaceChrono `.rcz` archives | ✅ | Imports on its own, with the logger's own lap list |
 | GoPro GPMF embedded GPS | ✅ | Own MP4/GPMF reader (AVFoundation hides the track) |
 | Sony / DJI / Garmin camera metadata | ◐ | DJI SRT and Garmin FIT sidecars, Sony XML clock; Sony `rtmd` embedded GPS not read |
+| How good the GPS data is | ➕ | The import report rates a file's positions Good, Fair or Poor — rate, dropouts, jumps, the logger's accuracy, HDOP and satellites, a missed start/finish line — and says how close its distances are; a **GPS rate** channel (#555). RaceRender shows none of it |
 
 ## Performance (M14 measurements, M2 MacBook-class Apple silicon, HERO13 4K source)
 

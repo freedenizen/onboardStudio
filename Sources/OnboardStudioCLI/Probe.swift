@@ -177,6 +177,10 @@ struct Probe: ParsableCommand {
             let duration = TimeParsing.lapTimeString(session.duration)
             print("Time:      \(fmt(range.lowerBound)) … \(fmt(range.upperBound))  (\(duration))")
         }
+        if let gps = session.gpsQuality {
+            print("GPS:       \(gps.rating.title) — \(gps.measurements(units: .metric))")
+            for message in gps.messages(units: .metric) { print("           \(message)") }
+        }
     }
 
     private func printChannels(_ session: TelemetrySession) {

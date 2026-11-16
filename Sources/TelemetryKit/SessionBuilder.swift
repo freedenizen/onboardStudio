@@ -44,6 +44,8 @@ public enum SessionBuilder {
         /// The circuit's turn names pinned to their apexes (#548); used instead of `cornerLabels`
         /// when there are any.
         public var turnNames: [TurnName] = []
+        /// What counts against the positions (#555).
+        public var gpsQuality = GPSQuality.Options()
         /// Read every corner of the reference lap, as before #585, or only drop corners, as between
         /// #585 and #598 (`TelemetrySession.legacyCornersPerLap`, `.legacyCornersOnlyDropped`).
         public var legacyCornersPerLap = false, legacyCornersOnlyDropped = false
@@ -110,6 +112,8 @@ public enum SessionBuilder {
         var mapper = ColumnMapper(options: options)
 
         var report = ImportReport()
+        // The positions as they arrived, before resampling gives them the resampler's rate.
+        var arrived: [ChannelRole: Channel] = [:]
 
         for (index, column) in table.columns.enumerated() {
             guard let mapping = mapper.map(column) else {
@@ -128,6 +132,7 @@ public enum SessionBuilder {
             let recordedUnit = channel.unit
             channel = channel.convertedToCanonicalUnit()
             if channel.unit != recordedUnit { recordedUnits[finalRole] = recordedUnit }
+            if finalRole == .latitude || finalRole == .longitude { arrived[finalRole] = channel }
             if let hertz = options.resampleHertz, channel.interpolation == .linear {
                 channel = Resampler.resample(channel, hertz: hertz)
             }
@@ -160,6 +165,7 @@ public enum SessionBuilder {
         // Pit-lane fragments cannot be the best lap, and every object can read the deltas to it.
         session.laps = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
         for channel in LapDeltas.channels(for: session) { session.add(channel) }
+        addGPSQuality(to: &session, latitude: arrived[.latitude], longitude: arrived[.longitude], options: options)
         // Before the sectors, whose corner-aware boundaries are placed between its corners.
         session.readCorners(as: options)
         // After the demotion, so an out-lap cannot be the lap the sectors are measured on.
@@ -167,51 +173,6 @@ public enum SessionBuilder {
         session.cornerLabels = options.cornerLabels
         session.turnNames = options.turnNames
         return session
-    }
-
-    // MARK: - Time axis
-
-    /// Every importer promises a finite, strictly increasing time axis, but a corrupt file can
-    /// break that promise; rows with NaN, infinite or non-increasing times are dropped here so
-    /// binary searches and time ranges stay valid.
-    /// Drops samples and lap markers outside the trim, keeping the file's own timebase: a
-    /// trimmed session's times still read as seconds into the original file, so sync, markers and
-    /// anything else pointing into it stay pointing at the same moments.
-    static func trimmed(_ table: RawTable, from start: Double?, to end: Double?) -> RawTable {
-        guard start != nil || end != nil else { return table }
-        let lower = start ?? -.infinity
-        let upper = end ?? .infinity
-        guard lower <= upper else { return table }
-        let keep = table.times.indices.filter { table.times[$0] >= lower && table.times[$0] <= upper }
-        guard keep.count != table.times.count else { return table }
-        var out = table
-        out.times = keep.map { table.times[$0] }
-        out.columns = table.columns.map { column in
-            var copy = column
-            copy.values = keep.map { $0 < column.values.count ? column.values[$0] : nil }
-            return copy
-        }
-        out.lapMarkers = table.lapMarkers.filter { $0.time >= lower && $0.time <= upper }
-        return out
-    }
-
-    static func sanitised(_ table: RawTable) -> RawTable {
-        var keep: [Int] = []
-        keep.reserveCapacity(table.times.count)
-        var last = -Double.infinity
-        for (index, time) in table.times.enumerated() where time.isFinite && time > last {
-            keep.append(index)
-            last = time
-        }
-        guard keep.count != table.times.count else { return table }
-        var out = table
-        out.times = keep.map { table.times[$0] }
-        out.columns = table.columns.map { column in
-            var copy = column
-            copy.values = keep.map { $0 < column.values.count ? column.values[$0] : nil }
-            return copy
-        }
-        return out
     }
 
     // MARK: - Channels
@@ -345,6 +306,51 @@ public enum SessionBuilder {
 }
 
 extension SessionBuilder {
+    // MARK: - Time axis
+
+    /// Every importer promises a finite, strictly increasing time axis, but a corrupt file can
+    /// break that promise; rows with NaN, infinite or non-increasing times are dropped here so
+    /// binary searches and time ranges stay valid.
+    /// Drops samples and lap markers outside the trim, keeping the file's own timebase: a
+    /// trimmed session's times still read as seconds into the original file, so sync, markers and
+    /// anything else pointing into it stay pointing at the same moments.
+    static func trimmed(_ table: RawTable, from start: Double?, to end: Double?) -> RawTable {
+        guard start != nil || end != nil else { return table }
+        let lower = start ?? -.infinity
+        let upper = end ?? .infinity
+        guard lower <= upper else { return table }
+        let keep = table.times.indices.filter { table.times[$0] >= lower && table.times[$0] <= upper }
+        guard keep.count != table.times.count else { return table }
+        var out = table
+        out.times = keep.map { table.times[$0] }
+        out.columns = table.columns.map { column in
+            var copy = column
+            copy.values = keep.map { $0 < column.values.count ? column.values[$0] : nil }
+            return copy
+        }
+        out.lapMarkers = table.lapMarkers.filter { $0.time >= lower && $0.time <= upper }
+        return out
+    }
+
+    static func sanitised(_ table: RawTable) -> RawTable {
+        var keep: [Int] = []
+        keep.reserveCapacity(table.times.count)
+        var last = -Double.infinity
+        for (index, time) in table.times.enumerated() where time.isFinite && time > last {
+            keep.append(index)
+            last = time
+        }
+        guard keep.count != table.times.count else { return table }
+        var out = table
+        out.times = keep.map { table.times[$0] }
+        out.columns = table.columns.map { column in
+            var copy = column
+            copy.values = keep.map { $0 < column.values.count ? column.values[$0] : nil }
+            return copy
+        }
+        return out
+    }
+
     /// Runs between a start and a finish line (#552), laps from crossings of one line, or the
     /// file's own laps, in that order of what the options ask for.
     static func timedLaps(of session: TelemetrySession, table: RawTable, options: Options) -> [Lap] {

@@ -724,6 +724,27 @@ everything read cleanly says so in one line. The filter field searches every col
 group or what it became. Select rows and press **⌘C** to copy them as text, for a message to
 whoever wired the logger. Without a data file the tab says so and offers **Add Data File…**.
 
+**How good the GPS is.** Above the columns, a GPS line rates the file's positions **Good**,
+**Fair** or **Poor**, and says what it measured: how many positions arrived a second, the
+logger's own accuracy, HDOP and satellites when the file records them, and how close a distance
+read from it can be — *distances to about 1 m* from a 25 Hz logger, *about 15 m* from a phone
+logging once a second. Under it, one sentence for each thing that counts against the data:
+
+- fewer than 10 positions a second, and under 5 makes it poor;
+- a stretch with no position while the car was moving (a *dropout*), poor from 3 seconds, long
+  enough for a corner to pass inside it;
+- a position further from the last than the car could have got to (a *jump*), poor from five;
+- the logger's own accuracy worse than 2 m (poor beyond 5 m), HDOP above 1.5 (poor above 3),
+  or fewer than 8 satellites (poor below 5);
+- a lap about twice the usual length, because the car crossed the start/finish line without a
+  position close enough to it to count. (Sectors are split by distance along the lap rather than
+  by lines, so only the start/finish line can be missed this way.)
+
+A logger that writes its position into every row, filled in between real fixes as RaceChrono's
+CSV export does, would look faster than it is; when the file logs the GPS's own update rate, as
+RaceChrono does, that is the rate shown. The same rate is a channel, **GPS rate**, that a gauge or
+graph can show alongside **GPS accuracy**, satellites and HDOP; it reads zero through a dropout.
+
 **A file that knows where the line is.** Racelogic VBO files record the start/finish line, and
 any sector gates, as actual geometry — the only format that does. Add one and the line and sectors
 come with it, and the app says so rather than guessing from the trace. Opening a project you saved

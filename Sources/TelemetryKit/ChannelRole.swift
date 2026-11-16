@@ -8,6 +8,9 @@ public enum ChannelRole: Hashable, Sendable, Codable {
     case gpsUpdate
     case gpsDelay
     case accuracy
+    /// Positions a second over the last second, derived from when they arrived (#555). Reads
+    /// zero through a dropout.
+    case gpsRate
     case speed
     case heading
     case lap
@@ -103,6 +106,7 @@ public enum ChannelRole: Hashable, Sendable, Codable {
         case .gpsUpdate: "gpsUpdate"
         case .gpsDelay: "gpsDelay"
         case .accuracy: "accuracy"
+        case .gpsRate: "gpsRate"
         case .speed: "speed"
         case .heading: "heading"
         case .lap: "lap"
@@ -195,6 +199,7 @@ extension ChannelRole {
         case .gpsUpdate: "GPS update"
         case .gpsDelay: "GPS delay"
         case .accuracy: "GPS accuracy"
+        case .gpsRate: "GPS rate"
         case .speed: "Speed"
         case .heading: "Heading"
         case .lap: "Lap"
@@ -251,8 +256,8 @@ extension ChannelRole {
     ]
 
     public static let standardRoles: [ChannelRole] = [
-        .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .speed, .heading, .lap, .distance,
-        .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG, .lapDelta, .speedDelta,
+        .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .gpsRate, .speed, .heading, .lap,
+        .distance, .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG, .lapDelta, .speedDelta,
         .projectedLap, .brakePressureFront, .brakePressureRear, .oilPressure, .oilTemperature, .coolantTemperature,
         .intakeTemperature, .exhaustTemperature, .boostPressure, .steeringAngle, .clutch, .leanAngle,
         .airFuelRatio, .fuelLevel, .batteryVoltage, .engineLoad,
