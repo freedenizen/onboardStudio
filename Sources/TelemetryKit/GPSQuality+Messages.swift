@@ -63,7 +63,7 @@ extension GPSQuality {
 
 extension [String] {
     /// "4", "4 and 7", "4, 7 and 9".
-    var formattedList: String {
+    public var formattedList: String {
         guard count > 1, let last else { return first ?? "" }
         return dropLast().joined(separator: ", ") + " and " + last
     }
