@@ -242,7 +242,7 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 - #557 a session's lap table: sector splits per lap, best sectors, speeds — *shipped*
 - #558 grip use: combined braking and turning, time near the limit, and its trend
 - #559 judging a tyre, pressure or setup change: structured pressures, Trends split by conditions
-  (built: the setup sheet and setups kept with the car; Trends next)
+  — *shipped*
 - #560 weather filled in from the session's time and place (the first network read for analysis)
 - #561 the track line coloured by any channel — *shipped*
 - #562 a second logger (an ECU CSV) lined up with the first by a shared channel
