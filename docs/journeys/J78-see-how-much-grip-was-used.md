@@ -16,6 +16,12 @@ still learning.*
 4. Choose the car under **Cars**: its card shows **Grip** on a dry and a wet surface, and a stepper
    scales it (*Adjusted to 105% of what it has shown*) when the car has more grip than its sessions
    have shown. The scale is a step of **Edit ▸ Undo** (*Undo Adjust Grip*).
+5. **Coach…** the session: a corner's detail shows **Grip used** and **Braking to turning** for
+   both laps, and where the lap let go of the grip between braking and turning and the reference
+   did not, the note says so and suggests keeping a little brake on as you turn in.
+6. In **Trends** at the circuit, **Grip** charts each session's grip used and share of the lap near
+   the limit across visits.
+7. In a project whose logger recorded G, add a gauge, bar or graph and choose **Grip used**.
 
 Tests: `GripUITests.testASessionsGripIsReadAgainstTheCars`. Model: `GripTests`, `CarGripTests`,
-`GripWordingTests`.
+`GripWordingTests`, `GripTrendsTests`, `NoGripNotesMigrationTests`.

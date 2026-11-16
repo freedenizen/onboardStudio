@@ -103,4 +103,97 @@ struct GripTests {
             columns: [RawColumn(name: "rpm", unit: .rpm, suggestedRole: .rpm, values: [1, 2, 3])])
         #expect(GripEnvelope.measure(SessionBuilder.build(table)) == nil)
     }
+
+    // MARK: - In coaching
+
+    static func profile(_ number: Int, in session: TelemetrySession) throws -> LapProfile {
+        let lap = try #require(session.laps.first { $0.number == number })
+        return try #require(LapProfile(lap: lap, in: session))
+    }
+
+    @Test func coachingSaysWhereBrakingStoppedBeforeTurningWhenTheReferenceDidNot() throws {
+        let session = Self.session
+        let analysis = try #require(
+            CoachingAnalysis.analyse(
+                lap: try Self.profile(2, in: session), in: session, reference: try Self.profile(1, in: session),
+                referencePhrase: "your best lap", sameSession: true))
+        var corner = try #require(analysis.corners.first)
+        #expect(corner.lapGrip != nil && corner.referenceGrip != nil, "both laps read")
+        func grip(_ lowest: Double, mean: Double) -> GripUse.Corner {
+            GripUse.Corner(
+                index: corner.index, label: corner.label, meanUsed: mean, peakUsed: 1, nearLimit: 0.2,
+                gap: GripUse.Gap(lowestUsed: lowest, lowestG: lowest, seconds: 0.6, at: 100))
+        }
+        corner.lapGrip = grip(0.25, mean: 0.6)
+        corner.referenceGrip = grip(0.8, mean: 0.8)
+        let context = CoachingNotes.Context(
+            comparison: corner, phase: .entry, kind: .coasting, spread: nil, referencePhrase: "your best lap",
+            units: .metric, options: CoachingOptions())
+        let note = CoachingNotes.note(context)
+        #expect(
+            note.evidence.contains(
+                "Braking stopped before turning: combined G fell to 0.25 g (your best lap kept 0.80 g)"),
+            "\(note.evidence)")
+        #expect(note.evidence.contains("Used 60% of the grip through it against 80%"))
+        #expect(
+            note.suggestion.hasSuffix(
+                "Keep a little brake on as you turn in, so the braking runs into the "
+                    + "cornering rather than stopping before it."))
+        // The reference stopped braking before turning as much: nothing to say.
+        corner.referenceGrip = grip(0.3, mean: 0.62)
+        let same = CoachingNotes.note(
+            .init(
+                comparison: corner, phase: .entry, kind: .coasting, spread: nil, referencePhrase: "your best lap",
+                units: .metric, options: CoachingOptions()))
+        #expect(!same.evidence.contains { $0.hasPrefix("Braking stopped") || $0.hasPrefix("Used ") })
+        #expect(!same.suggestion.contains("Keep a little brake on"))
+    }
+
+    @Test func theCarsGripIsUsedWhenGiven() throws {
+        let session = Self.session
+        let reference = try Self.profile(1, in: session)
+        let lap = try Self.profile(2, in: session)
+        var options = CoachingOptions()
+        options.gripEnvelope = GripEnvelope(circle: 4)
+        let analysis = try #require(
+            CoachingAnalysis.analyse(
+                lap: lap, in: session, reference: reference, referencePhrase: "lap 1", sameSession: true,
+                options: options))
+        // Against four g, nothing comes near the limit.
+        #expect(analysis.corners.allSatisfy { ($0.lapGrip?.peakUsed ?? 1) < 0.5 })
+    }
+
+    @Test func aSessionFromAnOlderProjectIsCoachedWithoutGrip() throws {
+        var session = Self.session
+        session.legacyNoGripNotes = true
+        let analysis = try #require(
+            CoachingAnalysis.analyse(
+                lap: try Self.profile(2, in: session), in: session, reference: try Self.profile(1, in: session),
+                referencePhrase: "lap 1", sameSession: true))
+        #expect(analysis.corners.allSatisfy { $0.lapGrip == nil && $0.referenceGrip == nil })
+    }
+
+    // MARK: - The overlay channel
+
+    @Test func recordedGMakesAGripUsedChannelAgainstTheSessionsOwnGrip() throws {
+        let points = Self.ellipse(braking: 1.0, accelerating: 0.5, cornering: 1.0, count: 2_000)
+        let times = points.indices.map { Double($0) * 0.1 }
+        let table = RawTable(
+            info: SessionInfo(sourceFormat: "test"), times: times,
+            columns: [
+                RawColumn(name: "lat g", unit: .gForce, suggestedRole: .lateralG, values: points.map(\.lateral)),
+                RawColumn(
+                    name: "long g", unit: .gForce, suggestedRole: .longitudinalG, values: points.map(\.longitudinal)),
+            ])
+        let session = SessionBuilder.build(table)
+        let channel = try #require(session[.gripUsed])
+        #expect(channel.unit == .percent)
+        #expect((channel.values.max() ?? 0) > 95 && (channel.values.max() ?? 0) <= 150)
+        let finite = channel.values.allSatisfy { $0.isFinite }
+        #expect(finite)
+    }
+
+    @Test func noRecordedGNoGripUsedChannel() {
+        #expect(Self.session[.gripUsed] == nil, "the fixture's G is only derived")
+    }
 }

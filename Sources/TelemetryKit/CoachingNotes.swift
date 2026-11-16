@@ -59,6 +59,7 @@ public enum CoachingNotes {
         let lost = format.seconds(context.comparison.timeLost)
         let headline = "Turn \(context.comparison.label): \(lost) lost on \(phase)"
         var suggestion = suggestion(context)
+        if let grip = gripSuggestion(context) { suggestion += " " + grip }
         if let spread = context.spread, !spread.isConsistent, let brakeSpread = spread.brakePointSpread {
             suggestion =
                 "This corner varies lap to lap (brake point spread \(format.metres(brakeSpread))): "
@@ -99,6 +100,7 @@ public enum CoachingNotes {
         if let coasting = context.coastingMore, coasting > options.coastingToleranceSeconds {
             lines.append("Coasted \(format.seconds(coasting)) longer")
         }
+        lines += gripEvidence(context)
         let exitDifference = reference.exitSpeed - lap.exitSpeed
         if reference.exitSpeed > 0, abs(exitDifference) / reference.exitSpeed > options.minimumSpeedToleranceFraction {
             lines.append("Exit speed \(format.speed(abs(exitDifference))) \(exitDifference > 0 ? "lower" : "higher")")

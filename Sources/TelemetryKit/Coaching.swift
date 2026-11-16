@@ -5,6 +5,10 @@ import Foundation
 public struct CoachingOptions: Sendable, Hashable {
     public var corners = CornerDetector.Options()
     public var metrics = CornerMetrics.Options()
+    /// The grip the corners are read against (#558): the car's in like conditions when the caller
+    /// knows it, else the two laps' own.
+    public var gripEnvelope: GripEnvelope?
+    public var grip = GripUse.Options()
     public var stepMeters = 2.0
     /// How the two laps are lined up; `nil` picks by distance within one session and by position
     /// across two.
@@ -236,6 +240,11 @@ public struct CoachingAnalysis: Sendable {
         markTraffic(&comparisons, lap: lap, reference: sameSession ? reference : nil, delta: delta, in: session)
         attach(reading.suggestions, to: &comparisons, lap: lap)
         markGPSGaps(&comparisons, lap: lap, reference: sameSession ? reference : nil, delta: delta, in: session)
+        if !session.legacyNoGripNotes {
+            readGrip(
+                &comparisons, lap: lap, corners: lapCorners, reference: reference, referenceCorners: referenceCorners,
+                options: options)
+        }
         var warnings: [CoachingWarning] = []
         if delta.confidence == 0 && alignment != delta.alignment { warnings.append(.approximateAlignment) }
         if lapMetrics.contains(where: { $0.brakeSource == .speedTrace }) { warnings.append(.pedalsFromSpeedTrace) }

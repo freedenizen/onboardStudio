@@ -59,6 +59,9 @@ public struct TelemetrySession: Sendable {
     /// dropout, as builds before #555 did. Set from the data input of a project saved by one of
     /// them, so its Corner Callouts keep their words.
     public var legacyExactDistances = false
+    /// Coaching says nothing of grip, as builds before #558 did. Set from the data input of a
+    /// project saved by one of them, so its Corner Callouts keep their words.
+    public var legacyNoGripNotes = false
     /// Stretches the driver marked as held up by traffic or a flag (#571), in session time. Not
     /// read from the file: whoever reads the session for coaching puts the marks the project or
     /// the logbook keeps here first, so every reading of it leaves the same corners out.
@@ -158,6 +161,7 @@ public struct TelemetrySession: Sendable {
         .time, .latitude, .longitude, .altitude, .speed, .heading, .distance, .lap,
         .longitudinalG, .lateralG, .rpm, .gear, .throttle, .brake, .lapDelta, .speedDelta, .projectedLap, .accuracy,
         .gpsRate,
+        .gripUsed,
         .gpsUpdate,
         .gpsDelay,
     ]

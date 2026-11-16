@@ -415,7 +415,8 @@ extension CoachingContent {
             }
         }
         let reference = selection.reference
-        let options = selection.options
+        var options = selection.options
+        options.gripEnvelope = carGrip(for: selection)
         let result = await Task.detached(priority: .userInitiated) { () -> CoachingAnalysis? in
             if let other {
                 guard let lapProfile = LapProfile(lap: lap, in: session),

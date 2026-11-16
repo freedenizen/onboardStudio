@@ -63,6 +63,13 @@ public struct GripTrace: Hashable, Codable, Sendable {
         public var start: Double
         public var apex: Double
         public var end: Double
+
+        public init(label: String, start: Double, apex: Double, end: Double) {
+            self.label = label
+            self.start = start
+            self.apex = apex
+            self.end = end
+        }
     }
 
     public var stepMeters: Double
@@ -75,6 +82,19 @@ public struct GripTrace: Hashable, Codable, Sendable {
     public var corners: [CornerSpan]
 
     public var count: Int { elapsed.count }
+
+    public init(
+        stepMeters: Double, elapsed: [Double], lateral: [Double], longitudinal: [Double], throttle: [Double]?,
+        brake: [Double]?, corners: [CornerSpan]
+    ) {
+        self.stepMeters = stepMeters
+        self.elapsed = elapsed
+        self.lateral = lateral
+        self.longitudinal = longitudinal
+        self.throttle = throttle
+        self.brake = brake
+        self.corners = corners
+    }
 
     /// `profile` every `stepMeters`, with `corners` named by `labels`; `nil` without G.
     public init?(_ profile: LapProfile, corners: [Corner], labels: [String] = [], stepMeters: Double = 5) {

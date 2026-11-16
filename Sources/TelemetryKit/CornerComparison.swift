@@ -24,6 +24,10 @@ public struct CornerComparison: Sendable, Equatable, Codable {
     /// No position arrived somewhere through the corner on either lap (#555): its brake point is
     /// not read.
     public var gpsGap = false
+    /// How much of the grip each lap used through the corner (#558), and where braking stopped
+    /// before turning; `nil` without G.
+    public var lapGrip: GripUse.Corner?
+    public var referenceGrip: GripUse.Corner?
     /// What the telemetry suggests may have been traffic in the corner on the lap (#572), when it
     /// is not marked. Only a suggestion: the corner is coached as any other.
     public var suggestion: TrafficSuggestion?

@@ -47,6 +47,10 @@ struct LogbookTrendsView: View {
                     } else {
                         lapTimes
                         consistency
+                        let grip = GripTrends.points(
+                            for: entries, circuitKey: circuitKey, car: car.isEmpty ? nil : car,
+                            cars: LogbookModel.shared.cars)
+                        if grip.count >= 2 { GripTrendsSection(points: grip, onOpen: onOpen) }
                     }
                     corners(circuitKey: circuitKey)
                     if cars.count >= 2 {

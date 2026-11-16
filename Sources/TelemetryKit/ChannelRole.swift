@@ -11,6 +11,9 @@ public enum ChannelRole: Hashable, Sendable, Codable {
     /// Positions a second over the last second, derived from when they arrived (#555). Reads
     /// zero through a dropout.
     case gpsRate
+    /// How much of the grip the car showed in the session it is using (#558), 0–100 %, from the
+    /// G the logger recorded.
+    case gripUsed
     case speed
     case heading
     case lap
@@ -107,6 +110,7 @@ public enum ChannelRole: Hashable, Sendable, Codable {
         case .gpsDelay: "gpsDelay"
         case .accuracy: "accuracy"
         case .gpsRate: "gpsRate"
+        case .gripUsed: "gripUsed"
         case .speed: "speed"
         case .heading: "heading"
         case .lap: "lap"
@@ -200,6 +204,7 @@ extension ChannelRole {
         case .gpsDelay: "GPS delay"
         case .accuracy: "GPS accuracy"
         case .gpsRate: "GPS rate"
+        case .gripUsed: "Grip used"
         case .speed: "Speed"
         case .heading: "Heading"
         case .lap: "Lap"
@@ -258,7 +263,8 @@ extension ChannelRole {
     public static let standardRoles: [ChannelRole] = [
         .time, .latitude, .longitude, .altitude, .gpsUpdate, .gpsDelay, .accuracy, .gpsRate, .speed, .heading, .lap,
         .distance, .rpm, .gear, .throttle, .brake, .longitudinalG, .lateralG, .lapDelta, .speedDelta,
-        .projectedLap, .brakePressureFront, .brakePressureRear, .oilPressure, .oilTemperature, .coolantTemperature,
+        .projectedLap, .gripUsed, .brakePressureFront, .brakePressureRear, .oilPressure, .oilTemperature,
+        .coolantTemperature,
         .intakeTemperature, .exhaustTemperature, .boostPressure, .steeringAngle, .clutch, .leanAngle,
         .airFuelRatio, .fuelLevel, .batteryVoltage, .engineLoad,
         .absActive, .tractionControlActive, .pitLimiter,
