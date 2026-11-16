@@ -125,6 +125,7 @@ struct LogbookDetail: View {
     var debrief: () -> Void = {}
     /// The session's laps raced round the circuit in 3D (#415).
     var replay: () -> Void = {}
+    var analyse: () -> Void = {}
     var exportTelemetry: () -> Void = {}
     let addToProject: () -> Void
     let remove: () -> Void
@@ -309,6 +310,12 @@ struct LogbookDetail: View {
                 Button("Replay…", action: replay)
                     .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
                     .accessibilityIdentifier("logbook.replay")
+                Button("Analyse Laps…", action: analyse)
+                    .help(
+                        "Lay up to four laps over each other: delta-T, speed, any channel, the map and the "
+                            + "friction circle"
+                    )
+                    .accessibilityIdentifier("logbook.analyse")
                 Button("Export Telemetry…", action: exportTelemetry)
                     .help("Write the session or one lap as CSV, GPX, KML or VBO for another app")
                     .accessibilityIdentifier("logbook.exportTelemetry")

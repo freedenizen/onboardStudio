@@ -22,6 +22,7 @@ struct LogbookCommandContext {
     var addToProject: (LogbookEntry) -> Void
     var coach: (LogbookEntry) -> Void
     var replay: (LogbookEntry) -> Void
+    var analyse: (LogbookEntry) -> Void
     var exportTelemetry: (LogbookEntry) -> Void
     var compare: (LogbookEntry, LogbookEntry) -> Void
     var debrief: (LogbookEntry) -> Void
@@ -144,6 +145,8 @@ private struct SessionMenuItems: View {
             .disabled(session == nil)
         // No key: ⌃⌘R opens the Replay window from the Window menu.
         Button("Replay…") { act { logbook?.replay($0) } }
+            .disabled(session == nil)
+        Button("Analyse Laps…") { act { logbook?.analyse($0) } }
             .disabled(session == nil)
         Button("Export Telemetry…") { act { logbook?.exportTelemetry($0) } }
             .disabled(session == nil)

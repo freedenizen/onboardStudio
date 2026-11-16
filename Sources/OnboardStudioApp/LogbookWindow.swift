@@ -432,6 +432,7 @@ struct LogbookWindow: View {
                 model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)
             },
             replay: { ReplayWindow.open(openWindow, entry: entry) },
+            analyse: { AnalysisWindow.open(openWindow, entry: entry) },
             exportTelemetry: { exportingTelemetry = entry },
             addToProject: { addToCurrentProject(entry) },
             remove: { remove([entry.id]) },
