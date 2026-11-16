@@ -203,7 +203,9 @@ extension GPSQuality {
     public static func rateChannel(latitude: Channel, longitude: Channel) -> Channel? {
         let times = fixes(latitude: latitude, longitude: longitude).map(\.time)
         guard let first = times.first, let last = times.last, last - first > 1 else { return nil }
-        let step = 0.1
+        // A tenth of a second, but never more than a few readings a position: a corrupt time an
+        // age away from the rest must not ask for billions of them.
+        let step = max(0.1, (last - first) / Double(4 * times.count))
         let count = Int(((last - first - 1) / step).rounded(.down)) + 1
         var grid: [Double] = []
         var values: [Double] = []
