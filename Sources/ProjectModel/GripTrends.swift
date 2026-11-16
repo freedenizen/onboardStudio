@@ -16,11 +16,14 @@ public enum GripTrends {
         public var gaps: Int
     }
 
-    /// The sessions at `circuitKey` (in `car`, when given) whose grip was read, oldest first.
+    /// The sessions at `circuitKey` (in `car`, when given) whose grip was read, oldest first. Each
+    /// car's grip is learned from `learningFrom` — every session, though Trends shows only those
+    /// its filters leave (#559) — or from `entries` without it.
     public static func points(
         for entries: [LogbookEntry], circuitKey: String, car: String? = nil, cars: [Car] = [],
-        options: GripUse.Options = .init()
+        learningFrom all: [LogbookEntry]? = nil, options: GripUse.Options = .init()
     ) -> [Point] {
+        let learning = all ?? entries
         guard !circuitKey.isEmpty else { return [] }
         return entries.filter { entry in
             LogbookFilter.circuitKey(of: entry) == circuitKey
@@ -29,7 +32,7 @@ public enum GripTrends {
         .sorted { ($0.date ?? $0.added) < ($1.date ?? $1.added) }
         .compactMap { entry in
             let adjustment = Garage.car(named: entry.car, in: cars)?.gripAdjustment ?? 1
-            guard let limit = CarGrip.limit(for: entry, among: entries, adjustment: adjustment),
+            guard let limit = CarGrip.limit(for: entry, among: learning, adjustment: adjustment),
                 let use = entry.gripUse(against: limit)
             else { return nil }
             return Point(
