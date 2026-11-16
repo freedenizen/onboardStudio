@@ -37,6 +37,7 @@ extension LogbookWindow {
             Button("New Project from Session") { newProject(fromSession: entry, template: LogbookModel.lastTemplate()) }
             Button("Coach…") { coach(entry) }
             Button("Replay…") { ReplayWindow.open(openWindow, entry: entry) }
+            Button("Analyse Laps…") { AnalysisWindow.open(openWindow, entry: entry) }
             Button("Show in Finder") {
                 if let url = entry.resolveFile() { NSWorkspace.shared.activateFileViewerSelecting([url]) }
             }

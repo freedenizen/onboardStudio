@@ -73,6 +73,11 @@ struct OnboardStudioApp: App {
             CoachingWindow()
         }
         .defaultSize(width: 1000, height: 640)
+        // Laps as data (#556): delta-T, traces, map and friction circle, one cursor across them.
+        Window("Analysis", id: AnalysisWindow.windowID) {
+            AnalysisWindow()
+        }
+        .defaultSize(width: 1180, height: 760)
         // Laps raced round the circuit in 3D (#415); ⌃⌘R, as Coaching is ⌃⌘C.
         Window("Replay", id: ReplayWindow.windowID) {
             ReplayWindow()

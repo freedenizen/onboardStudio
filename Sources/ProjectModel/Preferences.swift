@@ -88,6 +88,11 @@ public enum Preferences {
     /// `ColorRamp.preferenceText`. Empty is `ColorRamp.standard`.
     public static let mapColorRamp = Preference(key: "mapColorRamp", unset: "")
 
+    // MARK: - Analysis
+
+    /// The Analysis view's panels (#556), as `AnalysisLayout.preferenceText`. Empty is the standard.
+    public static let analysisLayout = Preference(key: "analysisLayout", unset: "")
+
     // MARK: - Editing
 
     /// How far one arrow-key press moves the selected object, in pixels of the exported frame.
@@ -124,7 +129,7 @@ public enum Preferences {
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
         logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
-        mapColorRamp.key,
+        mapColorRamp.key, analysisLayout.key,
     ]
 }
 

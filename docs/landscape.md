@@ -239,6 +239,7 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
   (built: *Laps that don't count* in the guide; the video still counts every lap)
 - #555 how good the GPS data is, and how far its brake points can be trusted
 - #556 laps as data without building a video: linked traces, delta-T, map and picture
+  (built: the Analysis window; Coaching's Data tab, a Logbook view and the picture next)
 - #557 a session's lap table: sector splits per lap, best sectors, speeds — *shipped*
 - #558 grip use: combined braking and turning, time near the limit, and its trend
 - #559 judging a tyre, pressure or setup change: structured pressures, Trends split by conditions
