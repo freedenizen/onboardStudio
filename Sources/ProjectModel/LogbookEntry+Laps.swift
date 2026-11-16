@@ -48,6 +48,7 @@ extension LogbookEntry {
         lapMeasurement = Self.lapMeasurement
         applyPenalties()
         readSplits(of: session)
+        readGPS(of: session)
         readCorners(of: session)
         readPerformance(of: session)
     }

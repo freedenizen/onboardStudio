@@ -40,6 +40,11 @@ logbooks first and analysers second.
   reads 0, and the Logbook reads its file for them the first time the session is shown
   (`LogbookModel.readSplits`), with no step of Undo, because they are the file's numbers and not
   an edit;
+- **the GPS** — `gps`, what `GPSQuality` made of the file's positions (#555,
+  `LogbookEntry+GPS.swift`): the rating's findings, the rate, dropouts, jumps, the logged
+  accuracy, HDOP and satellites and the distance precision. `gpsMeasurement` says which reading it
+  is from; an entry from before #555 reads 0 and is read the first time the session is shown, as
+  its splits are. A file without positions keeps no `gps` but is still marked read;
 - **words** — notes and tags now; weather, track condition, temperature, tyres and setup come with
   #348, as optional keys the decoder already tolerates;
 - **the projects** made from it, by path and name (#349 fills them in);

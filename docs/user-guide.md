@@ -365,6 +365,18 @@ choose it, with a line under the laps while that happens. If the file has moved,
 are listed without them. Runs on a point-to-point course keep their list of cones and DNFs
 ([Runs and courses](#runs-and-courses)) and show no sector table.
 
+### How good a session's GPS is
+
+The Logbook's **GPS** column rates every session's positions: a seal for **Good**, a warning
+triangle for **Fair**, a stop sign for **Poor**. Hover over it for what was measured and what
+counts against it. Choosing the session shows the same under its numbers, beside **GPS**, as the
+import report does ([How good the GPS is](#what-the-import-read)): positions a second, the logger's
+accuracy, HDOP and satellites, how close a distance read from them can be, and a sentence for each
+dropout, jump, poor figure or missed start/finish line. When you add files, a session whose GPS is
+fair or poor says so in its line of the report (*added: Sonoma, 12 laps, best 1:56.88, GPS poor*).
+A session added before the Logbook judged GPS shows a dash until you choose it, when its file is
+read once; sort the column to bring the poor ones together.
+
 ### What you can do with a session
 
 What can be done with the session stays at the foot of its detail, in view however many laps are

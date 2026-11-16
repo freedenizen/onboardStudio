@@ -11,5 +11,11 @@ quoted brake points to the metre from either, so a driver could not tell a fact 
    lap about twice the usual length because the start/finish line was missed.
 3. Add a gauge or graph and choose **GPS rate** as its channel to watch the rate through the lap;
    it reads zero through a dropout.
+4. Add files to the Logbook: a file whose GPS is fair or poor says so in its line of the report
+   (*added: Sonoma, 4 laps, best 0:41.20, GPS fair*).
+5. In the Logbook, the **GPS** column shows each session's rating, with the reasons in its help
+   tag; choose a session and its details say the same beside **GPS**.
 
-Tests: `GPSQualityUITests.testTheImportReportSaysHowGoodTheGPSIs`. Model: `GPSQualityTests`.
+Tests: `GPSQualityUITests.testTheImportReportSaysHowGoodTheGPSIs`,
+`GPSQualityUITests.testTheLogbookSaysHowGoodEachSessionsGPSIs`. Model: `GPSQualityTests`,
+`LogbookGPSTests`, `TrackDayImportGPSTests`.
