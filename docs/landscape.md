@@ -246,7 +246,7 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 - #560 weather filled in from the session's time and place (the first network read for analysis)
 - #561 the track line coloured by any channel — *shipped*
 - #562 a second logger (an ECU CSV) lined up with the first by a shared channel
-- #563 a lap or session's telemetry exported as CSV, GPX, KML or VBO
+- #563 a lap or session's telemetry exported as CSV, GPX, KML or VBO — *shipped*
 
 **Not filed**
 

@@ -125,6 +125,7 @@ struct LogbookDetail: View {
     var debrief: () -> Void = {}
     /// The session's laps raced round the circuit in 3D (#415).
     var replay: () -> Void = {}
+    var exportTelemetry: () -> Void = {}
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
@@ -308,6 +309,9 @@ struct LogbookDetail: View {
                 Button("Replay…", action: replay)
                     .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
                     .accessibilityIdentifier("logbook.replay")
+                Button("Export Telemetry…", action: exportTelemetry)
+                    .help("Write the session or one lap as CSV, GPX, KML or VBO for another app")
+                    .accessibilityIdentifier("logbook.exportTelemetry")
                 Menu("Compare With") {
                     ForEach(comparisons, id: \.entry.id) { choice in
                         Button(choice.title) { compare(choice.entry) }

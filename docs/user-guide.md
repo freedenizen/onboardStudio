@@ -480,6 +480,19 @@ With no project in front, the project's own menus — Project, Arrange, Marker, 
 and their keys are left alone, so Space, Delete and the letters do nothing unexpected in the
 Logbook. **Help ▸ Keyboard Shortcuts** lists the Logbook's keys with the rest.
 
+### A session's telemetry, for another app
+
+**Export Telemetry…** on a session (in its detail, on its right-click menu and in the session
+menu) writes the session, or one lap of it — the best lap to begin with — in an open format another
+app reads: **CSV** with every channel the file has, each column named with its unit, the time from
+the session's start, the time of day when the file knows its clock, and the lap; **GPX** with the
+path, times, height and speed, a segment per lap; **KML** with a line per lap for Google Earth; or
+**VBO** for Racelogic's Circuit Tools and other lap timers, with the start/finish line when the
+session has one. What is written is the session as the app reads it, its trim, laps and line
+included; the app's own readings — the delta to the best lap, the projected lap time, the GPS rate —
+are left out. A file that never knew its clock is written without a date rather than with one made
+up. From Terminal, `onboard export-data <file> --format gpx --lap best` does the same.
+
 ### Taking the logbook with you
 
 The toolbar's **Export or Import** menu takes the logbook with you: **Export Logbook…** writes a

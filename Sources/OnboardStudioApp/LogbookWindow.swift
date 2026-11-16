@@ -223,6 +223,8 @@ struct LogbookWindow: View {
     @AppStorage(Preferences.logbookTourSeen.key) private var tourSeen = false
     /// What the last export or import did, under the table (#350).
     @State var message: String?
+    /// The session Export Telemetry… is writing (#563).
+    @State var exportingTelemetry: LogbookEntry?
     /// Files are being dragged over the window (#468).
     @State var isDropTarget = false
     @Environment(\.openWindow) var openWindow
@@ -257,6 +259,9 @@ struct LogbookWindow: View {
             )
             .modifier(carSheets)
             .sheet(item: $model.turnNaming) { request in turnNamingSheet(request) }
+            .sheet(item: $exportingTelemetry) { entry in
+                ExportTelemetrySheet(entry: entry) { message = $0 }
+            }
             .onAppear {
                 model.reload()
                 // Once, as the editor's is: the app opens here (#452).
@@ -427,6 +432,7 @@ struct LogbookWindow: View {
                 model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)
             },
             replay: { ReplayWindow.open(openWindow, entry: entry) },
+            exportTelemetry: { exportingTelemetry = entry },
             addToProject: { addToCurrentProject(entry) },
             remove: { remove([entry.id]) },
             save: { model.save($0, undo: undoManager) },
