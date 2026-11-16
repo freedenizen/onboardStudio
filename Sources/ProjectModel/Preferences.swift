@@ -88,6 +88,12 @@ public enum Preferences {
     /// `ColorRamp.preferenceText`. Empty is `ColorRamp.standard`.
     public static let mapColorRamp = Preference(key: "mapColorRamp", unset: "")
 
+    // MARK: - Setups
+
+    /// The unit tyre pressures are typed and read in on a setup sheet (#559), as a
+    /// `SetupUnits.Pressure` raw value. Empty follows the speed: psi with miles an hour, else bar.
+    public static let setupPressureUnit = Preference(key: "setupPressureUnit", unset: "")
+
     // MARK: - Editing
 
     /// How far one arrow-key press moves the selected object, in pixels of the exported frame.
@@ -125,7 +131,7 @@ public enum Preferences {
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
         logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
-        mapColorRamp.key,
+        mapColorRamp.key, setupPressureUnit.key,
     ]
 }
 

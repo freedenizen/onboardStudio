@@ -164,6 +164,21 @@ Return or losing focus, never per keystroke. `summary` is the table's column and
 future "what the day was like". These are library files, not a document, so the edits are not
 undoable, as the track definitions' are not.
 
+**The setup sheet (#559).** `SetupSheet` (`ProjectModel/SetupSheet.swift`) sits on the conditions
+as `sheet`, beside the free-text `tyres` (the tyre set) and `setup` (what was changed, shown as
+*Changes*): pressures at each corner cold, hot and bled in kPa, camber in degrees, toe per axle in
+its own `toeUnit` (mm, in or °, none converting to another without the wheel's size), ride height
+in mm, bump and rebound clicks, bars and wing as words, and `name`, the saved setup it was loaded
+from. Pressures typed in psi or bar are kept to a tenth of a kPa, so the same pressure typed twice
+is the same value. A conditions block with no sheet is written without the key, as an earlier build
+wrote it. `SetupItem` lists every value with its title, text and comparison key — what Trends will
+split sessions by. Saved setups live on the garage's `Car` (`setups`, `startingSetupID`);
+`Logbook.applyStartingSetup` puts the starting one on a new session that notes no tyres and no
+setup, at import (`TrackDayImport`), on entering a project's session (`ProjectLogbook.enter`) and on
+**Set Car** for an import's days. A car with setups is not tidied out of the garage, and a rename
+that makes two cars one keeps both cars' setups. The pressure unit is
+`Preferences.setupPressureUnit` (empty follows the speed: psi with mph, else bar).
+
 ## Projects and the logbook (#349)
 
 `ProjectLogbook` (`MediaKit/ProjectLogbook.swift`) and `EditorModel+Logbook.swift`. A data file

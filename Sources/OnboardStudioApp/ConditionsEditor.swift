@@ -11,7 +11,13 @@ struct ConditionsEditor: View {
     let identity: UUID
     let conditions: SessionConditions
     let notes: String
+    /// The car whose setups the sheet offers (#559).
+    let car: String
+    /// What the setup sheet is of, for its explanation.
+    let subject: String
     let save: (SessionConditions, String) -> Void
+    @State private var editingSetup = false
+    @Environment(\.undoManager) private var undoManager
     @State private var temperature = ""
     @State private var tyres = ""
     @State private var setup = ""
@@ -25,6 +31,8 @@ struct ConditionsEditor: View {
         identity = entry.id
         conditions = entry.conditions
         notes = entry.notes
+        car = entry.car
+        subject = "The setup for this session"
         self.save = { conditions, notes in
             var changed = entry
             changed.conditions = conditions
@@ -38,6 +46,8 @@ struct ConditionsEditor: View {
         identity = day.id
         conditions = day.conditions
         notes = day.notes
+        car = day.car
+        subject = "The day's setup, which a session added to the day starts with"
         self.save = { conditions, notes in
             var changed = day
             changed.conditions = conditions
@@ -91,6 +101,10 @@ struct ConditionsEditor: View {
                 }
                 GridRow {
                     Text("Setup").foregroundStyle(.secondary)
+                    setupSummary
+                }
+                GridRow {
+                    Text("Changes").foregroundStyle(.secondary)
                     TextField("What was changed", text: $setup, axis: .vertical).lineLimit(1...3)
                         .focused($focus, equals: .setup)
                         .onSubmit(commit)
@@ -106,7 +120,28 @@ struct ConditionsEditor: View {
         }
         .onAppear(perform: load)
         .onChange(of: identity) { load() }
+        // The sheet's Tyres line is this one.
+        .onChange(of: conditions.tyres) { if focus != .tyres { tyres = conditions.tyres } }
+        .sheet(isPresented: $editingSetup) {
+            SetupSheetEditor(
+                subject: subject, car: car, conditions: conditions, undoManager: undoManager
+            ) { save($0, notes) }
+        }
         .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
+    }
+
+    /// What the sheet notes, and the way to it.
+    private var setupSummary: some View {
+        HStack(spacing: 8) {
+            let summary = conditions.sheet.summary(units: .app)
+            Text(summary.isEmpty ? "Not noted" : summary)
+                .foregroundStyle(summary.isEmpty ? .tertiary : .secondary)
+                .lineLimit(1).truncationMode(.tail)
+                .accessibilityIdentifier("logbook.setupSummary")
+            Button("Edit Setup…") { editingSetup = true }
+                .help("Pressures, alignment, dampers, bars and wing, and the setups kept with the car")
+                .accessibilityIdentifier("logbook.editSetup")
+        }
     }
 
     private func binding<Value>(_ keyPath: WritableKeyPath<SessionConditions, Value>) -> Binding<Value> {
