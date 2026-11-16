@@ -1608,6 +1608,24 @@ kink few of the session's laps find no longer counted as a corner (#585), a bend
 through counted though the best lap smoothed it (#598) — so a fixed reading
 reaches sessions already in the logbook.
 
+#### Did a change help: filters and Before and After
+
+When the sessions at the circuit noted different **Tyres**, [setups](#the-setup-sheet), surfaces or
+weather, a pop-up for each sits under the summary — *Every Set*, *Every Setup*, *Every Surface*,
+*Any Weather* — and choosing one narrows every chart and table to the sessions driven that way;
+**Show All** puts the rest back.
+
+**Before and after**, below the corners, compares two ways of driving the sessions that are left.
+**Compare by** offers each thing they differ by: the tyre set, the setup, the surface, the weather,
+or any one value of the setup sheet, such as *Cold Pressure, Rear Left*. **Before** and **After**
+start on the last two values you drove. It reads the two sides as a sentence (*Soft rear: each
+session's best averaged 0.20 s quicker than Base (1 session against 2)*), then a table of sessions,
+each session's best averaged, the best, the optimal and the lap spread, then which sectors and
+which corners were quicker and slower, with each corner's minimum speed and time against the
+other side — a gain in one corner is often given back in another. It warns when the difference
+may not be the change: one session on a side, or every session of one side on another surface,
+tyre set or in other weather.
+
 ### Performance in Trends
 
 When any session in the logbook has [performance runs](#performance-runs-060-the-quarter-mile-and-stops),
