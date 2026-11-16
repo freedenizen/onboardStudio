@@ -237,7 +237,7 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 - #553 performance runs from a standstill: 0–60, ¼ mile, trap speed, braking distance — *shipped*
 - #554 a lap that should not count (traffic, a flag, an off), and which laps an optimal lap came from
   (built: *Laps that don't count* in the guide; the video still counts every lap)
-- #555 how good the GPS data is, and how far its brake points can be trusted
+- #555 how good the GPS data is, and how far its brake points can be trusted — *shipped*
 - #556 laps as data without building a video: linked traces, delta-T, map and picture
 - #557 a session's lap table: sector splits per lap, best sectors, speeds — *shipped*
 - #558 grip use: combined braking and turning, time near the limit, and its trend

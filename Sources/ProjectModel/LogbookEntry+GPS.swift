@@ -18,5 +18,5 @@ extension LogbookEntry {
     }
 
     /// For sorting by the GPS column: good first, a session not yet judged last.
-    public var gpsRank: Int { gps.map(\.rating.rawValue) ?? (needsGPSReading ? 4 : 3) }
+    public var gpsRank: Int { gps.map { $0.rated(with: .app).rating.rawValue } ?? (needsGPSReading ? 4 : 3) }
 }

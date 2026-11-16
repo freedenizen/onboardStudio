@@ -194,7 +194,7 @@ struct LogbookDetail: View {
                         "\(entry.completeLapCount) \(entry.isRuns ? "finished" : "complete") of \(entry.laps.count)",
                         identifier: "logbook.detail.laps")
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
-                    if let gps = entry.gps { GPSQualityGridRow(gps: gps) }
+                    if let gps = entry.gps { GPSQualityGridRow(measured: gps) }
                 }
                 .font(.callout)
                 if entry.isRuns, !entry.laps.isEmpty {
