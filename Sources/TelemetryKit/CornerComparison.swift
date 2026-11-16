@@ -21,6 +21,9 @@ public struct CornerComparison: Sendable, Equatable, Codable {
     /// The traffic mark covering the corner on either lap (#571); such a corner is no
     /// opportunity and says nothing about consistency.
     public var traffic: CornerTraffic?
+    /// No position arrived somewhere through the corner on either lap (#555): its brake point is
+    /// not read.
+    public var gpsGap = false
     /// What the telemetry suggests may have been traffic in the corner on the lap (#572), when it
     /// is not marked. Only a suggestion: the corner is coached as any other.
     public var suggestion: TrafficSuggestion?

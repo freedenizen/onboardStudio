@@ -48,7 +48,7 @@ struct ImportReportTable: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if let gps {
                 VStack(spacing: 0) {
-                    GPSQualityView(quality: gps)
+                    GPSQualityView(measured: gps)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                         .padding(.vertical, rowInset * 2)

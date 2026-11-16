@@ -377,6 +377,13 @@ fair or poor says so in its line of the report (*added: Sonoma, 12 laps, best 1:
 A session added before the Logbook judged GPS shows a dash until you choose it, when its file is
 read once; sort the column to bring the poor ones together.
 
+**The thresholds are yours.** **Settings ▸ GPS Quality** sets what counts as good and poor:
+positions a second (good from 10, poor below 5), how long a dropout makes the data poor (3 s), how
+many jumps (5), the logger's accuracy (good within 2 m, poor beyond 5 m), HDOP (good up to 1.5,
+poor above 3) and satellites (good from 8, poor below 5). Between good and poor is fair. Changing
+one re-rates every session in the Logbook and the import report at once, without reading a file
+again; **Restore Default Thresholds** puts them back.
+
 ### What you can do with a session
 
 What can be done with the session stays at the foot of its detail, in view however many laps are
@@ -1315,6 +1322,16 @@ cards, their advice in full: which turn, how much time and in which phase (braki
 0.49 s longer") and what to try next time, phrased as an experiment. A corner you drive
 differently every lap is told so, and asked for the same brake point first. **Show Me** puts the
 playhead where that corner's braking began on the lap being read, so the preview shows it.
+
+**As close as the GPS allows.** Coaching says a distance only as closely as the session's
+positions can place it ([How good the GPS is](#what-the-import-read)). From a logger that gives
+10 or more good positions a second the notes are to the metre. From a phone logging once a second
+they read "Braked ≈ 25 m earlier than your best lap", with a line saying distances are to the
+nearest 25 m and why. A brake point, slowest point or throttle pick-up closer to the reference's
+than that is not called earlier or later at all. A corner a GPS dropout runs through, on your lap
+or the reference, gets no brake-point note ("No brake point: the GPS dropped out through this
+corner"); its time lost is still counted. A project saved by an earlier build keeps its notes, and
+its Corner Callouts, to the metre.
 
 Every corner is in the table below, sortable by any column: time lost, the phase, and how the
 brake point, minimum speed and where it fell, exit speed and throttle pick-up compare with the

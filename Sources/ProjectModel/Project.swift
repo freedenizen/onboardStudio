@@ -89,7 +89,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 6
+    public static let currentSchemaVersion = 7
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -247,6 +247,12 @@ public struct Project: Hashable, Codable, Sendable {
             // corner most laps found and the reference lap drove through was not one.
             onEveryDataInput { $0.legacyCornersOnlyDropped = true }
             schemaVersion = 6
+        }
+        if schemaVersion < 7 {
+            // 6 → 7 (#555): coaching gave distances to the metre whatever the GPS, and read brake
+            // points through a dropout.
+            onEveryDataInput { $0.legacyExactDistances = true }
+            schemaVersion = 7
         }
         schemaVersion = Self.currentSchemaVersion
     }

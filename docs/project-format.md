@@ -90,6 +90,11 @@ resolves to the old values.
   given `legacyCornersOnlyDropped` true, so its corners stay as they were; one older still has
   `legacyCornersPerLap` from schema 5's step, which reads every corner as the reference lap finds
   it.
+- **Schema 7 (#555).** Coaching says a distance only as closely as the session's GPS can place it
+  ("≈ 25 m" from a phone logging once a second), judges no difference finer than that, and reads
+  no brake point in a corner a GPS dropout runs through. Corner Callouts draw those notes into
+  the video, so every data input of a project at schema 6 or earlier is given
+  `legacyExactDistances` true, and its callouts keep their distances to the metre.
 
 ### This covers `project.json` only
 
@@ -210,7 +215,7 @@ those builds did. A file that recorded mph or km/h is shown in its own unit eith
 |---|---|
 | `id` | UUID, referenced by display objects |
 | `source.path` | file path, relative to the package or absolute |
-| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … , "logbookEntryID": <uuid> } } }` — `logbookEntryID` (optional, #349) is the logbook entry the file was entered as when it was added; absent before the logbook existed or with the preference off; bookkeeping that changes no render. `legacyFirstLap` (always written, #477): `true` on the inputs of a project saved before schema 4, whose first lap is read as those builds read it; `false` on every input added since. `legacyCornersPerLap` (always written, #585): `true` on the inputs of a project saved before schema 5, which number every corner the reference lap finds; `false` on every input added since, which number only the corners most of the session's laps agree on. `legacyCornersOnlyDropped` (always written, #598): `true` on the inputs of a project saved at schema 5, whose laps only take corners away from the reference lap; `false` on every input since, which also gain a corner most laps find and the reference lap drove through |
+| `kind` | `{ "video": { "_0": { "trim": {…}, "includeAudio": true } } }`, `{ "audio": {} }`, `{ "image": {} }`, or `{ "data": { "_0": { "importerID": null, "roleOverrides": {}, … , "logbookEntryID": <uuid> } } }` — `logbookEntryID` (optional, #349) is the logbook entry the file was entered as when it was added; absent before the logbook existed or with the preference off; bookkeeping that changes no render. `legacyFirstLap` (always written, #477): `true` on the inputs of a project saved before schema 4, whose first lap is read as those builds read it; `false` on every input added since. `legacyCornersPerLap` (always written, #585): `true` on the inputs of a project saved before schema 5, which number every corner the reference lap finds; `false` on every input added since, which number only the corners most of the session's laps agree on. `legacyCornersOnlyDropped` (always written, #598): `true` on the inputs of a project saved at schema 5, whose laps only take corners away from the reference lap; `false` on every input since, which also gain a corner most laps find and the reference lap drove through. `legacyExactDistances` (always written, #555): `true` on the inputs of a project saved at schema 6 or earlier, whose coaching says distances to the metre whatever the GPS; `false` on every input since |
 | `sync` | `startPositionInInput`, `offsetInProject`, `playSpeed` — `inputTime = (t − offsetInProject) × playSpeed + startPositionInInput` |
 
 Data input settings (all optional):
