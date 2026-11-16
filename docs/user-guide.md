@@ -1542,6 +1542,26 @@ and **Free** (drag to orbit, scroll or pinch to zoom; keys 1–5). **Go to Turn 
 before a corner, the scrubber and ← → step through the lap, **Speed** slows or quickens the
 replay.
 
+### Laps as data: the Analysis window
+
+Select a session in the **Logbook** and **Analyse Laps…** (also on the row's right-click menu and
+in the session menu), or choose **Window ▸ Analysis** for the project in front. The session's
+quickest lap is the **reference** and its next quickest is laid over it; tick up to four laps in the
+list, from this session, the project's other data files or the Logbook's other sessions at the
+circuit, and **Make Reference** on a lap's right-click menu reads the others against it.
+
+Every panel is drawn against distance into the reference lap, a slightly longer or shorter lap
+stretched to it so a corner is in the same place on each. **Delta-T** is how far each lap is behind
+the reference (above the line slower, below quicker); **Speed** is in the app's speed unit; under
+it are the channels from **Panels ▸ Add Trace**: throttle and brake to begin with, and any channel
+the logger recorded, such as RPM, steering or an oil pressure. Move the pointer over a trace and a
+cursor moves on all of them, each lap's car moves on the **track map** and in the **friction
+circle** (lateral against longitudinal G, rings every 0.5 G), and the line above reads each lap's
+time there, its gap to the reference and its speed. Click a corner on the map, or choose one from
+**Go to Corner**, and the traces zoom to it, from the braking into it to the drive out; **Whole
+Lap** shows the whole lap again. **Panels** also hides delta-T, speed, the map or the friction
+circle and makes the traces taller or shorter; the window opens laid out the same way next time.
+
 ## 5. Your progress
 
 Every session in the Logbook counts towards these; nothing has to be set up. They are views of the

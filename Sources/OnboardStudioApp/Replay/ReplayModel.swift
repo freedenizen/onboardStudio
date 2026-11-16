@@ -116,7 +116,7 @@ struct ReplayHUD: Equatable {
         }
         let key = LogbookReferences.circuitKey(for: input, session: session, entries: LogbookModel.shared.entries)
         let own = input.dataSettings?.logbookEntryID.flatMap { id in LogbookModel.shared.entries.first { $0.id == id } }
-        groups += logbookGroups(at: key, excluding: own?.file.contentHash)
+        groups += Self.logbookGroups(at: key, excluding: own?.file.contentHash)
         self.groups = groups
         chooseDefaults()
     }
@@ -142,7 +142,7 @@ struct ReplayHUD: Equatable {
                     id: entry.id.uuidString, title: entry.title, subtitle: Self.subtitle(of: entry), session: session,
                     entry: entry, isHome: true)
             ]
-            groups += logbookGroups(at: key, excluding: entry.file.contentHash)
+            groups += Self.logbookGroups(at: key, excluding: entry.file.contentHash)
             self.groups = groups
             isLoading = false
             chooseDefaults()
@@ -162,8 +162,9 @@ struct ReplayHUD: Equatable {
         generation += 1
     }
 
-    /// The logbook's other sessions at the circuit, their laps from the entries until read in.
-    private func logbookGroups(at circuitKey: String, excluding ownHash: String?) -> [ReplaySessionGroup] {
+    /// The logbook's other sessions at the circuit, their laps from the entries until read in; the
+    /// Analysis window offers the same (#556).
+    static func logbookGroups(at circuitKey: String, excluding ownHash: String?) -> [ReplaySessionGroup] {
         LogbookReferences.sessions(at: circuitKey, in: LogbookModel.shared.entries, excluding: ownHash).map { entry in
             let choices = entry.laps.filter(\.isComplete).map { lap in
                 ReplayLapChoice(
@@ -177,7 +178,7 @@ struct ReplayHUD: Equatable {
         }
     }
 
-    private static func group(
+    static func group(
         id: String, title: String, subtitle: String, session: TelemetrySession, entry: LogbookEntry? = nil, isHome: Bool
     ) -> ReplaySessionGroup {
         let choices = completeLaps(of: session).map { lap in

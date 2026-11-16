@@ -125,6 +125,7 @@ struct LogbookDetail: View {
     var debrief: () -> Void = {}
     /// The session's laps raced round the circuit in 3D (#415).
     var replay: () -> Void = {}
+    var analyse: () -> Void = {}
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
@@ -308,6 +309,12 @@ struct LogbookDetail: View {
                 Button("Replay…", action: replay)
                     .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
                     .accessibilityIdentifier("logbook.replay")
+                Button("Analyse Laps…", action: analyse)
+                    .help(
+                        "Lay up to four laps over each other: delta-T, speed, any channel, the map and the "
+                            + "friction circle"
+                    )
+                    .accessibilityIdentifier("logbook.analyse")
                 Menu("Compare With") {
                     ForEach(comparisons, id: \.entry.id) { choice in
                         Button(choice.title) { compare(choice.entry) }
