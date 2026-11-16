@@ -29,6 +29,9 @@ import TelemetryKit
         }
     }
     private var generation = 0
+    /// The home session's laps to begin with, in order, when they are known: Coaching's reference
+    /// and lap. Empty is the quickest two.
+    private var preferredLaps: [Int] = []
 
     init() {
         layout = AnalysisLayout(preferenceText: UserDefaults.standard.value(for: Preferences.analysisLayout))
@@ -41,9 +44,10 @@ import TelemetryKit
 
     /// The front project's session with laps, its other data files beside it, and the logbook's
     /// other sessions at the circuit.
-    func showFrontProject(editor: EditorModel?) {
+    func showFrontProject(editor: EditorModel?, laps: [Int] = []) {
         kind = .frontProject
         reset()
+        preferredLaps = laps
         guard let editor, let input = editor.lapInput, let session = editor.sessions[input.id] else {
             problem = editor == nil ? nil : "The project has no data file with laps."
             return
@@ -67,10 +71,14 @@ import TelemetryKit
     }
 
     /// A logbook session, read in on demand, the logbook's other sessions at its circuit beside it.
-    func show(entry: LogbookEntry) {
-        if case .logbook(let id) = kind, id == entry.id, !groups.isEmpty { return }
+    func show(entry: LogbookEntry, laps: [Int] = []) {
+        if case .logbook(let id) = kind, id == entry.id, !groups.isEmpty {
+            if !laps.isEmpty, laps != preferredLaps { choose(laps) }
+            return
+        }
         kind = .logbook(entry.id)
         reset()
+        preferredLaps = laps
         isLoading = true
         let key = LogbookFilter.circuitKey(of: entry)
         Task { @MainActor in
@@ -103,11 +111,21 @@ import TelemetryKit
         generation += 1
     }
 
-    /// The home session's best lap as the reference, and its next quickest against it.
+    /// The laps asked for, else the home session's best lap as the reference and its next quickest
+    /// against it.
     private func chooseDefaults() {
         guard let home = groups.first(where: \.isHome) else { return }
-        chosen = home.choices.sorted { ($0.seconds ?? .infinity) < ($1.seconds ?? .infinity) }.prefix(2).map(\.id)
+        let asked = preferredLaps.compactMap { number in home.choices.first { $0.number == number }?.id }
+        let quickest = home.choices.sorted { ($0.seconds ?? .infinity) < ($1.seconds ?? .infinity) }.prefix(2)
+        chosen =
+            asked.isEmpty ? quickest.map(\.id) : Array(NSOrderedSet(array: asked).array.compactMap { $0 as? String })
         rebuild()
+    }
+
+    /// The home session's laps `numbers`, in order, the first the reference.
+    func choose(_ numbers: [Int]) {
+        preferredLaps = numbers
+        chooseDefaults()
     }
 
     // MARK: - Choosing laps

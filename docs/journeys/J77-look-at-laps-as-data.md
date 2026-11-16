@@ -16,6 +16,10 @@ meant building a video.*
    the braking into it to the drive out; **Whole Lap** shows the lap again.
 5. **Panels** shows or hides delta-T, speed, the map and the friction circle, adds or removes
    traces, and makes them taller or shorter; the window opens the same way next time.
+6. The same view is in two more places: **Data** in the Coaching window's toolbar, which starts
+   on the coached lap against Coaching's reference, and **Analysis** in the Logbook (**View ▸
+   Analysis**, ⌘4), which shows the session selected under Sessions.
 
-Tests: `LapAnalysisUITests.testALogbookSessionsLapsAreLaidOverEachOther`. Model: `LapAnalysisTests`,
+Tests: `LapAnalysisUITests.testALogbookSessionsLapsAreLaidOverEachOther`,
+`LapAnalysisUITests.testCoachingAndTheLogbookShowTheLapsAsDataToo`. Model: `LapAnalysisTests`,
 `AnalysisLayoutTests`.

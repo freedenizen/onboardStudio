@@ -5,6 +5,8 @@ import TelemetryKit
 /// Which of its two faces the Coaching window shows (#458).
 enum CoachingMode: String, CaseIterable, Identifiable {
     case walkthrough, allCorners
+    /// The laps as data (#556): the Analysis view, on Coaching's laps.
+    case data
 
     var id: String { rawValue }
 
@@ -12,6 +14,7 @@ enum CoachingMode: String, CaseIterable, Identifiable {
         switch self {
         case .walkthrough: "Walkthrough"
         case .allCorners: "All Corners"
+        case .data: "Data"
         }
     }
 }

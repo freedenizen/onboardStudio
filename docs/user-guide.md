@@ -1529,6 +1529,11 @@ time there, its gap to the reference and its speed. Click a corner on the map, o
 Lap** shows the whole lap again. **Panels** also hides delta-T, speed, the map or the friction
 circle and makes the traces taller or shorter; the window opens laid out the same way next time.
 
+The same view is in two more places. In the **Coaching** window, **Data** beside *Walkthrough* and
+*All Corners* starts on the lap being coached against Coaching's reference lap. In the **Logbook**,
+**Analysis** beside Sessions, Trends and Season (**View ▸ Analysis**, ⌘4) shows the session
+selected under Sessions.
+
 ## 5. Your progress
 
 Every session in the Logbook counts towards these; nothing has to be set up. They are views of the
