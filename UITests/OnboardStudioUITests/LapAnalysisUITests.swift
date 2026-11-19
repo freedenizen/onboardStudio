@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 1
 /// J77: look at laps as data (#556). Analyse Laps… on a Logbook session lays its best two laps over
 /// each other: delta-T, speed, the map and the friction circle, one cursor across them, and a
 /// corner to zoom to.
@@ -53,5 +53,49 @@ final class LapAnalysisUITests: OnboardStudioUITestCase {
         add(shot)
         wholeLap.click()
         XCTAssertFalse(wholeLap.isEnabled, "Whole Lap did not show the whole lap")
+    }
+
+    /// The fixture session at a circuit, in an empty logbook, selected.
+    @MainActor
+    private func selectTheFixtureSession() {
+        XCTAssertTrue(app.windows["Logbook"].waitForExistence(timeout: Self.timeout), "No Logbook at launch")
+        testing("Add Fixture Session at a Circuit")
+        XCTAssertTrue(
+            app.staticTexts["trackday.summary"].waitForExistence(timeout: Self.timeout * 3), "No import report")
+        app.buttons["trackday.done"].click()
+        let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch
+        let rowTypes = NSPredicate(
+            format: "elementType == %d OR elementType == %d", XCUIElement.ElementType.tableRow.rawValue,
+            XCUIElement.ElementType.outlineRow.rawValue)
+        let rows = table.descendants(matching: .any).matching(rowTypes)
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: Self.timeout), "No session listed")
+        rows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
+    }
+
+    /// The same laps from Coaching's Data view and from the Logbook's Analysis view (⌘4).
+    @MainActor
+    func testCoachingAndTheLogbookShowTheLapsAsDataToo() throws {
+        launch(logbook: true)
+        selectTheFixtureSession()
+
+        app.typeKey("4", modifierFlags: .command)
+        let inLogbook = app.windows["Logbook"].descendants(matching: .any).matching(identifier: "analysis.delta")
+            .firstMatch
+        XCTAssertTrue(inLogbook.waitForExistence(timeout: Self.timeout * 2), "No Analysis view in the Logbook")
+        app.typeKey("1", modifierFlags: .command)
+
+        let coach = app.buttons["logbook.coach"]
+        XCTAssertTrue(coach.waitForExistence(timeout: Self.timeout), "No Coach… on the session")
+        reveal(coach)
+        coach.click()
+        let coaching = app.windows["Coaching"]
+        XCTAssertTrue(coaching.waitForExistence(timeout: Self.timeout), "No Coaching window")
+        let data = coaching.radioButtons["Data"].exists ? coaching.radioButtons["Data"] : coaching.buttons["Data"]
+        XCTAssertTrue(data.waitForExistence(timeout: Self.timeout), "No Data view in Coaching")
+        data.click()
+        let inCoaching = coaching.descendants(matching: .any).matching(identifier: "analysis.delta").firstMatch
+        XCTAssertTrue(inCoaching.waitForExistence(timeout: Self.timeout * 2), "No delta-T in Coaching's Data view")
+        let reference = coaching.staticTexts["Reference"]
+        XCTAssertTrue(reference.exists, "No reference lap marked")
     }
 }
