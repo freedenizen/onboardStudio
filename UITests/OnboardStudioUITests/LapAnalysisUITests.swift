@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 1
 /// J77: look at laps as data (#556). Analyse Laps… on a Logbook session lays its best two laps over
 /// each other: delta-T, speed, the map and the friction circle, one cursor across them, and a
 /// corner to zoom to.
