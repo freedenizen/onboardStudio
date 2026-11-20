@@ -1603,6 +1603,13 @@ time there, its gap to the reference and its speed. Click a corner on the map, o
 Lap** shows the whole lap again. **Panels** also hides delta-T, speed, the map or the friction
 circle and makes the traces taller or shorter; the window opens laid out the same way next time.
 
+The friction circle's **dashed line** is the car's grip: the most it has shown in conditions like
+the reference lap's, from the Logbook, adjusted as on the car's card (see *How much of the car's
+grip was used*). A lap's points short of the line in one direction are grip left there, such as
+corner exits well inside it while braking reaches it. The line under the circle says what it is; for
+a session the Logbook does not hold, it is the most that session itself reached. VoiceOver reads
+each lap's share of it.
+
 When a lap has video, **Picture** above the map shows it at the cursor: in a project, the project's
 own picture with its overlays, from where the data's sync puts it; for a Logbook session, the day's
 clip that the camera's clock puts the lap in. **Play** runs it from the cursor and the cursor follows

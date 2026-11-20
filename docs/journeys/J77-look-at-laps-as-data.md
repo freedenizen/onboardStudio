@@ -12,6 +12,8 @@ meant building a video.*
    speed, and any channel added from **Panels ▸ Add Trace** (throttle and brake to begin with)
    under it. Move the pointer over any trace: the cursor moves on every trace, the cars move on
    the map and the friction circle, and the line above reads each lap's time, gap and speed there.
+   The friction circle's dashed line is the car's grip in conditions like these, from the Logbook
+   (#631): points short of it in a direction are grip left there.
 4. Click a corner on the map, or choose one from **Go to Corner**, and the traces zoom to it from
    the braking into it to the drive out; **Whole Lap** shows the lap again.
 5. **Panels** shows or hides delta-T, speed, the map and the friction circle, adds or removes
@@ -27,4 +29,4 @@ meant building a video.*
 Tests: `LapAnalysisUITests.testALogbookSessionsLapsAreLaidOverEachOther`,
 `LapAnalysisUITests.testCoachingAndTheLogbookShowTheLapsAsDataToo`,
 `LapAnalysisUITests.testAProjectsLapsShowTheirPicture`. Model: `LapAnalysisTests`,
-`AnalysisLayoutTests`.
+`AnalysisLayoutTests`, `GripTargetTests`, `GripOutlineTests`.

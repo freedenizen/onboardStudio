@@ -191,23 +191,31 @@ struct AnalysisMapPanel: View {
 }
 
 /// Lateral against longitudinal G for each lap across the span: how much of the grip each used,
-/// and whether braking ran into turning (#556, groundwork for #558). The cursor's points are larger.
+/// and whether braking ran into turning (#556). The car's grip is a dashed line round them (#631).
+/// The cursor's points are larger.
 struct AnalysisFrictionCircle: View {
     let analysis: LapAnalysis
     let colors: [Color]
     let span: ClosedRange<Double>
     let cursor: Double?
+    var target: GripTarget?
 
     var body: some View {
         let grid = analysis.grid(in: span, points: 300)
         let clouds = analysis.traces.map { analysis.frictionCircle($0, at: grid) }
-        let limit = max(1, (clouds.flatMap { $0 }.map { max(abs($0.lateral), abs($0.longitudinal)) }.max() ?? 1) * 1.1)
+        let outline = target?.envelope.outline() ?? []
+        let reached =
+            clouds.flatMap { $0 }.map { max(abs($0.lateral), abs($0.longitudinal)) }
+            + outline.map { max(abs($0.lateral), abs($0.longitudinal)) }
+        let limit = max(1, (reached.max() ?? 1) * 1.1)
         Canvas { context, size in
             let radius = min(size.width, size.height) / 2 - 4
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+            func at(lateral: Double, longitudinal: Double) -> CGPoint {
+                CGPoint(x: centre.x + lateral / limit * radius, y: centre.y - longitudinal / limit * radius)
+            }
             func at(_ point: LapAnalysis.GPoint) -> CGPoint {
-                CGPoint(
-                    x: centre.x + point.lateral / limit * radius, y: centre.y - point.longitudinal / limit * radius)
+                at(lateral: point.lateral, longitudinal: point.longitudinal)
             }
             for ring in stride(from: 0.5, through: limit, by: 0.5) {
                 let r = ring / limit * radius
@@ -221,6 +229,12 @@ struct AnalysisFrictionCircle: View {
             axes.move(to: CGPoint(x: centre.x, y: centre.y - radius))
             axes.addLine(to: CGPoint(x: centre.x, y: centre.y + radius))
             context.stroke(axes, with: .style(.quaternary), lineWidth: 1)
+            if !outline.isEmpty {
+                var shape = Path()
+                shape.addLines(outline.map { at(lateral: $0.lateral, longitudinal: $0.longitudinal) })
+                shape.closeSubpath()
+                context.stroke(shape, with: .style(.secondary), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+            }
             for (index, cloud) in clouds.enumerated().reversed() {
                 let color = colors[index % colors.count].opacity(0.45)
                 for point in cloud {
@@ -241,17 +255,26 @@ struct AnalysisFrictionCircle: View {
         .overlay(alignment: .topLeading) {
             Text("Friction circle · rings every 0.5 G").font(.caption2).foregroundStyle(.secondary).padding(4)
         }
+        .overlay(alignment: .bottomLeading) {
+            if let target {
+                Text(target.caption).font(.caption2).foregroundStyle(.secondary).lineLimit(2).padding(4)
+                    .help("Each lap's points against the most grip the car has shown in conditions like these")
+            }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Friction circle")
         .accessibilityValue(spoken(clouds))
         .accessibilityIdentifier("analysis.frictionCircle")
     }
 
-    /// The most combined G each lap reached across the span.
+    /// The most combined G each lap reached across the span, and the most of the target it used.
     private func spoken(_ clouds: [[LapAnalysis.GPoint]]) -> String {
         zip(analysis.traces, clouds).map { trace, cloud in
             let most = cloud.map { hypot($0.lateral, $0.longitudinal) }.max() ?? 0
-            return "\(trace.label) up to \(String(format: "%.2f", most)) G"
+            let reading = "\(trace.label) up to \(String(format: "%.2f", most)) G"
+            guard let target else { return reading }
+            let used = target.mostUsed(cloud.map { ($0.lateral, $0.longitudinal) })
+            return reading + ", \(GripWording.percent(used)) of \(target.noun)"
         }.joined(separator: ", ")
     }
 }
