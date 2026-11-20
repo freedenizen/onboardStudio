@@ -62,7 +62,8 @@ struct CarGripRow: View {
 
     var body: some View {
         GridRow(alignment: .firstTextBaseline) {
-            Text("Grip").foregroundStyle(.secondary)
+            // The row's identifier sits on its label: on the stack it would cover the stepper's own.
+            Text("Grip").foregroundStyle(.secondary).accessibilityIdentifier("car.header.grip")
             VStack(alignment: .leading, spacing: 4) {
                 if let dry { Text("Dry: \(dry.summary)") }
                 if let wet { Text("Wet: \(wet.summary)") }
@@ -76,7 +77,6 @@ struct CarGripRow: View {
                 .help("Raise it when the car has more grip than its sessions have shown; grip use is read against this")
                 .accessibilityIdentifier("car.header.gripAdjustment")
             }
-            .accessibilityIdentifier("car.header.grip")
         }
     }
 }
