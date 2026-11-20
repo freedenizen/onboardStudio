@@ -296,6 +296,9 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
     /// dropout, as builds before #555 did. Set by `Project.migrateIfNeeded()` on the inputs of a
     /// project saved at schema 6 or earlier; `false` for every input since.
     public var legacyExactDistances = false
+    /// Coaching says nothing of grip, as builds before #558 did. Set by `Project.migrateIfNeeded()`
+    /// on the inputs of a project saved at schema 7 or earlier; `false` for every input since.
+    public var legacyNoGripNotes = false
 
     public init(
         importerID: String? = nil,
@@ -340,7 +343,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         case deriveSpeedFromPosition, deriveHeadingFromPosition
         case resampleHertz, smoothingSeconds, calculatedFields, lapLine, runFinishLine, sectors, circuitID
         case cornerLabels, turnNames, configuration, trim
-        case logbookEntryID, legacyFirstLap, legacyCornersPerLap, legacyCornersOnlyDropped, legacyExactDistances
+        case logbookEntryID, legacyFirstLap, legacyCornersPerLap, legacyCornersOnlyDropped, legacyExactDistances,
+            legacyNoGripNotes
         case measuresPerformance
     }
 
@@ -385,6 +389,8 @@ public struct DataInputSettings: Hashable, Codable, Sendable {
         legacyCornersOnlyDropped = try c.decodeIfPresent(Bool.self, forKey: .legacyCornersOnlyDropped) ?? false
         // Absent before schema 7; the migration sets it on an older project.
         legacyExactDistances = try c.decodeIfPresent(Bool.self, forKey: .legacyExactDistances) ?? false
+        // Absent before schema 8; the migration sets it on an older project.
+        legacyNoGripNotes = try c.decodeIfPresent(Bool.self, forKey: .legacyNoGripNotes) ?? false
     }
 }
 

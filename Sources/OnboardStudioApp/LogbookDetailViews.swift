@@ -130,6 +130,8 @@ struct LogbookDetail: View {
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
+    /// The car's grip in the session's conditions (#558), when the logbook has read some.
+    var gripLimit: CarGripLimit?
     /// The cars the logbook names, for correcting this session's without retyping (#453).
     var knownCars: [String] = []
     var knownConfigurations: [String] = []  // named at the session's circuit (#549)
@@ -197,6 +199,9 @@ struct LogbookDetail: View {
                         identifier: "logbook.detail.laps")
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                     if let gps = entry.gps { GPSQualityGridRow(measured: gps) }
+                    if let gripLimit, let use = entry.gripUse(against: gripLimit) {
+                        GripGridRow(use: use, limit: gripLimit)
+                    }
                 }
                 .font(.callout)
                 if entry.isRuns, !entry.laps.isEmpty {
@@ -259,7 +264,7 @@ struct LogbookDetail: View {
         }
         .accessibilityIdentifier("logbook.detail")
         .task(id: entry.id) {
-            guard entry.needsSplitReading || entry.needsGPSReading else { return }
+            guard entry.needsAReading else { return }
             readingSplits = entry.needsSplitReading
             await readSplits()
             readingSplits = false
@@ -367,7 +372,10 @@ struct LogbookDetail: View {
         return "A new project with \(parts.joined(separator: ", ")) and \(layout); "
             + "the arrow offers the other templates, or a blank project"
     }
+}
 
+// Outside the type's body, which the session's rows fill.
+extension LogbookDetail {
     /// "1:56.88 · lap 4 · 23 Aug 2026 · Miata", or "this session" when it is the one.
     private var personalBestText: String? {
         guard let personalBest else { return nil }
@@ -390,10 +398,7 @@ struct LogbookDetail: View {
         ]
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
-}
 
-// Outside the type's body, which the session's rows fill.
-extension LogbookDetail {
     @ViewBuilder private func row(
         _ label: String, _ value: String?, detail: String? = nil, identifier: String = ""
     ) -> some View {

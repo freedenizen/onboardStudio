@@ -227,12 +227,35 @@ starts with it, whether it comes from a file added to the Logbook, a project, or
 import report. A track day has a sheet too, and a session added to the day starts with the day's.
 A session loaded from a saved setup keeps its values when the saved one changes or is deleted.
 
+### How much of the car's grip was used
+
+A session's details show **Grip**: how much of the car's grip its best lap used while braking and
+turning, how much of the lap was near the limit, and how long it coasted. The grip is the most
+combined G — braking, cornering and both at once — the car has shown in conditions like these: its
+sessions on the same kind of surface, on the same tyres and in much the same air (within 8 °C) when
+those were noted. It is a range, from the typical session to the best (*Against 1.02–1.15 G from 6
+sessions, dry, RE-71RS*), and the best is what the lap is read against. With fewer than two
+sessions alike the air and then the tyres are let go, but wet grip never stands for dry. When
+braking stopped before turning — the combined G fell below half the limit between the two — the
+row names the corners. Sessions entered before grip was read are read when you next select them.
+
+Coaching reads the same grip corner by corner: a corner's detail shows **Grip used** (on average
+and at its peak) and **Braking to turning** (the least combined G between peak braking and peak
+cornering) for both laps, and a note says *Braking stopped before turning: combined G fell to
+0.25 g (your best lap kept 0.80 g)* when the lap let go of the grip there and the reference did not,
+with *Keep a little brake on as you turn in…* added to what to try. **Trends** charts each session's
+grip used and its share of the lap near the limit once two sessions at the circuit have been read,
+each against the car's grip in that session's conditions.
+
 ### The garage: your cars
 
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
 sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
 worth keeping, and the [setups](#the-setup-sheet) saved with it are kept with it. A car with [performance runs](#performance-runs-060-the-quarter-mile-and-stops)
-lists its best 0–60, quarter mile and 60–0 under **Bests**. **Rename…** changes the name on every day and session at once; type another car's
+lists its best 0–60, quarter mile and 60–0 under **Bests**. **Grip** shows the grip it has shown
+on a dry and on a wet surface, and its stepper scales it (*Adjusted to 105% of what it has shown*)
+when you know the car has more than its sessions have shown — every session's grip use is read
+against the scaled figure. **Rename…** changes the name on every day and session at once; type another car's
 name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
 added to the garage the first time its name is typed anywhere, and a name put right on the day or
 the session leaves it again. A car with notes stays when nothing names it any more: it is listed
@@ -792,6 +815,11 @@ A logger that writes its position into every row, filled in between real fixes a
 CSV export does, would look faster than it is; when the file logs the GPS's own update rate, as
 RaceChrono does, that is the rate shown. The same rate is a channel, **GPS rate**, that a gauge or
 graph can show alongside **GPS accuracy**, satellites and HDOP; it reads zero through a dropout.
+
+When the logger records lateral and longitudinal G, **Grip used** is a channel too: at every
+moment, the share of the grip the car showed in that session that it is using, 0–100%, for a bar,
+gauge or graph. It is read against the session's own grip, not the car's across the logbook, so a
+video renders the same however many sessions the logbook gains.
 
 **A file that knows where the line is.** Racelogic VBO files record the start/finish line, and
 any sector gates, as actual geometry — the only format that does. Add one and the line and sectors
@@ -1574,6 +1602,17 @@ time there, its gap to the reference and its speed. Click a corner on the map, o
 **Go to Corner**, and the traces zoom to it, from the braking into it to the drive out; **Whole
 Lap** shows the whole lap again. **Panels** also hides delta-T, speed, the map or the friction
 circle and makes the traces taller or shorter; the window opens laid out the same way next time.
+
+When a lap has video, **Picture** above the map shows it at the cursor: in a project, the project's
+own picture with its overlays, from where the data's sync puts it; for a Logbook session, the day's
+clip that the camera's clock puts the lap in. **Play** runs it from the cursor and the cursor follows
+round every trace; **Pause** stops it. With more than one chosen lap filmed, the pop-up beside Play
+chooses whose picture; **Panels ▸ Picture** hides it.
+
+The same view is in two more places. In the **Coaching** window, **Data** beside *Walkthrough* and
+*All Corners* starts on the lap being coached against Coaching's reference lap. In the **Logbook**,
+**Analysis** beside Sessions, Trends and Season (**View ▸ Analysis**, ⌘4) shows the session
+selected under Sessions.
 
 ## 5. Your progress
 

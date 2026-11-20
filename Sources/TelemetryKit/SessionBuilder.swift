@@ -51,6 +51,8 @@ public enum SessionBuilder {
         public var legacyCornersPerLap = false, legacyCornersOnlyDropped = false
         /// Coaching distances to the metre and through dropouts, as before #555.
         public var legacyExactDistances = false
+        /// Coaching without grip, as before #558.
+        public var legacyNoGripNotes = false
         /// Ignore samples before this point in the file's own time (`nil` = from the beginning).
         ///
         /// Applied before anything else, so the session behaves as if the recording had started
@@ -168,6 +170,7 @@ public enum SessionBuilder {
         session.laps = LapDeltas.demotingShortLaps(session.laps, distance: session[.distance])
         for channel in LapDeltas.channels(for: session) { session.add(channel) }
         addGPSQuality(to: &session, latitude: arrived[.latitude], longitude: arrived[.longitude], options: options)
+        if let gripUsed = GripEnvelope.gripUsedChannel(of: session) { session.add(gripUsed) }
         // Before the sectors, whose corner-aware boundaries are placed between its corners.
         session.readCorners(as: options)
         // After the demotion, so an out-lap cannot be the lap the sectors are measured on.
@@ -372,5 +375,6 @@ extension TelemetrySession {
         legacyCornersPerLap = options.legacyCornersPerLap
         legacyCornersOnlyDropped = options.legacyCornersOnlyDropped
         legacyExactDistances = options.legacyExactDistances
+        legacyNoGripNotes = options.legacyNoGripNotes
     }
 }

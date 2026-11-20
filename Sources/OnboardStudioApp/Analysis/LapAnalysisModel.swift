@@ -18,8 +18,15 @@ import TelemetryKit
     private(set) var isLoading = false
     private(set) var isBuilding = false
     private(set) var analysis: LapAnalysis?
+    /// The picture of each trace that has one, by trace id (#556).
+    private(set) var footage: [Int: AnalysisFootage] = [:]
+    let picture = AnalysisPicture()
+    /// The project whose picture a project's laps are shown in.
+    @ObservationIgnored private(set) weak var editor: EditorModel?
     /// Metres into the reference lap the cursor is at.
-    var cursor: Double?
+    var cursor: Double? {
+        didSet { if cursor != oldValue { showPicture() } }
+    }
     /// The span the traces show; `nil` is the whole lap.
     var visible: ClosedRange<Double>?
     var layout: AnalysisLayout {
@@ -29,6 +36,9 @@ import TelemetryKit
         }
     }
     private var generation = 0
+    /// The home session's laps to begin with, in order, when they are known: Coaching's reference
+    /// and lap. Empty is the quickest two.
+    private var preferredLaps: [Int] = []
 
     init() {
         layout = AnalysisLayout(preferenceText: UserDefaults.standard.value(for: Preferences.analysisLayout))
@@ -41,9 +51,11 @@ import TelemetryKit
 
     /// The front project's session with laps, its other data files beside it, and the logbook's
     /// other sessions at the circuit.
-    func showFrontProject(editor: EditorModel?) {
+    func showFrontProject(editor: EditorModel?, laps: [Int] = []) {
         kind = .frontProject
         reset()
+        self.editor = editor
+        preferredLaps = laps
         guard let editor, let input = editor.lapInput, let session = editor.sessions[input.id] else {
             problem = editor == nil ? nil : "The project has no data file with laps."
             return
@@ -67,10 +79,15 @@ import TelemetryKit
     }
 
     /// A logbook session, read in on demand, the logbook's other sessions at its circuit beside it.
-    func show(entry: LogbookEntry) {
-        if case .logbook(let id) = kind, id == entry.id, !groups.isEmpty { return }
+    func show(entry: LogbookEntry, laps: [Int] = []) {
+        if case .logbook(let id) = kind, id == entry.id, !groups.isEmpty {
+            if !laps.isEmpty, laps != preferredLaps { choose(laps) }
+            return
+        }
         kind = .logbook(entry.id)
         reset()
+        editor = nil
+        preferredLaps = laps
         isLoading = true
         let key = LogbookFilter.circuitKey(of: entry)
         Task { @MainActor in
@@ -98,16 +115,28 @@ import TelemetryKit
         chosen = []
         problem = nil
         analysis = nil
+        footage = [:]
+        picture.stop()
         cursor = nil
         visible = nil
         generation += 1
     }
 
-    /// The home session's best lap as the reference, and its next quickest against it.
+    /// The laps asked for, else the home session's best lap as the reference and its next quickest
+    /// against it.
     private func chooseDefaults() {
         guard let home = groups.first(where: \.isHome) else { return }
-        chosen = home.choices.sorted { ($0.seconds ?? .infinity) < ($1.seconds ?? .infinity) }.prefix(2).map(\.id)
+        let asked = preferredLaps.compactMap { number in home.choices.first { $0.number == number }?.id }
+        let quickest = home.choices.sorted { ($0.seconds ?? .infinity) < ($1.seconds ?? .infinity) }.prefix(2)
+        chosen =
+            asked.isEmpty ? quickest.map(\.id) : Array(NSOrderedSet(array: asked).array.compactMap { $0 as? String })
         rebuild()
+    }
+
+    /// The home session's laps `numbers`, in order, the first the reference.
+    func choose(_ numbers: [Int]) {
+        preferredLaps = numbers
+        chooseDefaults()
     }
 
     // MARK: - Choosing laps
@@ -154,6 +183,40 @@ import TelemetryKit
     }
 
     func showWholeLap() { visible = nil }
+
+    // MARK: - The picture
+
+    /// The shown lap and its picture, when it has one.
+    private var pictured: (trace: LapAnalysis.Trace, footage: AnalysisFootage)? {
+        guard let trace = analysis?.traces.first(where: { $0.id == picture.trace }), let footage = footage[trace.id]
+        else { return nil }
+        return (trace, footage)
+    }
+
+    /// The shown lap's frame at the cursor.
+    func showPicture() {
+        guard let analysis, let pictured else { return }
+        picture.show(pictured.footage, at: analysis.sessionTime(pictured.trace, at: cursor ?? 0))
+    }
+
+    /// Plays the shown lap's picture from the cursor, the cursor following it round the lap.
+    func playPicture() {
+        guard let analysis, let pictured else { return }
+        let trace = pictured.trace
+        let window = trace.profile.window
+        picture.play(pictured.footage, from: analysis.sessionTime(trace, at: cursor ?? 0)) { [weak self] time in
+            guard let self, time < window.end else { return false }
+            let own = trace.profile.distance(atElapsed: time - window.start)
+            self.cursor = own / trace.scale
+            return true
+        }
+    }
+
+    func showPicture(of trace: Int) {
+        picture.stop()
+        picture.trace = trace
+        showPicture()
+    }
 
     /// The channels the chosen laps' sessions recorded that can be traced, beside speed.
     var traceableChannels: [ChannelRole] {
@@ -214,8 +277,12 @@ import TelemetryKit
             }
             let built = await Task.detached(priority: .userInitiated) { Self.build(picks, roles: roles) }.value
             guard generation == mine else { return }
-            let lengthChanged = built?.length != analysis?.length
-            analysis = built
+            let lengthChanged = built?.analysis.length != analysis?.length
+            analysis = built?.analysis
+            picture.stop()
+            footage = await loadFootage(for: built?.picks ?? [])
+            guard generation == mine else { return }
+            if footage[picture.trace] == nil { picture.trace = footage.keys.min() ?? 0 }
             isBuilding = false
             if lengthChanged {
                 visible = nil
@@ -224,7 +291,11 @@ import TelemetryKit
         }
     }
 
-    nonisolated static func build(_ picks: [ReplayPick], roles: [ChannelRole]) -> LapAnalysis? {
+    /// The analysis, and the picks that made a trace each, in trace order.
+    nonisolated static func build(_ picks: [ReplayPick], roles: [ChannelRole]) -> (
+        analysis: LapAnalysis, picks: [ReplayPick]
+    )? {
+        var kept: [ReplayPick] = []
         let profiles = picks.compactMap { pick -> (label: String, profile: LapProfile)? in
             guard let session = pick.session, let lap = session.laps.first(where: { $0.number == pick.number }),
                 let end = lap.end,
@@ -235,11 +306,13 @@ import TelemetryKit
             let label =
                 pick.isHome
                 ? "Lap \(lap.number)" : "\(pick.subtitle.isEmpty ? pick.title : pick.subtitle) · Lap \(lap.number)"
+            kept.append(pick)
             return (label, profile)
         }
-        guard let first = picks.first, let session = first.session,
-            let lap = session.laps.first(where: { $0.number == first.number })
+        guard let first = kept.first, let session = first.session,
+            let lap = session.laps.first(where: { $0.number == first.number }),
+            let analysis = LapAnalysis(profiles: profiles, corners: LapAnalysis.corners(of: lap, in: session))
         else { return nil }
-        return LapAnalysis(profiles: profiles, corners: LapAnalysis.corners(of: lap, in: session))
+        return (analysis, Array(kept.prefix(LapAnalysis.maximumLaps)))
     }
 }

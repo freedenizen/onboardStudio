@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 3
 /// J79: hand a session's telemetry to another app (#563). Export Telemetry… writes the session, or
 /// one lap of it, as CSV, GPX, KML or VBO.
 final class ExportTelemetryUITests: OnboardStudioUITestCase {

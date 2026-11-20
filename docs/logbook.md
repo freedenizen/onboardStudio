@@ -279,6 +279,25 @@ corner's minimum speed and time averaged over the sessions' best laps. Its cavea
 side is a single session, or when the surface, weather or tyres also differed wholly between the
 sides.
 
+## Grip (#558)
+
+`GripEnvelope` (TelemetryKit) is the combined G a car reached in each of sixteen directions round
+the friction circle, the 98th percentile of each so a kerb strike does not set it, a sector with
+too few points taking its neighbours'; it needs braking and cornering to say anything. `GripUse`
+reads a lap against one: the mean share used while braking or turning, the share of the lap at or
+above `nearLimit` (0.8), coasting, the RMS rate of change of the combined G as roughness, and per
+corner the mean, peak and near-limit share and the *gap* — the lowest share between peak braking
+and peak cornering, and the seconds under `gapBelow` (0.5). Every threshold is in `Options`.
+
+An entry keeps `grip: GripRecord` — the session's envelope and its best lap's `GripTrace` (G every
+5 m with the pedals and the corners) — read at entry and lazily for older entries
+(`gripMeasurement`), so the lap is read again against a limit learned later. `CarGrip.limit` takes
+the car's entries on the same kind of surface (damp, wet, drying and greasy are all wet; unnoted is
+dry), then the same tyres and air within 8 °C when noted, letting the air and then the tyres go
+below two sessions, and returns `CarGripLimit`: the median and the best envelope each way and the
+car's `gripAdjustment` (the garage's `Car`, 0.5–2, kept in the garage like notes). Use is read
+against the best, scaled.
+
 ## Car against car (#354)
 
 `CarVersusCar` (`MediaKit/CarVersusCar.swift`) takes the two cars' best entries at a circuit

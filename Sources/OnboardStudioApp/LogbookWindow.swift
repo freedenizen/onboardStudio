@@ -116,16 +116,21 @@ import UniformTypeIdentifiers
         }
     }
 
-    /// Reads the sector times and speeds (#557) and the GPS quality (#555) of a session entered
+    /// Reads the sector times and speeds (#557), the GPS quality (#555) and the grip (#558) of a session entered
     /// before they were kept, once, off the main thread, and writes them with no step of Undo:
     /// they are the file's, not an edit, and Undo of an edit made before puts back laps that are
     /// read again when next shown. A session whose file cannot be found is left as it was.
     func readSplits(of entry: LogbookEntry) async {
-        guard entry.needsSplitReading || entry.needsGPSReading, let session = await session(for: entry),
-            var latest = AppLogbook.shared.entry(id: entry.id), latest.needsSplitReading || latest.needsGPSReading
+        guard entry.needsAReading, let session = await session(for: entry),
+            var latest = AppLogbook.shared.entry(id: entry.id), latest.needsAReading
         else { return }
         if latest.needsSplitReading { latest.readSplits(of: session) }
         if latest.needsGPSReading { latest.readGPS(of: session) }
+        if latest.needsGripReading {
+            // Every lap's profile and the corners: off the main actor.
+            latest.grip = await Task.detached(priority: .utility) { GripRecord(session: session) }.value
+            latest.gripMeasurement = LogbookEntry.gripMeasurement
+        }
         try? AppLogbook.shared.save(latest)
         if let index = entries.firstIndex(where: { $0.id == latest.id }) { entries[index] = latest }
     }
@@ -198,12 +203,15 @@ struct LogbookWindow: View {
 
     enum LogbookView: String, CaseIterable, Identifiable {
         case sessions, trends, season
+        /// The selected session's laps as data (#556).
+        case analysis
         var id: String { rawValue }
         var title: String {
             switch self {
             case .sessions: "Sessions"
             case .trends: "Trends"
             case .season: "Season"
+            case .analysis: "Analysis"
             }
         }
     }
@@ -379,6 +387,8 @@ struct LogbookWindow: View {
             SeasonView(
                 entries: model.entries, plans: (active.editor?.trackLibrary ?? TrackLibrary.app).all(),
                 goals: model.goals, onOpen: show)
+        } else if view == .analysis {
+            LogbookAnalysisView(entry: selectedEntries.count == 1 ? selectedEntries.first : nil)
         } else if view == .trends {
             LogbookTrendsView(
                 entries: model.entries, circuitKey: trendsCircuit?.id, circuitTitle: trendsCircuit?.title ?? "",
@@ -437,6 +447,7 @@ struct LogbookWindow: View {
             addToProject: { addToCurrentProject(entry) },
             remove: { remove([entry.id]) },
             save: { model.save($0, undo: undoManager) },
+            gripLimit: model.gripLimit(for: entry),
             knownCars: model.knownCars,
             knownConfigurations: LogbookFilter.configurations(
                 at: LogbookFilter.venueKey(of: entry), in: model.entries, definitions: model.trackDefinitions),

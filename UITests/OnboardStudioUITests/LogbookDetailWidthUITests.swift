@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 6
 /// #483: a session's detail in the Logbook forgot the width it was dragged to — after a visit to
 /// Trends, after the session went out of the table and came back, and the next time the app
 /// opened. It stays as wide as it was left.
@@ -88,12 +88,19 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
         XCTAssertLessThanOrEqual(widest, 422, "It can be dragged past its widest")
 
         // Then a little narrower, to a width that is neither where it starts nor where it stops:
-        // by up to 20 points, and no more than half the room the window gives it.
-        let step = min(20, ((widest - narrowest) / 2).rounded(.down))
-        let back = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        back.click(forDuration: 0.3, thenDragTo: back.withOffset(CGVector(dx: step, dy: 0)))
-        let left = detailWidth
-        XCTAssertEqual(left, widest - step, accuracy: 4, "Dragging its edge right did not narrow it")
+        // by up to 20 points, and no more than half the room the window gives it. A divider does
+        // not move for a drag of a few points, so where the window leaves it under 16 points of
+        // room (CI's screen can, #626) it is left at its widest, which the next launch can still
+        // tell from where it starts.
+        var left = widest
+        let room = widest - narrowest
+        if room >= 16 {
+            let step = min(20, (room / 2).rounded(.down))
+            let back = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            back.click(forDuration: 0.3, thenDragTo: back.withOffset(CGVector(dx: step, dy: 0)))
+            left = detailWidth
+            XCTAssertEqual(left, widest - step, accuracy: 4, "Dragging its edge right did not narrow it")
+        }
 
         // And the next time the app opens, it is as wide as it was left.
         app.terminate()

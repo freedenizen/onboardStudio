@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 5
+// ci-shard: 6
 /// J75: note what was on the car (#559). A session's setup sheet takes pressures at each corner,
 /// is kept with the car as a named setup, and a car's starting setup is what its next session has.
 final class SetupSheetUITests: OnboardStudioUITestCase {

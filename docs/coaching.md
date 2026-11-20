@@ -356,6 +356,22 @@ use it, and the evidence says so. A session from a project saved at schema 6 or 
 `legacyExactDistances` and is read as before. The step comes from the lap's own session; a
 reference from another session is assumed no coarser.
 
+### Grip (#558)
+
+`readGrip` reads each corner's `GripUse` on both laps against `CoachingOptions.gripEnvelope` —
+the car's grip in like conditions, which the app fills from the logbook (`CarGrip.limit`) when the
+session is one of its entries — or, without it, the envelope the two laps themselves reached. The
+readings sit on `CornerComparison.lapGrip` and `.referenceGrip`, and the corner's detail shows them
+as *Grip used* (mean, and peak) and *Braking to turning* (the least combined G between peak
+braking and peak cornering). `CoachingNotes` adds two evidence lines when the lap did clearly worse
+than the reference: *Braking stopped before turning: combined G fell to 0.25 g (your best lap kept
+0.80 g)* when the lap's gap fell below `GripUse.Options.gapBelow` of the limit and the reference's
+stayed 15 points higher (or had none), and *Used 60% of the grip through it against 80%* when the
+lap used ten points less. For losses of the coasting, over-slowing and braking kinds the same gap
+adds *Keep a little brake on as you turn in…* to the suggestion. Corner Callouts draw these, so a
+session from a project saved at schema 7 or earlier has `legacyNoGripNotes` and says nothing of
+grip.
+
 ## On the command line (#320)
 
 `onboard coach <file|project> [--lap N] [--reference best|rolling|optimal|lap:N] [--units metric|imperial] [--all] [--json]`

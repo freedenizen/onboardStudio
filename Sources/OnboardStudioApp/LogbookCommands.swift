@@ -91,12 +91,13 @@ struct LogbookCommands: Commands {
             }
         }
         CommandGroup(before: .toolbar) {
-            // ⌘1–⌘3, as Photos switches Years, Months and All Photos; only while the Logbook is in
+            // ⌘1–⌘4, as Photos switches Years, Months and All Photos; only while the Logbook is in
             // front, so the attribute window's ⌘1 and ⌘2 stay its own.
             if let view = logbook?.view {
                 Toggle("Sessions", isOn: view.selecting(.sessions)).keyboardShortcut("1", modifiers: .command)
                 Toggle("Trends", isOn: view.selecting(.trends)).keyboardShortcut("2", modifiers: .command)
                 Toggle("Season", isOn: view.selecting(.season)).keyboardShortcut("3", modifiers: .command)
+                Toggle("Analysis", isOn: view.selecting(.analysis)).keyboardShortcut("4", modifiers: .command)
                 Divider()
             }
         }
