@@ -1562,6 +1562,12 @@ time there, its gap to the reference and its speed. Click a corner on the map, o
 Lap** shows the whole lap again. **Panels** also hides delta-T, speed, the map or the friction
 circle and makes the traces taller or shorter; the window opens laid out the same way next time.
 
+When a lap has video, **Picture** above the map shows it at the cursor: in a project, the project's
+own picture with its overlays, from where the data's sync puts it; for a Logbook session, the day's
+clip that the camera's clock puts the lap in. **Play** runs it from the cursor and the cursor follows
+round every trace; **Pause** stops it. With more than one chosen lap filmed, the pop-up beside Play
+chooses whose picture; **Panels ▸ Picture** hides it.
+
 The same view is in two more places. In the **Coaching** window, **Data** beside *Walkthrough* and
 *All Corners* starts on the lap being coached against Coaching's reference lap. In the **Logbook**,
 **Analysis** beside Sessions, Trends and Season (**View ▸ Analysis**, ⌘4) shows the session

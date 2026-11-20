@@ -16,10 +16,15 @@ meant building a video.*
    the braking into it to the drive out; **Whole Lap** shows the lap again.
 5. **Panels** shows or hides delta-T, speed, the map and the friction circle, adds or removes
    traces, and makes them taller or shorter; the window opens the same way next time.
-6. The same view is in two more places: **Data** in the Coaching window's toolbar, which starts
+6. When a lap has video — the project's own picture, or a Logbook day's clip that the camera's
+   clock puts the lap in — **Picture** above the map shows it at the cursor. **Play** runs it from
+   there, the cursor following round every trace; with more than one lap filmed, the pop-up beside
+   it chooses whose picture.
+7. The same view is in two more places: **Data** in the Coaching window's toolbar, which starts
    on the coached lap against Coaching's reference, and **Analysis** in the Logbook (**View ▸
    Analysis**, ⌘4), which shows the session selected under Sessions.
 
 Tests: `LapAnalysisUITests.testALogbookSessionsLapsAreLaidOverEachOther`,
-`LapAnalysisUITests.testCoachingAndTheLogbookShowTheLapsAsDataToo`. Model: `LapAnalysisTests`,
+`LapAnalysisUITests.testCoachingAndTheLogbookShowTheLapsAsDataToo`,
+`LapAnalysisUITests.testAProjectsLapsShowTheirPicture`. Model: `LapAnalysisTests`,
 `AnalysisLayoutTests`.

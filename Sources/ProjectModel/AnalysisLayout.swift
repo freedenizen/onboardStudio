@@ -9,6 +9,8 @@ public struct AnalysisLayout: Hashable, Codable, Sendable {
     public var showsSpeed: Bool
     public var showsMap: Bool
     public var showsFrictionCircle: Bool
+    /// The lap's picture, when it has one.
+    public var showsPicture: Bool
     /// Traces under speed, top to bottom.
     public var channels: [ChannelRole]
     /// Points.
@@ -19,12 +21,13 @@ public struct AnalysisLayout: Hashable, Codable, Sendable {
 
     public init(
         showsDelta: Bool = true, showsSpeed: Bool = true, showsMap: Bool = true, showsFrictionCircle: Bool = true,
-        channels: [ChannelRole] = [.throttle, .brake], traceHeight: Double = 140
+        showsPicture: Bool = true, channels: [ChannelRole] = [.throttle, .brake], traceHeight: Double = 140
     ) {
         self.showsDelta = showsDelta
         self.showsSpeed = showsSpeed
         self.showsMap = showsMap
         self.showsFrictionCircle = showsFrictionCircle
+        self.showsPicture = showsPicture
         self.channels = channels
         self.traceHeight = traceHeight
     }
@@ -39,7 +42,7 @@ public struct AnalysisLayout: Hashable, Codable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case showsDelta, showsSpeed, showsMap, showsFrictionCircle, channels, traceHeight
+        case showsDelta, showsSpeed, showsMap, showsFrictionCircle, showsPicture, channels, traceHeight
     }
 
     public init(from decoder: any Decoder) throws {
@@ -50,6 +53,7 @@ public struct AnalysisLayout: Hashable, Codable, Sendable {
         showsMap = try c.decodeIfPresent(Bool.self, forKey: .showsMap) ?? standard.showsMap
         showsFrictionCircle =
             try c.decodeIfPresent(Bool.self, forKey: .showsFrictionCircle) ?? standard.showsFrictionCircle
+        showsPicture = try c.decodeIfPresent(Bool.self, forKey: .showsPicture) ?? standard.showsPicture
         channels = (try? c.decodeIfPresent([ChannelRole].self, forKey: .channels)) ?? standard.channels
         let height = try c.decodeIfPresent(Double.self, forKey: .traceHeight) ?? standard.traceHeight
         traceHeight = min(max(height, Self.traceHeights.lowerBound), Self.traceHeights.upperBound)
