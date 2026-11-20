@@ -129,6 +129,8 @@ struct LogbookDetail: View {
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
+    /// The car's grip in the session's conditions (#558), when the logbook has read some.
+    var gripLimit: CarGripLimit?
     /// The cars the logbook names, for correcting this session's without retyping (#453).
     var knownCars: [String] = []
     var knownConfigurations: [String] = []  // named at the session's circuit (#549)
@@ -196,6 +198,9 @@ struct LogbookDetail: View {
                         identifier: "logbook.detail.laps")
                     row("Personal best here", personalBestText, detail: visits > 1 ? "\(visits) visits" : nil)
                     if let gps = entry.gps { GPSQualityGridRow(measured: gps) }
+                    if let gripLimit, let use = entry.gripUse(against: gripLimit) {
+                        GripGridRow(use: use, limit: gripLimit)
+                    }
                 }
                 .font(.callout)
                 if entry.isRuns, !entry.laps.isEmpty {
@@ -258,7 +263,7 @@ struct LogbookDetail: View {
         }
         .accessibilityIdentifier("logbook.detail")
         .task(id: entry.id) {
-            guard entry.needsSplitReading || entry.needsGPSReading else { return }
+            guard entry.needsAReading else { return }
             readingSplits = entry.needsSplitReading
             await readSplits()
             readingSplits = false

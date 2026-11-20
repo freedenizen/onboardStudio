@@ -13,6 +13,10 @@ struct CarHeader: View {
     let saveNotes: (String) -> Void
     let rename: () -> Void
     let remove: () -> Void
+    /// The car's grip on each kind of surface, and the driver's scale on it (#558).
+    var grip: (dry: CarGripLimit?, wet: CarGripLimit?) = (nil, nil)
+    var gripAdjustment: Double = 1
+    var adjustGrip: (Double) -> Void = { _ in }
     /// Settings ▸ Units ▸ Speed; with nothing chosen there, the region's (#464).
     @AppStorage(Preferences.speedUnit.key) private var appSpeedUnit = Preferences.speedUnit.unset
     private var metric: Bool { (SpeedUnitSetting(rawValue: appSpeedUnit) ?? .automatic).shown() != .mph }
@@ -49,6 +53,9 @@ struct CarHeader: View {
                             .help("The car's best standing starts and stops, from every session; Trends charts them")
                             .accessibilityIdentifier("car.header.bests")
                     }
+                }
+                if grip.dry != nil || grip.wet != nil {
+                    CarGripRow(dry: grip.dry, wet: grip.wet, adjustment: gripAdjustment, adjust: adjustGrip)
                 }
                 GridRow(alignment: .firstTextBaseline) {
                     Text("Notes").foregroundStyle(.secondary)

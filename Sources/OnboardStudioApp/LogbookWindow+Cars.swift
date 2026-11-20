@@ -56,7 +56,10 @@ extension LogbookWindow {
                 name: car, summary: Garage.summary(of: car, entries: model.entries, days: model.days),
                 notes: Garage.car(named: car, in: model.cars)?.notes ?? "", entries: model.entries,
                 saveNotes: { model.saveNotes($0, forCar: car, undo: undoManager) },
-                rename: { renamingCar = CarRename(name: car) }, remove: { removeCar(car) }
+                rename: { renamingCar = CarRename(name: car) }, remove: { removeCar(car) },
+                grip: model.gripLimits(ofCar: car),
+                gripAdjustment: Garage.car(named: car, in: model.cars)?.gripAdjustment ?? 1,
+                adjustGrip: { model.setGripAdjustment($0, forCar: car, undo: undoManager) }
             )
             // Another car is another field, not this one's typing carried over.
             .id(car)

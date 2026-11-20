@@ -227,12 +227,27 @@ starts with it, whether it comes from a file added to the Logbook, a project, or
 import report. A track day has a sheet too, and a session added to the day starts with the day's.
 A session loaded from a saved setup keeps its values when the saved one changes or is deleted.
 
+### How much of the car's grip was used
+
+A session's details show **Grip**: how much of the car's grip its best lap used while braking and
+turning, how much of the lap was near the limit, and how long it coasted. The grip is the most
+combined G — braking, cornering and both at once — the car has shown in conditions like these: its
+sessions on the same kind of surface, on the same tyres and in much the same air (within 8 °C) when
+those were noted. It is a range, from the typical session to the best (*Against 1.02–1.15 G from 6
+sessions, dry, RE-71RS*), and the best is what the lap is read against. With fewer than two
+sessions alike the air and then the tyres are let go, but wet grip never stands for dry. When
+braking stopped before turning — the combined G fell below half the limit between the two — the
+row names the corners. Sessions entered before grip was read are read when you next select them.
+
 ### The garage: your cars
 
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
 sessions, days and circuits it has and when, and **Notes** for its setup, tyres or anything else
 worth keeping, and the [setups](#the-setup-sheet) saved with it are kept with it. A car with [performance runs](#performance-runs-060-the-quarter-mile-and-stops)
-lists its best 0–60, quarter mile and 60–0 under **Bests**. **Rename…** changes the name on every day and session at once; type another car's
+lists its best 0–60, quarter mile and 60–0 under **Bests**. **Grip** shows the grip it has shown
+on a dry and on a wet surface, and its stepper scales it (*Adjusted to 105% of what it has shown*)
+when you know the car has more than its sessions have shown — every session's grip use is read
+against the scaled figure. **Rename…** changes the name on every day and session at once; type another car's
 name and the two become one car, with both cars' notes — how a misspelling is put right. A car is
 added to the garage the first time its name is typed anywhere, and a name put right on the day or
 the session leaves it again. A car with notes stays when nothing names it any more: it is listed
