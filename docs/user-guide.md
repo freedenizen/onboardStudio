@@ -239,6 +239,14 @@ sessions alike the air and then the tyres are let go, but wet grip never stands 
 braking stopped before turning — the combined G fell below half the limit between the two — the
 row names the corners. Sessions entered before grip was read are read when you next select them.
 
+Coaching reads the same grip corner by corner: a corner's detail shows **Grip used** (on average
+and at its peak) and **Braking to turning** (the least combined G between peak braking and peak
+cornering) for both laps, and a note says *Braking stopped before turning: combined G fell to
+0.25 g (your best lap kept 0.80 g)* when the lap let go of the grip there and the reference did not,
+with *Keep a little brake on as you turn in…* added to what to try. **Trends** charts each session's
+grip used and its share of the lap near the limit once two sessions at the circuit have been read,
+each against the car's grip in that session's conditions.
+
 ### The garage: your cars
 
 The cars in the sidebar are the **garage**. Choose one and its card is above its sessions: how many
@@ -794,6 +802,11 @@ A logger that writes its position into every row, filled in between real fixes a
 CSV export does, would look faster than it is; when the file logs the GPS's own update rate, as
 RaceChrono does, that is the rate shown. The same rate is a channel, **GPS rate**, that a gauge or
 graph can show alongside **GPS accuracy**, satellites and HDOP; it reads zero through a dropout.
+
+When the logger records lateral and longitudinal G, **Grip used** is a channel too: at every
+moment, the share of the grip the car showed in that session that it is using, 0–100%, for a bar,
+gauge or graph. It is read against the session's own grip, not the car's across the logbook, so a
+video renders the same however many sessions the logbook gains.
 
 **A file that knows where the line is.** Racelogic VBO files record the start/finish line, and
 any sector gates, as actual geometry — the only format that does. Add one and the line and sectors

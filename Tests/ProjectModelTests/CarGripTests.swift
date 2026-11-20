@@ -107,3 +107,43 @@ struct GripWordingTests {
         #expect(GripWording.gaps(Self.use(gaps: [0.1])) == "Braking stopped before turning into Turn 1.")
     }
 }
+
+@Suite("Grip over visits (#558)")
+struct GripTrendsTests {
+    /// A lap that brakes at `braking` g, then corners at `cornering` g, `coast` points between.
+    static func trace(braking: Double, cornering: Double, coast: Int) -> GripTrace {
+        let quiet = [Double](repeating: 0, count: 40)
+        let gap = [Double](repeating: 0, count: coast)
+        let lateral: [Double] = quiet + gap + [Double](repeating: cornering, count: 40)
+        let longitudinal: [Double] = [Double](repeating: -braking, count: 40) + gap + quiet
+        let elapsed: [Double] = lateral.indices.map { Double($0) * 0.2 }
+        let start = Double(40 + coast) * 5
+        let corner = GripTrace.CornerSpan(label: "1", start: start, apex: start + 100, end: start + 200)
+        return GripTrace(
+            stepMeters: 5, elapsed: elapsed, lateral: lateral, longitudinal: longitudinal, throttle: nil, brake: nil,
+            corners: [corner])
+    }
+
+    static func entry(_ hash: String, day: Int, trace: GripTrace) -> LogbookEntry {
+        var entry = GarageTests.entry(hash, car: "Miata", on: GarageTests.date(9, day))
+        entry.grip = GripRecord(envelope: GripEnvelope(circle: 1), bestLap: trace)
+        return entry
+    }
+
+    @Test func eachSessionIsReadAgainstTheCarsGripOldestFirst() throws {
+        let entries = [
+            Self.entry("later", day: 9, trace: Self.trace(braking: 0.9, cornering: 0.9, coast: 0)),
+            Self.entry("first", day: 2, trace: Self.trace(braking: 0.6, cornering: 0.6, coast: 10)),
+        ]
+        let key = LogbookFilter.circuitKey(of: entries[0])
+        let points = GripTrends.points(for: entries, circuitKey: key, car: "Miata")
+        #expect(points.map(\.entryID) == [entries[1].id, entries[0].id])
+        #expect(points[0].meanUsed < points[1].meanUsed)
+        #expect(points[0].gaps == 1 && points[1].gaps == 0)
+        #expect(
+            GripTrends.summary(of: points)
+                == "Grip used went from 60% to 90% over 2 sessions; braking stopped before turning in 1 corner, then 0."
+        )
+        #expect(GripTrends.summary(of: Array(points.prefix(1))) == nil)
+    }
+}

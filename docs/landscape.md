@@ -241,8 +241,8 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 - #556 laps as data without building a video: linked traces, delta-T, map and picture — *shipped*
 - #557 a session's lap table: sector splits per lap, best sectors, speeds — *shipped*
 - #558 grip use: combined braking and turning, time near the limit, and its trend
-  (built: the readings, the car's grip by conditions and its adjustment; Coaching, Analysis, Trends
-  and the overlay channel next)
+  (built: readings, the car's grip by conditions, Coaching, Trends and the overlay channel; the
+  Analysis friction circle's target next)
 - #559 judging a tyre, pressure or setup change: structured pressures, Trends split by conditions
   — *shipped*
 - #560 weather filled in from the session's time and place (the first network read for analysis)

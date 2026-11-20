@@ -89,7 +89,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 7
+    public static let currentSchemaVersion = 8
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -253,6 +253,11 @@ public struct Project: Hashable, Codable, Sendable {
             // points through a dropout.
             onEveryDataInput { $0.legacyExactDistances = true }
             schemaVersion = 7
+        }
+        if schemaVersion < 8 {
+            // 7 → 8 (#558): coaching said nothing of grip, and Corner Callouts draw its notes.
+            onEveryDataInput { $0.legacyNoGripNotes = true }
+            schemaVersion = 8
         }
         schemaVersion = Self.currentSchemaVersion
     }

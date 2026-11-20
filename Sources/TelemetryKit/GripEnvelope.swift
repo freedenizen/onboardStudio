@@ -121,3 +121,33 @@ extension GripEnvelope {
         return measure(points)
     }
 }
+
+extension GripEnvelope {
+    /// `gripUsed` (#558): at every sample the logger recorded both G, the share of the grip the car
+    /// reached in that session it is using, 0–100 %. Against the session's own envelope, so a video
+    /// renders the same whatever the logbook learns later; `nil` without recorded lateral and
+    /// longitudinal G, or too little driving to know the envelope.
+    public static func gripUsedChannel(of session: TelemetrySession, movingSpeed: Double = 8) -> Channel? {
+        guard session[.gripUsed] == nil, let lateral = session[.lateralG], let longitudinal = session[.longitudinalG]
+        else { return nil }
+        let speed = session[.speed]
+        struct Sample {
+            let time: Double
+            let lateral: Double
+            let longitudinal: Double
+        }
+        let samples = zip(lateral.times, lateral.values).compactMap { time, lat -> Sample? in
+            guard let long = longitudinal.value(at: time), lat.isFinite, long.isFinite else { return nil }
+            return Sample(time: time, lateral: lat, longitudinal: long)
+        }
+        let moving = samples.filter { sample in
+            (speed?.value(at: sample.time) ?? movingSpeed).map { $0 >= movingSpeed } ?? true
+        }
+        guard samples.count >= 4,
+            let envelope = measure(moving.map { ($0.lateral, $0.longitudinal) })
+        else { return nil }
+        return Channel(
+            role: .gripUsed, name: "Grip used", unit: .percent, times: samples.map(\.time),
+            values: samples.map { min(150, envelope.used(lateral: $0.lateral, longitudinal: $0.longitudinal) * 100) })
+    }
+}
