@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 5
+// ci-shard: 6
 /// J67: leave traffic out of the coaching (#571, #572). A corner where another car held the
 /// driver up is marked from the walkthrough or the corner's detail; the coaching stops calling it
 /// an opportunity, says how much of the lap's loss it was, and the mark is one undo step. The

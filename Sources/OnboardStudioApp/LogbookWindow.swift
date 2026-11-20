@@ -203,12 +203,15 @@ struct LogbookWindow: View {
 
     enum LogbookView: String, CaseIterable, Identifiable {
         case sessions, trends, season
+        /// The selected session's laps as data (#556).
+        case analysis
         var id: String { rawValue }
         var title: String {
             switch self {
             case .sessions: "Sessions"
             case .trends: "Trends"
             case .season: "Season"
+            case .analysis: "Analysis"
             }
         }
     }
@@ -379,6 +382,8 @@ struct LogbookWindow: View {
             SeasonView(
                 entries: model.entries, plans: (active.editor?.trackLibrary ?? TrackLibrary.app).all(),
                 goals: model.goals, onOpen: show)
+        } else if view == .analysis {
+            LogbookAnalysisView(entry: selectedEntries.count == 1 ? selectedEntries.first : nil)
         } else if view == .trends {
             LogbookTrendsView(
                 entries: model.entries, circuitKey: trendsCircuit?.id, circuitTitle: trendsCircuit?.title ?? "",
@@ -432,6 +437,7 @@ struct LogbookWindow: View {
                 model.openAsProject(entry, template: ProjectTemplate.coachingDebrief, then: .debrief)
             },
             replay: { ReplayWindow.open(openWindow, entry: entry) },
+            analyse: { AnalysisWindow.open(openWindow, entry: entry) },
             addToProject: { addToCurrentProject(entry) },
             remove: { remove([entry.id]) },
             save: { model.save($0, undo: undoManager) },

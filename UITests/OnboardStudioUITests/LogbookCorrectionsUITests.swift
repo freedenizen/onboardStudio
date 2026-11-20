@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 6
 /// J60: put the Logbook right (#454). Several sessions are selected at once, removed with no
 /// question and brought back by Edit ▸ Undo; a session on the wrong day is moved by its right-click
 /// menu or by dragging it onto a day in the sidebar.

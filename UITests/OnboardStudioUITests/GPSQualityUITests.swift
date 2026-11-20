@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 6
 /// J74: see how good a session's GPS is (#555). The import report rates the file's positions and
 /// says what counts against them, so a driver knows how far a brake point read from them is worth.
 final class GPSQualityUITests: OnboardStudioUITestCase {
