@@ -38,6 +38,7 @@ extension LogbookWindow {
             Button("Coach…") { coach(entry) }
             Button("Replay…") { ReplayWindow.open(openWindow, entry: entry) }
             Button("Analyse Laps…") { AnalysisWindow.open(openWindow, entry: entry) }
+            Button("Export Telemetry…") { exportingTelemetry = entry }
             Button("Show in Finder") {
                 if let url = entry.resolveFile() { NSWorkspace.shared.activateFileViewerSelecting([url]) }
             }

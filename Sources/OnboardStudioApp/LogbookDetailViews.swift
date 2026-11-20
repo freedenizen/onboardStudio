@@ -126,6 +126,7 @@ struct LogbookDetail: View {
     /// The session's laps raced round the circuit in 3D (#415).
     var replay: () -> Void = {}
     var analyse: () -> Void = {}
+    var exportTelemetry: () -> Void = {}
     let addToProject: () -> Void
     let remove: () -> Void
     let save: (LogbookEntry) -> Void
@@ -320,6 +321,9 @@ struct LogbookDetail: View {
                             + "friction circle"
                     )
                     .accessibilityIdentifier("logbook.analyse")
+                Button("Export Telemetry…", action: exportTelemetry)
+                    .help("Write the session or one lap as CSV, GPX, KML or VBO for another app")
+                    .accessibilityIdentifier("logbook.exportTelemetry")
                 Menu("Compare With") {
                     ForEach(comparisons, id: \.entry.id) { choice in
                         Button(choice.title) { compare(choice.entry) }
@@ -368,7 +372,10 @@ struct LogbookDetail: View {
         return "A new project with \(parts.joined(separator: ", ")) and \(layout); "
             + "the arrow offers the other templates, or a blank project"
     }
+}
 
+// Outside the type's body, which the session's rows fill.
+extension LogbookDetail {
     /// "1:56.88 · lap 4 · 23 Aug 2026 · Miata", or "this session" when it is the one.
     private var personalBestText: String? {
         guard let personalBest else { return nil }
@@ -391,10 +398,7 @@ struct LogbookDetail: View {
         ]
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
-}
 
-// Outside the type's body, which the session's rows fill.
-extension LogbookDetail {
     @ViewBuilder private func row(
         _ label: String, _ value: String?, detail: String? = nil, identifier: String = ""
     ) -> some View {

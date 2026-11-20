@@ -17,6 +17,7 @@ extension LogbookWindow {
             coach: { coach($0) },
             replay: { ReplayWindow.open(openWindow, entry: $0) },
             analyse: { AnalysisWindow.open(openWindow, entry: $0) },
+            exportTelemetry: { exportingTelemetry = $0 },
             compare: { compare($0, with: $1) },
             debrief: { model.openAsProject($0, template: ProjectTemplate.coachingDebrief, then: .debrief) },
             remove: { remove($0.map(\.id)) },

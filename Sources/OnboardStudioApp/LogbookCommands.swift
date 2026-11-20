@@ -23,6 +23,7 @@ struct LogbookCommandContext {
     var coach: (LogbookEntry) -> Void
     var replay: (LogbookEntry) -> Void
     var analyse: (LogbookEntry) -> Void
+    var exportTelemetry: (LogbookEntry) -> Void
     var compare: (LogbookEntry, LogbookEntry) -> Void
     var debrief: (LogbookEntry) -> Void
     var remove: ([LogbookEntry]) -> Void
@@ -147,6 +148,8 @@ private struct SessionMenuItems: View {
         Button("Replay…") { act { logbook?.replay($0) } }
             .disabled(session == nil)
         Button("Analyse Laps…") { act { logbook?.analyse($0) } }
+            .disabled(session == nil)
+        Button("Export Telemetry…") { act { logbook?.exportTelemetry($0) } }
             .disabled(session == nil)
         Menu("Compare With") {
             ForEach(logbook?.comparisons ?? [], id: \.entry.id) { choice in
