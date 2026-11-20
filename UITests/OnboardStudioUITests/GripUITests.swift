@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 5
+// ci-shard: 2
 /// J78: see how much of the car's grip was used (#558). A session's details read its best lap
 /// against the grip the car has shown in conditions like these; the car's card says what that
 /// grip is and lets the driver adjust it.
