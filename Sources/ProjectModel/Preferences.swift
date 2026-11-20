@@ -88,6 +88,11 @@ public enum Preferences {
     /// `ColorRamp.preferenceText`. Empty is `ColorRamp.standard`.
     public static let mapColorRamp = Preference(key: "mapColorRamp", unset: "")
 
+    // MARK: - Analysis
+
+    /// The Analysis view's panels (#556), as `AnalysisLayout.preferenceText`. Empty is the standard.
+    public static let analysisLayout = Preference(key: "analysisLayout", unset: "")
+
     // MARK: - Setups
 
     /// The unit tyre pressures are typed and read in on a setup sheet (#559), as a
@@ -131,7 +136,7 @@ public enum Preferences {
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
         logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
-        mapColorRamp.key, setupPressureUnit.key,
+        mapColorRamp.key, analysisLayout.key, setupPressureUnit.key,
     ]
 }
 
