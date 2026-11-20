@@ -112,12 +112,14 @@ final class LapAnalysisUITests: OnboardStudioUITestCase {
         // The player is AppKit's view, which carries no identifier of SwiftUI's; its Play button does.
         let play = window.buttons["analysis.picture.play"]
         XCTAssertTrue(play.waitForExistence(timeout: Self.timeout * 2), "No picture of the lap")
+        // The readout starts wherever the pointer last crossed a trace: a window that opens under the
+        // pointer has already been read at one place. Play has to take it somewhere else.
         let cursor = window.staticTexts["analysis.cursor"]
-        XCTAssertTrue(text(of: cursor).hasPrefix("Move over"), text(of: cursor))
+        XCTAssertTrue(cursor.waitForExistence(timeout: Self.timeout), "No cursor readout")
+        let before = text(of: cursor)
         play.click()
         let moving = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "NOT (value BEGINSWITH 'Move over') AND NOT (label BEGINSWITH 'Move over')"),
-            object: cursor)
+            predicate: NSPredicate(format: "value != %@ AND label != %@", before, before), object: cursor)
         XCTAssertEqual(
             XCTWaiter().wait(for: [moving], timeout: Self.timeout), .completed, "Play did not move the cursor")
         play.click()
