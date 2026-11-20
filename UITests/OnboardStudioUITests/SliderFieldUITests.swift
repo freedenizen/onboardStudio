@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 3
+// ci-shard: 6
 /// Every slider has a box beside it for the exact value, and the graph's Now at returns to the
 /// middle in one click (#266).
 final class SliderFieldUITests: OnboardStudioUITestCase {

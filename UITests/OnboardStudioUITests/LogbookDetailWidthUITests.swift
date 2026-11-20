@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 4
+// ci-shard: 6
 /// #483: a session's detail in the Logbook forgot the width it was dragged to — after a visit to
 /// Trends, after the session went out of the table and came back, and the next time the app
 /// opened. It stays as wide as it was left.
