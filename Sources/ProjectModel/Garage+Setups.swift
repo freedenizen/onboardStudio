@@ -61,3 +61,26 @@ extension Logbook {
         conditions.load(starting)
     }
 }
+
+extension Logbook {
+    /// The driver's scale on the car's learned grip (#558), kept between half and twice it.
+    public func setGripAdjustment(_ factor: Double, forCar name: String) throws {
+        let car = name.trimmingCharacters(in: .whitespaces)
+        guard !car.isEmpty, factor.isFinite else { return }
+        let kept = min(max(factor, 0.5), 2)
+        var cars = cars()
+        if let index = cars.firstIndex(where: { Garage.same($0.name, car) }) {
+            guard cars[index].gripAdjustment != kept else { return }
+            cars[index].gripAdjustment = kept
+        } else {
+            cars.append(Car(name: car, gripAdjustment: kept))
+        }
+        try saveCars(cars)
+    }
+
+    /// The limit `entry` is read against: its car's, in its conditions, as the driver adjusted it.
+    public func gripLimit(for entry: LogbookEntry, among entries: [LogbookEntry]? = nil) -> CarGripLimit? {
+        let adjustment = Garage.car(named: entry.car, in: cars())?.gripAdjustment ?? 1
+        return CarGrip.limit(for: entry, among: entries ?? self.entries(), adjustment: adjustment)
+    }
+}

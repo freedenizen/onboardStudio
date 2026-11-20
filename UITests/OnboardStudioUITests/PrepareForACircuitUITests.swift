@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 2
+// ci-shard: 6
 /// J63: prepare to go back to a circuit (#460). Choosing it in the Logbook's sidebar shows what to
 /// know before going: the personal best, the last visit and a plan to write and change right
 /// there; New Track Day Here… begins the next day at it, which shows the same card.

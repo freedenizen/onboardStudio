@@ -289,6 +289,26 @@ GPS-verified offset with a correlation of 0.9, whereas picture motion alone is u
 dash-cam footage (people walking past a parked car change as many pixels as driving does), which is
 why it is only the fallback. `onboard sync --dump signals.csv` writes the signals for inspection.
 
+## Writing telemetry out (#563)
+
+`TelemetryExport` (`Importers/TelemetryExport.swift`) writes a session, or one lap, as:
+
+- **CSV** — `time (s)` from the start of what is written, `utc` (ISO 8601) when the session has an
+  absolute clock, `lap`, then every channel as `name (unit)` in the session's order, a name
+  repeated by another channel suffixed with its role (`[aux:speed]`). One row at every time any
+  channel has a sample, the others read between their own samples. The app's derived channels
+  (`lapDelta`, `speedDelta`, `projectedLap`, `gpsRate`) are left out. Read back by `generic-csv`.
+- **GPX 1.1** — one `trk`, a `trkseg` per lap (and one each for before and after the laps), `ele`,
+  `time` when the clock is known (never made up) and `<extensions><speed>` in m/s.
+- **KML 2.2** — a `Placemark` with a clamped `LineString` per lap.
+- **VBO** — `[header]`, `[laptiming]` with the session's start gate when it has one (longitude
+  first, minutes, west positive, as read), `[column names]` `sats time lat long velocity heading
+  height` plus `longacc`/`latacc` when recorded, and `[data]` rows: `008`, `hhmmss.ss` UTC (from the
+  start of the session's day without a clock), minutes north-positive and west-positive, km/h.
+  `File created on` only when the clock is known. CRLF line ends.
+
+`onboard export-data <file> --format csv|gpx|kml|vbo [--lap N|best] [--out path]`.
+
 ## Logbook entry (`.onboardsession`)
 
 One JSON file per session in `~/Library/Application Support/OnboardStudio/Logbook` (#345), written

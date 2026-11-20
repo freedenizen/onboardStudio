@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 5
+// ci-shard: 2
 /// J80: line a second logger up with the first by what both recorded (#562).
 final class DataAlignmentUITests: OnboardStudioUITestCase {
     @MainActor

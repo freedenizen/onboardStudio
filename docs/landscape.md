@@ -189,7 +189,7 @@ summary; a next-session plan carried to the circuit. These remain Onboard Studio
 | Niche | Steering-angle indicator | **Yes — not found in any other surveyed tool** |
 | Niche | Tyre-temperature heat map | No (VBOX only, among those surveyed) |
 | Common | Track line coloured by any channel (speed, brake, throttle, G) | Yes — the lap being driven, on one ramp set in Settings, with a legend (#561) |
-| Moderate | Friction-circle / combined-G use read per corner | No — the G-force object draws it, nothing reads it (#558) |
+| Moderate | Friction-circle / combined-G use read per corner | Yes — grip used, time near the limit and braking-to-turning gaps against the car's grip in like conditions (#558) |
 | Moderate | Point-to-point runs (autocross, hill climb, stage) | No — laps need one start/finish line (#552) |
 | Moderate | Performance runs: 0–60, ¼ mile, braking distance | No (#553) |
 | Niche | Theoretical / optimal lap | Yes — *Optimal* on the Sector Times panel, and in the data inspector |
@@ -238,15 +238,17 @@ Originally ranked by breadth of evidence, not by effort. Where each item stands 
 - #554 a lap that should not count (traffic, a flag, an off), and which laps an optimal lap came from
   (built: *Laps that don't count* in the guide; the video still counts every lap)
 - #555 how good the GPS data is, and how far its brake points can be trusted — *shipped*
-- #556 laps as data without building a video: linked traces, delta-T, map and picture
+- #556 laps as data without building a video: linked traces, delta-T, map and picture — *shipped*
 - #557 a session's lap table: sector splits per lap, best sectors, speeds — *shipped*
 - #558 grip use: combined braking and turning, time near the limit, and its trend
+  (built: readings, the car's grip by conditions, Coaching, Trends and the overlay channel; the
+  Analysis friction circle's target next)
 - #559 judging a tyre, pressure or setup change: structured pressures, Trends split by conditions
   — *shipped*
 - #560 weather filled in from the session's time and place (the first network read for analysis)
 - #561 the track line coloured by any channel — *shipped*
 - #562 a second logger (an ECU CSV) lined up with the first by a shared channel — *shipped*
-- #563 a lap or session's telemetry exported as CSV, GPX, KML or VBO
+- #563 a lap or session's telemetry exported as CSV, GPX, KML or VBO — *shipped*
 
 **Not filed**
 

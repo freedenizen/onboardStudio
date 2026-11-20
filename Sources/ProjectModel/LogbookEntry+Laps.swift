@@ -49,6 +49,7 @@ extension LogbookEntry {
         applyPenalties()
         readSplits(of: session)
         readGPS(of: session)
+        readGrip(of: session)
         readCorners(of: session)
         readPerformance(of: session)
     }

@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 6
 /// J55: the Logbook from the menu bar and the keyboard (#450). With the Logbook in front, the
 /// Session menu acts on the session whose detail is on show, ⌘1–⌘3 switch its views and ⌘F finds;
 /// the editor's menus are dimmed and leave their keys to the Logbook.

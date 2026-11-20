@@ -22,6 +22,8 @@ struct LogbookCommandContext {
     var addToProject: (LogbookEntry) -> Void
     var coach: (LogbookEntry) -> Void
     var replay: (LogbookEntry) -> Void
+    var analyse: (LogbookEntry) -> Void
+    var exportTelemetry: (LogbookEntry) -> Void
     var compare: (LogbookEntry, LogbookEntry) -> Void
     var debrief: (LogbookEntry) -> Void
     var remove: ([LogbookEntry]) -> Void
@@ -89,12 +91,13 @@ struct LogbookCommands: Commands {
             }
         }
         CommandGroup(before: .toolbar) {
-            // ⌘1–⌘3, as Photos switches Years, Months and All Photos; only while the Logbook is in
+            // ⌘1–⌘4, as Photos switches Years, Months and All Photos; only while the Logbook is in
             // front, so the attribute window's ⌘1 and ⌘2 stay its own.
             if let view = logbook?.view {
                 Toggle("Sessions", isOn: view.selecting(.sessions)).keyboardShortcut("1", modifiers: .command)
                 Toggle("Trends", isOn: view.selecting(.trends)).keyboardShortcut("2", modifiers: .command)
                 Toggle("Season", isOn: view.selecting(.season)).keyboardShortcut("3", modifiers: .command)
+                Toggle("Analysis", isOn: view.selecting(.analysis)).keyboardShortcut("4", modifiers: .command)
                 Divider()
             }
         }
@@ -143,6 +146,10 @@ private struct SessionMenuItems: View {
             .disabled(session == nil)
         // No key: ⌃⌘R opens the Replay window from the Window menu.
         Button("Replay…") { act { logbook?.replay($0) } }
+            .disabled(session == nil)
+        Button("Analyse Laps…") { act { logbook?.analyse($0) } }
+            .disabled(session == nil)
+        Button("Export Telemetry…") { act { logbook?.exportTelemetry($0) } }
             .disabled(session == nil)
         Menu("Compare With") {
             ForEach(logbook?.comparisons ?? [], id: \.entry.id) { choice in

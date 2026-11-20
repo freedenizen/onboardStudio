@@ -9,7 +9,7 @@ struct OnboardStudio: AsyncParsableCommand {
         version: OnboardStudioVersion.marketing,
         subcommands: [
             Probe.self, Coach.self, TrafficCommand.self, Render.self, Sync.self, Upload.self, Bench.self,
-            LogbookCommand.self,
+            LogbookCommand.self, ExportData.self,
         ]
     )
 }

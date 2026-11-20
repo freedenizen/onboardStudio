@@ -77,6 +77,13 @@ struct CornerDetailView: View {
                 row("Exit speed", format.speed(lap.exitSpeed), format.speed(reference.exitSpeed))
                 row("Coasting", lap.coastingSeconds.map(format.seconds), reference.coastingSeconds.map(format.seconds))
                 row("Peak lateral G", lap.peakLateralG.map(format.g), reference.peakLateralG.map(format.g))
+                // How much of the car's grip, and how far it fell between braking and turning (#558).
+                row(
+                    "Grip used", comparison.lapGrip.map(Self.gripUsed),
+                    comparison.referenceGrip.map(Self.gripUsed))
+                row(
+                    "Braking to turning", comparison.lapGrip?.gap.map { format.g($0.lowestG) + " at least" },
+                    comparison.referenceGrip?.gap.map { format.g($0.lowestG) + " at least" })
                 row("Time in corner", format.seconds(lap.timeInCorner), format.seconds(reference.timeInCorner))
             }
             .font(.callout)
@@ -97,6 +104,11 @@ struct CornerDetailView: View {
     /// "172 m before the apex"
     private func before(_ metres: Double?) -> String? {
         metres.map { "\(format.metres($0)) before" }
+    }
+
+    /// "78%, 96% at most": the corner's average and peak share of the car's grip.
+    static func gripUsed(_ grip: GripUse.Corner) -> String {
+        "\(GripWording.percent(grip.meanUsed)), \(GripWording.percent(grip.peakUsed)) at most"
     }
 
     /// "12 m after" / "4 m before" / "at the apex"

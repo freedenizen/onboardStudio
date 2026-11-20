@@ -62,7 +62,10 @@ struct CoachingWindow: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .help("Be taken through the lap's biggest losses, or see every corner at once")
+                .help(
+                    "Be taken through the lap's biggest losses, see every corner at once, or lay the laps over "
+                        + "each other"
+                )
                 .disabled(active.editor == nil && target.logbookSource == nil)
                 .accessibilityIdentifier("coaching.mode")
             }
