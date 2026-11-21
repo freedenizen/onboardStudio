@@ -20,6 +20,8 @@ import TelemetryKit
     private(set) var analysis: LapAnalysis?
     /// The picture of each trace that has one, by trace id (#556).
     private(set) var footage: [Int: AnalysisFootage] = [:]
+    /// What the friction circle reads the laps against (#631).
+    private(set) var gripTarget: GripTarget?
     let picture = AnalysisPicture()
     /// The project whose picture a project's laps are shown in.
     @ObservationIgnored private(set) weak var editor: EditorModel?
@@ -116,6 +118,7 @@ import TelemetryKit
         problem = nil
         analysis = nil
         footage = [:]
+        gripTarget = nil
         picture.stop()
         cursor = nil
         visible = nil
@@ -218,29 +221,6 @@ import TelemetryKit
         showPicture()
     }
 
-    /// The channels the chosen laps' sessions recorded that can be traced, beside speed.
-    var traceableChannels: [ChannelRole] {
-        let excluded: Set<ChannelRole> = [.latitude, .longitude, .distance, .speed]
-        var seen: [ChannelRole] = []
-        for group in groups where group.session != nil && chosen.contains(where: { $0.hasPrefix(group.id + "#") }) {
-            for channel in group.session?.orderedChannels ?? [] where !excluded.contains(channel.role) {
-                if !seen.contains(channel.role) { seen.append(channel.role) }
-            }
-        }
-        for role in [ChannelRole.lateralG, .longitudinalG] where !seen.contains(role) { seen.append(role) }
-        return seen
-    }
-
-    /// What a channel's numbers are in, from the reference's session.
-    func unit(of role: ChannelRole) -> String {
-        switch role {
-        case .lateralG, .longitudinalG: return "G"
-        default: break
-        }
-        let session = groups.first { group in chosen.first?.hasPrefix(group.id + "#") ?? false }?.session
-        return session?[role]?.unit.symbol ?? ""
-    }
-
     // MARK: - Building
 
     /// Reads in any session a chosen lap needs, then builds the profiles off the main actor.
@@ -279,6 +259,8 @@ import TelemetryKit
             guard generation == mine else { return }
             let lengthChanged = built?.analysis.length != analysis?.length
             analysis = built?.analysis
+            gripTarget = await readGripTarget(for: built?.picks.first)
+            guard generation == mine else { return }
             picture.stop()
             footage = await loadFootage(for: built?.picks ?? [])
             guard generation == mine else { return }
@@ -314,5 +296,48 @@ import TelemetryKit
             let analysis = LapAnalysis(profiles: profiles, corners: LapAnalysis.corners(of: lap, in: session))
         else { return nil }
         return (analysis, Array(kept.prefix(LapAnalysis.maximumLaps)))
+    }
+}
+
+// Outside the class's body, which the laps and the picture fill.
+extension LapAnalysisModel {
+    /// The channels the chosen laps' sessions recorded that can be traced, beside speed.
+    var traceableChannels: [ChannelRole] {
+        let excluded: Set<ChannelRole> = [.latitude, .longitude, .distance, .speed]
+        var seen: [ChannelRole] = []
+        for group in groups where group.session != nil && chosen.contains(where: { $0.hasPrefix(group.id + "#") }) {
+            for channel in group.session?.orderedChannels ?? [] where !excluded.contains(channel.role) {
+                if !seen.contains(channel.role) { seen.append(channel.role) }
+            }
+        }
+        for role in [ChannelRole.lateralG, .longitudinalG] where !seen.contains(role) { seen.append(role) }
+        return seen
+    }
+
+    /// What a channel's numbers are in, from the reference's session.
+    func unit(of role: ChannelRole) -> String {
+        switch role {
+        case .lateralG, .longitudinalG: return "G"
+        default: break
+        }
+        let session = groups.first { group in chosen.first?.hasPrefix(group.id + "#") ?? false }?.session
+        return session?[role]?.unit.symbol ?? ""
+    }
+
+    /// The car's grip in the reference lap's conditions, when the logbook knows its session; else
+    /// the most that session reached, measured off the main actor.
+    private func readGripTarget(for reference: ReplayPick?) async -> GripTarget? {
+        guard let reference else { return nil }
+        let group = groups.first { $0.id == reference.groupID }
+        let entryID =
+            group?.entry?.id
+            ?? editor?.project.dataInputs.first { $0.id.rawValue.uuidString == reference.groupID }?.dataSettings?
+            .logbookEntryID
+        let logbook = LogbookModel.shared
+        let entry = entryID.flatMap { id in logbook.entries.first { $0.id == id } }
+        if let limit = entry.flatMap({ logbook.gripLimit(for: $0) }) { return .car(limit) }
+        guard let session = reference.session else { return nil }
+        let own = await Task.detached(priority: .userInitiated) { GripEnvelope.measure(session) }.value
+        return GripTarget.choose(car: nil, session: own)
     }
 }

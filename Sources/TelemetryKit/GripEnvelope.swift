@@ -151,3 +151,20 @@ extension GripEnvelope {
             values: samples.map { min(150, envelope.used(lateral: $0.lateral, longitudinal: $0.longitudinal) * 100) })
     }
 }
+
+extension GripEnvelope {
+    /// The limit as a closed shape (#631): `count` points `(lateral, longitudinal)` in g, evenly
+    /// round the circle from straight braking, clockwise through cornering right, each at the reach
+    /// the envelope gives that direction.
+    public func outline(points count: Int = 64) -> [(lateral: Double, longitudinal: Double)] {
+        let steps = max(count, Self.directions)
+        return (0..<steps).map { index in
+            let angle = Double(index) / Double(steps) * 2 * .pi
+            // The direction `sector` reads: braking (longitudinal negative) at 0, right at a quarter.
+            let lateral = sin(angle)
+            let longitudinal = -cos(angle)
+            let reach = limit(lateral: lateral, longitudinal: longitudinal)
+            return (lateral * reach, longitudinal * reach)
+        }
+    }
+}

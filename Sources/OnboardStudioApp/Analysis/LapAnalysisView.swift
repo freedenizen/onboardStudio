@@ -135,9 +135,12 @@ struct LapAnalysisView: View {
                 .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
             }
             if model.layout.showsFrictionCircle {
-                AnalysisFrictionCircle(analysis: analysis, colors: colors, span: model.span, cursor: model.cursor)
-                    .frame(height: 240)
-                    .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
+                AnalysisFrictionCircle(
+                    analysis: analysis, colors: colors, span: model.span, cursor: model.cursor,
+                    target: model.gripTarget
+                )
+                .frame(height: 240)
+                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
             }
         }
         .frame(width: 260)
