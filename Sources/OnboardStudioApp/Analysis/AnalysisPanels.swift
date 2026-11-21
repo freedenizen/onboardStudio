@@ -208,6 +208,23 @@ struct AnalysisFrictionCircle: View {
             clouds.flatMap { $0 }.map { max(abs($0.lateral), abs($0.longitudinal)) }
             + outline.map { max(abs($0.lateral), abs($0.longitudinal)) }
         let limit = max(1, (reached.max() ?? 1) * 1.1)
+        VStack(alignment: .leading, spacing: 0) {
+            circle(clouds: clouds, outline: outline, limit: limit)
+            // Under the circle, not over its points, and its own words for VoiceOver and the tests.
+            if let target {
+                Text(target.caption).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                    .padding([.horizontal, .bottom], 4)
+                    .help("Each lap's points against the most grip the car has shown in conditions like these")
+                    .accessibilityIdentifier("analysis.gripTarget")
+            }
+        }
+    }
+
+    private func circle(
+        clouds: [[LapAnalysis.GPoint]], outline: [(lateral: Double, longitudinal: Double)], limit: Double
+    )
+        -> some View
+    {
         Canvas { context, size in
             let radius = min(size.width, size.height) / 2 - 4
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -254,12 +271,6 @@ struct AnalysisFrictionCircle: View {
         }
         .overlay(alignment: .topLeading) {
             Text("Friction circle · rings every 0.5 G").font(.caption2).foregroundStyle(.secondary).padding(4)
-        }
-        .overlay(alignment: .bottomLeading) {
-            if let target {
-                Text(target.caption).font(.caption2).foregroundStyle(.secondary).lineLimit(2).padding(4)
-                    .help("Each lap's points against the most grip the car has shown in conditions like these")
-            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Friction circle")

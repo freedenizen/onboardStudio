@@ -35,12 +35,10 @@ final class LapAnalysisUITests: OnboardStudioUITestCase {
                 window.descendants(matching: .any).matching(identifier: panel).firstMatch.exists, "No \(panel)")
         }
         // The friction circle reads each lap against the car's grip from the logbook (#631).
-        let circle = window.descendants(matching: .any).matching(identifier: "analysis.frictionCircle").firstMatch
-        let againstTheCar = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value CONTAINS %@", "of the car's grip"), object: circle)
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [againstTheCar], timeout: Self.timeout), .completed,
-            "The friction circle is not read against the car's grip: \(circle.value ?? "")")
+        let target = window.staticTexts["analysis.gripTarget"]
+        XCTAssertTrue(
+            target.waitForExistence(timeout: Self.timeout), "The friction circle names no grip to read against")
+        XCTAssertTrue(text(of: target).contains("the car's grip"), "Not the car's grip: \(text(of: target))")
 
         // A corner from the menu zooms every trace to it and puts the cursor on its apex.
         let wholeLap = window.buttons["analysis.wholeLap"]
