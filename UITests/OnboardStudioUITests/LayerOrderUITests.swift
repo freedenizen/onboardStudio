@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 3
+// ci-shard: 5
 /// Putting overlays in front of or behind each other (#277): the Arrange menu, and dragging rows
 /// in the sidebar, which lists the front first.
 final class LayerOrderUITests: OnboardStudioUITestCase {

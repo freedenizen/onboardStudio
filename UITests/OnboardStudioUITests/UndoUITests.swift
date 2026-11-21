@@ -25,13 +25,15 @@ final class UndoUITests: OnboardStudioUITestCase {
         }
         XCTAssertLessThan(opacity.normalizedSliderPosition, before - 0.3, "The drag did not move the slider")
         XCTAssertEqual(undoRedoTitles().undo, "Undo Change Opacity")
-        // One ⌘Z puts it back, and the step before the drag is next.
-        app.typeKey("z", modifierFlags: .command)
+        // One Undo puts it back, and the step before the drag is next. Chosen from the Edit menu,
+        // which is what ⌘Z does: a keystroke the runner drops looks exactly like a drag that took
+        // two steps (#634).
+        menu("Edit", "Undo Change Opacity")
         let deadline = Date().addingTimeInterval(Self.timeout)
         while abs(opacity.normalizedSliderPosition - before) > 0.02, Date() < deadline {
             Thread.sleep(forTimeInterval: 0.2)
         }
-        XCTAssertEqual(opacity.normalizedSliderPosition, before, accuracy: 0.02, "One ⌘Z did not undo the drag")
+        XCTAssertEqual(opacity.normalizedSliderPosition, before, accuracy: 0.02, "One Undo did not undo the drag")
         XCTAssertEqual(undoRedoTitles().undo, "Undo Add Speedometer")
     }
 }
