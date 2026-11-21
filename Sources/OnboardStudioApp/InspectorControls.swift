@@ -101,6 +101,8 @@ struct SliderField: View {
     let minimumLabel: String?
     let maximumLabel: String?
     let identifier: String?
+    @Environment(\.undoManager) private var undoManager
+    @State private var drag = SliderDrag()
 
     init(
         _ title: String, value: Binding<Double>, in range: ClosedRange<Double>, step: Double? = nil,
@@ -154,27 +156,63 @@ struct SliderField: View {
 
     @ViewBuilder var slider: some View {
         let label = Text(title)
-        switch (step, minimumLabel, maximumLabel) {
-        case (let step?, let low?, let high?):
-            Slider(value: $value, in: range, step: step) {
-                label
-            } minimumValueLabel: {
-                Text(low)
-            } maximumValueLabel: {
-                Text(high)
+        let tracked = Binding(
+            get: { value },
+            set: {
+                drag.last = $0
+                value = $0
+            })
+        Group {
+            switch (step, minimumLabel, maximumLabel) {
+            case (let step?, let low?, let high?):
+                Slider(value: tracked, in: range, step: step) {
+                    label
+                } minimumValueLabel: {
+                    Text(low)
+                } maximumValueLabel: {
+                    Text(high)
+                } onEditingChanged: {
+                    dragged($0)
+                }
+            case (nil, let low?, let high?):
+                Slider(value: tracked, in: range) {
+                    label
+                } minimumValueLabel: {
+                    Text(low)
+                } maximumValueLabel: {
+                    Text(high)
+                } onEditingChanged: {
+                    dragged($0)
+                }
+            case (let step?, _, _):
+                Slider(value: tracked, in: range, step: step) {
+                    label
+                } onEditingChanged: {
+                    dragged($0)
+                }
+            default:
+                Slider(value: tracked, in: range) {
+                    label
+                } onEditingChanged: {
+                    dragged($0)
+                }
             }
-        case (nil, let low?, let high?):
-            Slider(value: $value, in: range) {
-                label
-            } minimumValueLabel: {
-                Text(low)
-            } maximumValueLabel: {
-                Text(high)
-            }
-        case (let step?, _, _):
-            Slider(value: $value, in: range, step: step) { label }
-        default:
-            Slider(value: $value, in: range) { label }
+        }
+        .onDisappear { drag.finish(value: $value) }
+    }
+
+    /// A drag is one undo step (#243, #634). Grouping by event made it one only while every value
+    /// arrived inside the slider's mouse-down; one that arrived after it was a step of its own, and
+    /// ⌘Z undid that and left the drag. So nothing is recorded during the drag, and when it ends
+    /// (a turn of the run loop later, for a value sent after letting go) the value goes back to
+    /// where it started and on to where it ended, recorded once.
+    private func dragged(_ editing: Bool) {
+        if editing {
+            drag.begin(from: value, undo: undoManager)
+        } else {
+            let binding = $value
+            let drag = drag
+            DispatchQueue.main.async { MainActor.assumeIsolated { drag.finish(value: binding) } }
         }
     }
 
@@ -339,5 +377,34 @@ struct OverrideRow<Content: View>: View {
                 }
             }
         }
+    }
+}
+
+/// A slider drag under way: where it started, the last value it sent, and the undo manager whose
+/// recording it holds off until it ends (#634).
+@MainActor final class SliderDrag {
+    private var start: Double?
+    var last: Double?
+    private var undo: UndoManager?
+
+    func begin(from value: Double, undo: UndoManager?) {
+        guard start == nil else { return }
+        start = value
+        last = nil
+        self.undo = undo
+        undo?.disableUndoRegistration()
+    }
+
+    /// Puts the value back to where the drag started without recording it, then on to where it
+    /// ended as one step. Safe to call twice, and when no drag is under way.
+    func finish(value: Binding<Double>) {
+        guard let start else { return }
+        self.start = nil
+        let end = last
+        last = nil
+        if end != nil { value.wrappedValue = start }
+        undo?.enableUndoRegistration()
+        undo = nil
+        if let end { value.wrappedValue = end }
     }
 }

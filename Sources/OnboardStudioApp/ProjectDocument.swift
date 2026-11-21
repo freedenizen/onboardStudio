@@ -54,6 +54,7 @@ final class ProjectDocument: ReferenceFileDocument, @unchecked Sendable {
                 document.apply(undoManager, name: name) { $0 = before }
             }
         }
-        undoManager?.setActionName(name)
+        // While a slider drag holds recording off (#634), naming would rename the step before it.
+        if undoManager?.isUndoRegistrationEnabled ?? false { undoManager?.setActionName(name) }
     }
 }
