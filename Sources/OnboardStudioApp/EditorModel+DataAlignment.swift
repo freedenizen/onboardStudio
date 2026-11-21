@@ -5,12 +5,12 @@ import TelemetryKit
 // MARK: - A second data file lined up with the first (#562)
 
 extension EditorModel {
-    /// The data file another is lined up with: the one the laps come from, else the first other one.
-    /// `nil` for the lap file itself: it is what the others are lined up with.
+    /// The data file another is lined up with: the project's first. `nil` for that file itself, which
+    /// the others are lined up with. Not `lapInput`, which follows the selection: selecting the file to
+    /// line up made it the lap file, and the menu never showed (#625).
     func alignmentReference(for dataID: InputID) -> Input? {
-        guard dataID != lapInput?.id else { return nil }
-        let others = project.dataInputs.filter { $0.id != dataID }
-        return others.first { $0.id == lapInput?.id } ?? others.first
+        guard let first = project.dataInputs.first, first.id != dataID else { return nil }
+        return first
     }
 
     /// The channels the two files both recorded, most telling first.
