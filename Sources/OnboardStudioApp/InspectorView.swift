@@ -120,6 +120,7 @@ struct InputInspector: View {
                 Text("Drag the video bars in the timeline to move them; videos snap to each other's ends.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            if input.kind.isData { DataAlignmentRow(editor: editor, input: input) }
             if !input.kind.isVideo {
                 Button("Synchronize with Video…") { editor.showSyncWizard = true }
                 if let suggestion = editor.suggestedSync(for: input.id) {
