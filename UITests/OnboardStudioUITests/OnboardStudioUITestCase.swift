@@ -51,6 +51,9 @@ class OnboardStudioUITestCase: XCTestCase {
             "-logbook.projectTemplate", "Classic Dash",
             // GPS is rated against the default thresholds, whatever this Mac's Settings say (#555).
             "-gpsThresholds", "",
+            // No weather is looked up and no offer for it stands in the way, but in the weather's
+            // own journey (#560); there the app answers itself, and nothing is sent.
+            "-lookUpWeather", "NO", "-weatherOfferAnswered", "YES",
         ]
         // The test's own arguments last, so that they override these.
         app.launchArguments += Self.firstRunArguments(tourSeen: tourSeen) + extraArguments

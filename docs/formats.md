@@ -322,7 +322,9 @@ file's seconds, #554; absent = none), `bestLap`, `bestLapNumber`, `optimalLap`, 
 (the lap numbers the optimal lap is spliced from, #554; absent until the laps are read again),
 `fastestRollingLap`, `topSpeed` (m/s), `distanceMeters` (#355), `notes`, `tags`, `conditions`
 (`{ weather: sunny|cloudy|overcast|rain|mixed, track: dry|damp|wet|drying|greasy, ambientCelsius, tyres, setup }`,
-every key optional, #348), `projects` and `exports` (`[{ path, name }]`, #349), `corners`
+every key optional, #348; `lookedUp`, a list of `weather`, `track` and `air`, names the ones filled
+in from the weather record, #560, absent when none were), `weatherLookedUp` (when the weather was
+looked up, #560; absent = not yet), `projects` and `exports` (`[{ path, name }]`, #349), `corners`
 (`[{ index, label, brakePointMeters, minimumSpeed, exitSpeed, timeInCorner }]`, the best lap's, #353),
 `cornerMeasurement` (which corner measurement read them, #438; absent = 1), `lapMeasurement`
 (which reading the laps are from, #498; absent = 1), `added`, `modified`.

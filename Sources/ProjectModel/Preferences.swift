@@ -128,6 +128,14 @@ public enum Preferences {
     /// Steps of the Logbook's checklist that leave nothing in the logbook to read them from.
     public static let logbookCoached = Preference(key: "logbookCoached", unset: false)
     public static let logbookSawProgress = Preference(key: "logbookSawProgress", unset: false)
+    /// A session added to the logbook has its weather looked up (#560): the circuit's place,
+    /// rounded to about 10 km, and the date go to Open-Meteo.
+    public static let lookUpWeather = Preference(key: "lookUpWeather", unset: true)
+    /// When the lookup first ran, as seconds since 1970; 0 before. Sessions added earlier are
+    /// offered once rather than looked up unasked.
+    public static let weatherSince = Preference(key: "weatherSince", unset: 0.0)
+    /// The offer to fill in the earlier sessions has been taken or turned down.
+    public static let weatherOfferAnswered = Preference(key: "weatherOfferAnswered", unset: false)
 
     /// All of them, for the test that no two share a key.
     public static let allKeys: [String] = [
@@ -136,7 +144,8 @@ public enum Preferences {
         youTubeClientID.key,
         youTubeClientSecret.key, openLogbookAtLaunch.key, tourSeen.key, showGettingStarted.key,
         logbookTourSeen.key, showLogbookGettingStarted.key, logbookCoached.key, logbookSawProgress.key,
-        mapColorRamp.key, analysisLayout.key, setupPressureUnit.key,
+        mapColorRamp.key, analysisLayout.key, setupPressureUnit.key, lookUpWeather.key, weatherSince.key,
+        weatherOfferAnswered.key,
     ]
 }
 

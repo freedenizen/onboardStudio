@@ -35,7 +35,8 @@ struct ConditionsEditor: View {
         subject = "The setup for this session"
         self.save = { conditions, notes in
             var changed = entry
-            changed.conditions = conditions
+            // A looked-up field the driver changes is theirs (#560).
+            changed.conditions = conditions.keepingLookups(from: entry.conditions)
             changed.notes = notes
             save(changed)
         }
@@ -112,6 +113,7 @@ struct ConditionsEditor: View {
                 }
             }
             .font(.callout)
+            if !conditions.lookedUp.isEmpty { weatherCredit }
             Text("Notes").font(.subheadline.weight(.semibold)).padding(.top, 4)
             TextField("Anything worth remembering about the day", text: $notesText, axis: .vertical).lineLimit(2...6)
                 .focused($focus, equals: .notes)
@@ -122,12 +124,38 @@ struct ConditionsEditor: View {
         .onChange(of: identity) { load() }
         // The sheet's Tyres line is this one.
         .onChange(of: conditions.tyres) { if focus != .tyres { tyres = conditions.tyres } }
+        // The air looked up while the session is on show (#560): leaving the box must not write
+        // the empty text back over it.
+        .onChange(of: conditions.ambientCelsius) {
+            if focus != .temperature { temperature = conditions.ambientCelsius.map { Self.format($0) } ?? "" }
+        }
         .sheet(isPresented: $editingSetup) {
             SetupSheetEditor(
                 subject: subject, car: car, conditions: conditions, undoManager: undoManager
             ) { save($0, notes) }
         }
         .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
+    }
+
+    /// Which fields came from the weather record, and whose record it is (#560).
+    private var weatherCredit: some View {
+        let names = [
+            conditions.lookedUp.contains(.weather) ? "Weather" : nil,
+            conditions.lookedUp.contains(.track) ? "surface" : nil,
+            conditions.lookedUp.contains(.air) ? "air" : nil,
+        ]
+        .compactMap { $0 }
+        let listed = ListFormatter.localizedString(byJoining: names)
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(
+                "\(listed.prefix(1).uppercased() + listed.dropFirst()) from the weather where and when it was "
+                    + "driven; change any to note your own."
+            )
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("logbook.weatherLookedUp")
+            Link(WeatherLookup.credit, destination: WeatherLookup.creditURL)
+        }
+        .font(.caption).foregroundStyle(.secondary)
     }
 
     /// What the sheet notes, and the way to it.

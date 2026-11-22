@@ -48,6 +48,7 @@ extension LogbookWindow {
             MoveToDayMenu(
                 entries: entries, days: model.days, move: { move(entries.map(\.id), to: $0) },
                 moveToOwnDays: { moveToOwnDays(entries.map(\.id)) })
+            Button("Fill In Weather") { fillWeather(entries.map(\.id)) }
             if !model.knownCars.isEmpty {
                 Menu("Car") {
                     ForEach(model.knownCars, id: \.self) { car in

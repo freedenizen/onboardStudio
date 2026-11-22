@@ -1,3 +1,4 @@
+import AppKit
 import ProjectModel
 import SwiftUI
 
@@ -23,6 +24,7 @@ extension LogbookWindow {
             remove: { remove($0.map(\.id)) },
             move: { move($0.map(\.id), to: $1) },
             moveToOwnDays: { moveToOwnDays($0.map(\.id)) },
+            fillWeather: { fillWeather($0.map(\.id)) },
             findSessions: { searchFocused = true },
             takeTour: { model.tourStep = 0 },
             showGettingStarted: showGettingStartedNow,
@@ -93,5 +95,21 @@ extension LogbookWindow {
             .help("Take the logbook with you as files, as CSV or Markdown, or read an export back in")
             .accessibilityIdentifier("logbook.transfer")
         }
+    }
+}
+
+// Out of LogbookWindow.swift, which holds the window's layout.
+extension LogbookWindow {
+    // MARK: - Into a project
+
+    /// A new project with the session's data file, its clips and `template` (#394).
+    func openAsProject(_ entry: LogbookEntry, template: ProjectTemplate?) {
+        model.openAsProject(entry, template: template)
+    }
+
+    func addToCurrentProject(_ entry: LogbookEntry) {
+        guard let editor = active.editor, let url = entry.resolveFile() else { return }
+        editor.addData(at: url)
+        NSApp.activate()
     }
 }
