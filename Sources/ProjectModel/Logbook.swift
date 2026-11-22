@@ -158,6 +158,9 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// The laps the optimal lap is spliced from, in lap order (#554); empty until the laps are
     /// read by a build that keeps them.
     public var optimalSources: [Int] = []
+    /// When its weather was looked up (#560), whatever the record had; `nil` until then, so a
+    /// session is looked up once and not again on every launch.
+    public var weatherLookedUp: Date?
     public var added: Date
     public var modified: Date
 
@@ -277,6 +280,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
             modified
         case runLines, course, coursePath, penaltyPerCone, measuresPerformance, performance
         case lapMarks, optimalSources, gps, gpsMeasurement, grip, gripMeasurement
+        case weatherLookedUp
     }
 
     public init(from decoder: any Decoder) throws {
@@ -327,6 +331,7 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
         penaltyPerCone = try c.decodeIfPresent(Double.self, forKey: .penaltyPerCone)
         lapMarks = try c.decodeIfPresent([LapMark].self, forKey: .lapMarks) ?? []
         optimalSources = try c.decodeIfPresent([Int].self, forKey: .optimalSources) ?? []
+        weatherLookedUp = try c.decodeIfPresent(Date.self, forKey: .weatherLookedUp)
         added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date(timeIntervalSince1970: 0)
         modified = try c.decodeIfPresent(Date.self, forKey: .modified) ?? added
     }

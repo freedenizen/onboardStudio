@@ -9,6 +9,7 @@ struct SettingsView: View {
         .defaultExportPreset.unset
     @AppStorage(Preferences.ffmpegPath.key) private var ffmpegPath = Preferences.ffmpegPath.unset
     @AppStorage(Preferences.logbookAutoAdd.key) private var logbookAutoAdd = Preferences.logbookAutoAdd.unset
+    @AppStorage(Preferences.lookUpWeather.key) private var lookUpWeather = Preferences.lookUpWeather.unset
     @AppStorage(Preferences.openLogbookAtLaunch.key) private var openLogbookAtLaunch = Preferences.openLogbookAtLaunch
         .unset
     @AppStorage(Preferences.speedUnit.key) private var speedUnit = Preferences.speedUnit.unset
@@ -94,6 +95,19 @@ struct SettingsView: View {
                     "The logbook keeps every session the app reads: where and when, the car, every lap. "
                         + "Window ▸ Logbook."
                 )
+                .font(.caption).foregroundStyle(.secondary)
+                // The app's one request for analysis (#560): what it sends, said where it is switched.
+                Toggle("Look up the weather for sessions added to the logbook", isOn: $lookUpWeather)
+                    .accessibilityIdentifier("settings.lookUpWeather")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(
+                        "Fills in a session's weather, surface and air temperature when they are empty. The "
+                            + "circuit's position, rounded to about 10 km, and the session's date are sent to "
+                            + "Open-Meteo; nothing else is."
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
+                    Link(WeatherLookup.credit, destination: WeatherLookup.creditURL)
+                }
                 .font(.caption).foregroundStyle(.secondary)
             }
             GPSThresholdSettings()

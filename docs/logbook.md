@@ -67,7 +67,8 @@ cars kept for their notes.
 written through the same pattern as `TrackLibrary` (`entries()` newest session first, `save`
 stamps `modified`, unreadable files are skipped rather than failing the list). Separate files, as
 the tracks are, so a season can be copied, backed up, diffed or handed over as files; a selection
-export and a merge-by-hash import are #350. **Local only: nothing is uploaded.**
+export and a merge-by-hash import are #350. **Local only: nothing is uploaded.** The one request
+the Logbook makes is a session's weather (#560), below.
 
 What is deliberately not here: samples (the file has them; an entry is a card, not a copy), and
 anything a later build might compute differently from the same file — an entry records what the app read
@@ -163,6 +164,25 @@ window's detail writes straight to the entry: pickers and the temperature as set
 Return or losing focus, never per keystroke. `summary` is the table's column and the sheet's
 future "what the day was like". These are library files, not a document, so the edits are not
 undoable, as the track definitions' are not.
+
+**The weather, looked up (#560).** `WeatherLookup` (`ProjectModel/WeatherLookup.swift`) is the
+arithmetic: a `Request` rounds the place to a tenth of a degree and spans the session from six hours
+before (for rain that left the surface damp); its `url` is Open-Meteo's archive, or its forecast
+record for a session under six days old, which the archive has not reached, asking for hourly
+temperature, precipitation and cloud cover in Unix time, GMT. `reading` takes the air at the
+middle of the session between the hours either side, the sky from the hours that overlap it (rain
+of 0.1 mm or more in every one is *rain*, in some *mixed*, else mean cloud under 30 % *sunny*, under
+70 % *cloudy*, else *overcast*), and the surface (0.5 mm over the session *wet*; any wet hour, or
+0.2 mm in the six hours before, *damp*; else *dry*). `SessionConditions.fill` writes only the empty
+fields and adds them to `lookedUp`; `keepingLookups` takes a field off it when the driver changes
+it, which `ConditionsEditor` applies on every save. The place is the catalogue circuit's, else the
+course's first point, else the file's first fix. `LogbookModel.lookUpNewWeather` runs after every
+reload on entries added since `Preferences.weatherSince` (set the first time a build with the
+lookup runs, so the logbook from before is offered, not looked up unasked) that have no
+`weatherLookedUp`, when `lookUpWeather` is on: bookkeeping, as the import was, so no step of Undo. A
+failed request is not stamped and is tried again next launch. `fillWeather` (the offer, and Fill In
+Weather on a selection) looks every session up first and then writes them in one `edit`, one step
+of Undo. `WeatherService` makes the request; under UI tests it answers itself (sunny, dry, 21.5 °C).
 
 **The setup sheet (#559).** `SetupSheet` (`ProjectModel/SetupSheet.swift`) sits on the conditions
 as `sheet`, beside the free-text `tyres` (the tyre set) and `setup` (what was changed, shown as

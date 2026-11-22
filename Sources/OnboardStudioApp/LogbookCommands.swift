@@ -29,6 +29,8 @@ struct LogbookCommandContext {
     var remove: ([LogbookEntry]) -> Void
     var move: ([LogbookEntry], TrackDay) -> Void
     var moveToOwnDays: ([LogbookEntry]) -> Void
+    /// Fill In Weather on every session selected (#560).
+    var fillWeather: ([LogbookEntry]) -> Void
     var findSessions: () -> Void
     /// Help ▸ Take the Tour and Show Getting Started, the Logbook's own (#452).
     var takeTour: () -> Void
@@ -173,6 +175,8 @@ private struct SessionMenuItems: View {
             moveToOwnDays: { logbook?.moveToOwnDays(selected) }
         )
         .disabled(selected.isEmpty)
+        Button("Fill In Weather") { logbook?.fillWeather(selected) }
+            .disabled(selected.isEmpty)
         Divider()
         // ⌘⌫, as the Finder moves to the Trash and Photos deletes; only while the sessions have the
         // keyboard, so it still deletes to the start of a line while a note is being typed. No

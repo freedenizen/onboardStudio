@@ -16,6 +16,11 @@ import UniformTypeIdentifiers
     private(set) var cars: [Car] = []
     /// `reload` has read the logbook at least once.
     private(set) var hasLoaded = false
+    /// Fill In Weather is under way (#560).
+    var isLookingUpWeather = false
+    /// Sessions whose weather this run has asked for, so a failed request is not repeated on every
+    /// reload; the next launch asks again.
+    @ObservationIgnored var weatherAttempted: Set<UUID> = []
     /// The plan kept for each circuit (#330), by its catalogue id: what its card shows (#460).
     var plans: [String: NextSessionPlan] = [:]
     /// Every track definition kept, read with the plans: the configurations named at each circuit
@@ -93,6 +98,7 @@ import UniformTypeIdentifiers
         reloadPlans()
         goals = logbook.goals()
         hasLoaded = true
+        lookUpNewWeather()
     }
 
     /// Writes an edited day — its car, driver, conditions, notes, clips — and shows it. A change
@@ -406,6 +412,7 @@ struct LogbookWindow: View {
                 carHeader
                 circuitCard
                 lapReadingOffer
+                weatherOffer
                 if shown.isEmpty, isSearching {
                     // Not an empty striped table (#457).
                     ContentUnavailableView.search(text: search).frame(maxHeight: .infinity)
@@ -472,19 +479,6 @@ struct LogbookWindow: View {
     }
 
     private func circuitKey(of entry: LogbookEntry) -> String { LogbookFilter.circuitKey(of: entry) }
-
-    // MARK: - Into a project
-
-    /// A new project with the session's data file, its clips and `template` (#394).
-    func openAsProject(_ entry: LogbookEntry, template: ProjectTemplate?) {
-        model.openAsProject(entry, template: template)
-    }
-
-    func addToCurrentProject(_ entry: LogbookEntry) {
-        guard let editor = active.editor, let url = entry.resolveFile() else { return }
-        editor.addData(at: url)
-        NSApp.activate()
-    }
 
     static func urls(from providers: [NSItemProvider]) async -> [URL] {
         var urls: [URL] = []

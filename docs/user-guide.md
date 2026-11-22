@@ -211,6 +211,26 @@ under **Notes**: pickers and the temperature are kept as soon as set, text on Re
 leave the field; the table's Conditions column shows "Sunny · Dry · 24 °C · RE-71RS · Base" with
 only what you filled in, and the search finds it. Nothing is required.
 
+### The weather, looked up
+
+A session added to the Logbook has its **weather**, **surface** and **air temperature** filled in
+from the weather where and when it was driven, when you have not noted them yourself. Rain in every
+hour of the session is *Rain*, in some of them *Mixed*, and otherwise the cloud says *Sunny*,
+*Cloudy* or *Overcast*. The surface is a suggestion: *Wet* after rain during the session, *Damp*
+after a little or after rain in the six hours before, else *Dry*. Under Conditions a line says which
+fields were looked up; change any of them and it is yours. What you noted is never replaced.
+
+The sessions already in the Logbook before this was added are offered once, above the table:
+**Fill In Weather** fills in every one that has weather, surface or air empty, as one step of
+**Edit ▸ Undo**; **Not Now** leaves them. **Fill In Weather** on a session's right-click menu or the
+**Session** menu does the same for the sessions selected, whenever you like.
+
+This is the one thing the app looks up for you, so here is exactly what leaves your Mac: the
+circuit's position rounded to about 10 km, and the session's dates, sent to
+[Open-Meteo](https://open-meteo.com/) (weather data by Open-Meteo.com, CC BY 4.0). Nothing about
+you, the car, the laps or the files is sent. Turn it off in **Settings ▸ Logbook** with *Look up
+the weather for sessions added to the logbook*; Fill In Weather still asks when you choose it.
+
 ### The setup sheet
 
 **Setup** under Conditions says what the session's setup sheet notes (*Base · 30/28 psi cold · 6
@@ -835,7 +855,8 @@ come with it, and the app says so rather than guessing from the trace. Opening a
 earlier never changes its line, whatever the file says.
 
 **The circuit.** Onboard Studio recognises where you were driving from the GPS trace, against a
-bundled list of 1,290 motorsport venues — nothing is fetched and nothing is sent anywhere. The
+bundled list of 1,290 motorsport venues — nothing is fetched and nothing is sent anywhere for it
+(the one thing the app does look up is a session's weather; see *The weather, looked up*). The
 *Track* section names it, says how sure it is, and lets you search for the right one if it guessed
 wrong or found nothing. *Not This Circuit* clears it.
 

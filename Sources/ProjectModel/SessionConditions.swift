@@ -42,6 +42,11 @@ public struct SessionConditions: Hashable, Codable, Sendable {
     public var setup: String
     /// What was on the car, value by value (#559).
     public var sheet: SetupSheet
+    /// Which of the weather, the surface and the air came from the weather record (#560) and not
+    /// from the driver; empty for a session noted by hand.
+    public var lookedUp: Set<LookedUp> = []
+
+    public enum LookedUp: String, Codable, CaseIterable, Sendable { case weather, track, air }
 
     public init(
         weather: Weather? = nil, track: Track? = nil, ambientCelsius: Double? = nil, tyres: String = "",
@@ -73,7 +78,7 @@ public struct SessionConditions: Hashable, Codable, Sendable {
         return parts.joined(separator: " · ")
     }
 
-    private enum CodingKeys: String, CodingKey { case weather, track, ambientCelsius, tyres, setup, sheet }
+    private enum CodingKeys: String, CodingKey { case weather, track, ambientCelsius, tyres, setup, sheet, lookedUp }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -83,6 +88,9 @@ public struct SessionConditions: Hashable, Codable, Sendable {
         tyres = try c.decodeIfPresent(String.self, forKey: .tyres) ?? ""
         setup = try c.decodeIfPresent(String.self, forKey: .setup) ?? ""
         sheet = try c.decodeIfPresent(SetupSheet.self, forKey: .sheet) ?? SetupSheet()
+        // Absent before #560, and for anything noted by hand. An unknown field is skipped.
+        let names = (try? c.decodeIfPresent([String].self, forKey: .lookedUp)) ?? []
+        lookedUp = Set(names.compactMap(LookedUp.init(rawValue:)))
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -94,5 +102,6 @@ public struct SessionConditions: Hashable, Codable, Sendable {
         try c.encode(setup, forKey: .setup)
         // A session with no sheet is written as an earlier build wrote it.
         if !sheet.isEmpty { try c.encode(sheet, forKey: .sheet) }
+        if !lookedUp.isEmpty { try c.encode(lookedUp.map(\.rawValue).sorted(), forKey: .lookedUp) }
     }
 }
