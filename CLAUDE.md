@@ -46,7 +46,11 @@ swift run onboard bench --export --codec hevc --seconds 60
   signed commits, review threads resolved, no force pushes. **Not strict**: a PR need not be up
   to date with `main` to merge, so a merge never puts another PR `BEHIND`. The push run on
   `main` is what proves `main`; when it is red the `main health` job opens the issue labelled
-  `main-red` — fix forward at once. CodeQL's Swift analysis still runs on every PR but does not
+  `main-red` — fix forward at once. `Scripts/ci-changes.sh` keeps a run off the macOS runners
+  (five at once for the whole account) when it can: documentation alone skips Lint and Test, a
+  version-only `project.yml` skips the UI tests, and the push run skips everything when the PR
+  was up to date and already passed on the same tree (#646) — so rebasing before `gh pr ready`
+  also saves the second run. CodeQL's Swift analysis still runs on every PR but does not
   block it. Never push to `main` directly and never force-push it.
   **Force-pushing a feature branch is fine and is how you rebase one.** Rebase locally and
   `git push --force-with-lease`; never `gh pr update-branch --rebase`, which re-creates the

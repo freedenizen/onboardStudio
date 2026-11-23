@@ -45,8 +45,15 @@ setting. For the logbook a compile reads, scope it to the test's own task with
 
 CI runs the same suite on every pull request together with the two lint jobs, the XCUITest
 journeys and the commit signature check; those are the required checks, and a PR cannot merge
-until they pass. What a PR does not wait for runs afterwards: the push to `main` repeats the
-suite with coverage and, when red, opens the issue labelled `main-red`; the **Nightly** workflow
+until they pass. A run asks for a Mac only for what the change can affect
+(`Scripts/ci-changes.sh`, with its cases in `Scripts/test-ci-changes.sh`): documentation alone —
+`docs/`, `.claude/` and the Markdown files at the top of the repository — runs neither Lint nor
+Test, and the XCUITest journeys run when the app, the UI tests, `project.yml` beyond its version
+line, `ci.yml` or that script changed. What a PR does not wait for runs afterwards: the push to
+`main` repeats the suite with coverage and, when red, opens the issue labelled `main-red` —
+unless the pull request was up to date with `main` and left it with exactly the tree its own run
+passed on, in which case there is nothing new to test and the push run says so (#646); the
+**Nightly** workflow
 runs the ffprobe-backed media tests (no PR runner has ffprobe, so they skip there), a headless
 `onboard render` of the fixture project, an unsigned app bundle and the overlay benchmark
 against a budget, and opens `nightly-red` when it fails. CodeQL's Swift analysis runs on every
