@@ -31,28 +31,34 @@ extension CoachingContent {
     func logbookChoices(selection: CoachingSelection) -> some View {
         let candidates = logbookCandidates(for: selection)
         if !candidates.isEmpty {
+            // The session being coached, when the logbook has it: what the others are to it (#661).
+            let own = source.ownContentHash.flatMap { hash in
+                LogbookModel.shared.entries.first { $0.file.contentHash == hash }
+            }
+            let best = LogbookReferences.best(in: candidates, besides: own)
             Section("Logbook") {
-                if let best = LogbookReferences.personalBest(in: candidates) {
-                    Text("Personal best here — \(LogbookReferences.phrase(for: best, lap: nil))")
-                        .tag(CoachingSettings.Reference.logbook(entryID: best.id, lap: nil))
+                if let best {
+                    let label = best.standing == .personalBest ? "Personal best here" : "Next best here"
+                    Text("\(label) — \(LogbookReferences.phrase(for: best.entry, lap: nil, among: candidates))")
+                        .tag(CoachingSettings.Reference.logbook(entryID: best.entry.id, lap: nil))
                 }
-                if let last = LogbookReferences.lastVisit(in: candidates),
-                    last.id != LogbookReferences.personalBest(in: candidates)?.id
-                {
-                    Text("Last visit — \(LogbookReferences.phrase(for: last, lap: nil))")
+                if let last = LogbookReferences.lastVisit(in: candidates, before: own), last.id != best?.entry.id {
+                    Text("Last visit — \(LogbookReferences.phrase(for: last, lap: nil, among: candidates))")
                         .tag(CoachingSettings.Reference.logbook(entryID: last.id, lap: nil))
                 }
                 ForEach(candidates) { entry in
-                    Text(Self.candidateTitle(entry))
+                    Text(Self.candidateTitle(entry, among: candidates))
                         .tag(CoachingSettings.Reference.logbook(entryID: entry.id, lap: entry.bestLapNumber))
                 }
             }
         }
     }
 
-    /// "Sonoma, 23 Aug 2026, lap 4 · Miata".
-    static func candidateTitle(_ entry: LogbookEntry) -> String {
-        [LogbookReferences.phrase(for: entry, lap: nil), entry.car].filter { !$0.isEmpty }.joined(separator: " · ")
+    /// "Sonoma, 23 Aug 2026, lap 4 · Miata", with the time of day when another of `others` was
+    /// driven the same day.
+    static func candidateTitle(_ entry: LogbookEntry, among others: [LogbookEntry] = []) -> String {
+        [LogbookReferences.phrase(for: entry, lap: nil, among: others), entry.car]
+            .filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
     /// Whether the reference is another session, which is always matched by position.

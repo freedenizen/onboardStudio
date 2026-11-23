@@ -479,8 +479,10 @@ blank project is unchanged; `LogbookLaunchUITests` starts with the Logbook.
 **Coach…** in a session's detail reads the project open on the session when there is one
 (#462, `CoachingWindow.open(_:coaching:)`; see `docs/coaching.md`), else the session alone.
 Beside it: **Compare With ▸** (`LogbookWindow.comparisons(for:)` —
-`LogbookReferences.sessions` at the entry's circuit key, the personal best and the last visit
-named first) writes the chosen session onto the entry's `coaching.reference` as
+`LogbookReferences.sessions` at the entry's circuit key; `best(in:besides:)` and
+`lastVisit(in:before:)` name the first two for the entry they are offered on (#661): the personal
+best or, when the entry holds it, the next best, and the quickest session of the day before the
+entry's own) writes the chosen session onto the entry's `coaching.reference` as
 `.logbook(entryID:lap:)` and opens the Coaching window on it, exactly the state the window would
 have reached by hand; **Export Coaching Debrief…** is `LogbookModel.openAsProject(_:template:then:)`
 with the Coaching Debrief template and `then: .debrief`, so the new editor puts the debrief sheet

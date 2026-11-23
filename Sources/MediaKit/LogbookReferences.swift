@@ -48,10 +48,58 @@ public enum LogbookReferences {
         candidates.filter { $0.date != nil }.max { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
     }
 
+    /// What another session is to the one being read (#661).
+    public enum Standing: Sendable, Equatable {
+        /// It holds the quickest lap at the circuit.
+        case personalBest
+        /// It is the quickest of the others: the session being read holds the personal best itself.
+        case nextBest
+    }
+
+    /// The quickest of `candidates` and what it is to `own`, the session being read: the personal
+    /// best here, unless `own` is quicker — then it is only the next best, and calling it the
+    /// personal best says the driver has not just beaten it. With no `own`, the personal best.
+    public static func best(
+        in candidates: [LogbookEntry], besides own: LogbookEntry?
+    ) -> (entry: LogbookEntry, standing: Standing)? {
+        guard let best = personalBest(in: candidates), let lap = best.bestLap else { return nil }
+        let quicker = own?.bestLap.map { $0 < lap } ?? false
+        return (best, quicker ? .nextBest : .personalBest)
+    }
+
+    /// The visit before `own`'s: the quickest session of the newest day among `candidates` that is
+    /// earlier than the day `own` was driven. A session of the same day is the same visit, not the
+    /// last one (#661). With no `own`, or none dated, the newest day there is.
+    public static func lastVisit(
+        in candidates: [LogbookEntry], before own: LogbookEntry?, calendar: Calendar = .current
+    ) -> LogbookEntry? {
+        let ownDay = own?.date.map(calendar.startOfDay)
+        let earlier = candidates.filter { candidate in
+            guard let day = candidate.date.map(calendar.startOfDay) else { return false }
+            return ownDay.map { day < $0 } ?? true
+        }
+        guard let latest = earlier.compactMap({ $0.date.map(calendar.startOfDay) }).max() else { return nil }
+        return earlier.filter { $0.date.map(calendar.startOfDay) == latest }
+            .min { ($0.bestLap ?? .infinity) < ($1.bestLap ?? .infinity) }
+    }
+
     /// "Sonoma, 23 Aug 2026, lap 4": how the reading names the reference.
     public static func phrase(for entry: LogbookEntry, lap: Int?) -> String {
+        phrase(for: entry, lap: lap, among: [])
+    }
+
+    /// As `phrase(for:lap:)`, with the time of day when another of `others` was driven the same
+    /// day: in a list, two sessions of one day are otherwise the same words (#661).
+    public static func phrase(
+        for entry: LogbookEntry, lap: Int?, among others: [LogbookEntry], calendar: Calendar = .current
+    ) -> String {
         var parts = [entry.circuitTitle]
-        if let date = entry.date { parts.append(date.formatted(date: .abbreviated, time: .omitted)) }
+        if let date = entry.date {
+            let sharesItsDay = others.contains { other in
+                other.id != entry.id && other.date.map { calendar.isDate($0, inSameDayAs: date) } == true
+            }
+            parts.append(date.formatted(date: .abbreviated, time: sharesItsDay ? .shortened : .omitted))
+        }
         if let lap = lap ?? entry.bestLapNumber { parts.append("lap \(lap)") }
         return parts.joined(separator: ", ")
     }
