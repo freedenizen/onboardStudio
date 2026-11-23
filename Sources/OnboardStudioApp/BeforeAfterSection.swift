@@ -13,7 +13,9 @@ struct TrendsFilterBar: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        // In rows, as text wraps: side by side they are wider than the Logbook's middle column
+        // at the size the window first opens, and the page lost its left edge to them (#659).
+        FlowLayout {
             if choices.tyres.count >= 2 {
                 Picker("Tyres", selection: $filter.tyres) {
                     Text("Every Set").tag(String?.none)
@@ -51,9 +53,9 @@ struct TrendsFilterBar: View {
                     .help("Every session at the circuit, whatever its tyres, setup or conditions")
                     .accessibilityIdentifier("logbook.trends.filter.clear")
             }
-            Spacer()
         }
         .font(.callout)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -101,7 +103,8 @@ struct BeforeAfterSection: View {
     }
 
     private var pickers: some View {
-        HStack(spacing: 12) {
+        // In rows, as the filter bar is (#659).
+        FlowLayout {
             Picker("Compare by", selection: $split) {
                 ForEach(splits, id: \.self) { Text($0.title).tag(Optional($0)) }
             }
@@ -117,9 +120,9 @@ struct BeforeAfterSection: View {
             }
             .fixedSize()
             .accessibilityIdentifier("logbook.trends.beforeAfter.after")
-            Spacer()
         }
         .font(.callout)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// The first split the sessions differ by, unless the one chosen still applies.

@@ -71,7 +71,9 @@ struct LogbookTrendsView: View {
                     }
                 }
                 .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // `minWidth: 0`: a page wider than its column is then cut off on the right, where
+                // a reader expects it, not centred with its left edge under the sidebar (#659).
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             }
             .accessibilityIdentifier("logbook.trends")
         } else if !performance.isEmpty {
@@ -201,7 +203,9 @@ struct LogbookTrendsView: View {
             if trends.isEmpty {
                 Text("No corners read for the latest track day yet.").font(.callout).foregroundStyle(.secondary)
             } else {
+                // Up to nine columns once there is a visit to compare with.
                 cornerGrid(trends, last: comparison?.previous != nil, best: comparison?.best != nil)
+                    .scrolledSideways()
                 Text(cornerFormat.note)
                     .font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("logbook.trends.corners.note")
@@ -407,7 +411,7 @@ extension LogbookTrendsView {
                     .font(.callout).foregroundStyle(.secondary)
             }
             .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("logbook.trends")
     }
@@ -468,5 +472,12 @@ extension LogbookTrendsView {
             return "The logbook has \(count) at \(circuitTitle)\(inCar) driven this way. Show All to see the rest."
         }
         return "The logbook has \(count) at \(circuitTitle)\(inCar). Add another track day there."
+    }
+}
+
+extension View {
+    /// Scrolled sideways where its column is narrower than it is, rather than clipped (#659).
+    fileprivate func scrolledSideways() -> some View {
+        ScrollView(.horizontal) { self }.scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
 }
