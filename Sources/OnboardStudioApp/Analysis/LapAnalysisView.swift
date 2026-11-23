@@ -47,11 +47,19 @@ struct LapAnalysisView: View {
                 HStack(alignment: .top, spacing: 12) {
                     ScrollView { traces(analysis) }
                     if model.layout.showsMap || model.layout.showsFrictionCircle || showsPicture {
-                        sidePanels(analysis)
+                        // The panels scroll, as the traces beside them do. Their heights are fixed,
+                        // and with a lap's picture over the map and the friction circle they are
+                        // taller than the window Coaching opens in: the whole view then overflowed
+                        // it, was centred on the overflow, and its row of controls went under the
+                        // toolbar a few seconds after the view appeared, when the picture did (#669).
+                        ScrollView { sidePanels(analysis) }.frame(width: Self.sidePanelWidth)
                     }
                 }
             }
             .padding(12)
+            // From the top, whatever its height: a view taller than its window loses its foot,
+            // never its controls.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else if model.isBuilding {
             ProgressView("Laying the laps over each other…").frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -143,8 +151,10 @@ struct LapAnalysisView: View {
                 .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
             }
         }
-        .frame(width: 260)
+        .frame(width: Self.sidePanelWidth)
     }
+
+    private static var sidePanelWidth: CGFloat { 260 }
 
     /// The picture shows when asked for and a chosen lap has one.
     private var showsPicture: Bool { model.layout.showsPicture && !model.footage.isEmpty }
