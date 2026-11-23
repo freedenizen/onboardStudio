@@ -68,7 +68,11 @@ the core tasks — a goal, no button names.
 - Open the staged folder in Finder with `open <folder>` and nothing else: scripting Finder
   (`osascript`) raises a macOS permission dialog that then sits over the app and swallows clicks.
 - Typing goes through the full-screen tools; a save sheet will not take ⇧⌘G, so check the folder it
-  shows before saving (it reopens on the last folder used).
+  shows before saving (it reopens on the last folder used). On a fresh copy the first save sheet
+  opens on the real Documents and cannot be steered from the keyboard: cancel it, use one of the
+  app's Open panels on a staged folder first, and the save sheet then opens there.
+- Drag a file from Finder with a single drag action. Pressing, moving in steps and releasing only
+  rubber-bands a selection, so the window cannot be captured while a file is held over it.
 - A menu listed in the background can be out of date. Before writing that a menu lacks an item or
   has the wrong title, open it on screen.
 - If the app goes away, look for a crash report (`~/Library/Logs/DiagnosticReports`) before
