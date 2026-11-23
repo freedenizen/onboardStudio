@@ -150,8 +150,8 @@ struct ExporterTests {
         #expect(abs(info.nominalFrameRate - 25) < 0.5)
     }
 
-    @Test func cancellationStopsTheExport() async throws {
-        let output = MediaFixtures.temporaryOutput("cancel")
+    @Test func anErrorThrownWhileReadingProgressReachesTheCaller() async throws {
+        let output = MediaFixtures.temporaryOutput("thrown")
         defer { try? FileManager.default.removeItem(at: output) }
         let compiled = try await CompositionBuilder.build(
             videos: [VideoInputSpec(url: try MediaFixtures.video)], overlays: [], outputWidth: 640, outputHeight: 360,
@@ -165,6 +165,41 @@ struct ExporterTests {
             }
         }
         await #expect(throws: CancellationError.self) { try await task.value }
+    }
+
+    /// #663: Cancel left the export running to its last frame — the pump asked `Task.isCancelled`
+    /// on a dispatch queue, where it is always false — and a whole video appeared where the user
+    /// had been told there was none. Cancelled before a frame is written, the export has to stop
+    /// and take what the writer had opened with it.
+    @Test func aCancelledExportStopsAndLeavesNothingBehind() async throws {
+        let output = MediaFixtures.temporaryOutput("cancelled")
+        defer { ExportJob.removePartial(output) }
+        let compiled = try await CompositionBuilder.build(
+            videos: [VideoInputSpec(url: try MediaFixtures.video)], overlays: [], outputWidth: 640, outputHeight: 360,
+            frameRate: 30)
+        let settings = ExportSettings(width: 640, height: 360, frameRate: 30, videoBitrate: 2_000_000)
+        let task = Task {
+            for try await _ in Exporter.export(compiled, settings: settings, to: output) {}
+            // The loop of a cancelled task ends without throwing: this is the check every
+            // caller makes before it calls the export done.
+            try Task.checkCancellation()
+        }
+        task.cancel()
+        await #expect(throws: CancellationError.self) { try await task.value }
+
+        func left() -> [String] {
+            let folder = output.deletingLastPathComponent()
+            let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+            return names.filter { $0.hasPrefix(output.lastPathComponent) }
+        }
+        // The job hears of it through the stream ending; give it a moment to stop and tidy up.
+        let deadline = Date().addingTimeInterval(10)
+        while !left().isEmpty, Date() < deadline { try await Task.sleep(for: .milliseconds(50)) }
+        #expect(left().isEmpty, "\(left())")
+        // And it stays gone: the fixture exports in well under a second, so an export that had
+        // carried on would have written its file by now.
+        try await Task.sleep(for: .seconds(2))
+        #expect(left().isEmpty, "\(left())")
     }
 
     @Test func ffprobeAgreesWhenAvailable() async throws {

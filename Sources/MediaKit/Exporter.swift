@@ -221,6 +221,9 @@ final class ExportJob: @unchecked Sendable {
             } catch {
                 reader.cancelReading()
                 writer.cancelWriting()
+                // What was written so far is no video: the file the writer opened and the copy it
+                // was writing through go, so a cancelled export leaves nothing to mistake for one.
+                Self.removePartial(outputURL)
                 throw error
             }
         }
@@ -251,8 +254,18 @@ final class ExportJob: @unchecked Sendable {
         }
     }
 
+    /// The file a writer that was stopped left at `outputURL`, and its `.sb-…` copy (#663).
+    static func removePartial(_ outputURL: URL) {
+        try? FileManager.default.removeItem(at: outputURL)
+        removeLeftovers(beside: outputURL)
+    }
+
     /// Copies sample buffers from a reader output to a writer input, honouring back-pressure and
     /// Task cancellation.
+    ///
+    /// The block below runs on a dispatch queue, where there is no current task: `Task.isCancelled`
+    /// read there is always false, and a cancelled export went on to its last frame while the
+    /// sheet said it was over (#663). Cancellation is caught on the task and carried in as a flag.
     private func pump(
         from output: AVAssetReaderOutput,
         to input: AVAssetWriterInput,
@@ -260,44 +273,79 @@ final class ExportJob: @unchecked Sendable {
         onSample: @escaping @Sendable (Double) -> Void
     ) async throws {
         let queue = DispatchQueue(label: "onboard.export.\(label)")
-        let finished = Flag()
+        let pending = PendingPump()
         // AVFoundation invokes the block only on `queue`, serially, so these captures are safe.
         nonisolated(unsafe) let output = output
         nonisolated(unsafe) let input = input
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            input.requestMediaDataWhenReady(on: queue) {
-                // One pool per sample: a ready writer can take hundreds of frames in one call, and
-                // every decoded frame and composited buffer is autoreleased.
-                while input.isReadyForMoreMediaData,
-                    autoreleasepool(invoking: { () -> Bool in
-                        if finished.value { return false }
-                        if Task.isCancelled {
-                            input.markAsFinished()
-                            if !finished.exchange(true) { continuation.resume(throwing: ExportError.cancelled) }
-                            return false
-                        }
-                        guard let sample = output.copyNextSampleBuffer() else {
-                            input.markAsFinished()
-                            if !finished.exchange(true) { continuation.resume() }
-                            return false
-                        }
-                        if !input.append(sample) {
-                            input.markAsFinished()
-                            if !finished.exchange(true) {
-                                continuation.resume(throwing: ExportError.writerFailed("append rejected"))
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                // Cancelled before it began: nothing is asked of the writer at all.
+                guard pending.park(continuation) else {
+                    continuation.resume(throwing: ExportError.cancelled)
+                    return
+                }
+                input.requestMediaDataWhenReady(on: queue) {
+                    // One pool per sample: a ready writer can take hundreds of frames in one call,
+                    // and every decoded frame and composited buffer is autoreleased.
+                    while input.isReadyForMoreMediaData,
+                        autoreleasepool(invoking: { () -> Bool in
+                            // Settled from outside is cancelled: `run` stops the writer itself.
+                            if pending.isSettled { return false }
+                            guard let sample = output.copyNextSampleBuffer() else {
+                                input.markAsFinished()
+                                pending.settle(.success(()))
+                                return false
                             }
-                            return false
-                        }
-                        onSample(CMSampleBufferGetPresentationTimeStamp(sample).seconds)
-                        return true
-                    })
-                {}
+                            if !input.append(sample) {
+                                input.markAsFinished()
+                                pending.settle(.failure(ExportError.writerFailed("append rejected")))
+                                return false
+                            }
+                            onSample(CMSampleBufferGetPresentationTimeStamp(sample).seconds)
+                            return true
+                        })
+                    {}
+                }
             }
+        } onCancel: {
+            pending.settle(.failure(ExportError.cancelled))
         }
     }
 }
 
-/// Tiny thread-safe counter/flag helpers for the export pump.
+/// The continuation a pump waits on, resumed once by whichever comes first: the last sample, a
+/// writer that refuses one, or the task being cancelled (#663). Cancellation has to be able to
+/// resume it from outside the writer's queue: a writer that has been stopped never calls the
+/// pump's block again, and the pump — and the export with it — would wait for ever.
+final class PendingPump: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Void, Error>?
+    private var settled = false
+
+    var isSettled: Bool { lock.withLock { settled } }
+
+    /// Keeps `continuation` to be resumed later; `false` when the pump was settled before it
+    /// started, and the caller resumes it itself.
+    func park(_ continuation: CheckedContinuation<Void, Error>) -> Bool {
+        lock.withLock {
+            guard !settled else { return false }
+            self.continuation = continuation
+            return true
+        }
+    }
+
+    func settle(_ result: Result<Void, Error>) {
+        let waiting: CheckedContinuation<Void, Error>? = lock.withLock {
+            guard !settled else { return nil }
+            settled = true
+            defer { continuation = nil }
+            return continuation
+        }
+        waiting?.resume(with: result)
+    }
+}
+
+/// A thread-safe counter for the export pump.
 final class Counter: @unchecked Sendable {
     private let lock = NSLock()
     private var count = 0
@@ -306,20 +354,6 @@ final class Counter: @unchecked Sendable {
         lock.withLock {
             count += 1
             return count
-        }
-    }
-}
-
-final class Flag: @unchecked Sendable {
-    private let lock = NSLock()
-    private var flag = false
-    var value: Bool { lock.withLock { flag } }
-    /// Sets the flag and returns the previous value.
-    func exchange(_ new: Bool) -> Bool {
-        lock.withLock {
-            let old = flag
-            flag = new
-            return old
         }
     }
 }
