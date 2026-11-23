@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 2
 /// J25: two laps side by side, the compared one kept level by distance (#154).
 final class CompareLapsUITests: OnboardStudioUITestCase {
     @MainActor

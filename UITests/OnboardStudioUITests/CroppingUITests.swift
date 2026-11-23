@@ -1,6 +1,6 @@
 import XCTest
 
-// ci-shard: 1
+// ci-shard: 3
 /// Cropping a video on the preview (#276): the crop drawn over the whole picture, its edges
 /// dragged, the picture turned from the bar, and the session one undo step.
 final class CroppingUITests: OnboardStudioUITestCase {
