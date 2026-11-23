@@ -1,0 +1,108 @@
+name: CodeQL
+
+# Code scanning, as a workflow rather than GitHub's default setup (#648). Default setup scans
+# every language on every pull request and push and has no setting for when; its Swift scan held
+# one of the account's five macOS runners for 28 minutes each time, ahead of CI's own jobs. Here
+# the two scans that take a minute on Linux keep running on every change — `Analyze (actions)` is
+# a required check on `main` — and Swift is scanned once a week.
+#
+# The two setups cannot both be on: GitHub rejects a workflow's results while default setup is
+# enabled. Settings ▸ Code security ▸ CodeQL analysis must read "Advanced". The languages, the
+# build modes and the `/language:<name>` categories are the ones default setup used, so the
+# alerts it raised carry over instead of being raised again.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 9 * * 0" # Sunday 02:00 Pacific, clear of the nightly at 04:00
+  workflow_dispatch:
+# By event as well as branch: the weekly Swift scan runs on `main` for half an hour, and a push
+# to `main` must not wait behind it.
+concurrency:
+  group: codeql-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  # The job name is the required check's name: `Analyze (actions)`.
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, python]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+
+  # CodeQL reads Swift by watching it compile, so the scan is a whole `swift build` (25 of its 28
+  # minutes) on a Mac. Weekly, and on request: Actions ▸ CodeQL ▸ Run workflow scans any branch.
+  # `macos-latest`, not CI's `xcode-27`: it is the image default setup scanned on, and CodeQL's
+  # Swift extractor supports the compilers it has been released for, not the newest one.
+  analyze-swift:
+    name: Analyze (swift)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: swift
+          build-mode: autobuild
+      - uses: github/codeql-action/autobuild@v4
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:swift
+
+  # Nobody is watching a scan that runs on Sunday morning, so a failed one opens — or adds to —
+  # the issue labelled `codeql-red`, and the next one that passes closes it.
+  report:
+    name: Swift scan report
+    needs: analyze-swift
+    if: always() && needs.analyze-swift.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Open or update the codeql-red issue
+        if: needs.analyze-swift.result != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          RESULT: ${{ needs.analyze-swift.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          Scripts/report-ci-issue.sh open codeql-red \
+            "The Swift code scan is red as of ${SHA:0:7}" \
+            "$RUN_URL: $RESULT on \`${SHA:0:7}\`. This issue closes itself when a scan passes."
+      - name: Close it once green
+        if: needs.analyze-swift.result == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: Scripts/report-ci-issue.sh close codeql-red "Green again at \`${SHA:0:7}\`."
