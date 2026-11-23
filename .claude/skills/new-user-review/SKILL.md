@@ -62,6 +62,17 @@ the core tasks — a goal, no button names.
   points. Do not convert screenshot pixels.
 - After each step write the note at once: did, expected, happened, the screenshot names. Count the
   steps as you go.
+- **Run it when the user is away from the Mac.** While they type, background clicks, drags and
+  typing are refused, and every full-screen step takes their screen. The first review was stopped
+  early for this.
+- Open the staged folder in Finder with `open <folder>` and nothing else: scripting Finder
+  (`osascript`) raises a macOS permission dialog that then sits over the app and swallows clicks.
+- Typing goes through the full-screen tools; a save sheet will not take ⇧⌘G, so check the folder it
+  shows before saving (it reopens on the last folder used).
+- A menu listed in the background can be out of date. Before writing that a menu lacks an item or
+  has the wrong title, open it on screen.
+- If the app goes away, look for a crash report (`~/Library/Logs/DiagnosticReports`) before
+  relaunching, keep it in the review folder, and never click a system dialog.
 
 ## After the walk
 
@@ -69,7 +80,8 @@ Follow "After the walk" in the process, in its order. Notes for doing it here:
 
 - Re-check each finding from a fresh launch (`clean`, `make`, `launch`) before writing it up, and
   say in the report which ones changed.
-- The independent reading is `swift run onboard probe <staged file>`. Compare, and write only
+- The independent reading is `swift run onboard probe <staged file>`, built from the checkout.
+  Try the release's own CLI archive first — whether it runs is a finding. Compare, and write only
   whether the app agreed.
 - Checking the guide's bold labels and pictures against the screens visited is mechanical: give it
   to a Sonnet subagent with the chapters and the screenshots. Lookups and status checks go to

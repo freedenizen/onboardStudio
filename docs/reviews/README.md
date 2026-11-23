@@ -6,7 +6,8 @@ the codes in a finding (`C4`, `N9`) are items of [the checklist](../ux-checklist
 
 | Release | Report | Tasks done unaided | Findings (severity 3 and 4) |
 |---|---|---|---|
+| v0.37.0 | [22 November 2026](v0.37.0.md) | 11 of 15 | 10 |
 
-The first is due for v0.37.0. The review that came before this process, in November 2026, was
-filed directly as issues #448–#468 and has no report here; the first report goes back over those
-issues where it would otherwise go back over the last report.
+The review that came before this process, on 9 November 2026, was filed directly as issues
+#448–#468 and has no report here; the first report goes back over those issues where a later one
+goes back over the report before it.
