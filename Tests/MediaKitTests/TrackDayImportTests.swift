@@ -245,4 +245,38 @@ struct TrackDayImportTests {
         #expect(owner?.id == undated.id && second.matchedBy == .onlySessionThatDay)
         #expect(matched.first?.line.contains("the picture of") == true)
     }
+
+    /// The lookup behind "video already on the day" (#653). In the release build it handed back a
+    /// record copied from memory already freed, and the app crashed whenever a folder that was in
+    /// the logbook was added again. A debug build never did, so this states what it must return —
+    /// the stored record, whole — for a build that is run optimised to be held to.
+    @Test func aClipOnAnyDayIsKnownAgainByItsFingerprintWithItsRecordWhole() throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        var stored: [ClipRecord] = []
+        for dayIndex in 0..<3 {
+            var day = TrackDay(
+                date: Date(timeIntervalSince1970: 1_700_000_000 + Double(dayIndex) * 86_400),
+                trackName: "Fixtures \(dayIndex)")
+            day.clips = (0..<4).map { clipIndex in
+                ClipRecord(
+                    path: "/clips/day \(dayIndex)/GX0100\(clipIndex).MP4",
+                    bookmark: Data(repeating: UInt8(clipIndex), count: 512), byteCount: 1_000 + clipIndex,
+                    fingerprint: "fingerprint-\(dayIndex)-\(clipIndex)",
+                    chapterPaths: ["/clips/day \(dayIndex)/GX0200\(clipIndex).MP4"], durationSeconds: 600,
+                    recordedAt: Date(timeIntervalSince1970: 1_700_000_000 + Double(clipIndex) * 3_600),
+                    clock: "GoPro GPS clock", hasGPS: true)
+            }
+            try logbook.saveDay(day)
+            stored += day.clips
+        }
+        for wanted in stored {
+            // The same recording met again under another name: only its fingerprint says so.
+            let met = ClipRecord(
+                path: "/elsewhere/renamed.MP4", byteCount: wanted.byteCount, fingerprint: wanted.fingerprint)
+            #expect(TrackDayImport.knownClip(met, in: logbook) == wanted)
+        }
+        let stranger = ClipRecord(path: "/elsewhere/new.MP4", byteCount: 1, fingerprint: "seen nowhere")
+        #expect(TrackDayImport.knownClip(stranger, in: logbook) == nil)
+    }
 }
