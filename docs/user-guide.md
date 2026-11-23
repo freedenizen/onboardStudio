@@ -1839,6 +1839,21 @@ data/video offset from motion, `logbook` keeps the logbook of track days, `uploa
 YouTube and `bench` measures speed. See
 [testing.md](testing.md).
 
+Each release publishes it as `onboard-cli-<version>-macos.tar.gz`. Unpack it and run `onboard` from
+the folder it makes. Keep that folder whole: beside `onboard` are the circuit catalogue and the
+other files it reads, and it looks for them next to itself. To have it on your `PATH`, link to it
+rather than moving it:
+
+```sh
+tar -xzf onboard-cli-vX.Y.Z-macos.tar.gz
+ln -s "$PWD/onboard-cli-vX.Y.Z-macos/onboard" /usr/local/bin/onboard
+onboard probe session.csv
+```
+
+The archives of 0.37.0 and earlier held `onboard` alone, and it stopped on every file with *unable
+to find bundle*; build it from source for those versions (`swift build -c release --product onboard`
+and run it from `.build/release`).
+
 `onboard coach session.csv` reads the quickest lap that is not the best against the best lap:
 the top three corners by time lost, each with what happened ("Braked 22 m earlier than your best
 lap", "Coasted 0.49 s longer") and what to try, then every corner in a table with its brake point,

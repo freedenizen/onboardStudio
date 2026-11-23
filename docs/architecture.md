@@ -92,7 +92,9 @@ two thin executables.
   `Sources/OnboardStudioApp` and links the package libraries and Sparkle.
 - `Scripts/bundle-app.sh` → `Scripts/make-dmg.sh` → `Scripts/notarize.sh` (optional) →
   `Scripts/make-appcast.sh` mirror `.github/workflows/release.yml`, which runs on every `v*` tag and
-  publishes the DMG, `appcast.xml` and a CLI tarball as a GitHub Release. Sparkle's feed URL points
+  publishes the DMG, `appcast.xml` and a CLI tarball as a GitHub Release. The tarball is
+  `Scripts/make-cli-archive.sh`'s: `onboard` in a folder with the resource bundles it reads, run
+  from the unpacked archive before it is published (#662). Sparkle's feed URL points
   at `releases/latest/download/appcast.xml`.
 
 ## Icons

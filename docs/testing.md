@@ -55,8 +55,9 @@ unless the pull request was up to date with `main` and left it with exactly the 
 passed on, in which case there is nothing new to test and the push run says so (#646); the
 **Nightly** workflow
 runs the ffprobe-backed media tests (no PR runner has ffprobe, so they skip there), a headless
-`onboard render` of the fixture project, an unsigned app bundle and the overlay benchmark
-against a budget, and opens `nightly-red` when it fails. Code scanning is the **CodeQL** workflow:
+`onboard render` of the fixture project, an unsigned app bundle, the command-line archive packed
+as a release packs it and run from where it is unpacked (`Scripts/make-cli-archive.sh`, #662) and
+the overlay benchmark against a budget, and opens `nightly-red` when it fails. Code scanning is the **CodeQL** workflow:
 the workflow files and the Python scripts are scanned on every PR, and Swift — which CodeQL reads
 by compiling it, half an hour on a Mac — every Sunday, or on request from Actions ▸ CodeQL ▸ Run
 workflow; a Swift scan that fails opens `codeql-red` (#648). Locally, `Scripts/test.sh quick` skips the two-hour session and the
@@ -202,7 +203,8 @@ before tagging a release.
 
 ## Release smoke test
 
-Before tagging: check the nightly is green (it built the bundle and ran the render), then
+Before tagging: check the nightly is green (it built the bundle, ran the render and read a file
+with the packed command-line tool), then
 `Scripts/release.sh`, install the DMG, launch the app, check "Check for Updates…" opens the
 Sparkle dialog, and run the current milestone's QA script.
 
