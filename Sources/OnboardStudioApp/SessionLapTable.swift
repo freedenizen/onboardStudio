@@ -24,17 +24,25 @@ struct SessionLapTable: View {
             Text("Laps").font(.subheadline.weight(.semibold))
             ViewThatFits(in: .horizontal) {
                 table(speeds: hasSpeeds)
+                withoutSpeeds(spacing: Self.columnSpacing)
+                // The same, set closer: at the width the Logbook first opens at, three sectors
+                // missed fitting by a few points, and the table scrolled for those (#666).
+                withoutSpeeds(spacing: Self.closeColumnSpacing)
+                // Narrower than the sectors too: the whole table, scrolled sideways, and said in
+                // words. The scroll bar shows only while scrolling, so a table cut off mid-number
+                // with nothing said looked broken, and its speeds might as well not have been
+                // there (#666).
                 VStack(alignment: .leading, spacing: 4) {
-                    table(speeds: false)
-                    // Where the speeds went, so a narrow detail does not hide that there are any.
-                    if hasSpeeds {
-                        Text("Drag the detail wider for each lap's top and lowest speed.")
-                            .font(.caption).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("logbook.laps.speedsHidden")
-                    }
+                    ScrollView(.horizontal) { table(speeds: hasSpeeds) }
+                    Text(
+                        hasSpeeds
+                            ? "Scroll sideways, or drag the detail wider, for the later sectors and each lap's speeds."
+                            : "Scroll sideways, or drag the detail wider, for the later sectors."
+                    )
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("logbook.laps.scrolled")
                 }
-                ScrollView(.horizontal) { table(speeds: hasSpeeds) }
             }
             if markFailed {
                 Text("The session's file could not be read, so the lap was not changed. It may have moved.")
@@ -59,9 +67,26 @@ struct SessionLapTable: View {
         .accessibilityIdentifier("logbook.laps")
     }
 
-    private func table(speeds: Bool) -> some View {
+    private static let columnSpacing: CGFloat = 12
+    private static let closeColumnSpacing: CGFloat = 8
+
+    /// The table without its speeds, saying where they went, so a narrow detail does not hide
+    /// that there are any.
+    private func withoutSpeeds(spacing: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            table(speeds: false, spacing: spacing)
+            if hasSpeeds {
+                Text("Drag the detail wider for each lap's top and lowest speed.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("logbook.laps.speedsHidden")
+            }
+        }
+    }
+
+    private func table(speeds: Bool, spacing: CGFloat = SessionLapTable.columnSpacing) -> some View {
         let bestSectors = entry.bestSectors
-        return Grid(alignment: .trailing, horizontalSpacing: 12, verticalSpacing: 3) {
+        return Grid(alignment: .trailing, horizontalSpacing: spacing, verticalSpacing: 3) {
             GridRow {
                 Text("Lap").gridColumnAlignment(.leading)
                 Text("Time")
