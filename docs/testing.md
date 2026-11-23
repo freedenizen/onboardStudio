@@ -56,8 +56,10 @@ passed on, in which case there is nothing new to test and the push run says so (
 **Nightly** workflow
 runs the ffprobe-backed media tests (no PR runner has ffprobe, so they skip there), a headless
 `onboard render` of the fixture project, an unsigned app bundle and the overlay benchmark
-against a budget, and opens `nightly-red` when it fails. CodeQL's Swift analysis runs on every
-PR but does not block it. Locally, `Scripts/test.sh quick` skips the two-hour session and the
+against a budget, and opens `nightly-red` when it fails. Code scanning is the **CodeQL** workflow:
+the workflow files and the Python scripts are scanned on every PR, and Swift — which CodeQL reads
+by compiling it, half an hour on a Mac — every Sunday, or on request from Actions ▸ CodeQL ▸ Run
+workflow; a Swift scan that fails opens `codeql-red` (#648). Locally, `Scripts/test.sh quick` skips the two-hour session and the
 fuzz suites; `Scripts/test.sh full` is what CI runs.
 
 Fuzz suites mutate every fixture (byte flips, truncation, inserted garbage, digit storms) with a

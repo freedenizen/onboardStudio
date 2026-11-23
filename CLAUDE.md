@@ -50,8 +50,9 @@ swift run onboard bench --export --codec hevc --seconds 60
   (five at once for the whole account) when it can: documentation alone skips Lint and Test, a
   version-only `project.yml` skips the UI tests, and the push run skips everything when the PR
   was up to date and already passed on the same tree (#646) — so rebasing before `gh pr ready`
-  also saves the second run. CodeQL's Swift analysis still runs on every PR but does not
-  block it. Never push to `main` directly and never force-push it.
+  also saves the second run. CodeQL is a workflow (`codeql.yml`), not GitHub's default setup:
+  the Actions and Python scans run on every PR, Swift once a week and on request, and a failed
+  Swift scan opens the `codeql-red` issue (#648). Never push to `main` directly and never force-push it.
   **Force-pushing a feature branch is fine and is how you rebase one.** Rebase locally and
   `git push --force-with-lease`; never `gh pr update-branch --rebase`, which re-creates the
   commits on GitHub's side **unsigned** and fails the required `Verify commit signatures` check.
