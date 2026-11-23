@@ -244,6 +244,13 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// The circuit and the configuration driven: "Sonoma Raceway — Club Course" (#549).
     public var circuitTitle: String { CircuitKey.title(title, configuration: configuration) }
 
+    /// The circuit the entry names, for a list's Circuit column; empty when it names none (#667).
+    /// `circuitTitle` falls back to the file's name there: that is what to call the session, not
+    /// where it was driven, and the sidebar files the same session under "No circuit" (#455).
+    public var namedCircuit: String {
+        course == nil && LogbookFilter.venueKey(of: self).isEmpty ? "" : circuitTitle
+    }
+
     /// The year the session was driven, for grouping; `nil` when the date is unknown.
     public var year: Int? { date.map { Calendar(identifier: .gregorian).component(.year, from: $0) } }
 

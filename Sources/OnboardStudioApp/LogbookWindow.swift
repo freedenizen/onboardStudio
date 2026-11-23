@@ -421,6 +421,7 @@ struct LogbookWindow: View {
                 } else {
                     LogbookTable(
                         entries: shown, bests: PersonalBests.badges(in: model.entries),
+                        dayDates: Dictionary(model.days.map { ($0.id, $0.date) }) { first, _ in first },
                         selection: $selection, sortOrder: $sortOrder
                     ) { ids in sessionMenu(for: ids) }
                     .focused($sessionsFocused)

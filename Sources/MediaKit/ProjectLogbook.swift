@@ -70,16 +70,20 @@ public enum ProjectLogbook {
         return Enrolment(entry: entry, isNew: true)
     }
 
-    /// Notes the project at `url` on each entry, once.
-    public static func record(project url: URL, in entryIDs: [UUID], logbook: Logbook) {
+    /// Notes the project at `url` on each entry, once. Returns whether any entry was written, so
+    /// a caller that asks every time the project is compiled reloads the Logbook only for news.
+    @discardableResult
+    public static func record(project url: URL, in entryIDs: [UUID], logbook: Logbook) -> Bool {
         let link = LogbookEntry.ProjectLink(path: url.path, name: url.deletingPathExtension().lastPathComponent)
+        var written = false
         for id in entryIDs {
             guard var entry = logbook.entry(id: id), !entry.projects.contains(where: { $0.path == link.path }) else {
                 continue
             }
             entry.projects.append(link)
-            try? logbook.save(entry)
+            if (try? logbook.save(entry)) != nil { written = true }
         }
+        return written
     }
 
     /// Notes an exported video on each entry, once.

@@ -8,7 +8,8 @@ public struct LogbookChecklist: Sendable, Equatable {
     public let hasSessions: Bool
     /// Every session names its car.
     public let carsNamed: Bool
-    /// A project has been made from a session.
+    /// A saved project has been made from a session, or a video exported from one (#667): the
+    /// export is the video, whether or not its project was ever saved.
     public let madeVideo: Bool
     /// The Coaching window has been opened on a session, or a session has coaching choices.
     public let coached: Bool
@@ -18,7 +19,7 @@ public struct LogbookChecklist: Sendable, Equatable {
     public init(entries: [LogbookEntry], coached: Bool, sawProgress: Bool) {
         hasSessions = !entries.isEmpty
         carsNamed = hasSessions && !entries.contains { $0.car.trimmingCharacters(in: .whitespaces).isEmpty }
-        madeVideo = entries.contains { !$0.projects.isEmpty }
+        madeVideo = entries.contains { !$0.projects.isEmpty || !$0.exports.isEmpty }
         self.coached = coached || entries.contains { $0.coaching != nil }
         self.sawProgress = sawProgress
     }

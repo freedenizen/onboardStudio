@@ -10,8 +10,12 @@ struct EditorView: View {
     @AppStorage(Preferences.attributeMappings.key) private var globalMappings = Preferences.attributeMappings.unset
     @AppStorage(Preferences.mapColorRamp.key) private var mapColorRamp = Preferences.mapColorRamp.unset
 
+    /// Where the document is saved, as SwiftUI has it now: `nil` until a new project is saved.
+    private let fileURL: URL?
+
     init(document: ProjectDocument, fileURL: URL?) {
         _editor = State(initialValue: EditorModel(document: document, fileURL: fileURL))
+        self.fileURL = fileURL
     }
 
     var body: some View {
@@ -106,6 +110,8 @@ struct EditorView: View {
             editor.scheduleCompile()
         }
         .onChange(of: undoManager) { _, newValue in editor.undoManager = newValue }
+        // Saved, or saved somewhere else: its sessions list it from now on (#667).
+        .onChange(of: fileURL) { editor.recordProjectInLogbook() }
         // The mapping for all projects lives in preferences, not in this document, so no edit of
         // the project notices it change; without this an open project kept its old channels (#214).
         .onChange(of: globalMappings) { editor.scheduleCompile() }

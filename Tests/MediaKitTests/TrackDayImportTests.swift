@@ -207,6 +207,26 @@ struct TrackDayImportTests {
         #expect(again.first?.isClip == true, "\(again.map(\.line))")
     }
 
+    /// #667: the project is listed on its session once, and the caller is told when it was news,
+    /// which is what lets the editor ask after every compile and on every save.
+    @Test func aSavedProjectIsListedOnItsSessionOnceAndSaysWhenItWasNews() async throws {
+        let logbook = temporaryLogbook()
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        _ = await TrackDayImport.run([Self.fixtures.appending(path: "racechrono-v3.csv")], into: logbook)
+        let session = try #require(logbook.entries().first)
+        let project = URL(fileURLWithPath: "/projects/Morning.onboardproj")
+
+        #expect(ProjectLogbook.record(project: project, in: [session.id], logbook: logbook))
+        #expect(!ProjectLogbook.record(project: project, in: [session.id], logbook: logbook), "nothing new to write")
+        #expect(logbook.entry(id: session.id)?.projects.map(\.name) == ["Morning"])
+        #expect(!ProjectLogbook.record(project: project, in: [UUID()], logbook: logbook), "no such session")
+        #expect(!ProjectLogbook.record(project: project, in: [], logbook: logbook))
+        // Saved somewhere else, it is listed there too.
+        let copy = URL(fileURLWithPath: "/projects/Morning 2.onboardproj")
+        #expect(ProjectLogbook.record(project: copy, in: [session.id], logbook: logbook))
+        #expect(logbook.entry(id: session.id)?.projects.count == 2)
+    }
+
     @Test func aClipGoesOnTheDayAndIsMatchedOrLeftToAssign() async throws {
         let logbook = temporaryLogbook()
         defer { try? FileManager.default.removeItem(at: logbook.directory) }

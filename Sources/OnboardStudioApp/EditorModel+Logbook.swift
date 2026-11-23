@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MediaKit
 import ProjectModel
@@ -38,7 +39,6 @@ extension EditorModel {
         } catch {
             statusMessage = "Could not enter the data file in the logbook: \(error.localizedDescription)"
         }
-        recordProjectInLogbook()
     }
 
     /// Called after every compile: a data file the driver has since timed in runs, or moved the
@@ -88,10 +88,22 @@ extension EditorModel {
     /// Every entry this project's data inputs came from.
     var logbookEntryIDs: [UUID] { project.dataInputs.compactMap { $0.dataSettings?.logbookEntryID } }
 
+    /// Where the project is saved now, as its document has it. `fileURL` is where the window was
+    /// opened from, so it stays `nil` for a project that was new and has been saved since (#667).
+    var savedURL: URL? {
+        window.flatMap { NSDocumentController.shared.document(for: $0) }?.fileURL ?? fileURL
+    }
+
     /// The saved project on each of its entries, once it has a place on disk.
+    ///
+    /// Called after every compile and when the project is saved (#667). It used to be called
+    /// only as a data file was entered, with the place the window was opened from: a project made
+    /// from a session is new then and has no place, so saving it afterwards listed it on no
+    /// session, and the Logbook's Getting Started never ticked its video.
     func recordProjectInLogbook() {
-        guard let fileURL, !logbookEntryIDs.isEmpty else { return }
-        ProjectLogbook.record(project: fileURL, in: logbookEntryIDs, logbook: AppLogbook.shared)
+        let ids = logbookEntryIDs
+        guard let url = savedURL, !ids.isEmpty else { return }
+        if ProjectLogbook.record(project: url, in: ids, logbook: AppLogbook.shared) { LogbookModel.shared.reload() }
     }
 
     /// An export on each entry, when it finishes.

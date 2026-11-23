@@ -11,6 +11,8 @@ struct LogbookTable<RowMenu: View>: View {
     /// The sessions that set a personal best when they were driven (#351), and whether each still
     /// holds it (#422).
     var bests: [UUID: PersonalBestBadge] = [:]
+    /// The date of each track day, for a session whose file gives none (#667).
+    var dayDates: [UUID: Date] = [:]
     @Binding var selection: Set<UUID>
     @Binding var sortOrder: [KeyPathComparator<LogbookEntry>]
     /// The right-click menu of the sessions clicked: the selection, when the row is in it.
@@ -49,10 +51,19 @@ struct LogbookTable<RowMenu: View>: View {
         .width(min: 28, ideal: 32)
         // The time too: a day's sessions all share its date, and only the time tells them apart (#564).
         TableColumn("Date", value: \.date, comparator: OptionalDateComparator()) { entry in
-            Text(entry.date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "—")
+            Text(dateText(of: entry))
         }
         .width(min: 130, ideal: 160)
-        TableColumn("Circuit", value: \.circuitTitle).width(min: 110, ideal: 150)
+        // The circuit the session names, and a dash when it names none: the file's name stood
+        // here, as if it were a place, for a session the sidebar files under "No circuit" (#667).
+        TableColumn("Circuit", value: \.namedCircuit) { entry in
+            if entry.namedCircuit.isEmpty {
+                Text("—").foregroundStyle(.secondary).accessibilityLabel(LogbookScope.noCircuit)
+            } else {
+                Text(entry.namedCircuit)
+            }
+        }
+        .width(min: 110, ideal: 150)
         TableColumn("Car", value: \.car).width(min: 70, ideal: 100)
         TableColumn("Laps", value: \.completeLapCount) { entry in Text("\(entry.completeLapCount)") }
             .width(min: 40, ideal: 50)
@@ -71,6 +82,16 @@ struct LogbookTable<RowMenu: View>: View {
         TableColumn("GPS", value: \.gpsRank) { entry in GPSRatingBadge(entry: entry) }
             .width(min: 34, ideal: 40)
         TableColumn("Conditions", value: \.conditions.summary).width(min: 90, ideal: 140)
+    }
+
+    /// When the session was driven: its own date and time; else the date of the day it is on, with
+    /// no time, since nothing says one; a dash only when it is on no day either (#667).
+    private func dateText(of entry: LogbookEntry) -> String {
+        if let date = entry.date { return date.formatted(date: .abbreviated, time: .shortened) }
+        if let day = entry.trackDayID.flatMap({ dayDates[$0] }) {
+            return day.formatted(date: .abbreviated, time: .omitted)
+        }
+        return "—"
     }
 }
 
