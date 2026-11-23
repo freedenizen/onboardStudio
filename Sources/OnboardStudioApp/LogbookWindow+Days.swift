@@ -210,20 +210,27 @@ extension LogbookWindow {
 
     // MARK: - Against another session (#397)
 
-    /// The logbook's other sessions at the entry's circuit: the personal best here and the last
-    /// visit first, then the rest by date.
+    /// The logbook's other sessions at the entry's circuit: the personal best here — or the next
+    /// best, when this session holds it — and the visit before this one first, then the rest by
+    /// date. Sessions of one day are told apart by their time (#661).
     func comparisons(for entry: LogbookEntry) -> [(title: String, entry: LogbookEntry)] {
         let candidates = LogbookReferences.sessions(
             at: LogbookFilter.circuitKey(of: entry), in: model.entries, excluding: entry.file.contentHash)
-        var choices: [(title: String, entry: LogbookEntry)] = []
-        if let best = LogbookReferences.personalBest(in: candidates) {
-            choices.append(("Personal Best Here — \(LogbookReferences.phrase(for: best, lap: nil))", best))
+        func phrase(_ other: LogbookEntry) -> String {
+            LogbookReferences.phrase(for: other, lap: nil, among: candidates)
         }
-        if let last = LogbookReferences.lastVisit(in: candidates), last.id != choices.first?.entry.id {
-            choices.append(("Last Visit — \(LogbookReferences.phrase(for: last, lap: nil))", last))
+        var choices: [(title: String, entry: LogbookEntry)] = []
+        if let best = LogbookReferences.best(in: candidates, besides: entry) {
+            let label = best.standing == .personalBest ? "Personal Best Here" : "Next Best Here"
+            choices.append(("\(label) — \(phrase(best.entry))", best.entry))
+        }
+        if let last = LogbookReferences.lastVisit(in: candidates, before: entry),
+            last.id != choices.first?.entry.id
+        {
+            choices.append(("Last Visit — \(phrase(last))", last))
         }
         for candidate in candidates where !choices.contains(where: { $0.entry.id == candidate.id }) {
-            choices.append((CoachingContent.candidateTitle(candidate), candidate))
+            choices.append((CoachingContent.candidateTitle(candidate, among: candidates), candidate))
         }
         return choices
     }

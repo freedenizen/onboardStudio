@@ -1366,8 +1366,11 @@ the session already open, **Coach…** reads that project instead — the plan, 
 picture and **Compare in Video** are there, and the project comes forward behind the window — and
 a Coaching window that was already reading the session offers **Use the Open Project** in place of
 Make a Project; neither makes a second project of the same session. Beside **Coach…**,
-**Compare With ▸** lists the logbook's other sessions at the circuit — the personal best here and
-the last visit first — and opens the window with that one as the reference; **Export Coaching
+**Compare With ▸** lists the logbook's other sessions at the circuit and opens the window with the
+one you choose as the reference. Two come first: **Personal Best Here** — or **Next Best Here**,
+when the session you are on holds the personal best itself — and **Last Visit**, the quickest
+session of the day you were there before this one, never another session of the same day. Sessions
+of one day carry their time of day, so they can be told apart. **Export Coaching
 Debrief…** (once the session has a clip) opens a project laid out for a debrief with the sheet up.
 
 ### The walkthrough
@@ -1399,8 +1402,9 @@ each lap joined into one, the lap you have already shown you can do; **another l
 **another data file** in the project, which is how you compare with a friend's or an instructor's
 session (the two lines are matched by position, so a different line through a corner still meets
 the same corner); or, when the logbook has other sessions at this circuit, a **Logbook** session —
-**Personal best here**, **Last visit**, or any by date and car — read in on demand without adding
-its file to the project. Two laps of one session are matched metre for metre, which is right when they
+**Personal best here** (**Next best here** when the session being coached holds the best itself),
+**Last visit** (the visit before this session's day), or any by date and car — read in on demand
+without adding its file to the project. Two laps of one session are matched metre for metre, which is right when they
 follow the same line; when you drove a corner two different ways on purpose, turn on **Line up by
 position** and they are matched by where the car was instead (undoable, saved with the project).
 

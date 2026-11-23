@@ -16,6 +16,65 @@ struct LogbookReferencesTests {
             date: date, car: car, bestLap: best, bestLapNumber: best == nil ? nil : lap)
     }
 
+    /// #661: on the session that had just set the personal best, the menu called an older lap the
+    /// "personal best here" and another session of the same day the "last visit".
+    @Test func whatAnotherSessionIsDependsOnTheOneBeingRead() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let noon = { (day: Double, hour: Double) in
+            Date(timeIntervalSince1970: 1_700_049_600 + day * 86_400 + hour * 3_600)
+        }
+        let first = entry("first", key: "Stadium", best: 43.0, date: noon(0, 0))
+        let firstLater = entry("firstLater", key: "Stadium", best: 42.0, date: noon(0, 3))
+        let morning = entry("morning", key: "Stadium", best: 41.5, date: noon(30, -2))
+        let record = entry("record", key: "Stadium", best: 41.0, date: noon(30, 0))
+        let afternoon = entry("afternoon", key: "Stadium", best: 41.8, date: noon(30, 3))
+        let all = [first, firstLater, morning, record, afternoon]
+        func others(than own: LogbookEntry) -> [LogbookEntry] {
+            LogbookReferences.sessions(at: "Stadium", in: all, excluding: own.file.contentHash)
+        }
+
+        // The session that holds the personal best: the quickest of the others is only next best,
+        // and the last visit is the first day's quicker session, not that afternoon's.
+        let best = try #require(LogbookReferences.best(in: others(than: record), besides: record))
+        #expect(best.entry.file.contentHash == "morning" && best.standing == .nextBest)
+        let last = LogbookReferences.lastVisit(in: others(than: record), before: record, calendar: calendar)
+        #expect(last?.file.contentHash == "firstLater")
+
+        // A slower session of the same day: the record is the personal best, the visit the same.
+        let held = try #require(LogbookReferences.best(in: others(than: afternoon), besides: afternoon))
+        #expect(held.entry.file.contentHash == "record" && held.standing == .personalBest)
+        #expect(
+            LogbookReferences.lastVisit(in: others(than: afternoon), before: afternoon, calendar: calendar)?
+                .file.contentHash == "firstLater")
+
+        // The first day has no visit before it.
+        #expect(LogbookReferences.lastVisit(in: others(than: first), before: first, calendar: calendar) == nil)
+        // Nothing known of the session being read: the personal best, and the newest day.
+        #expect(LogbookReferences.best(in: all, besides: nil)?.standing == .personalBest)
+        #expect(LogbookReferences.lastVisit(in: all, before: nil, calendar: calendar)?.file.contentHash == "record")
+    }
+
+    @Test func sessionsOfOneDayAreToldApartByTheirTime() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let base = Date(timeIntervalSince1970: 1_700_006_400)
+        let morning = entry("morning", key: "Stadium", best: 41.5, lap: 3, date: base)
+        let afternoon = entry("afternoon", key: "Stadium", best: 41.8, lap: 3, date: base.addingTimeInterval(3 * 3_600))
+        let another = entry("another", key: "Stadium", best: 44.0, lap: 3, date: base.addingTimeInterval(9 * 86_400))
+        let all = [morning, afternoon, another]
+        let plain = LogbookReferences.phrase(for: morning, lap: nil)
+        let told = LogbookReferences.phrase(for: morning, lap: nil, among: all, calendar: calendar)
+        #expect(told != plain && told.count > plain.count, "\(told)")
+        #expect(
+            told != LogbookReferences.phrase(for: afternoon, lap: nil, among: all, calendar: calendar),
+            "two sessions of a day read differently")
+        // A day with one session keeps the short form.
+        #expect(
+            LogbookReferences.phrase(for: another, lap: nil, among: all, calendar: calendar)
+                == LogbookReferences.phrase(for: another, lap: nil))
+    }
+
     @Test func theCandidatesAreTheOtherSessionsAtTheCircuit() throws {
         let day = { (n: Double) in Date(timeIntervalSince1970: 1_700_000_000 + n * 86_400) }
         let all = [
