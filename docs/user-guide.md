@@ -1166,6 +1166,14 @@ before any file is known. A dial whose scale you have set yourself is left as yo
 is one in a project saved earlier: there the scale is still the 0–160 it was saved with, and
 **Maximum** and the ticks in the inspector are where to change it.
 
+The scale follows the unit when you change it, too — **Speed unit** on the object, or **Speed** in
+the project's units — in the same step, so one Undo takes both back. A dial or a speed bar still
+as its file fitted it becomes the one the new unit would have had from the start, and changing
+back restores it exactly. One whose scale you set keeps the speeds it ran between, rounded outwards
+to round labels (0–200 mph becomes 0–350 km/h), and its coloured zones move with it. Changing the
+unit in **Settings ▸ Units** does not rescale the dials of projects already made: set **Maximum**
+there, or choose the unit on the object.
+
 ### The timeline
 
 A segment starts at a project time and changes any object's visibility, position, size or opacity

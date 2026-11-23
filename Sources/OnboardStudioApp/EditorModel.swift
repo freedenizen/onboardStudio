@@ -153,7 +153,11 @@ final class EditorModel {
     // MARK: - Editing
 
     func edit(_ name: String, _ change: (inout Project) -> Void) {
-        document.apply(undoManager, name: name, change)
+        // An edit that changes the unit a speed is drawn in takes its scale along, in one step (#668).
+        document.apply(undoManager, name: name) { [shown = shownSpeedUnits] project in
+            change(&project)
+            reshowSpeedScales(in: &project, from: shown)
+        }
         syncFromDocument()
     }
 
