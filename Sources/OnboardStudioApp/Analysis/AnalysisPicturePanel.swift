@@ -23,8 +23,12 @@ struct AnalysisPicturePanel: View {
                 .help("Play this lap's picture from the cursor, the cursor following it")
                 .accessibilityIdentifier("analysis.picture.play")
                 if model.footage.count > 1 {
-                    Picker("Picture of", selection: Binding(get: { model.picture.trace }, set: model.showPicture(of:)))
-                    {
+                    // A closure, not `model.showPicture(of:)` itself: handed over as a method, the
+                    // setter needed a thunk that crashed the compiler in CodeQL's build (#639).
+                    Picker(
+                        "Picture of",
+                        selection: Binding(get: { model.picture.trace }, set: { model.showPicture(of: $0) })
+                    ) {
                         ForEach(analysis.traces.filter { model.footage[$0.id] != nil }) { trace in
                             Text(trace.label).tag(trace.id)
                         }
