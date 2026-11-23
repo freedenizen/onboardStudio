@@ -136,8 +136,18 @@ extension TrackDayImport {
     }
 
     /// The clip already on a day of the logbook, known by its fingerprint.
+    ///
+    /// A plain loop over a named array, on purpose (#653). Written as
+    /// `logbook.days().lazy.compactMap { $0.clips.first { … } }.first`, an optimised build freed the
+    /// days before the record found in them had been copied out: the copy read freed memory, and
+    /// the app went down with a corrupted heap a moment later — every time a folder already in the
+    /// logbook was added again. A debug build keeps the array alive, so no test saw it.
     static func knownClip(_ clip: ClipRecord, in logbook: Logbook) -> ClipRecord? {
-        logbook.days().lazy.compactMap { $0.clips.first { $0.fingerprint == clip.fingerprint } }.first
+        let days = logbook.days()
+        for day in days {
+            if let known = day.clips.first(where: { $0.fingerprint == clip.fingerprint }) { return known }
+        }
+        return nil
     }
 
     /// A camera recording onto its day (#394): the chosen one, else the day its clock says.
