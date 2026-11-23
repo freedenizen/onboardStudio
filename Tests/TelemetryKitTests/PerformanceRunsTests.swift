@@ -113,6 +113,53 @@ import Testing
         #expect(abs(hundred.metres - 27.7778 * 27.7778 / 18) < 0.05)
     }
 
+    /// `session` with its distance channel put through `change` (seconds, metres).
+    static func session(_ session: TelemetrySession, distance change: (Double, Double) -> Double) -> TelemetrySession {
+        var channels = session.channels.values.filter { $0.role != .distance }
+        if let distance = session[.distance] {
+            channels.append(
+                Channel(
+                    role: .distance, name: distance.name, unit: .meters, times: distance.times,
+                    values: zip(distance.times, distance.values).map(change)))
+        }
+        return TelemetrySession(info: session.info, channels: channels)
+    }
+
+    /// #660: a camera's GPS lost its fix as the car slowed and found itself again far away. Speed
+    /// fell through 60 mph to nothing and the distance leapt, which read as a stop a hundred
+    /// miles long — and stood in Trends as the car's best. The distance of a stop has to be one
+    /// its own speeds could have covered.
+    @Test func aStopItsSpeedsCouldNotHaveCoveredIsNoStop() throws {
+        // Up to 30 m/s by 8 s, held to 11 s, then 9 m/s² to a standstill at about 14.3 s.
+        let clean = Self.session(phases: [(5, 6), (0, 3), (-9, 30 / 9.0), (0, 2)])
+        #expect(Runs.measure(in: clean).stops.count == 2)
+        // The position leaps 150 km in the middle of the braking.
+        let leapt = Self.session(clean) { time, metres in time > 12.5 ? metres + 150_000 : metres }
+        #expect(Runs.measure(in: leapt).stops.isEmpty, "\(Runs.measure(in: leapt).stops)")
+        // The positions stand still from before the braking, while the speed still says moving.
+        let held = try #require(clean[.distance]?.value(at: 11))
+        let frozen = Self.session(clean) { time, metres in time > 11 ? held : metres }
+        #expect(Runs.measure(in: frozen).stops.isEmpty, "\(Runs.measure(in: frozen).stops)")
+    }
+
+    /// An entry measured before #660 holds the stop as it was read then.
+    @Test func aSavedResultLosesAStopNoCarCouldHaveMade() throws {
+        let saved = Runs.Result(stops: [
+            Runs.Stop(from: .sixtyMph, start: 231.9, end: 233.2, metres: 147_875, slope: nil),
+            Runs.Stop(from: .sixtyMph, start: 400, end: 403, metres: 40, slope: nil),
+        ])
+        let read = try JSONDecoder().decode(Runs.Result.self, from: JSONEncoder().encode(saved))
+        #expect(read.stops.map(\.metres) == [40])
+    }
+
+    @Test func aStopInAOneHertzLogIsStillAStop() throws {
+        let result = Runs.measure(in: Self.session(hertz: 1, phases: [(5, 6), (0, 3), (-9, 30 / 9.0), (0, 2)]))
+        let sixty = try #require(result.stops.first { $0.from == .sixtyMph })
+        let v = 26.8224
+        #expect(abs(sixty.metres - v * v / 18) < 2, "\(sixty.metres) m")
+        #expect(result.stops.contains { $0.from == .hundredKmh })
+    }
+
     @Test func aSlopeIsMeasured() throws {
         let attempt = try #require(Runs.measure(in: Self.session(phases: [(5, 20)], climb: -0.02)).attempts.first)
         #expect(abs(try #require(attempt.slope) - -0.02) < 1e-6, "2 % downhill")

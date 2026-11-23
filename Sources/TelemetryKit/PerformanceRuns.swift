@@ -54,11 +54,31 @@ public enum PerformanceRuns {
         public let metres: Double
         public var slope: Double?
         public var seconds: Double { end - start }
+
+        /// Whether a car could have done it: no further than its braking speed, held all the
+        /// way, would have carried it. A stop that fails this was a receiver losing its fix
+        /// (#660), and is not kept even where it was measured before that was checked.
+        public var isPossible: Bool {
+            metres >= 0 && metres <= (from.metresPerSecond + 1) * max(seconds, 0) + 2
+        }
     }
 
     public struct Result: Sendable, Hashable, Codable {
         public var attempts: [Attempt] = []
         public var stops: [Stop] = []
+
+        public init(attempts: [Attempt] = [], stops: [Stop] = []) {
+            self.attempts = attempts
+            self.stops = stops
+        }
+
+        /// As saved, less any stop no car could have made: a logbook entry measured before #660
+        /// can hold one, and it would stand as the car's best for ever.
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            attempts = try container.decodeIfPresent([Attempt].self, forKey: .attempts) ?? []
+            stops = (try container.decodeIfPresent([Stop].self, forKey: .stops) ?? []).filter(\.isPossible)
+        }
     }
 
     public struct Options: Sendable, Equatable {
@@ -68,6 +88,10 @@ public enum PerformanceRuns {
         public var liftDrop = 3.0
         /// A stop is not one if speed rises this much on the way down (m/s).
         public var stopRise = 1.0
+        /// A stop's distance has to agree with its own speeds: within this share of what the
+        /// speeds add up to over the stop, or within `stopSlack` metres when that is more.
+        public var stopDisagreement = 0.25
+        public var stopSlack = 2.0
         /// A timeslip's rollout (m).
         public var rollout = 0.3048
         /// A strip's trap (m): the last 66 ft before the mark.
@@ -187,7 +211,12 @@ public enum PerformanceRuns {
                     stopped = decel > 0 ? crossing + options.movingSpeed / decel : crossing
                 }
             }
-            if let stopped, let from = distance.value(at: start), let to = distance.value(at: stopped) {
+            // A receiver that loses its fix reports no speed and, when it finds itself again, a
+            // position somewhere else: a "stop" from 60 mph in a second that covered a hundred
+            // miles (#660). The distance has to be one the speeds could have covered.
+            if let stopped, let from = distance.value(at: start), let to = distance.value(at: stopped),
+                track.agrees(with: to - from, from: start, to: stopped, options: options)
+            {
                 var stop = Stop(from: braking, start: start, end: stopped, metres: to - from)
                 stop.slope = ground.slope(from: start, to: stopped)
                 stops.append(stop)
@@ -295,5 +324,36 @@ public enum PerformanceRuns {
             else { return nil }
             return (h1 - h0) / (d1 - d0)
         }
+    }
+}
+
+extension PerformanceRuns.SpeedTrack {
+    /// How far the speeds say the car went between two moments: the area under them, with
+    /// the speed running straight from one sample to the next.
+    func travelled(from start: Double, to end: Double) -> Double {
+        guard end > start, times.count > 1 else { return 0 }
+        func speed(at time: Double, between a: Int, and b: Int) -> Double {
+            let span = times[b] - times[a]
+            return span > 0 ? values[a] + (values[b] - values[a]) * (time - times[a]) / span : values[a]
+        }
+        var total = 0.0
+        for index in 1..<times.count where times[index] > start && times[index - 1] < end {
+            let from = max(start, times[index - 1])
+            let to = min(end, times[index])
+            guard to > from else { continue }
+            let first = speed(at: from, between: index - 1, and: index)
+            let last = speed(at: to, between: index - 1, and: index)
+            total += (first + last) / 2 * (to - from)
+        }
+        return total
+    }
+
+    /// Whether `metres`, read from the distance channel, is what the speeds between the two
+    /// moments could have covered.
+    func agrees(
+        with metres: Double, from start: Double, to end: Double, options: PerformanceRuns.Options
+    ) -> Bool {
+        let expected = travelled(from: start, to: end)
+        return abs(metres - expected) <= max(expected * options.stopDisagreement, options.stopSlack)
     }
 }

@@ -335,8 +335,10 @@ Each launch from standing still is a **Start**, with a column for each measure i
   quarter mile 0.2–0.3 s quicker than timing from the first movement.
 
 A start that lifted early has the measures it reached and a dash for the rest. Each **Stop** from
-60 mph (100 km/h) to standing still is listed with its distance and time. The best of each measure
-is in the accent colour. The measures follow the speed unit in Settings; both sets are always
+60 mph (100 km/h) to standing still is listed with its distance and time. A stop whose distance its
+own speeds could not have covered is not one: that is a GPS receiver losing its fix — the speed
+falls to nothing and the position turns up somewhere else — and it is left out, of a session
+measured before this was checked too. The best of each measure is in the accent colour. The measures follow the speed unit in Settings; both sets are always
 measured, so changing the unit shows the other without reading the file again.
 
 A note beside a start says when its numbers should be read with care, rather than hiding it. A slope
