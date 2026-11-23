@@ -347,6 +347,8 @@ extension ExportSheet {
                 where throttle.shouldReport(update.fraction) {
                     progress = update
                 }
+                // A cancelled task's loop just ends, as a finished export's does (#663).
+                try Task.checkCancellation()
                 finishedURL = destination
                 editor.hasExported = true
                 editor.recordExportInLogbook(destination)
@@ -476,6 +478,7 @@ extension ExportSheet {
                         progress = ExportProgress(
                             fraction: overall, framesWritten: update.framesWritten, currentTime: update.currentTime)
                     }
+                    try Task.checkCancellation()  // as above (#663)
                 }
                 batchLabel = nil
                 finishedURL = folder

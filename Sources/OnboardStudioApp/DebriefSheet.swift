@@ -163,6 +163,8 @@ struct DebriefSheet: View {
                 where throttle.shouldReport(update.fraction) {
                     progress = update
                 }
+                // A cancelled task's loop just ends, as a finished export's does (#663).
+                try Task.checkCancellation()
                 finishedURL = url
                 editor.recordExportInLogbook(url)
                 editor.statusMessage = "Exported the coaching debrief."
