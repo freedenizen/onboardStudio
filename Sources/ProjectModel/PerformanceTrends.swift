@@ -46,12 +46,12 @@ public enum PerformanceTrends {
         return
             entries
             .filter { entry in car.map { Garage.same(entry.car, $0) } ?? true }
-            .sorted { ($0.date ?? $0.added) < ($1.date ?? $1.added) }
+            .sorted { $0.when < $1.when }
             .compactMap { entry in
                 guard let performance = entry.performance else { return nil }
                 let quarter = performance.best(.quarterMile)
                 let point = Point(
-                    entryID: entry.id, date: entry.date ?? entry.added, car: entry.car,
+                    entryID: entry.id, date: entry.when, car: entry.car,
                     launch: performance.best(launch)?.seconds, quarterMile: quarter?.seconds, trap: quarter?.trap,
                     stop: performance.best(braking)?.stop.metres)
                 return point.launch == nil && point.quarterMile == nil && point.stop == nil ? nil : point

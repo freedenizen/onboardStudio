@@ -139,7 +139,7 @@ extension SetupComparison {
         key: String, label: String
     )] {
         var seen: [(key: String, label: String)] = []
-        for entry in entries.sorted(by: { ($0.date ?? $0.added) < ($1.date ?? $1.added) }) {
+        for entry in entries.sorted(by: { $0.when < $1.when }) {
             guard let key = split.key(of: entry), let label = split.label(of: entry, units: units),
                 !seen.contains(where: { $0.key == key })
             else { continue }

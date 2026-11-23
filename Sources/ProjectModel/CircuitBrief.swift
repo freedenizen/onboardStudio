@@ -44,7 +44,7 @@ public struct CircuitBrief: Sendable, Equatable {
         -> CircuitBrief
     {
         let here = entries.filter { !circuitKey.isEmpty && LogbookFilter.circuitKey(of: $0) == circuitKey }
-        let byDay = Dictionary(grouping: here) { calendar.startOfDay(for: $0.date ?? $0.added) }
+        let byDay = Dictionary(grouping: here) { calendar.startOfDay(for: $0.when) }
         let last = byDay.max { $0.key < $1.key }.map { day, sessions in
             Visit(date: day, best: sessions.compactMap(\.bestLap).min(), sessions: sessions.count)
         }

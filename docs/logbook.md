@@ -336,8 +336,10 @@ result per pair of sessions for the app's life.
 
 ## The season (#355)
 
-`SeasonSummary` (`ProjectModel/SeasonSummary.swift`) composes a year — by the day driven, or
-entered when the file carried no date — out of what the entries already hold: distinct days,
+`SeasonSummary` (`ProjectModel/SeasonSummary.swift`) composes a year — by `LogbookEntry.when`: the
+day driven; for a file that carried no date, the date of the track day the session is on
+(`dayDate`, which `Logbook.entries()` and `entry(id:)` fill in from the day and never write, #656);
+and the day it was entered only for an entry on no day — out of what the entries already hold: distinct days,
 sessions, complete laps, the sum of `distanceMeters` (new on the entry, from the distance channel),
 the personal bests set that year (`PersonalBests.entriesSettingBests`), the best at each circuit
 (`PersonalBests.best`), the corner that moved most either way (`LogbookTrends.cornerTrends` per

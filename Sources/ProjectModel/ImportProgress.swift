@@ -57,7 +57,7 @@ public struct ImportProgress: Sendable, Equatable {
     public static func make(added: Set<UUID>, in entries: [LogbookEntry], calendar: Calendar = .current)
         -> ImportProgress
     {
-        func day(_ entry: LogbookEntry) -> Date { calendar.startOfDay(for: entry.date ?? entry.added) }
+        func day(_ entry: LogbookEntry) -> Date { calendar.startOfDay(for: entry.when) }
         let new = entries.filter { added.contains($0.id) }
         let keys = Set(new.map(LogbookFilter.circuitKey(of:))).subtracting([""])
         let titles = Dictionary(
