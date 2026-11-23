@@ -70,6 +70,10 @@ its source; the new-user review holds every release to it, so ask them before th
 - Honour Reduce Motion, Reduce Transparency and Increase Contrast.
 - A toolbar `Menu` is read by its **symbol's name** ("gauge.with.dots.needle.33percent") unless it
   has its own `.accessibilityLabel`; a `Label` inside it is not enough (#153).
+- A `TextField` whose label is hidden (`.labelsHidden()`), or whose title is only the hint
+  inside it, has **no name** in the accessibility tree: VoiceOver reads "edit text". Give it
+  `.accessibilityLabel` with the word shown beside it (#673). A `Picker` keeps its label when
+  hidden, but a row of them needs one that tells them apart ("Session of <clip>").
 - `underPageBackgroundColor` is mid-grey in the light appearance; secondary text on it fails
   contrast. The timeline ruler did (#153).
 - A drawn `NSView` (the preview) is invisible to VoiceOver until it returns

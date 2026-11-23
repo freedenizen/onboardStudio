@@ -37,6 +37,7 @@ struct SessionConfigurationField: View {
                     .onChange(of: entry.configuration) { load() }
                     .onChange(of: focused) { old, new in if old, !new { commit() } }
                     .help("Which layout of the circuit was driven, such as Club Course. Empty for its usual layout.")
+                    .accessibilityLabel("Configuration")
                     .accessibilityIdentifier("logbook.detail.configuration")
                 if !others.isEmpty || entry.configuration != nil {
                     Menu {

@@ -60,6 +60,8 @@ struct TrackDayHeader: View {
                         .focused($focus, equals: .car)
                         .onSubmit(commit)
                         .frame(maxWidth: 240)
+                        // Its title is the hint inside it; the word beside it is not its label (#673).
+                        .accessibilityLabel("Car")
                         .accessibilityIdentifier("trackday.header.car")
                 }
                 GridRow {
@@ -68,6 +70,7 @@ struct TrackDayHeader: View {
                         .focused($focus, equals: .driver)
                         .onSubmit(commit)
                         .frame(maxWidth: 240)
+                        .accessibilityLabel("Driver")
                         .accessibilityIdentifier("trackday.header.driver")
                 }
                 // A day of runs counts cones (#552); a circuit's day has none to count.
@@ -239,6 +242,7 @@ struct NewTrackDaySheet: View {
                         // The row is labelled already: a second title would be drawn beside it as
                         // "Car · What you drove" (#457). The prompt is the hint inside the field.
                         TextField("Car", text: $car, prompt: Text("What you drove")).labelsHidden()
+                            .accessibilityLabel("Car")
                             .accessibilityIdentifier("trackday.new.car")
                         if !knownCars.isEmpty {
                             Menu {

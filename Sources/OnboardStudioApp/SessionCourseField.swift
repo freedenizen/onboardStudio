@@ -20,6 +20,8 @@ struct SessionCourseField: View {
             Text("Course").foregroundStyle(.secondary)
             HStack(spacing: 4) {
                 TextField("Course", text: $name, prompt: Text("Name this course")).labelsHidden()
+                    // A hidden label is not read out, so the field says what it is itself (#673).
+                    .accessibilityLabel("Course")
                     .focused($focused)
                     .onSubmit(commit)
                     .onAppear { name = course.name }
