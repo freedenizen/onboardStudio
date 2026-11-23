@@ -412,6 +412,10 @@ The detail lists a session's laps as a timing screen does, one row a lap:
   They need a wider detail than the others: at its usual width a line under the laps says so, and
   dragging the detail's left edge brings them in.
 
+At the width the Logbook first opens at, the table shows a lap's time, its gap and three sectors
+whole. A table wider than the detail even without its speeds — more sectors, or a lap left out with
+its reason — scrolls sideways, and the line under it says that instead.
+
 The quickest of each column is in the accent colour, so you can see which lap had the best S3 and
 whether S2 came down over the session. A sector the lap did not time is a dash: the recording ended
 during it, or the lap ended in the pit lane. The out-lap has no sector times, because it did not
