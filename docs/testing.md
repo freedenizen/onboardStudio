@@ -205,3 +205,15 @@ before tagging a release.
 Before tagging: check the nightly is green (it built the bundle and ran the render), then
 `Scripts/release.sh`, install the DMG, launch the app, check "Check for Updates…" opens the
 Sparkle dialog, and run the current milestone's QA script.
+
+## After a release: the new-user review
+
+A release that adds features (`vX.Y.0`) is then used as someone who has never seen the app would
+use it — the published download, only the documentation a user is given, and real track days — and
+what gets in the way is filed against the app and against the guide. Pushing the tag opens the
+issue that tracks it (`.github/workflows/new-user-review.yml`); `/new-user-review <version>` in
+Claude Code runs it, on a copy made by `Scripts/review-copy.sh` that starts as a first launch and
+leaves the real Logbook and settings alone. The process is [new-user-review.md](new-user-review.md),
+what it holds the app to is [ux-checklist.md](ux-checklist.md), and the reports are in
+[reviews/](reviews/README.md). It is not a substitute for the tests or the smoke test: it asks
+whether the app can be learnt, not whether it is correct.

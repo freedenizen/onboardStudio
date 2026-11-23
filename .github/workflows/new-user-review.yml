@@ -1,0 +1,39 @@
+name: New-user review
+# A release that adds features is followed by the new-user review (docs/new-user-review.md):
+# the published app, used as someone who has never seen it would use it. Pushing the release's tag
+# opens the issue that tracks the review, so that the review is a ticket and not something to
+# remember. A patch release (vX.Y.1 and up) is not reviewed and opens nothing.
+#
+# It only opens an issue. It checks out no code and is separate from the Release workflow, so
+# nothing here can hold up or fail a release.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.0']
+permissions:
+  issues: write
+jobs:
+  open-issue:
+    name: Open the review's issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Open the issue, unless this release has one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          title="New-user review of $TAG"
+          existing=$(gh issue list --state all --search "\"$title\" in:title" --limit 1 --json number --jq '.[0].number // empty')
+          if [[ -n "$existing" ]]; then
+            echo "Issue #$existing already tracks the review of $TAG."
+            exit 0
+          fi
+          gh issue create --title "$title" --label documentation --label new-user-review --body "$(cat <<EOF
+          \`$TAG\` adds features, so it is due the new-user review: the published app, the guide a user is given and real track days, with everything that gets in the way written down.
+
+          - The process: [docs/new-user-review.md](https://github.com/$GH_REPO/blob/main/docs/new-user-review.md). In Claude Code: \`/new-user-review ${TAG#v}\`, once the release is published.
+          - The last review, to go back over: the newest file in [docs/reviews](https://github.com/$GH_REPO/tree/main/docs/reviews).
+          - Done when \`docs/reviews/$TAG.md\` is merged and its findings are filed as issues labelled \`new-user-review\`. The PR that adds the report closes this issue.
+          EOF
+          )"

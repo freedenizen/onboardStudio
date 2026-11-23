@@ -28,6 +28,9 @@ swift run onboard bench --export --codec hevc --seconds 60
   fails with bogus "no member" errors.
 - `Scripts/bundle-app.sh` → `dist/OnboardStudio.app`; `Scripts/make-dmg.sh` → the DMG.
 - `Scripts/ui-tests.sh [Class[/test]]` — XCUITest journeys. See `.claude/rules/uitests.md`.
+- `Scripts/review-copy.sh make|stage|launch|info|clean <version>` — a copy of the app that starts
+  as a first launch (its own preferences, Logbook and track library), for the new-user review and
+  for any walk by hand that must not touch the real Logbook.
 - Media tests use `ffprobe` and skip when it isn't installed.
 - Set `ONBOARD_SAMPLES_DIR=~/OverlayGenSamples` to run the real-clip tests, and
   `ONBOARD_GYROFLOW_CLIP=<short GoPro clip>` (with Gyroflow installed) for the real Gyroflow render.
@@ -80,6 +83,13 @@ swift run onboard bench --export --codec hevc --seconds 60
 - The nightly workflow (`.github/workflows/nightly.yml`) runs what a PR does not wait for:
   the ffprobe-backed media tests, `onboard render` on the fixture, an unsigned bundle and the
   bench against a budget; red opens the `nightly-red` issue.
+- **A release that adds features (`vX.Y.0`) is followed by the new-user review**
+  (`/new-user-review <version>`, `docs/new-user-review.md`): the published DMG, only the
+  documentation a user is given, real track days, by computer use on a copy that starts as a first
+  launch. The tag opens its issue (`new-user-review.yml`); the report goes in `docs/reviews/` and
+  its findings are filed as issues labelled `new-user-review` once the user has seen them. Run it
+  on the release, never on a build of `main`, and in a session that has not been working on the
+  code.
 - Every commit is SSH-signed (key lives in the 1Password agent; `SSH_AUTH_SOCK` must point at it).
 - Conventional Commits subjects: `feat(importers): …`, `fix(mediakit): …`, `test(ui): …`, `ci: …`.
 - **Every user-visible change is documented in the same PR that makes it.** A feature nobody can
@@ -125,8 +135,9 @@ swift run onboard bench --export --codec hevc --seconds 60
   an old file from a new one. See `docs/project-format.md`.
 - **Ask before creating or pushing any git tag.** A tag cuts a signed, notarized public release.
   Push tags one at a time — GitHub starts no workflows when more than three arrive in one push.
-- `~/OverlayGenSamples` and the user's iCloud track-day folders are **local testing only**:
-  never commit, upload or attach them.
+- `~/OverlayGenSamples`, `~/Onboard Studio Testing Set` and the user's iCloud track-day folders
+  are **local testing only**: never commit, upload or attach them, and never write a value read
+  from them (a lap time, a speed, a position) into a test, a doc, an issue or a commit message.
 - Secrets are referenced by name only (`MACOS_CERT_P12`, `NOTARY_KEY_P8`, `SPARKLE_PRIVATE_KEY`, …).
   `sparkle_private_key*` is gitignored and must never be committed.
 - RaceChrono Pro CSV v3 is a first-class importer and must keep working.
@@ -143,7 +154,9 @@ Deeper docs, read on demand: `docs/architecture.md`, `docs/formats.md`, `docs/pr
 `docs/landscape.md` (what other track-day tools do, where we are ahead, ranked candidate work),
 `docs/tracks-and-sectors.md` (circuit identification, sectors, what each logger format carries),
 `docs/testing.md`, `docs/parity.md`, `docs/scripting.md`, `docs/user-journeys.md` and
-`docs/journeys/`, `docs/user-guide.md`, `docs/youtube.md`.
+`docs/journeys/`, `docs/user-guide.md`, `docs/youtube.md`, `docs/ux-checklist.md` (what
+"user-friendly" means here, item by item with its source — read before designing a screen),
+`docs/new-user-review.md` and `docs/reviews/` (the review of each release as a first-time user).
 
 Path-scoped rules load automatically when you work in those areas:
 `.claude/rules/renderkit.md`, `.claude/rules/importers.md`, `.claude/rules/uitests.md`,

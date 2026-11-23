@@ -61,4 +61,5 @@ a first change.
 ## Releases
 
 Tag `vX.Y.Z` on `main`; the Release workflow builds, signs, packages and publishes the DMG,
-Sparkle appcast and CLI tarball. See `docs/architecture.md`.
+Sparkle appcast and CLI tarball. See `docs/architecture.md`. A release that adds features
+(`vX.Y.0`) is followed by the [new-user review](docs/new-user-review.md); the tag opens its issue.

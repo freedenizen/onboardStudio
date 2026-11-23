@@ -12,6 +12,8 @@ That is the standard for every UI change, not a polish pass at the end — a con
 does not belong on a Mac is not finished.
 
 The rest of this file is what that means here, and the places this app has got it wrong before.
+`docs/ux-checklist.md` is the same standard as questions to ask of a finished screen, each with
+its source; the new-user review holds every release to it, so ask them before the review does.
 
 ## Use the platform, don't reinvent it
 
