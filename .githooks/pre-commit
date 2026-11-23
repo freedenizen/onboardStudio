@@ -25,6 +25,12 @@ if grep -q '^\.github/workflows/' <<< "$staged" && command -v actionlint >/dev/n
   actionlint -ignore SC2012 -ignore SC2086
 fi
 
+# The script that decides which CI jobs a change needs: a wrong answer skips a suite silently.
+if grep -q '^Scripts/\(test-\)\{0,1\}ci-changes\.sh$' <<< "$staged"; then
+  echo "pre-commit: CI change detector"
+  Scripts/test-ci-changes.sh >/dev/null
+fi
+
 # A new XCUITest class that is on no shard runs nowhere and every shard still passes.
 if grep -q '^UITests/\|^\.github/workflows/ci\.yml$' <<< "$staged"; then
   echo "pre-commit: UI test shards"

@@ -21,11 +21,12 @@ jobs:
   # on Linux, which is preinstalled with shellcheck and starts in seconds. Both are required.
   lint:
     name: Lint
-    # Drafts wait for macOS time until they are marked ready (#237), decided from the PR as it is
-    # now rather than as the event saw it (#239). A skipped required check counts as passing, so
-    # the "UI tests" check below fails on a draft: that is what keeps a draft from reading green.
+    # Skipped when nothing it reads changed, or when the tree was already tested (#646), and on a
+    # draft, which waits for macOS time until it is marked ready (#237). A skipped required check
+    # counts as passing, so the "UI tests" check below fails on a draft and when the detector
+    # failed: that is what keeps either from reading green.
     needs: changes
-    if: needs.changes.outputs.draft != 'true'
+    if: needs.changes.outputs.code == 'true'
     runs-on: xcode-27
     timeout-minutes: 15
     steps:
@@ -67,14 +68,17 @@ jobs:
         run: shellcheck -S warning Scripts/*.sh .githooks/*
       - name: UI test shards
         run: Scripts/check-ui-test-shards.sh
+      - name: CI change detector
+        run: Scripts/test-ci-changes.sh
 
   test:
     name: Test
-    # Drafts wait for macOS time until they are marked ready (#237), decided from the PR as it is
-    # now rather than as the event saw it (#239). A skipped required check counts as passing, so
-    # the "UI tests" check below fails on a draft: that is what keeps a draft from reading green.
+    # Skipped when nothing it reads changed, or when the tree was already tested (#646), and on a
+    # draft, which waits for macOS time until it is marked ready (#237). A skipped required check
+    # counts as passing, so the "UI tests" check below fails on a draft and when the detector
+    # failed: that is what keeps either from reading green.
     needs: changes
-    if: needs.changes.outputs.draft != 'true'
+    if: needs.changes.outputs.code == 'true'
     runs-on: xcode-27
     timeout-minutes: 30
     steps:
@@ -136,6 +140,9 @@ jobs:
       - name: CLI smoke
         run: swift run onboard --version
 
+  # Decides which macOS jobs this run needs. Only five run at once across the account, so a job
+  # the change cannot affect is a wait for every other run (#646). The rules, and why each one is
+  # safe, are in Scripts/ci-changes.sh.
   changes:
     name: Detect app changes
     runs-on: ubuntu-latest
@@ -143,14 +150,18 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      # To ask whether CI passed on the pull request a commit on main came from.
+      actions: read
     outputs:
       app: ${{ steps.filter.outputs.app }}
+      code: ${{ steps.filter.outputs.code }}
       draft: ${{ steps.filter.outputs.draft }}
+      why: ${{ steps.filter.outputs.why }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Does this change touch the app?
+      - name: What does this change need?
         id: filter
         env:
           EVENT: ${{ github.event_name }}
@@ -158,30 +169,9 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
-        run: |
-          # Anything not a pull request (i.e. a push to main) always runs the suite.
-          if [ "$EVENT" != "pull_request" ]; then
-            echo "app=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # A draft waits: the suite runs once, when it is marked ready for review (#237). Asked of
-          # the PR as it is now, not the event's payload: a push and "ready" a second apart fire two
-          # runs, and the one that survives may carry a payload that still says draft (#239).
-          draft=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .draft)
-          echo "draft=$draft" >> "$GITHUB_OUTPUT"
-          if [ "$draft" = "true" ]; then
-            echo "app=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # `ci.yml` is in the list because the build-once/upload/download/shard plumbing the
-          # suite runs on lives in this file: a change to it that skipped the suite would be a
-          # change to the UI tests that the UI tests never saw (#142).
-          if git diff --name-only "$BASE" "$HEAD" |
-            grep -qE '^(Sources/OnboardStudioApp/|UITests/|project\.yml$|\.github/workflows/ci\.yml$)'; then
-            echo "app=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "app=false" >> "$GITHUB_OUTPUT"
-          fi
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: Scripts/ci-changes.sh decide | tee -a "$GITHUB_OUTPUT"
 
   # Compiles the app and the UI test bundle once. The shards below reuse the products, so the
   # ~2 minute compile is paid once rather than once per shard. This also replaces the old
@@ -356,6 +346,7 @@ jobs:
           APP: ${{ needs.changes.outputs.app }}
           RESULT: ${{ needs.ui-tests-shard.result }}
           DRAFT: ${{ needs.changes.outputs.draft }}
+          WHY: ${{ needs.changes.outputs.why }}
         run: |
           # A failed detector produces no outputs, so APP is empty — which must not be read as
           # "the app was untouched". That would skip every shard and still report green.
@@ -370,9 +361,15 @@ jobs:
             echo "::error::A draft: the UI tests have not run. They run when the PR is marked ready for review."
             exit 1
           fi
-          if [ "$APP" != "true" ]; then
-            echo "No change to Sources/OnboardStudioApp, UITests or project.yml — suite not needed."
+          # Anything but a plain "false" runs or fails: an answer this job cannot read must not be
+          # taken for "not needed".
+          if [ "$APP" = "false" ]; then
+            echo "Suite not needed: $WHY."
             exit 0
+          fi
+          if [ "$APP" != "true" ]; then
+            echo "::error::Detect app changes did not say whether the UI tests were needed (app='$APP'). Re-run the workflow."
+            exit 1
           fi
           echo "Shards: $RESULT"
           [ "$RESULT" = "success" ]
@@ -413,9 +410,11 @@ jobs:
           [[ $fail -eq 0 ]] || { echo "::error::One or more commits are neither signed by a key in .github/allowed_signers nor verified by GitHub"; exit 1; }
 
   # `main` is not required to be up to date before a merge (two green PRs can still conflict once
-  # combined), so the push run is what proves `main` itself. When it is red this opens — or adds
-  # to — the one issue labelled `main-red`, and closes it when the next push is green; the fix is
-  # to fix forward, not to leave it. Only on push: a PR's failures are visible on the PR.
+  # combined), so the push run is what proves `main` itself — except when the pull request was up
+  # to date and left `main` with the very tree its own run passed on, which `changes` recognises
+  # and does not run twice (#646). When the push run is red this opens — or adds to — the one
+  # issue labelled `main-red`, and closes it when the next push is green; the fix is to fix
+  # forward, not to leave it. Only on push: a PR's failures are visible on the PR.
   main-health:
     name: main health
     needs: [lint, lint-fast, test, ui-tests, verify-signatures]
