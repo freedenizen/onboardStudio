@@ -147,7 +147,7 @@ struct ExportSheet: View {
                 ProgressView(value: progress.fraction) {
                     Text(
                         finishedURL == nil
-                            ? batchLabel ?? "Exporting… \(progress.framesWritten) frames"
+                            ? batchLabel ?? progress.sentence
                             : "Done: \(finishedURL?.lastPathComponent ?? "")")
                 }
             }
@@ -156,19 +156,23 @@ struct ExportSheet: View {
                 Spacer()
                 if exportTask != nil {
                     Button("Cancel") { exportTask?.cancel() }
+                } else if let finishedURL {
+                    // Once a file is written, Return ends the sheet at Done, on the right: it used
+                    // to export the video again, Export… being the default button still (#668).
+                    Button("Export Again…") { start() }.accessibilityIdentifier("export.start")
+                    Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([finishedURL]) }
+                        .accessibilityIdentifier("export.reveal")
+                    if !finishedURL.hasDirectoryPath {
+                        Button("Upload to YouTube…") {
+                            dismiss()
+                            editor.uploadURL = finishedURL
+                        }
+                    }
+                    Button("Done") { dismiss() }.keyboardShortcut(.defaultAction)
+                        .accessibilityIdentifier("export.close")
                 } else {
                     Button("Close") { dismiss() }.keyboardShortcut(.cancelAction).accessibilityIdentifier(
                         "export.close")
-                    if let finishedURL {
-                        Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([finishedURL]) }
-                            .accessibilityIdentifier("export.reveal")
-                        if !finishedURL.hasDirectoryPath {
-                            Button("Upload to YouTube…") {
-                                dismiss()
-                                editor.uploadURL = finishedURL
-                            }
-                        }
-                    }
                     Button("Export…") { start() }.keyboardShortcut(.defaultAction).accessibilityIdentifier(
                         "export.start")
                 }
@@ -176,6 +180,8 @@ struct ExportSheet: View {
         }
         .padding(20)
         .frame(width: 560)
+        // Escape still closes the sheet once Done has taken Return from Close.
+        .onExitCommand { if finishedURL != nil, exportTask == nil { dismiss() } }
         .onAppear(perform: load)
     }
 

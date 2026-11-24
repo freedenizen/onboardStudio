@@ -202,7 +202,8 @@ struct EditorCommands: Commands {
                 Button("Show Project Details") { editor?.showProjectInspector() }
                     .keyboardShortcut("i", modifiers: [.command, .control], when: live)
                 Divider()
-                Menu("Add Display Object") {
+                // The toolbar's name for the same menu (#668).
+                Menu("Add Object") {
                     ForEach(DisplayObject.templates, id: \.name) { template in
                         Button(template.name) { editor?.addObject(template.kind) }
                     }

@@ -131,6 +131,10 @@ struct EditorView: View {
         if let template = request.template, editor.project.displayObjects.isEmpty { editor.apply(template) }
         if !request.clips.isEmpty { editor.addVideos(at: request.clips) }
         if let url = request.entry.resolveFile() { editor.addData(at: url) }
+        // Adding a data file selects it, for whoever added it by hand. Here nobody did: a first
+        // project opened on Start position in file, Offset in project and Play speed (#668). With
+        // nothing selected the inspector is the project's own.
+        editor.showProjectInspector()
         switch request.then {
         case .coaching:
             // The Coaching window was reading the session; now it reads this project.

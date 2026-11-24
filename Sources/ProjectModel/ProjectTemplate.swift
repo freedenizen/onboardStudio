@@ -246,7 +246,8 @@ extension ProjectTemplate {
             object("G", .gForce(GForceParams()), UnitRect(x: 0.03, y: 0.62, width: 0.16, height: 0.28)),
             object("Lap", .timer(TimerParams()), UnitRect(x: 0.3, y: 0.04, width: 0.4, height: 0.08)),
             object("Best", .timer(TimerParams(mode: .bestLap)), UnitRect(x: 0.3, y: 0.13, width: 0.4, height: 0.06)),
-            object("Gear", .gear(GearParams()), UnitRect(x: 0.66, y: 0.05, width: 0.07, height: 0.12)),
+            // Beside the timers, not on them: at x 0.66 the box covered the last digits of both (#668).
+            object("Gear", .gear(GearParams()), UnitRect(x: 0.71, y: 0.05, width: 0.07, height: 0.12)),
         ])
 
     /// See-through instruments over the bottom of the picture, in the manner of manufacturer
