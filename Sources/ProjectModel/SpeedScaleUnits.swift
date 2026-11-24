@@ -49,18 +49,53 @@ extension GaugeParams {
         from old: SpeedDisplayUnit, in new: SpeedDisplayUnit, channels: [ChannelSummary]
     ) -> GaugeParams {
         guard old != new, !scaleAwaitsData, ChannelSummary.isSpeed(channel) else { return self }
+        // The unit the numbers are in, when the scale says (#699): it may not be the one it was
+        // drawn in, and a scale already in the new unit needs nothing but to be drawn.
+        let written = scaleUnit ?? old
+        guard written != new else { return self }
         if zones.isEmpty, channels.contains(where: { $0.identifier == channel }) {
-            let asFitted = fitted(to: channels, speedUnit: old)
+            let asFitted = fitted(to: channels, speedUnit: written)
             if (asFitted.minValue, asFitted.maxValue, asFitted.majorTick, asFitted.minorTick)
                 == (minValue, maxValue, majorTick, minorTick)
             {
                 return fitted(to: channels, speedUnit: new)
             }
         }
+        return converted(from: written, to: new)
+    }
+
+    /// The scale as it is drawn in `unit` (#699): itself when its numbers are in that unit or in
+    /// none, else converted — the same speeds at its ends, rounded outwards to round labels, and
+    /// its zones with them. What the renderer and the inspector are given, so a unit that
+    /// changed without an edit of the project (Settings ▸ Units) still leaves a sensible dial.
+    public func drawn(in unit: SpeedDisplayUnit) -> GaugeParams {
+        guard let scaleUnit, scaleUnit != unit, !scaleAwaitsData, ChannelSummary.isSpeed(channel) else { return self }
+        return converted(from: scaleUnit, to: unit)
+    }
+
+    private func converted(from old: SpeedDisplayUnit, to new: SpeedDisplayUnit) -> GaugeParams {
         var dial = self
         let (low, scale) = SpeedScaleUnits.converted(minValue, maxValue, from: old, to: new)
         (dial.minValue, dial.maxValue, dial.majorTick, dial.minorTick) = (low, scale.max, scale.major, scale.minor)
         dial.zones = SpeedScaleUnits.converted(zones, from: old, to: new)
+        dial.scaleUnit = new
+        return dial
+    }
+
+    /// The scale's own numbers, to tell an edit of them from an edit of anything else.
+    public var scaleNumbers: [Double] {
+        [minValue, maxValue, majorTick, minorTick] + zones.flatMap { [$0.from, $0.to ?? .infinity] }
+    }
+
+    /// After an edit in the inspector: a speed's scale whose numbers were typed, or that has just
+    /// become a speed's, is in the unit it is drawn in; a scale of anything else is in none.
+    public func scaleUnitKept(after old: GaugeParams, drawnIn unit: SpeedDisplayUnit) -> GaugeParams {
+        var dial = self
+        if !ChannelSummary.isSpeed(channel) {
+            dial.scaleUnit = nil
+        } else if scaleNumbers != old.scaleNumbers || channel != old.channel, !scaleAwaitsData {
+            dial.scaleUnit = unit
+        }
         return dial
     }
 }
@@ -69,16 +104,42 @@ extension BarParams {
     /// The same bar once the speed it shows is drawn in `new` instead of `old` (#668).
     public func reshown(from old: SpeedDisplayUnit, in new: SpeedDisplayUnit, channels: [ChannelSummary]) -> BarParams {
         guard old != new, ChannelSummary.isSpeed(channel) else { return self }
+        let written = scaleUnit ?? old
+        guard written != new else { return self }
         if zones.isEmpty, channels.contains(where: { $0.identifier == channel }) {
-            let asFitted = fitted(to: channels, speedUnit: old)
+            let asFitted = fitted(to: channels, speedUnit: written)
             if (asFitted.minValue, asFitted.maxValue) == (minValue, maxValue) {
                 return fitted(to: channels, speedUnit: new)
             }
         }
+        return converted(from: written, to: new)
+    }
+
+    /// The bar as it is drawn in `unit` (#699), as a gauge's `drawn(in:)`.
+    public func drawn(in unit: SpeedDisplayUnit) -> BarParams {
+        guard let scaleUnit, scaleUnit != unit, ChannelSummary.isSpeed(channel) else { return self }
+        return converted(from: scaleUnit, to: unit)
+    }
+
+    private func converted(from old: SpeedDisplayUnit, to new: SpeedDisplayUnit) -> BarParams {
         var bar = self
         let (low, scale) = SpeedScaleUnits.converted(minValue, maxValue, from: old, to: new)
         (bar.minValue, bar.maxValue) = (low, scale.max)
         bar.zones = SpeedScaleUnits.converted(zones, from: old, to: new)
+        bar.scaleUnit = new
+        return bar
+    }
+
+    public var scaleNumbers: [Double] { [minValue, maxValue] + zones.flatMap { [$0.from, $0.to ?? .infinity] } }
+
+    /// As a gauge's: the unit a typed scale is in, after an edit in the inspector.
+    public func scaleUnitKept(after old: BarParams, drawnIn unit: SpeedDisplayUnit) -> BarParams {
+        var bar = self
+        if !ChannelSummary.isSpeed(channel) {
+            bar.scaleUnit = nil
+        } else if scaleNumbers != old.scaleNumbers || channel != old.channel {
+            bar.scaleUnit = unit
+        }
         return bar
     }
 }
@@ -112,6 +173,21 @@ extension Project {
             changed.append(object.label)
         }
         return changed
+    }
+
+    /// Takes the unit off every scale: its numbers stand in whatever unit is drawn, as every
+    /// build before schema 9 drew them (#699).
+    mutating func drawSpeedScalesAsWritten() {
+        for index in displayObjects.indices {
+            let kind = displayObjects[index].kind
+            if var params = kind.gaugeParams, params.scaleUnit != nil {
+                params.scaleUnit = nil
+                displayObjects[index].kind = kind.replacingGaugeParams(params)
+            } else if case .bar(var params) = kind, params.scaleUnit != nil {
+                params.scaleUnit = nil
+                displayObjects[index].kind = .bar(params)
+            }
+        }
     }
 
     /// The objects whose scale is a speed's: the ones `reshowSpeedScales` may have to change.

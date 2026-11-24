@@ -281,12 +281,15 @@ extension GaugeParams {
                     0, scale.max, scale.major, scale.minor
                 )
                 dial.scaleAwaitsData = false
+                dial.scaleUnit = speedUnit
                 return dial
             }
         }
         guard let bounds = summary.suggestedBounds else { return self }
         var result = self
         result.scaleAwaitsData = false
+        // A speed's scale is in the unit it was fitted in (#699).
+        result.scaleUnit = recorded.isConvertedForDisplay ? speedUnit : nil
         result.minValue = bounds.min
         result.maxValue = bounds.max
         result.majorTick = GaugeParams.tick(over: bounds.max - bounds.min, parts: 5)
@@ -321,6 +324,7 @@ extension BarParams {
         }
         guard let bounds = summary.suggestedBounds else { return self }
         var result = self
+        result.scaleUnit = recorded.isConvertedForDisplay ? speedUnit : nil
         result.minValue = bounds.min
         result.maxValue =
             channel == "speed" ? GaugeParams.speedScale(top: summary.maxValue ?? bounds.max).max : bounds.max

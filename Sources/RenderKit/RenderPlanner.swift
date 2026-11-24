@@ -231,7 +231,10 @@ public enum RenderPlanner {
         switch kind {
         case .video: nil
         case .speedometer(let params), .tachometer(let params), .gauge(let params):
-            GaugeRenderer(context: context, params: params, faceImage: params.faceImageInputID == nil ? nil : image)
+            // A speed's scale in the unit it is drawn in, whatever unit its numbers are in (#699).
+            GaugeRenderer(
+                context: context, params: params.drawn(in: context.speedUnit),
+                faceImage: params.faceImageInputID == nil ? nil : image)
         case .trackMap(let params): TrackMapRenderer(context: context, params: params)
         case .gForce(let params): GForceRenderer(context: context, params: params)
         case .timer(let params): TimerRenderer(context: context, params: params)
@@ -239,7 +242,7 @@ public enum RenderPlanner {
         case .shape(let params): ShapeRenderer(context: context, params: params)
         case .text(let params): TextRenderer(context: context, params: params)
         case .image(let params): ImageRenderer(context: context, params: params, image: image)
-        case .bar(let params): BarRenderer(context: context, params: params)
+        case .bar(let params): BarRenderer(context: context, params: params.drawn(in: context.speedUnit))
         case .graph(let params): GraphRenderer(context: context, params: params)
         case .gear(let params): GearRenderer(context: context, params: params)
         case .lapCounter(let params): LapCounterRenderer(context: context, params: params)

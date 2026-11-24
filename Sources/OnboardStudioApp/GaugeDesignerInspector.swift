@@ -155,6 +155,7 @@ struct GaugeDesignerInspector: View {
     func update(_ name: String, _ change: (inout GaugeParams) -> Void) {
         var new = params
         change(&new)
+        new = new.scaleUnitKept(after: params, drawnIn: editor.speedUnit(for: object))
         let kind: DisplayObjectKind =
             switch object.kind {
             case .speedometer: .speedometer(new)
