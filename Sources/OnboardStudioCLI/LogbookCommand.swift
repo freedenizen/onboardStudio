@@ -161,7 +161,8 @@ struct LogbookCommand: AsyncParsableCommand {
             let reports = await TrackDayImport.run(
                 urls, into: book, tracks: TrackLibrary(), car: car, driver: driver, day: chosen)
             for report in reports { print(report.line) }
-            let added = reports.filter(\.isAdded).count
+            // A recording read as a session of its own is one of them (#665).
+            let added = reports.compactMap(\.addedEntry).count
             let clips = reports.filter(\.isClip).count
             let onto = chosen.map { " on \($0.label)" } ?? ""
             print(

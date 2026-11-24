@@ -72,7 +72,7 @@ extension LogbookWindow {
         ToolbarItem(id: "addFiles", placement: .primaryAction) {
             Button("Add Files…", systemImage: "doc.badge.plus", action: addFiles)
                 .help(
-                    "Enter a day's telemetry files and camera clips: on the day chosen in the sidebar, "
+                    "Enter a day's data files and camera clips: on the day chosen in the sidebar, "
                         + "else each on the day its date and circuit say"
                 )
                 .accessibilityIdentifier("logbook.addTrackDay")

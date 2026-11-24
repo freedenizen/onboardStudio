@@ -120,17 +120,17 @@ extension TrackDayImport {
         }
         for stray in strays {
             guard case .clip(let clip) = stray.kind else { continue }
-            var outcome: Outcome
+            var filed: Filed
             if let known = knownClip(clip, in: logbook) {
-                outcome = .clipAlreadyThere(known)
+                filed = Filed(outcome: .clipAlreadyThere(known))
             } else {
                 do {
-                    outcome = try fileClip(clip, first: stray.url, into: logbook, batch: batch)
+                    filed = try fileClip(clip, first: stray.url, into: logbook, batch: batch)
                 } catch {
-                    outcome = .failed(error.localizedDescription)
+                    filed = Filed(outcome: .failed(unreadableClip(stray.url, error)))
                 }
             }
-            reports.append(report(Filed(outcome: outcome), for: stray.url, chosen: day, logbook: logbook))
+            reports.append(report(filed, for: stray.url, chosen: day, logbook: logbook))
         }
         return reports
     }
@@ -153,7 +153,7 @@ extension TrackDayImport {
     /// A camera recording onto its day (#394): the chosen one, else the day its clock says.
     /// Matched against the day's sessions; a clip with GPS that matches none is read as a session
     /// of its own first, as it was before days existed, and is then the picture of that session.
-    static func fileClip(_ record: ClipRecord, first: URL, into logbook: Logbook, batch: Batch) throws -> Outcome {
+    static func fileClip(_ record: ClipRecord, first: URL, into logbook: Logbook, batch: Batch) throws -> Filed {
         var clip = record
         var day: TrackDay
         if let chosen = batch.day {
@@ -168,16 +168,19 @@ extension TrackDayImport {
         var onDay = batch
         onDay.day = day
         onDay.strays = .ontoTheDay
+        var madeSession = false
         if matched == nil, clip.hasGPS, case .added(let own) = importOne(first, into: logbook, batch: onDay).outcome {
             matched = (own.id, .clock)
             sessions.append(own)
+            madeSession = true
         }
         clip.sessionID = matched?.id
         clip.matchedBy = matched?.by
         day = logbook.day(id: day.id) ?? day
         day.clips.append(clip)
         try logbook.saveDay(day)
-        return .clip(clip, session: matched.flatMap { id, _ in sessions.first { $0.id == id } })
+        let session = matched.flatMap { id, _ in sessions.first { $0.id == id } }
+        return Filed(outcome: .clip(clip, session: session), madeSession: madeSession)
     }
 
     /// Files a session as read: onto the batch's day — with its circuit when the file has none,

@@ -182,7 +182,19 @@ or the car of the day they go on when it names one.
 
 ### What the import says
 
-When the files are in, the sheet says how the day went at each circuit: the day's best lap against
+While the files are read, the sheet says which one of how many it is on (*Reading 3 of 15*), with a
+bar that fills; a camera's recording in several chapters counts as one. A long recording can stand
+there for some seconds.
+
+When the files are in, its first line counts what was added: *9 sessions added, 3 of them from
+camera recordings with no logger session, 9 clips*. The sessions counted are the rows the Logbook
+then shows, so a recording that was read as a session of its own (see [the day's
+clips](#the-days-clips)) is one of them, and its line in the list says so. A recording's line names
+the session it is the picture of with the time that session began, which is what tells two sessions
+of one day apart. A file that could not be read says why: an empty video file is said to be empty,
+and to copy it from the camera's card again.
+
+The sheet then says how the day went at each circuit: the day's best lap against
 your last visit there (*1:42.31, 0.84 s quicker than your last visit (12 Oct) — a personal best*),
 or that this was your first visit. An older day added after newer ones is compared with the visit
 before it. It says too which of your [goals](#goals) the new sessions reached, or how much closer

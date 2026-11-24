@@ -49,7 +49,8 @@ struct TrackDayImportSheet: View {
     @State private var carlessDays: [TrackDay] = []
     @State private var car = ""
     @State private var carSet: String?
-    @State private var current: String?
+    /// The file being read, and how many there are (#665).
+    @State private var step: TrackDayImport.Step?
     @State private var phase = Phase.reading
 
     private enum Phase {
@@ -64,7 +65,7 @@ struct TrackDayImportSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(request.day.map { "Add Sessions to \($0.label)" } ?? "Add Files to Logbook").font(.title2)
             switch phase {
-            case .reading: ProgressView(current.map { "Reading \($0)…" } ?? "Looking for files…")
+            case .reading: reading
             case .asking: question
             case .placing: ProgressView("Adding…")
             case .done:
@@ -106,6 +107,20 @@ struct TrackDayImportSheet: View {
         .padding(20)
         .frame(width: 560)
         .task { await run() }
+    }
+
+    /// Which file of how many: the count is known as soon as the folders are listed, and a
+    /// spinner beside one file's name for ten seconds said nothing of how far there was to go
+    /// (#665).
+    @ViewBuilder private var reading: some View {
+        if let step {
+            ProgressView(value: Double(step.index), total: Double(max(step.count, 1))) {
+                Text(step.sentence).lineLimit(1).truncationMode(.middle)
+            }
+            .accessibilityIdentifier("trackday.reading")
+        } else {
+            ProgressView("Looking for files…")
+        }
     }
 
     // MARK: - Progress (#459)
@@ -210,23 +225,7 @@ struct TrackDayImportSheet: View {
 
     // MARK: - Reading
 
-    private var summary: String {
-        let added = reports.filter(\.isAdded).count
-        let skipped = reports.filter(\.isAlreadyThere).count
-        let clips = reports.filter(\.isClip).count
-        var parts = ["\(added) session\(added == 1 ? "" : "s") added"]
-        // With a day chosen, a session that went elsewhere is said to have (#456).
-        let elsewhere = request.day == nil ? 0 : reports.filter { $0.isAdded && $0.dayLabel != nil }.count
-        if elsewhere > 0 {
-            let days = elsewhere == 1 ? "its own day" : "their own days"
-            parts.append(elsewhere == added ? "on \(days)" : "\(elsewhere) of them on \(days)")
-        }
-        if clips > 0 { parts.append("\(clips) clip\(clips == 1 ? "" : "s")") }
-        if skipped > 0 { parts.append("\(skipped) already in the logbook") }
-        let rest = reports.count - added - skipped - clips
-        if rest > 0 { parts.append("\(rest) not read") }
-        return reports.isEmpty ? "Nothing in those files that this app reads." : parts.joined(separator: ", ") + "."
-    }
+    private var summary: String { TrackDayImport.summary(of: reports, onChosenDay: request.day != nil) }
 
     private func run() async {
         if undo != nil { before = AppLogbook.shared.snapshot() }
@@ -237,8 +236,11 @@ struct TrackDayImportSheet: View {
         let result = await Task.detached(priority: .userInitiated) {
             // A file that is not from the chosen day waits for the question, rather than going on
             // the day whatever it says (#456).
-            await TrackDayImport.run(urls, into: logbook, tracks: tracks, day: day, strays: .kept) { _, _, url in
-                Task { @MainActor in current = url.lastPathComponent }
+            await TrackDayImport.run(urls, into: logbook, tracks: tracks, day: day, strays: .kept) {
+                index, count, url in
+                Task { @MainActor in
+                    step = TrackDayImport.Step(index: index, count: count, name: url.lastPathComponent)
+                }
             }
         }.value
         reports = result
@@ -252,13 +254,12 @@ struct TrackDayImportSheet: View {
 
     private func finish() {
         phase = .done
-        let added = reports.filter(\.isAdded).count
-        editor?.statusMessage = "Added \(added) session\(added == 1 ? "" : "s") to the logbook."
+        // A recording read as a session of its own is one of them (#665): it was left out of the
+        // count, and of the progress, the goals and the question about the car with it.
+        let ids = reports.compactMap(\.addedEntry?.id)
+        editor?.statusMessage = "Added \(ids.count) session\(ids.count == 1 ? "" : "s") to the logbook."
         let model = LogbookModel.shared
         model.reload()
-        let ids = reports.compactMap { report -> UUID? in
-            if case .added(let entry) = report.outcome { entry.id } else { nil }
-        }
         if let before { model.record("Add Files", since: before, undo: undo) }
         progress = ImportProgress.make(added: Set(ids), in: model.entries)
         goalNews = GoalNews.make(

@@ -40,7 +40,11 @@ enum OpenPanels {
     static func chooseTrackDay(for day: TrackDay? = nil) -> [URL] {
         let panel = NSOpenPanel()
         panel.title = day.map { "Add Sessions to \($0.label)" } ?? "Add Files to Logbook"
-        panel.message = "Choose the day's telemetry files and camera clips, or the folders holding them."
+        // The logbook's own words for them (#665): "telemetry" is said nowhere else a user reads,
+        // and the button adds, it does not open.
+        panel.message =
+            "Choose the day's files — the logger's data files and the camera's clips — or the folders holding them."
+        panel.prompt = "Add"
         panel.canChooseDirectories = true
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = true
