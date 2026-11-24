@@ -106,7 +106,7 @@ public enum CoachingNotes {
             lines.append("Exit speed \(format.speed(abs(exitDifference))) \(exitDifference > 0 ? "lower" : "higher")")
         }
         if lap.brakeSource == .speedTrace || lap.throttleSource == .speedTrace {
-            lines.append("Pedals read from the speed trace")
+            lines.append("No pedal channels: brake and throttle points worked out from speed")
         }
         // Why a distance is rounded, once (#555).
         if format.isRounded, lines.contains(where: { $0.contains("≈") }) {

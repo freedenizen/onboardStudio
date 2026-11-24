@@ -188,11 +188,8 @@ struct ReplayHUD: Equatable {
             id: id, title: title, subtitle: subtitle, session: session, entry: entry, choices: choices, isHome: isHome)
     }
 
-    /// "23 Aug 2026 · Miata".
-    static func subtitle(of entry: LogbookEntry) -> String {
-        [entry.date.map { $0.formatted(date: .abbreviated, time: .omitted) }, entry.car.isEmpty ? nil : entry.car]
-            .compactMap { $0 }.joined(separator: " · ")
-    }
+    /// "23 Aug 2026 at 10:42 · Miata".
+    static func subtitle(of entry: LogbookEntry) -> String { LogbookReferences.heading(for: entry) }
 
     static func completeLaps(of session: TelemetrySession) -> [Lap] {
         LapDeltas.demotingShortLaps(session.laps, distance: session[.distance]).filter {
@@ -282,5 +279,21 @@ struct ReplayHUD: Equatable {
         let lapTime = TimeParsing.lapTimeString(min(time, watched.lap.lapTime), decimals: 2)
         let gap = watched.gapSeconds > 0 ? "+\(String(format: "%.2f", watched.gapSeconds))" : "leading"
         return ReplayHUD(speed: speed, lapTime: lapTime, gap: gap)
+    }
+}
+
+/// A lap of another Logbook session for the Analysis view to begin with as its reference: `lap`
+/// of it, else its quickest.
+struct AnalysisOtherLap: Equatable {
+    var entry: UUID
+    var lap: Int?
+
+    /// The choice it names among the sessions on offer; `nil` when that session is not one of them.
+    static func choice(_ other: AnalysisOtherLap?, in groups: [ReplaySessionGroup]) -> ReplayLapChoice? {
+        guard let other, let group = groups.first(where: { !$0.isHome && $0.id == other.entry.uuidString }) else {
+            return nil
+        }
+        if let lap = other.lap, let asked = group.choices.first(where: { $0.number == lap }) { return asked }
+        return group.choices.min { ($0.seconds ?? .infinity) < ($1.seconds ?? .infinity) }
     }
 }

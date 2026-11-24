@@ -150,4 +150,18 @@ struct LogbookReferencesTests {
             #expect(fallback[data.id]?.referencePhrase == "your best lap")
         }
     }
+
+    /// #669: five sessions of one day were five headings of the same words in the Data view.
+    @Test func aSessionsHeadingSaysWhenItBeganAndWhatWasDriven() {
+        let nine = Date(timeIntervalSince1970: 1_700_049_600)
+        let eleven = nine.addingTimeInterval(2 * 3_600)
+        let first = LogbookReferences.heading(for: entry("a", key: "Stadium", best: 43, date: nine, car: "Miata"))
+        let second = LogbookReferences.heading(for: entry("b", key: "Stadium", best: 42, date: eleven, car: "Miata"))
+        #expect(first != second, "two sessions of one day are told apart")
+        #expect(first == nine.formatted(date: .abbreviated, time: .shortened) + " · Miata")
+        #expect(LogbookReferences.heading(for: entry("c", key: "Stadium", best: 42, date: nil)).isEmpty)
+        #expect(
+            LogbookReferences.heading(for: entry("d", key: "Stadium", best: 42, date: nine))
+                == nine.formatted(date: .abbreviated, time: .shortened))
+    }
 }

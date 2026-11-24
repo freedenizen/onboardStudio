@@ -41,6 +41,8 @@ import TelemetryKit
     /// The home session's laps to begin with, in order, when they are known: Coaching's reference
     /// and lap. Empty is the quickest two.
     private var preferredLaps: [Int] = []
+    /// Another session's lap to begin with as the reference, ahead of `preferredLaps`.
+    private var preferredOther: AnalysisOtherLap?
 
     init() {
         layout = AnalysisLayout(preferenceText: UserDefaults.standard.value(for: Preferences.analysisLayout))
@@ -53,11 +55,12 @@ import TelemetryKit
 
     /// The front project's session with laps, its other data files beside it, and the logbook's
     /// other sessions at the circuit.
-    func showFrontProject(editor: EditorModel?, laps: [Int] = []) {
+    func showFrontProject(editor: EditorModel?, laps: [Int] = [], other: AnalysisOtherLap? = nil) {
         kind = .frontProject
         reset()
         self.editor = editor
         preferredLaps = laps
+        preferredOther = other
         guard let editor, let input = editor.lapInput, let session = editor.sessions[input.id] else {
             problem = editor == nil ? nil : "The project has no data file with laps."
             return
@@ -81,15 +84,16 @@ import TelemetryKit
     }
 
     /// A logbook session, read in on demand, the logbook's other sessions at its circuit beside it.
-    func show(entry: LogbookEntry, laps: [Int] = []) {
+    func show(entry: LogbookEntry, laps: [Int] = [], other: AnalysisOtherLap? = nil) {
         if case .logbook(let id) = kind, id == entry.id, !groups.isEmpty {
-            if !laps.isEmpty, laps != preferredLaps { choose(laps) }
+            if !laps.isEmpty, laps != preferredLaps || other != preferredOther { choose(laps, other: other) }
             return
         }
         kind = .logbook(entry.id)
         reset()
         editor = nil
         preferredLaps = laps
+        preferredOther = other
         isLoading = true
         let key = LogbookFilter.circuitKey(of: entry)
         Task { @MainActor in
@@ -131,14 +135,21 @@ import TelemetryKit
         guard let home = groups.first(where: \.isHome) else { return }
         let asked = preferredLaps.compactMap { number in home.choices.first { $0.number == number }?.id }
         let quickest = home.choices.sorted { ($0.seconds ?? .infinity) < ($1.seconds ?? .infinity) }.prefix(2)
-        chosen =
+        var ids =
             asked.isEmpty ? quickest.map(\.id) : Array(NSOrderedSet(array: asked).array.compactMap { $0 as? String })
+        // Another session's lap, when that is what was asked for, is the reference: first.
+        if let other = AnalysisOtherLap.choice(preferredOther, in: groups) {
+            ids = [other.id] + ids.filter { $0 != other.id }
+        }
+        chosen = Array(ids.prefix(LapAnalysis.maximumLaps))
         rebuild()
     }
 
-    /// The home session's laps `numbers`, in order, the first the reference.
-    func choose(_ numbers: [Int]) {
+    /// The home session's laps `numbers`, in order, the first the reference — unless `other`, a
+    /// lap of another session, is.
+    func choose(_ numbers: [Int], other: AnalysisOtherLap? = nil) {
         preferredLaps = numbers
+        preferredOther = other
         chooseDefaults()
     }
 

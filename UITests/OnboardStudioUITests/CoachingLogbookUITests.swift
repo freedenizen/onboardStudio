@@ -35,7 +35,9 @@ final class CoachingLogbookUITests: OnboardStudioUITestCase {
             XCTWaiter().wait(for: [read], timeout: Self.timeout * 3), .completed, headline.value as? String ?? "")
         let alignment = app.staticTexts["coaching.alignment"]
         XCTAssertTrue(alignment.waitForExistence(timeout: Self.timeout))
-        XCTAssertTrue((alignment.value as? String ?? "").contains("position"), alignment.value as? String ?? "")
+        XCTAssertTrue(
+            (alignment.value as? String ?? "").contains("by where the car was on the track"),
+            alignment.value as? String ?? "")
         menu("Edit", "Undo Change Coaching Reference")
         let back = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "value CONTAINS %@", "your best lap"), object: headline)

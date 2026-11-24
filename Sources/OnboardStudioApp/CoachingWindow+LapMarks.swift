@@ -9,7 +9,83 @@ extension CoachingContent {
     /// reading is made again without it.
     func markLap(_ number: Int, as reason: LapMark.Reason?, undo: UndoManager?) {
         guard let lap = source.session?.laps.first(where: { $0.number == number }) else { return }
+        LeftOutLaps.shared.note = reason.map { LeftOutLaps.Note(source: source.id, lap: number, reason: $0) }
         Task { await source.markLap(lap, as: reason, undo: undo) }
+    }
+
+    /// Across the top of the window once a lap has been left out here: what that did, and the way
+    /// back.
+    var leftOutNotice: some View {
+        LeftOutLapNotice(source: source) { number, undo in markLap(number, as: nil, undo: undo) }
+    }
+}
+
+/// The lap last left out in a Coaching window, for the window to say so. Leaving the lap being
+/// read out moved the window on to another lap with nothing to say one had been left out, why,
+/// or how to count it again (#669).
+@MainActor @Observable final class LeftOutLaps {
+    static let shared = LeftOutLaps()
+
+    struct Note: Equatable {
+        /// The `id` of the source it was left out in.
+        var source: String
+        var lap: Int
+        var reason: LapMark.Reason
+    }
+
+    var note: Note?
+}
+
+/// "Lap 3 is left out (traffic)…", with Put Lap 3 Back, until it is dismissed or the lap counts
+/// again — by this button, by the lap's own menu or by Undo.
+struct LeftOutLapNotice: View {
+    let source: any CoachingSource
+    let putBack: (Int, UndoManager?) -> Void
+    @Environment(\.undoManager) private var undoManager
+
+    /// The note, while it is about this window's session and the lap is still left out.
+    private var note: LeftOutLaps.Note? {
+        guard let note = LeftOutLaps.shared.note, note.source == source.id,
+            let lap = source.session?.laps.first(where: { $0.number == note.lap }),
+            source.lapMarks.mark(of: lap) != nil
+        else { return nil }
+        return note
+    }
+
+    var body: some View {
+        if let note {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Label {
+                    Text(Self.sentence(lap: note.lap, reason: note.reason))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("coaching.leftOut.notice")
+                } icon: {
+                    Image(systemName: "nosign").accessibilityHidden(true)
+                }
+                Spacer()
+                Button("Put Lap \(note.lap) Back") { putBack(note.lap, undoManager) }
+                    .help("Count the lap again, as Edit ▸ Undo does")
+                    .accessibilityIdentifier("coaching.leftOut.putBack")
+                Button {
+                    LeftOutLaps.shared.note = nil
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+                .help("Hide this note; the lap stays left out")
+            }
+            .font(.callout)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.quaternary.opacity(0.5))
+        }
+    }
+
+    /// What leaving the lap out did, in one sentence.
+    static func sentence(lap: Int, reason: LapMark.Reason) -> String {
+        "Lap \(lap) is left out (\(reason.word)). It is still listed, and no longer counts towards the best, "
+            + "optimal or rolling lap, consistency or Trends. Its menu beside the lap changes the reason."
     }
 }
 

@@ -23,7 +23,12 @@ struct AnalysisTracePanel: View {
     let unitSymbol: String
     @Binding var cursor: Double?
     var zeroLine = false
+    /// Said in place of the lines when no lap shown has anything to draw: an empty Throttle or
+    /// Brake panel did not say why it was empty (#669).
+    var emptyNote: String?
     var format: (Double) -> String = { String(format: "%.1f", $0) }
+
+    private var isEmpty: Bool { series.allSatisfy(\.points.isEmpty) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -47,7 +52,8 @@ struct AnalysisTracePanel: View {
             }
             .chartXScale(domain: span)
             .chartXAxis {
-                AxisMarks { value in
+                // Round in the unit shown, not round metres written in feet (#669).
+                AxisMarks(values: DistanceTicks.positions(in: span, metresPerUnit: metresPerUnit)) { value in
                     AxisGridLine()
                     AxisValueLabel {
                         if let metres = value.as(Double.self) { Text("\(Int((metres / metresPerUnit).rounded()))") }
@@ -63,6 +69,13 @@ struct AnalysisTracePanel: View {
             .chartLegend(.hidden)
             // A line runs to the grid point just outside the span; the plot ends where its axis does.
             .chartPlotStyle { $0.clipped() }
+            .overlay {
+                if isEmpty, let emptyNote {
+                    Text(emptyNote).font(.callout).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center).padding(.horizontal, 24)
+                        .accessibilityIdentifier("analysis.trace.empty")
+                }
+            }
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle().fill(.clear).contentShape(Rectangle())

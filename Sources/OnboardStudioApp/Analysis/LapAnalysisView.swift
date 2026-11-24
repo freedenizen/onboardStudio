@@ -122,7 +122,9 @@ struct LapAnalysisView: View {
                 AnalysisTracePanel(
                     title: unit.isEmpty ? role.displayName : "\(role.displayName) (\(unit))",
                     series: series(analysis) { analysis.values(of: role, $0, at: grid) }, span: model.span,
-                    height: layout.traceHeight, metresPerUnit: metresPerUnit, unitSymbol: unit, cursor: $model.cursor
+                    height: layout.traceHeight, metresPerUnit: metresPerUnit, unitSymbol: unit, cursor: $model.cursor,
+                    emptyNote: "None of the laps shown recorded \(role.displayName.lowercased()). "
+                        + "It is drawn for laps whose data file has that channel."
                 )
                 .contextMenu { Button("Remove Trace") { model.layout.remove(role) } }
                 .accessibilityIdentifier("analysis.trace.\(role.identifier)")
