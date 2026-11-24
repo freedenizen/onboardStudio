@@ -180,8 +180,8 @@ struct ExportSheet: View {
         }
         .padding(20)
         .frame(width: 560)
-        // Escape still closes the sheet once Done has taken Return from Close.
-        .onExitCommand { if finishedURL != nil, exportTask == nil { dismiss() } }
+        // Escape, asked here before Close's own shortcut: for Close as well as for Done (#668).
+        .onExitCommand { if exportTask == nil { dismiss() } }
         .onAppear(perform: load)
     }
 
