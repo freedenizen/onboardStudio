@@ -32,6 +32,8 @@ struct ImportCarField: View {
                         .labelsHidden()
                         .onSubmit(set)
                         .frame(maxWidth: 240)
+                        // A hidden label is not read out, so the field says what it is itself (#673).
+                        .accessibilityLabel("Car")
                         .accessibilityIdentifier("trackday.car")
                     if !knownCars.isEmpty {
                         Menu {

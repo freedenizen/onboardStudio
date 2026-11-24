@@ -28,6 +28,9 @@ struct SessionCarFields: View {
                 TextField("Car", text: $car, prompt: Text("What was driven")).labelsHidden()
                     .focused($focus, equals: .car)
                     .onSubmit(commit)
+                    // A hidden label is not read out: VoiceOver had "edit text" for this field,
+                    // the driver's and the configuration's, three alike (#673).
+                    .accessibilityLabel("Car")
                     .accessibilityIdentifier("logbook.detail.car")
                     // The view is two rows, so what belongs to the whole of it hangs here, once.
                     .onAppear(perform: load)
@@ -59,6 +62,7 @@ struct SessionCarFields: View {
             TextField("Driver", text: $driver, prompt: Text("Who drove")).labelsHidden()
                 .focused($focus, equals: .driver)
                 .onSubmit(commit)
+                .accessibilityLabel("Driver")
                 .accessibilityIdentifier("logbook.detail.driver")
         }
     }

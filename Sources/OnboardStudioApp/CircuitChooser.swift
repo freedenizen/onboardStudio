@@ -44,6 +44,8 @@ struct CircuitChooser: View {
                 // The row is labelled already; the prompt is the hint inside the field (#457).
                 TextField("Circuit", text: $search, prompt: Text("Search circuits")).labelsHidden()
                     .frame(maxWidth: fieldWidth)
+                    // A hidden label is not read out, so the field says what it is itself (#673).
+                    .accessibilityLabel("Circuit")
                     .accessibilityIdentifier("\(identifier).circuit")
                 ForEach(CircuitCatalog.search(search, limit: 5)) { match in
                     Button(match.displayName) {

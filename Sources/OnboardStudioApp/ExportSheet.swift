@@ -89,13 +89,7 @@ struct ExportSheet: View {
                     }
                     .accessibilityIdentifier("export.preset")
                     .onChange(of: preset) { _, key in applyPreset(key) }
-                    HStack {
-                        TextField("Width", value: custom(\.width), format: .number)
-                        Text("×")
-                        TextField("Height", value: custom(\.height), format: .number)
-                        Text("px")
-                        TextField("fps", value: custom(\.frameRate), format: .number.precision(.fractionLength(0...2)))
-                    }
+                    sizeFields
                     Picker("Codec", selection: custom(\.codec)) {
                         ForEach(ExportSettings.VideoCodec.allCases, id: \.self) { Text($0.displayName).tag($0) }
                     }

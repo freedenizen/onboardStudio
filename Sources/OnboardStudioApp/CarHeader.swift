@@ -145,6 +145,8 @@ struct CarRenameSheet: View {
             TextField("Name", text: $newName, prompt: Text("Car"))
                 .labelsHidden()
                 .onSubmit(commit)
+                // A hidden label is not read out, so the field says what it is itself (#673).
+                .accessibilityLabel("New Name")
                 .accessibilityIdentifier("car.rename.name")
             Text(explanation)
                 .font(.callout).foregroundStyle(.secondary)
