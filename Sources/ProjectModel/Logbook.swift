@@ -408,7 +408,9 @@ public struct Logbook: Sendable {
                 entry.dayDate = entry.trackDayID.flatMap { dayDates[$0] }
                 return entry
             }
-            .sorted { ($0.date ?? $0.dayDate ?? .distantPast) > ($1.date ?? $1.dayDate ?? .distantPast) }
+            // By its own date, the undated last. By its day's date (#686) an undated session led
+            // every list that follows this order, and stood at the foot of the table (#693).
+            .sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
     }
 
     public func entry(id: UUID) -> LogbookEntry? {

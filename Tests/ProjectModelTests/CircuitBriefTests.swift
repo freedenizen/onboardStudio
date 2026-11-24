@@ -127,6 +127,31 @@ struct CircuitBriefTests {
         #expect(SeasonSummary.make(entries: [logged, clip], year: 2026).trackDays == 1)
     }
 
+    /// A day's date is for counting. The order sessions are listed in is still by their own dates,
+    /// the undated last: a session with no date on today's day went to the head of the day's
+    /// sessions, where the clip pop-up offers the first, and to the foot of the table.
+    @Test func aSessionWithNoDateIsStillListedAfterTheDatedOnes() throws {
+        let logbook = Logbook(
+            directory: FileManager.default.temporaryDirectory.appending(path: "order-\(UUID().uuidString)"))
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        // The day is newer than any session on it, as a day made today for older files is.
+        let day = TrackDay(date: TrackDay.startOfDay(Self.date(11, 22)), trackName: "Stadium")
+        try logbook.saveDay(day)
+        func entry(_ hash: String, on date: Date?) -> LogbookEntry {
+            LogbookEntry(
+                file: .init(path: "/d/\(hash).csv", contentHash: hash, byteCount: 1, importerID: "x"),
+                trackName: "Stadium", date: date, trackDayID: day.id, added: Self.date(11, 22))
+        }
+        let older = entry("older", on: Self.date(9, 20))
+        let newer = entry("newer", on: Self.date(10, 4))
+        let undated = entry("undated", on: nil)
+        for saved in [undated, older, newer] { try logbook.save(saved) }
+
+        #expect(logbook.entries().map(\.id) == [newer.id, older.id, undated.id])
+        #expect(logbook.sessions(of: day).map(\.id) == [newer.id, older.id, undated.id])
+        #expect(logbook.entries().last?.dayDate == day.date, "and it still counts on its day")
+    }
+
     /// The logbook fills the day's date in as it reads an entry, and never writes it.
     @Test func theLogbookReadsEachSessionWithTheDateOfItsDay() throws {
         let logbook = Logbook(
@@ -147,7 +172,6 @@ struct CircuitBriefTests {
         #expect(read.first { $0.id == clip.id }?.dayDate == day.date)
         #expect(read.first { $0.id == clip.id } == logbook.entry(id: clip.id), "read alone, it is the same entry")
         #expect(read.first { $0.id == loose.id }?.dayDate == nil)
-        #expect(read.first?.id == clip.id, "listed by its day's date, before a session with none at all")
         let file = try String(contentsOf: logbook.url(for: clip.id), encoding: .utf8)
         #expect(!file.contains("dayDate"))
     }
