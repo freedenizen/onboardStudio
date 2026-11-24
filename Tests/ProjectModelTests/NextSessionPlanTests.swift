@@ -37,7 +37,8 @@ struct NextSessionPlanTests {
         let byDistance = try #require(CoachingAnalysis.analyse(lap: slow, reference: .sessionBest, in: session))
         #expect(byPosition.delta.alignment == .byPosition)
         #expect(byDistance.delta.alignment == .distance)
-        #expect(byPosition.alignmentLine.hasPrefix("Aligned by position"))
+        #expect(byPosition.alignmentLine.hasPrefix("The laps are lined up by where the car was on the track."))
+        #expect(byDistance.alignmentLine.hasPrefix("The laps are lined up by distance travelled."))
         // The same line driven twice reads the same either way, to within the matching step.
         #expect(abs(byPosition.totalLoss - byDistance.totalLoss) < 0.3)
         #expect(byPosition.corners.count == byDistance.corners.count)

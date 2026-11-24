@@ -121,9 +121,10 @@ struct CoachingContent: View {
                     "Coaching compares complete laps. Set a start/finish line in the data file's inspector, or check "
                         + "that the file has position and distance."))
         } else if let selection = selection(input: input, session: session), mode == .data {
-            CoachingDataTab(source: source, laps: Self.analysisLaps(selection, session: session))
+            dataTab(selection, session: session)
         } else if let selection = selection(input: input, session: session) {
             VStack(spacing: 0) {
+                leftOutNotice
                 Group {
                     if mode == .walkthrough {
                         walkthrough(selection: selection, laps: laps)

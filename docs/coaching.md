@@ -331,7 +331,7 @@ compile and the renders never read it.
 **Notes** are deterministic phrase templates filled from the numbers, in the units asked for
 (km/h and metres, or mph and feet): a headline ("Turn 4: 0.31 s lost on entry"), the evidence
 that applies ("Braked 18 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later",
-"Throttle 9 m later", "Pedals read from the speed trace") and one suggestion per kind, phrased as
+"Throttle 9 m later", "No pedal channels: brake and throttle points worked out from speed") and one suggestion per kind, phrased as
 an experiment ("Try braking where your best lap did, 18 m later, with the same pressure, and see
 whether the minimum speed comes up"). The reference is named the way the driver thinks of it:
 "your best lap", "lap 5", "the rolling lap", "the optimal lap", or the other input's name. The

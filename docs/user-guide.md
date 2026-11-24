@@ -1514,7 +1514,10 @@ walkthrough, under **Change…**). The walkthrough's first step then says the la
 lap menus read "left out (traffic)", and the session's best, optimal and rolling laps and its
 consistency are read without it, in the Logbook too ([Laps that don't count](#laps-that-dont-count)).
 When the telemetry suggests traffic on the lap, the first step offers **Leave Lap 7 Out** beside the
-suggestion, and the Lap menu reads "possibly traffic" on every lap it suggests traffic on. For a
+suggestion, and the Lap menu reads "possibly traffic" on every lap it suggests traffic on. Once a
+lap is left out, a line across the top of the window says so — *Lap 7 is left out (traffic)* and
+what that means — with **Put Lap 7 Back** beside it; the line stays until you dismiss it or count
+the lap again, there, from the lap's menu or with **Edit ▸ Undo**. For a
 project, the mark is kept with the session in the Logbook when the project's data file was entered
 there, and in the project otherwise.
 
@@ -1577,7 +1580,10 @@ a notes app. Files are named for the track and the lap (`Sonoma – Lap 2 coachi
 ### What the analysis reads
 
 When the data file has no brake or throttle channel (a GoPro, a phone), the brake and throttle
-points are read from the speed trace and the window says so. Notes are in mph and feet when the
+points are worked out from speed and the notes say so (*No pedal channels: brake and throttle
+points worked out from speed*). Under the headline the window says how the two laps were laid over
+each other — by distance travelled, or by where the car was on the track — and, when that match is
+rough, that small gaps may not be real. Notes are in mph and feet when the
 app's speed unit is mph — chosen in Settings, or your region's when Settings say *Automatic* — and
 in km/h and metres otherwise. The lap and reference you chose are saved with the
 project; changing them is undoable. The method, its thresholds and the research behind it are in
@@ -1669,7 +1675,11 @@ Every panel is drawn against distance into the reference lap, a slightly longer 
 stretched to it so a corner is in the same place on each. **Delta-T** is how far each lap is behind
 the reference (above the line slower, below quicker); **Speed** is in the app's speed unit; under
 it are the channels from **Panels ▸ Add Trace**: throttle and brake to begin with, and any channel
-the logger recorded, such as RPM, steering or an oil pressure. Move the pointer over a trace and a
+the logger recorded, such as RPM, steering or an oil pressure. The distance along the bottom of each
+is in feet or metres with the app's unit, marked at round numbers of it, and a panel for a channel
+that none of the laps shown recorded says so in place of its lines. In the list of laps each
+session is headed by its date and the time it began, so the sessions of one day can be told apart.
+Move the pointer over a trace and a
 cursor moves on all of them, each lap's car moves on the **track map** and in the **friction
 circle** (lateral against longitudinal G, rings every 0.5 G), and the line above reads each lap's
 time there, its gap to the reference and its speed. Click a corner on the map, or choose one from
@@ -1693,7 +1703,9 @@ are one column that scrolls when the window is shorter than the three, as the tr
 do.
 
 The same view is in two more places. In the **Coaching** window, **Data** beside *Walkthrough* and
-*All Corners* starts on the lap being coached against Coaching's reference lap. In the **Logbook**,
+*All Corners* starts on the lap being coached against Coaching's reference lap — a lap of another
+session, ticked as the reference, when that is what Coaching is reading against, as after **Compare
+With**. In the **Logbook**,
 **Analysis** beside Sessions, Trends and Season (**View ▸ Analysis**, ⌘4) shows the session
 selected under Sessions.
 

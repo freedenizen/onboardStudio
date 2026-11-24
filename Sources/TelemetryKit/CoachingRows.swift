@@ -28,15 +28,21 @@ extension CoachingAnalysis {
         return "Spliced from laps " + numbers.dropLast().joined(separator: ", ") + " and \(numbers[numbers.count - 1])"
     }
 
-    /// "Aligned by distance, confidence 1.00"
+    /// Below this, the two laps were matched roughly enough to say so.
+    public static let roughMatch = 0.8
+
+    /// "The laps are lined up by distance travelled." — how one lap was laid over the other, in a
+    /// driver's words, and only when the match is rough what that means for the numbers. It used
+    /// to read "Aligned by distance, confidence 1.00" (#669).
     public var alignmentLine: String {
-        let name: String
+        let how: String
         switch delta.alignment {
-        case .distance: name = "distance"
-        case .fractionOfLap: name = "fraction of lap (approximate)"
-        case .position: name = "position"
+        case .distance: how = "by distance travelled"
+        case .fractionOfLap: how = "by how far round the lap each was, which is approximate"
+        case .position: how = "by where the car was on the track"
         }
-        return "Aligned by \(name), confidence \(String(format: "%.2f", delta.confidence))"
+        let rough = delta.confidence < Self.roughMatch ? " The match is rough, so small gaps may not be real." : ""
+        return "The laps are lined up \(how).\(rough)"
     }
 
     /// One row per corner: the numbers to sort by and the words to show.

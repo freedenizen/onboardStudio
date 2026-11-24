@@ -35,7 +35,7 @@ struct CoachingAnalysisTests {
             // The slow lap braked 47 m earlier, over-slowed by 2 m/s and found its minimum 20 m late.
             #expect(note.evidence.contains { $0.hasPrefix("Braked ") && $0.contains("earlier than your best lap") })
             #expect(note.evidence.contains { $0.hasPrefix("Minimum speed ") && $0.contains("lower") })
-            #expect(note.evidence.contains("Pedals read from the speed trace"))
+            #expect(note.evidence.contains("No pedal channels: brake and throttle points worked out from speed"))
             #expect(note.suggestion.hasPrefix("This corner varies lap to lap (brake point spread "))
             #expect(note.suggestion.contains("repeat your best lap's brake point first, then try "))
             #expect(opportunity.kind != .line)

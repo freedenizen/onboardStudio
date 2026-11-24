@@ -104,6 +104,14 @@ public enum LogbookReferences {
         return parts.joined(separator: ", ")
     }
 
+    /// "23 Aug 2026 at 10:42 · Miata": a session under its circuit's name in a list of sessions,
+    /// with the time it began. Five sessions of one day were five headings of the same words
+    /// (#669), as the Compare With menu's entries were (#661).
+    public static func heading(for entry: LogbookEntry) -> String {
+        [entry.date.map { $0.formatted(date: .abbreviated, time: .shortened) }, entry.car.isEmpty ? nil : entry.car]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+
     /// The entry's session, read with the importer that read it first; `nil` when its file is
     /// gone or unreadable.
     ///
