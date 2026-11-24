@@ -170,10 +170,11 @@ struct EditorToolbar: ToolbarContent {
                 Divider()
                 Button("Image…") { editor.addImage() }
             } label: {
-                Label("Add Object", systemImage: "gauge.with.dots.needle.33percent")
+                Label(toolbarMenu: "Add Object", systemImage: "gauge.with.dots.needle.33percent")
             }
             .help("Add a gauge, map, timer, readout, text or image")
-            // A toolbar menu is read by its symbol's name unless it is told otherwise (#153).
+            // A toolbar menu is read by its symbol's name unless it is told otherwise (#153), and
+            // again after SwiftUI updates it unless its symbol is told as well (#691).
             .accessibilityLabel("Add Object")
             .accessibilityIdentifier("toolbar.addObject")
             Menu {
@@ -183,7 +184,7 @@ struct EditorToolbar: ToolbarContent {
                 Divider()
                 Button("Add Segment at Playhead") { editor.addSegmentAtPlayhead() }
             } label: {
-                Label("Layout", systemImage: "rectangle.3.group")
+                Label(toolbarMenu: "Layout", systemImage: "rectangle.3.group")
             }
             .help("Arrange the cameras, or start a new segment at the playhead")
             .accessibilityLabel("Layout")

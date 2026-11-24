@@ -69,7 +69,11 @@ its source; the new-user review holds every release to it, so ask them before th
   what they should in a sheet.
 - Honour Reduce Motion, Reduce Transparency and Increase Contrast.
 - A toolbar `Menu` is read by its **symbol's name** ("gauge.with.dots.needle.33percent") unless it
-  has its own `.accessibilityLabel`; a `Label` inside it is not enough (#153).
+  has its own `.accessibilityLabel`; a `Label` inside it is not enough (#153). That modifier lasts
+  only until SwiftUI next updates the menu — its items or its help change, a first import
+  refreshes the toolbar — and the rebuilt control is read by its symbol again ("Share" for
+  `square.and.arrow.up`). Give the menu `Label(toolbarMenu:systemImage:)`, which names the symbol
+  itself, as well as the modifier (#691).
 - A `TextField` whose label is hidden (`.labelsHidden()`), or whose title is only the hint
   inside it, has **no name** in the accessibility tree: VoiceOver reads "edit text". Give it
   `.accessibilityLabel` with the word shown beside it (#673). A `Picker` keeps its label when
