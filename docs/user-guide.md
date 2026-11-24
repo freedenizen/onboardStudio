@@ -1863,9 +1863,13 @@ ln -s "$PWD/onboard-cli-vX.Y.Z-macos/onboard" /usr/local/bin/onboard
 onboard probe session.csv
 ```
 
+`onboard` is signed and notarized like the app, so macOS runs a downloaded copy without asking.
+The first time, macOS checks it with Apple, which needs a network connection.
+
 The archives of 0.37.0 and earlier held `onboard` alone, and it stopped on every file with *unable
-to find bundle*; build it from source for those versions (`swift build -c release --product onboard`
-and run it from `.build/release`).
+to find bundle*; it was also unsigned, so macOS stopped a copy downloaded with a browser. Build it
+from source for those versions (`swift build -c release --product onboard` and run it from
+`.build/release`).
 
 `onboard coach session.csv` reads the quickest lap that is not the best against the best lap:
 the top three corners by time lost, each with what happened ("Braked 22 m earlier than your best

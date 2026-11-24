@@ -94,7 +94,9 @@ two thin executables.
   `Scripts/make-appcast.sh` mirror `.github/workflows/release.yml`, which runs on every `v*` tag and
   publishes the DMG, `appcast.xml` and a CLI tarball as a GitHub Release. The tarball is
   `Scripts/make-cli-archive.sh`'s: `onboard` in a folder with the resource bundles it reads, run
-  from the unpacked archive before it is published (#662). Sparkle's feed URL points
+  from the unpacked archive before it is published (#662). `onboard` is signed with the app's
+  Developer ID and the hardened runtime and notarized (#683); a bare tool has nowhere to keep
+  the notary's ticket, so Gatekeeper fetches it at the first run. Sparkle's feed URL points
   at `releases/latest/download/appcast.xml`.
 
 ## Icons
