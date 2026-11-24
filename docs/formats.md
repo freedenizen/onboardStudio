@@ -176,7 +176,11 @@ Channel members are named `channel_<deviceType>_<deviceId>_<canId>_<channelId>_<
   The distance member only repeats the GPS device's and is ignored.
 
 The archive carries **no names** for CAN channels, so one imports as `canbus:<id>` and the user
-says what it is in the attribute table. Every device samples on its own clock, so the table's time
+says what it is in the attribute table. The data file's inspector counts them above **Map
+Attributes…** and says that RaceChrono's CSV export of the same session carries the names (#657;
+`UnnamedChannels`). The accelerometer's three channels come in as `x_acc`, `y_acc` and `z_acc`, the
+device's own axes: the archive does not say how the logger was mounted, so neither lateral nor
+longitudinal G is derived from them, and the same notice says to map two of them. Every device samples on its own clock, so the table's time
 axis is the union of all of them and each channel keeps the times it was really recorded at.
 
 Scales were derived by importing one session both ways and matching the archive against the CSV
