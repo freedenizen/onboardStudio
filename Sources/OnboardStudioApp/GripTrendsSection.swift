@@ -15,18 +15,24 @@ struct GripTrendsSection: View {
                 Text(summary).font(.callout).foregroundStyle(.secondary)
                     .accessibilityIdentifier("logbook.trends.grip.summary")
             }
+            // Laid out as the lap charts are (#424): a label per track day and a rule between
+            // days. A label per session wrote the same date under five points of one day (#670).
+            let layout = TrendsChartLayout(dates: points.map(\.date))
             Chart {
+                layout.dayRules
                 ForEach(Array(points.enumerated()), id: \.element.id) { index, point in
-                    LineMark(x: .value("Session", index), y: .value("Share", point.meanUsed * 100))
+                    let position = layout.positions[index]
+                    LineMark(x: .value("Session", position), y: .value("Share", point.meanUsed * 100))
                         .foregroundStyle(by: .value("Reading", "Grip used braking and turning"))
-                    PointMark(x: .value("Session", index), y: .value("Share", point.meanUsed * 100))
+                    PointMark(x: .value("Session", position), y: .value("Share", point.meanUsed * 100))
                         .foregroundStyle(by: .value("Reading", "Grip used braking and turning"))
-                    LineMark(x: .value("Session", index), y: .value("Share", point.nearLimit * 100))
+                    LineMark(x: .value("Session", position), y: .value("Share", point.nearLimit * 100))
                         .foregroundStyle(by: .value("Reading", "Lap near the limit"))
-                    PointMark(x: .value("Session", index), y: .value("Share", point.nearLimit * 100))
+                    PointMark(x: .value("Session", position), y: .value("Share", point.nearLimit * 100))
                         .foregroundStyle(by: .value("Reading", "Lap near the limit"))
                 }
             }
+            .chartXScale(domain: layout.domain)
             .chartYScale(domain: 0...100)
             .chartYAxis {
                 AxisMarks(position: .trailing, values: [0, 25, 50, 75, 100]) { value in
@@ -34,24 +40,15 @@ struct GripTrendsSection: View {
                     AxisValueLabel { if let share = value.as(Int.self) { Text("\(share)%") } }
                 }
             }
-            .chartXAxis {
-                AxisMarks(values: Array(points.indices)) { value in
-                    AxisValueLabel {
-                        if let index = value.as(Int.self), points.indices.contains(index) {
-                            Text(points[index].date.formatted(.dateTime.day().month(.abbreviated)))
-                        }
-                    }
-                }
-            }
+            .chartXAxis { layout.dayAxis }
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle().fill(.clear).contentShape(Rectangle())
                         .onTapGesture { location in
-                            guard let frame = proxy.plotFrame,
-                                let index = proxy.value(atX: location.x - geometry[frame].origin.x, as: Double.self)
+                            guard let nearest = layout.index(at: location, proxy: proxy, geometry: geometry),
+                                points.indices.contains(nearest)
                             else { return }
-                            let nearest = Int(index.rounded())
-                            if points.indices.contains(nearest) { onOpen(points[nearest].entryID) }
+                            onOpen(points[nearest].entryID)
                         }
                 }
             }

@@ -94,7 +94,16 @@ struct BeforeAfterSection: View {
                 .accessibilityIdentifier("logbook.trends.beforeAfter.empty")
             } else {
                 pickers
-                if let comparison { BeforeAfterResult(comparison: comparison, format: format) }
+                if let comparison {
+                    BeforeAfterResult(comparison: comparison, format: format)
+                } else if split == nil {
+                    Text(
+                        "Choose what to compare, and this reads the sessions driven one way against those driven "
+                            + "another: across the lap, every sector and every corner."
+                    )
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("logbook.trends.beforeAfter.choose")
+                }
             }
         }
         .onAppear(perform: choose)
@@ -106,34 +115,47 @@ struct BeforeAfterSection: View {
         // In rows, as the filter bar is (#659).
         FlowLayout {
             Picker("Compare by", selection: $split) {
+                Text("Nothing").tag(SetupSplit?.none)
+                Divider()
                 ForEach(splits, id: \.self) { Text($0.title).tag(Optional($0)) }
             }
             .fixedSize()
             .accessibilityIdentifier("logbook.trends.beforeAfter.split")
-            Picker("Before", selection: $before) {
-                ForEach(values, id: \.key) { Text($0.label).tag(Optional($0.key)) }
+            if split != nil {
+                Picker("Before", selection: $before) {
+                    ForEach(values, id: \.key) { Text($0.label).tag(Optional($0.key)) }
+                }
+                .fixedSize()
+                .accessibilityIdentifier("logbook.trends.beforeAfter.before")
+                Picker("After", selection: $after) {
+                    ForEach(values, id: \.key) { Text($0.label).tag(Optional($0.key)) }
+                }
+                .fixedSize()
+                .accessibilityIdentifier("logbook.trends.beforeAfter.after")
             }
-            .fixedSize()
-            .accessibilityIdentifier("logbook.trends.beforeAfter.before")
-            Picker("After", selection: $after) {
-                ForEach(values, id: \.key) { Text($0.label).tag(Optional($0.key)) }
-            }
-            .fixedSize()
-            .accessibilityIdentifier("logbook.trends.beforeAfter.after")
         }
         .font(.callout)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The first split the sessions differ by, unless the one chosen still applies.
+    /// Nothing, until the driver says what to compare (#670): the section used to open on the
+    /// first thing the sessions differed by, which — once the weather was looked up for every
+    /// session — split one day into two kinds of weather that nobody had asked about. A choice
+    /// that no longer applies is dropped.
     private func choose() {
         if let split, splits.contains(split) { return }
-        split = splits.first
-        chooseValues()
+        split = nil
+        before = nil
+        after = nil
     }
 
     /// The last two values driven: the one before the latest, and the latest.
     private func chooseValues() {
+        guard split != nil else {
+            before = nil
+            after = nil
+            return
+        }
         let keys = values.map(\.key)
         if let before, let after, keys.contains(before), keys.contains(after) { return }
         after = keys.last

@@ -149,11 +149,19 @@ struct LogbookTrendsTests {
         entry = try JSONDecoder().decode(LogbookEntry.self, from: JSONSerialization.data(withJSONObject: json))
         #expect(entry.cornerMeasurement == 1)
         #expect(entry.needsCornerReading, "corners from the first measurement are offered a fresh reading")
-        // A new entry is read by this build's measurement; one with no corners always needs reading.
+        // A new entry is read by this build's measurement, whether or not it found corners: one
+        // with none — no complete lap — has nothing a second reading would find (#670).
         #expect(
             !visit("new", day: 1, best: 110, corners: [corner("1", brake: 80, minimum: 27, time: 3.9)])
                 .needsCornerReading)
-        #expect(visit("none", day: 1, best: 110).needsCornerReading)
+        #expect(!visit("none", day: 1, best: 110).needsCornerReading)
+        // One entered before corners were kept has none and no record of a measurement: offered.
+        var early = visit("early", day: 0, best: 110)
+        var earlyJSON = try #require(
+            try JSONSerialization.jsonObject(with: JSONEncoder().encode(early)) as? [String: Any])
+        earlyJSON.removeValue(forKey: "cornerMeasurement")
+        early = try JSONDecoder().decode(LogbookEntry.self, from: JSONSerialization.data(withJSONObject: earlyJSON))
+        #expect(early.corners.isEmpty && early.needsCornerReading)
         #expect(LogbookEntry.cornerMeasurement == 4, "4: the corners the laps agree on, added too (#598)")
     }
 

@@ -34,9 +34,14 @@ extension LogbookEntry {
     /// drove through it (#598).
     public static let cornerMeasurement = 4
 
-    /// Whether Trends should offer to read this entry's corners: none kept yet, or kept from a
-    /// measurement since corrected.
-    public var needsCornerReading: Bool { corners.isEmpty || cornerMeasurement < Self.cornerMeasurement }
+    /// Whether Trends should offer to read this entry's corners: it was entered before corners
+    /// were kept, or they were kept from a measurement since corrected. Either way an earlier
+    /// build wrote it, and its `cornerMeasurement` says so.
+    ///
+    /// An entry this build read and found no corners in — a recording with no complete lap — is
+    /// not offered again: reading it again finds none, and "sessions here predate corner
+    /// records" stood under the charts of a logbook ten minutes old (#670).
+    public var needsCornerReading: Bool { cornerMeasurement < Self.cornerMeasurement }
 
     /// Reads the corners of `session`'s best lap into the entry, with this build's measurement.
     public mutating func readCorners(of session: TelemetrySession) {
