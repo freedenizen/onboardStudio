@@ -38,6 +38,12 @@ final class SetupTrendsUITests: OnboardStudioUITestCase {
 
         let trends = app.radioButtons["Trends"].exists ? app.radioButtons["Trends"] : app.buttons["Trends"]
         trends.click()
+        // Nothing is compared until it is asked for (#670): the section says to choose, and Tyres
+        // is what these two visits differ by.
+        let prompt = app.staticTexts["logbook.trends.beforeAfter.choose"]
+        reveal(prompt)
+        XCTAssertTrue(prompt.waitForExistence(timeout: Self.timeout), "Before and after does not ask what to compare")
+        choosePopUpItem("Tyres", in: app.popUpButtons["logbook.trends.beforeAfter.split"])
         let headline = app.staticTexts["logbook.trends.beforeAfter.headline"]
         reveal(headline)
         XCTAssertTrue(headline.waitForExistence(timeout: Self.timeout), "No Before and After")

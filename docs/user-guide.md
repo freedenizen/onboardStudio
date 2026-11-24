@@ -1753,7 +1753,12 @@ corners were kept offer **Read Their Corners**, as do sessions whose corners wer
 a correction to how the app measures them — braking that belongs to the next corner (#438), and a
 kink few of the session's laps find no longer counted as a corner (#585), a bend most of them turn
 through counted though the best lap smoothed it (#598) — so a fixed reading
-reaches sessions already in the logbook.
+reaches sessions already in the logbook. A session this version has read is not offered again, even
+when it has no corners to show: a recording with no complete lap has none to find.
+
+Every chart on the page is laid out the same way: its sessions in the order they were driven, one
+date under each track day and a dashed line between one day and the next. That goes for the grip
+chart too, whose points of one day share that day's date.
 
 #### Did a change help: filters and Before and After
 
@@ -1763,9 +1768,10 @@ weather, a pop-up for each sits under the summary — *Every Set*, *Every Setup*
 **Show All** puts the rest back.
 
 **Before and after**, below the corners, compares two ways of driving the sessions that are left.
-**Compare by** offers each thing they differ by: the tyre set, the setup, the surface, the weather,
-or any one value of the setup sheet, such as *Cold Pressure, Rear Left*. **Before** and **After**
-start on the last two values you drove. It reads the two sides as a sentence (*Soft rear: each
+It compares nothing until you choose: **Compare by** offers each thing they differ by — the tyre
+set, the setup, the surface, the weather, or any one value of the setup sheet, such as *Cold
+Pressure, Rear Left* — and **Nothing** to put it away again. **Before** and **After** then start on
+the last two values you drove. It reads the two sides as a sentence (*Soft rear: each
 session's best averaged 0.20 s quicker than Base (1 session against 2)*), then a table of sessions,
 each session's best averaged, the best, the optimal and the lap spread, then which sectors and
 which corners were quicker and slower, with each corner's minimum speed and time against the
