@@ -85,7 +85,10 @@ swift run onboard bench --export --codec hevc --seconds 60
 - The nightly workflow (`.github/workflows/nightly.yml`) runs what a PR does not wait for:
   the ffprobe-backed media tests, `onboard render` on the fixture, an unsigned bundle, the
   command-line archive as a release packs it (`Scripts/make-cli-archive.sh`) and the bench
-  against a budget; red opens the `nightly-red` issue.
+  against a budget; and, in a job of its own, the optimised build run
+  (`Scripts/smoke-release.sh`, #675): the release-built `onboard` adds the fixture day twice, and
+  `TrackDayUITests` runs against a Release build of the app. Nothing else builds Release, so a
+  fault only the optimiser shows is first met there. Red opens the `nightly-red` issue.
 - **A release that adds features (`vX.Y.0`) is followed by the new-user review**
   (`/new-user-review <version>`, `docs/new-user-review.md`): the published DMG, only the
   documentation a user is given, real track days, by computer use on a copy that starts as a first
