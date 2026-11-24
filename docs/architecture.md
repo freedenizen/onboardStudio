@@ -90,6 +90,14 @@ two thin executables.
 - `swift build` / `swift test` build every library, the CLI and the app executable.
 - `xcodegen generate` creates `OnboardStudio.xcodeproj` from `project.yml`; the app target compiles
   `Sources/OnboardStudioApp` and links the package libraries and Sparkle.
+- The user guide is the app's help book (#700). A build phase of the app target runs
+  `Scripts/make-help-book.py`, which converts `docs/user-guide.md` to one page per `##` section,
+  with every heading an anchor, copies its pictures, and indexes it with `hiutil`, into
+  `OnboardStudio.help` in the app's Resources; `CFBundleHelpBookFolder` and `CFBundleHelpBookName`
+  name it. `HelpLinks.open(.userGuide, section:)` opens it in Help Viewer at a heading's anchor,
+  and falls back to the page on the web when the app runs without its bundle (`swift run`). A
+  link in the guide to a heading that is not there stops the build; `Scripts/test-make-help-book.sh`
+  (Lint (fast), the pre-commit hook) checks the book as built from the real guide.
 - `Scripts/bundle-app.sh` → `Scripts/make-dmg.sh` → `Scripts/notarize.sh` (optional) →
   `Scripts/make-appcast.sh` mirror `.github/workflows/release.yml`, which runs on every `v*` tag and
   publishes the DMG, `appcast.xml` and a CLI tarball as a GitHub Release. The tarball is

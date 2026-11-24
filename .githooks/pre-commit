@@ -31,6 +31,12 @@ if grep -q '^Scripts/\(test-\)\{0,1\}ci-changes\.sh$' <<< "$staged"; then
   Scripts/test-ci-changes.sh >/dev/null
 fi
 
+# The user guide is the app's help book: a link to a heading that is not there fails the build.
+if grep -q '^docs/user-guide\.md$\|^docs/images/\|^Scripts/\(test-\)\{0,1\}make-help-book\.' <<< "$staged"; then
+  echo "pre-commit: help book"
+  Scripts/test-make-help-book.sh >/dev/null
+fi
+
 # A new XCUITest class that is on no shard runs nowhere and every shard still passes.
 if grep -q '^UITests/\|^\.github/workflows/ci\.yml$' <<< "$staged"; then
   echo "pre-commit: UI test shards"

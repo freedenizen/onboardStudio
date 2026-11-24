@@ -152,11 +152,16 @@ struct EditorCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .help) {
-            Button("Onboard Studio User Guide") { HelpLinks.open(.userGuide) }
+            // The guide, in Help Viewer (#700), under the name and the key every Mac app's has.
+            Button("Onboard Studio Help") { HelpLinks.open(.userGuide) }.keyboardShortcut("?", modifiers: .command)
             Button("Supported Data Formats") { HelpLinks.open(.formats) }
-            Button("Scripting Reference") { HelpLinks.open(.scripting) }
             Button("YouTube Upload Setup") { HelpLinks.open(.youtube) }
-            Button("Project File Format") { HelpLinks.open(.projectFormat) }
+            // For someone writing a script or reading the file, not for someone making a video:
+            // they stood beside the guide as if they were for the same reader.
+            Menu("Developer Reference") {
+                Button("Scripting Reference") { HelpLinks.open(.scripting) }
+                Button("Project File Format") { HelpLinks.open(.projectFormat) }
+            }
             Divider()
             Button("Keyboard Shortcuts") { openWindow(id: "shortcuts") }
             // The tour of the window in front: the Logbook's has its own (#452).

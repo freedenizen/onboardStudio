@@ -31,6 +31,18 @@ targets:
       - path: App/Sample.onboardproj
         type: folder
         buildPhase: resources
+    # docs/user-guide.md, converted and indexed into the app's Resources (#700). Declared inputs
+    # and outputs, so it runs again only when the guide or the converter changes.
+    postBuildScripts:
+      - name: Help Book
+        script: |
+          "$SRCROOT/Scripts/make-help-book.py" \
+            --out "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" --version "${MARKETING_VERSION:-1.0}"
+        inputFiles:
+          - $(SRCROOT)/docs/user-guide.md
+          - $(SRCROOT)/Scripts/make-help-book.py
+        outputFiles:
+          - $(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/OnboardStudio.help/Contents/Info.plist
     info:
       path: App/Info.plist
       properties:
@@ -41,6 +53,10 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSApplicationCategoryType: public.app-category.video
+        # The user guide as a help book (#700): Help Viewer opens it, offline and at a topic,
+        # and the Help menu's search finds its topics. Made by the build phase below.
+        CFBundleHelpBookFolder: OnboardStudio.help
+        CFBundleHelpBookName: com.freedenizen.onboardstudio.help
         NSHumanReadableCopyright: "MIT License"
         SUFeedURL: https://github.com/freedenizen/onboardStudio/releases/latest/download/appcast.xml
         SUPublicEDKey: F/7BM7lVhYVQxvRAW7G4ugBaJZ4UkOyjUf0YTCVLLcc=
