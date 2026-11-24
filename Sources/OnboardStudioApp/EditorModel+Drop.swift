@@ -148,6 +148,11 @@ extension EditorModel {
     }
 
     func addData(at url: URL) {
+        // A file no importer knows is refused in words, as the Logbook refuses it (#668).
+        if let refusal = DataFileCheck.refusal(of: url) {
+            statusMessage = refusal
+            return
+        }
         let input = Input(
             label: url.deletingPathExtension().lastPathComponent,
             source: MediaReference.make(for: url, relativeTo: fileURL), kind: .data(DataInputSettings()))

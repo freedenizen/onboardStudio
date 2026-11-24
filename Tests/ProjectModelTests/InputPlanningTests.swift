@@ -194,3 +194,20 @@ struct InputPlanningTests {
         #expect(!InputPlanning.isFolder(folder.appending(path: "missing.csv")))
     }
 }
+
+/// The built-in layouts as a new project gets them (#668).
+@Suite("Built-in template layouts (#668)")
+struct TemplateLayoutTests {
+    @Test func classicDashKeepsItsGearBoxOffTheTimers() throws {
+        let objects = ProjectTemplate.classicDash.displayObjects
+        let gear = try #require(objects.first { $0.label == "Gear" }).frame
+        for name in ["Lap", "Best"] {
+            let timer = try #require(objects.first { $0.label == name }).frame
+            let besideIt = gear.x >= timer.x + timer.width || timer.x >= gear.x + gear.width
+            let aboveOrBelow = gear.y >= timer.y + timer.height || timer.y >= gear.y + gear.height
+            #expect(besideIt || aboveOrBelow, "the Gear box covers the \(name) timer")
+        }
+        #expect(gear.x >= 0)
+        #expect(gear.x + gear.width <= 1)
+    }
+}

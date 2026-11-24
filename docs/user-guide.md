@@ -478,8 +478,9 @@ and the next time the app opens).
   every template, or a blank project. The project is called after the session, as the Logbook lists
   it — *Sonoma Raceway, Sep 22, 2026*, not *Untitled* — in its window, the Window menu and the name
   Save suggests, and a second one from the same session is numbered; once saved, it is called by
-  its file. A project not made from a session takes its name from its Details when they give the
-  track or the day. The toolbar's **New Project** menu does the same while a session is selected,
+  its file. It opens with nothing selected, so the inspector shows the project's own page — what to
+  do next, the output and its details — and not the data file's settings. A project not made from a
+  session takes its name from its Details when they give the track or the day. The toolbar's **New Project** menu does the same while a session is selected,
   under a heading that names the session, so the two never disagree; its **New Project Without a
   Session** starts an empty project instead.
 - **Add to Current Project** adds the session to the project in front.
@@ -771,6 +772,10 @@ mapped and how the import went, in a line, and **Map Attributes…** opens the w
 misdetected column is fixed and every column's fate is listed (see below). *Processing* offers
 resampling, smoothing, speed/heading from GPS and calculated fields (`kph = speed * 3.6`).
 *Laps* come from the file when it has them, or from a start/finish line you pick on the map.
+
+A file that is not a logger's — a note, a picture, a video with no GPS in it — is not added: the
+status line says it is not a data file the app reads, and **Help ▸ Supported Data Formats** lists
+the ones it does.
 
 A data file is read from disk once. A large log takes a few seconds to read the first time — when
 it is added to the logbook, say; making a project from that session, opening **Coach…** or
@@ -1339,6 +1344,11 @@ had; **Project ▸ Stop Comparing Laps** removes the compared lap and keeps the 
 Presets cover 720p to 4K and vertical video; codecs are H.264, HEVC, HEVC with alpha and ProRes
 4444 (the last two for transparent overlay-only output to composite elsewhere). *Background* can be
 the video, a key colour or transparent. *360°* tags a full equirectangular frame as spherical video.
+
+While it writes, the sheet says how far it has got: *Exporting… 210 of 600 frames*, beside the bar.
+When the file is written the buttons change: **Done** closes the sheet and is what Return presses,
+**Reveal in Finder** shows the file, **Upload to YouTube…** sends it, and **Export Again…** writes
+another with the settings as they now are.
 
 *Range*, the first thing in the sheet, exports the whole project, a time span, the range marked
 with I and O, or a run of laps. **Laps** starts on your best lap: the **From** and **To** menus list

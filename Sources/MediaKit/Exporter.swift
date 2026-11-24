@@ -9,11 +9,23 @@ public struct ExportProgress: Sendable, Equatable {
     public let framesWritten: Int
     /// The project time of the frame just written.
     public let currentTime: Double
+    /// How many frames the export will write, where that is known: the length of the stretch at
+    /// the output's frame rate. A batch of several files knows only the fraction.
+    public let totalFrames: Int?
 
-    public init(fraction: Double, framesWritten: Int, currentTime: Double) {
+    public init(fraction: Double, framesWritten: Int, currentTime: Double, totalFrames: Int? = nil) {
         self.fraction = fraction
         self.framesWritten = framesWritten
         self.currentTime = currentTime
+        self.totalFrames = totalFrames
+    }
+
+    /// "Exporting… 210 of 600 frames": a count beside a bar said how far it had got and not how
+    /// far there was to go (#668). Without a total, the count alone, as before.
+    public var sentence: String {
+        guard let totalFrames, totalFrames > 0 else { return "Exporting… \(framesWritten) frames" }
+        // The last frame can land one past a total rounded from the length.
+        return "Exporting… \(min(framesWritten, totalFrames)) of \(totalFrames) frames"
     }
 }
 
@@ -122,6 +134,7 @@ final class ExportJob: @unchecked Sendable {
     private let frames = Counter()
     private let outputURL: URL
     private let spherical: Bool
+    private let frameRate: Double
 
     init(
         compiled: CompiledComposition,
@@ -142,6 +155,7 @@ final class ExportJob: @unchecked Sendable {
         self.onProgress = onProgress
         self.outputURL = outputURL
         spherical = settings.spherical
+        frameRate = Double(settings.frameRate)
 
         try? FileManager.default.removeItem(at: outputURL)
         do { reader = try AVAssetReader(asset: compiled.composition) } catch {
@@ -202,6 +216,7 @@ final class ExportJob: @unchecked Sendable {
         writer.startSession(atSourceTime: timeRange.start)
 
         let exportDuration = max(end - start, 0.001)
+        let totalFrames = max(1, Int((exportDuration * frameRate).rounded()))
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask { [self] in
                 try await pump(from: videoOutput, to: videoInput, label: "video") { time in
@@ -210,7 +225,7 @@ final class ExportJob: @unchecked Sendable {
                     self.onProgress(
                         ExportProgress(
                             fraction: fraction, framesWritten: count,
-                            currentTime: self.timeMap.projectTime(atOutput: time)))
+                            currentTime: self.timeMap.projectTime(atOutput: time), totalFrames: totalFrames))
                 }
             }
             if let audio {
@@ -237,7 +252,9 @@ final class ExportJob: @unchecked Sendable {
         Self.removeLeftovers(beside: outputURL)
         if spherical { try SphericalMetadata.inject(into: outputURL) }
         onProgress(
-            ExportProgress(fraction: 1, framesWritten: frames.value, currentTime: timeMap.projectTime(atOutput: end)))
+            ExportProgress(
+                fraction: 1, framesWritten: frames.value, currentTime: timeMap.projectTime(atOutput: end),
+                totalFrames: totalFrames))
     }
 
     /// Removes the copy the network-optimising pass leaves beside the output (`<name>.sb-…`).
