@@ -39,7 +39,7 @@ struct TrackDayHeader: View {
                 }
                 Spacer()
                 Button("Add Files…", systemImage: "doc.badge.plus", action: addSessions)
-                    .help("Enter the day's telemetry files and camera clips, or the folders holding them")
+                    .help("Enter the day's data files and camera clips, or the folders holding them")
                     .accessibilityIdentifier("trackday.header.addSessions")
                 Button("Remove Track Day", systemImage: "trash", role: .destructive, action: remove)
                     .labelStyle(.iconOnly)

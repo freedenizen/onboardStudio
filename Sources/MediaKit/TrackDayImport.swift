@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Importers
 import ProjectModel
@@ -35,12 +36,28 @@ public enum TrackDayImport {
         /// What the chosen day decided for a session added to it (#456): its circuit when the
         /// file had none, its date in spite of the file's. Said in the line, after the session.
         public let notes: [String]
+        /// The recording matched no session and was read as one of its own (#394): the session
+        /// in `.clip` is new with this file, and counts among the sessions added (#665).
+        public let madeSession: Bool
 
-        public init(url: URL, outcome: Outcome, dayLabel: String? = nil, notes: [String] = []) {
+        public init(
+            url: URL, outcome: Outcome, dayLabel: String? = nil, notes: [String] = [], madeSession: Bool = false
+        ) {
             self.url = url
             self.outcome = outcome
             self.dayLabel = dayLabel
             self.notes = notes
+            self.madeSession = madeSession
+        }
+
+        /// The session this file put in the logbook: its own, or the one a recording with no
+        /// logger session was read as.
+        public var addedEntry: LogbookEntry? {
+            switch outcome {
+            case .added(let entry): entry
+            case .clip(_, let session): madeSession ? session : nil
+            default: nil
+            }
         }
 
         public var isAdded: Bool { if case .added = outcome { return true } else { return false } }
@@ -76,14 +93,19 @@ public enum TrackDayImport {
             case .sameSession(let entry):
                 let file = URL(fileURLWithPath: entry.file.path).lastPathComponent
                 return "\(name) — the same session as \(file), already in the logbook: \(Self.describe(entry))"
-            case .notRecognised: return "\(name) — not a telemetry file this app reads"
+            case .notRecognised: return "\(name) — not a data file this app reads"
             case .noData: return "\(name) — no position or laps in it"
             case .failed(let reason): return "\(name) — could not be read: \(reason)"
             case .clip(let clip, let session):
                 let span = ClipMatcher.describe(clip)
                 let what = span.isEmpty ? "video" : "video, \(span)"
+                // With the time it began: two sessions of a day differed only in their laps (#665).
+                if let session, madeSession {
+                    let own = Self.describe(session, time: true)
+                    return "\(name) — \(what): no logger session at that time, so a session of its own: \(own)"
+                }
                 if let session {
-                    return "\(name) — \(what): the picture of \(Self.describe(session))"
+                    return "\(name) — \(what): the picture of \(Self.describe(session, time: true))"
                 }
                 return "\(name) — \(what): no session at that time, assign it in the logbook"
             case .clipAlreadyThere: return "\(name) — video already on the day"
@@ -93,9 +115,13 @@ public enum TrackDayImport {
             }
         }
 
-        public static func describe(_ entry: LogbookEntry) -> String {
+        /// "Sonoma, Aug 23, 2026, 12 laps, best 1:56.88"; with `time`, the date says when the
+        /// session began, which is what tells two sessions of one day apart.
+        public static func describe(_ entry: LogbookEntry, time: Bool = false) -> String {
             var parts = [entry.circuitTitle]
-            if let date = entry.date { parts.append(date.formatted(date: .abbreviated, time: .omitted)) }
+            if let date = entry.date {
+                parts.append(date.formatted(date: .abbreviated, time: time ? .shortened : .omitted))
+            }
             parts.append(entry.laps.isEmpty ? "no laps" : "\(entry.completeLapCount) laps")
             if let best = entry.bestLap { parts.append("best \(TimeParsing.lapTimeString(best))") }
             return parts.joined(separator: ", ")
@@ -160,8 +186,8 @@ public enum TrackDayImport {
         for (index, group) in clips.enumerated() {
             guard let first = group.first else { continue }
             progress(telemetry.count + index, count, first)
-            let outcome = await importClip(first, chapters: Array(group.dropFirst()), into: logbook, batch: batch)
-            reports.append(report(Filed(outcome: outcome), for: first, chosen: day, logbook: logbook))
+            let filed = await importClip(first, chapters: Array(group.dropFirst()), into: logbook, batch: batch)
+            reports.append(report(filed, for: first, chosen: day, logbook: logbook))
         }
         return reports
     }
@@ -182,6 +208,8 @@ public enum TrackDayImport {
     struct Filed: Sendable {
         var outcome: Outcome
         var tookDayCircuit = false
+        /// A recording that matched no session was read as one of its own.
+        var madeSession = false
     }
 
     /// The report for an outcome: naming the day a session was put on when none was chosen, and
@@ -199,30 +227,43 @@ public enum TrackDayImport {
                 label = logbook.day(id: id)?.label
             }
         }
-        return Report(url: url, outcome: filed.outcome, dayLabel: label, notes: notes)
+        return Report(
+            url: url, outcome: filed.outcome, dayLabel: label, notes: notes, madeSession: filed.madeSession)
     }
 
     /// A camera recording (#394): probed for its clock and length, then filed on its day — or kept
     /// back, when a day was chosen and the clip's clock says another (#456).
-    static func importClip(_ first: URL, chapters: [URL], into logbook: Logbook, batch: Batch) async -> Outcome {
+    static func importClip(_ first: URL, chapters: [URL], into logbook: Logbook, batch: Batch) async -> Filed {
         // A video exported from a session's project, picked up with the day's folder or offered by
         // the panel beside the footage, is the finished overlay, not that session's picture (#468).
         let path = first.standardizedFileURL.path
         if let source = logbook.entries().first(where: { entry in
             entry.exports.contains { URL(fileURLWithPath: $0.path).standardizedFileURL.path == path }
         }) {
-            return .ownExport(source)
+            return Filed(outcome: .ownExport(source))
         }
         do {
             let clip = try await ClipMatcher.record(first, chapters: chapters)
-            if let existing = knownClip(clip, in: logbook) { return .clipAlreadyThere(existing) }
+            if let existing = knownClip(clip, in: logbook) { return Filed(outcome: .clipAlreadyThere(existing)) }
             if batch.strays == .kept, let day = batch.day, let stray = Stray(clip, at: first, against: day) {
-                return .waiting(stray)
+                return Filed(outcome: .waiting(stray))
             }
             return try fileClip(clip, first: first, into: logbook, batch: batch)
         } catch {
-            return .failed(error.localizedDescription)
+            return Filed(outcome: .failed(unreadableClip(first, error)))
         }
+    }
+
+    /// Why a recording could not be read, about the file and what to do with it. The system's
+    /// own words for an empty file are "Cannot Open", which says neither (#665).
+    static func unreadableClip(_ url: URL, _ error: Error) -> String {
+        if (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize == 0 {
+            return "the file is empty; copy it from the camera's card again"
+        }
+        if (error as NSError).domain == AVFoundationErrorDomain {
+            return "macOS cannot open it as a video. It may be incomplete; copy it from the camera's card again"
+        }
+        return error.localizedDescription
     }
 
     /// One telemetry file: read, then filed on its day — or kept back, when a day was chosen and
