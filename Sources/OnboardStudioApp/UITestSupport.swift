@@ -301,6 +301,11 @@ struct UITestCommands: Commands {
                 let model = LogbookModel.shared
                 model.trackDayRequest = TrackDayRequest(urls: [folder], day: model.selectedDay)
             }
+            // A day's files with one of them dated another day, and no day chosen (#655).
+            Button("Add Fixture Day With One File Dated Apart") {
+                let names = ["racechrono-v2.csv", "session.vbo", "track.nmea", "racechrono-v3.csv"]
+                LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: names.compactMap(UITestSupport.fixture))
+            }
             // A second visit to the coaching fixture's "circuit": the same file name, one row
             // shorter, so it is another session at the same place (#352).
             Button("Set Project Car Miata") { editor?.setDetail("Change Car") { $0.car = "Miata" } }

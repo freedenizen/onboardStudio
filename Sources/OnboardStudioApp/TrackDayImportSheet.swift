@@ -205,13 +205,17 @@ private struct TrackDayImportReport: View {
 
     // MARK: - Files of another day (#456)
 
+    /// The day the question is about: the one chosen before the files, else — a file dated away
+    /// from the rest (#655) — the day the others went on.
+    private var asked: TrackDay? { day ?? run.strays.first?.rest }
+
     /// How many are not the day's, and what can be done with them.
     private var question: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(TrackDayImport.Stray.headline(run.strays.count, of: run.reports.count, day: day?.label ?? ""))
+            Text(TrackDayImport.Stray.headline(run.strays.count, of: run.reports.count, day: asked?.label ?? ""))
                 .font(.headline)
                 .accessibilityIdentifier("trackday.strays.question")
-            Text(TrackDayImport.Stray.explanation(run.strays.count))
+            Text(TrackDayImport.Stray.explanation(run.strays.count, chosen: day != nil))
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -229,8 +233,8 @@ private struct TrackDayImportReport: View {
         .help("The other files are in the logbook; \(one ? "this one is" : "these are") not added")
         .accessibilityIdentifier("trackday.strays.leaveOut")
         Spacer()
-        Button("Add to This Day") { run.place(onto: day) }
-            .help("For a logger or camera whose clock was wrong: the day you chose decides")
+        Button(TrackDayImport.Stray.addTitle(chosen: day != nil)) { run.place(onto: asked) }
+            .help(TrackDayImport.Stray.addHelp(chosen: day != nil))
             .accessibilityIdentifier("trackday.strays.thisDay")
         Button(one ? "Put on Its Own Day" : "Put on Their Own Days") { run.place(onto: nil) }
             .keyboardShortcut(.defaultAction)

@@ -36,6 +36,9 @@ extension TrackDayImport {
         public let date: Date?
         /// The circuit the file's trace lies at, when it is not the chosen day's.
         public let circuit: String?
+        /// With no day chosen (#655): the day the other files went on, which this one alone is
+        /// not dated. `nil` for a file read for a chosen day.
+        public let rest: TrackDay?
         let kind: Kept
 
         public var isClip: Bool { if case .clip = kind { true } else { false } }
@@ -43,6 +46,7 @@ extension TrackDayImport {
         /// "dated Aug 23, 2026, not this day's date": what the file says that the day does not.
         public var reason: String {
             let dated = date.map { "dated \($0.formatted(date: .abbreviated, time: .omitted))" }
+            if rest != nil { return "\(dated ?? "not dated"), not the date of the other files" }
             let place = circuit.map { "at \($0)" }
             switch (dated, place) {
             case (let dated?, let place?): return "\(dated) \(place), not this day's date or circuit"
@@ -61,13 +65,37 @@ extension TrackDayImport {
             return "\(count) of these \(files) files \(count == 1 ? "is" : "are") not from \(day)."
         }
 
-        /// What can be done with them, under the headline.
-        public static func explanation(_ count: Int) -> String {
+        /// What can be done with them, under the headline. `chosen` is a day chosen before the
+        /// files; without one the day in the headline is the one the other files went on.
+        public static func explanation(_ count: Int, chosen: Bool = true) -> String {
             let (each, them, days) =
                 count == 1 ? ("It says", "it", "its own day") : ("Each says", "them", "their own days")
+            guard chosen else {
+                return "\(each) below what is different. Put \(them) on \(days), or add \(them) to the day of the "
+                    + "other files: the answer for a logger or a camera whose clock was wrong."
+            }
             return "\(each) below what is different. Put \(them) on \(days), as Add Files does when no day is "
                 + "chosen, or add \(them) to this day anyway: the answer for a logger or a camera whose clock was "
                 + "wrong."
+        }
+
+        /// The button that puts them on the day in the headline: the one chosen, or the others'.
+        public static func addTitle(chosen: Bool) -> String { chosen ? "Add to This Day" : "Add to That Day" }
+
+        /// Its help tag.
+        public static func addHelp(chosen: Bool) -> String {
+            chosen
+                ? "For a logger or camera whose clock was wrong: the day you chose decides"
+                : "For a logger or camera whose clock was wrong: the day of the other files decides"
+        }
+
+        /// A file with no day chosen for it, as read: `rest` is filled in when it is asked about.
+        init(url: URL, date: Date?, kind: Kept, rest: TrackDay? = nil) {
+            self.url = url
+            self.date = date
+            circuit = nil
+            self.rest = rest
+            self.kind = kind
         }
 
         /// The session, if it is not `day`'s by its own account. A file with no date is not
@@ -84,6 +112,7 @@ extension TrackDayImport {
             self.url = url
             self.date = date
             self.circuit = circuit
+            rest = nil
             kind = .session(reading)
         }
 
@@ -93,6 +122,7 @@ extension TrackDayImport {
             self.url = url
             date = recorded
             circuit = nil
+            rest = nil
             kind = .clip(clip)
         }
     }
@@ -124,11 +154,7 @@ extension TrackDayImport {
             if let known = knownClip(clip, in: logbook) {
                 filed = Filed(outcome: .clipAlreadyThere(known))
             } else {
-                do {
-                    filed = try fileClip(clip, first: stray.url, into: logbook, batch: batch)
-                } catch {
-                    filed = Filed(outcome: .failed(unreadableClip(stray.url, error)))
-                }
+                filed = fileClipOrSayWhy(clip, first: stray.url, into: logbook, batch: batch)
             }
             reports.append(report(filed, for: stray.url, chosen: day, logbook: logbook))
         }

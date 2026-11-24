@@ -180,6 +180,16 @@ at once: each file goes on the day its date and circuit say, made if need be, an
 says which. Files added with no day chosen take the car of an earlier session at the same circuit,
 or the car of the day they go on when it names one.
 
+One file dated away from the rest is asked about here too. When the other dated files are all from
+one day and a file is dated another — a recording from a camera whose clock was wrong, most often —
+the sheet adds the rest, then stops: *1 of these 12 files is not from* that day, with the file's own
+date in its line. **Add to That Day** puts it on the day the other files went on, where a recording
+is matched to the session it filmed; **Put on Its Own Day** files it by its own date, as before;
+**Leave It Out** adds nothing for it. Until you answer, nothing is in the logbook for that file and
+no track day is made for it. It is asked only when there is one day it could belong to: folders
+holding several days' files are filed day by day unasked, and so is a file dated a track day the
+logbook already has. `onboard logbook add` cannot ask, and files each by its own date.
+
 ### What the import says
 
 While the files are read, the sheet says which one of how many it is on (*Reading 3 of 15*), with a
