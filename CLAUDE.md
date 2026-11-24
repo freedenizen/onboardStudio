@@ -50,10 +50,12 @@ swift run onboard bench --export --codec hevc --seconds 60
   to date with `main` to merge, so a merge never puts another PR `BEHIND`. The push run on
   `main` is what proves `main`; when it is red the `main health` job opens the issue labelled
   `main-red` — fix forward at once. `Scripts/ci-changes.sh` keeps a run off the macOS runners
-  (five at once for the whole account) when it can: documentation alone skips Lint and Test, a
-  version-only `project.yml` skips the UI tests, and the push run skips everything when the PR
-  was up to date and already passed on the same tree (#646) — so rebasing before `gh pr ready`
-  also saves the second run. CodeQL is a workflow (`codeql.yml`), not GitHub's default setup:
+  (five at once for the whole account) when it can: documentation alone skips Lint and Test; the
+  UI tests run for the app, any library under `Sources/` it links (#695), `Tests/Fixtures/`,
+  the package and `project.yml`, and are skipped for the rest — `Sources/OnboardStudioCLI/`,
+  unit tests, other scripts and workflows, a release's version bump; and the push run skips
+  everything when the PR was up to date and already passed on the same tree (#646) — so
+  rebasing before `gh pr ready` also saves the second run. CodeQL is a workflow (`codeql.yml`), not GitHub's default setup:
   the Actions and Python scans run on every PR, Swift once a week and on request, and a failed
   Swift scan opens the `codeql-red` issue (#648). Never push to `main` directly and never
   force-push it.

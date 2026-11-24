@@ -64,6 +64,9 @@ write project.yml 'settings:
 write README.md 'The app is at v1.0.0.'
 write Sources/OnboardStudioApp/View.swift 'struct View {}'
 write Sources/RenderKit/Draw.swift 'struct Draw {}'
+write Sources/ProjectModel/Version.swift 'public enum Version {
+    public static let marketing = "1.0.0"
+}'
 git add Scripts
 m0=$(commit "start")
 
@@ -99,7 +102,34 @@ expect "documentation needs no Mac" "$(classify "$m0" "$docs")" code=false app=f
 branch library "$m0"
 write Sources/RenderKit/Draw.swift 'struct Draw { let width = 1 }'
 library=$(commit "library")
-expect "a library needs Lint and Test, not the UI tests" "$(classify "$m0" "$library")" code=true app=false
+# The app's behaviour comes from its libraries as much as from its views (#695).
+expect "a library the app is built from needs the UI tests" "$(classify "$m0" "$library")" code=true app=true
+
+branch tool "$m0"
+write Sources/OnboardStudioCLI/Probe.swift 'struct Probe {}'
+tool=$(commit "tool")
+expect "the command-line tool needs Lint and Test, not the UI tests" "$(classify "$m0" "$tool")" code=true app=false
+
+branch fixture "$m0"
+write Tests/Fixtures/laps.csv 'lap,time'
+fixture=$(commit "fixture")
+expect "a fixture the UI tests open needs the UI tests" "$(classify "$m0" "$fixture")" code=true app=true
+
+branch unit "$m0"
+write Tests/RenderKitTests/DrawTests.swift 'struct DrawTests {}'
+write Scripts/bundle-app.sh 'exit 0'
+unit=$(commit "unit test")
+expect "a unit test or another script needs Lint and Test, not the UI tests" "$(classify "$m0" "$unit")" code=true app=false
+
+branch package "$m0"
+write Package.swift '// swift-tools-version: 6.0'
+package=$(commit "package")
+expect "the package needs the UI tests" "$(classify "$m0" "$package")" code=true app=true
+
+branch resolved "$m0"
+write Package.resolved '{}'
+resolved=$(commit "resolved")
+expect "a dependency's version needs the UI tests" "$(classify "$m0" "$resolved")" code=true app=true
 
 branch app "$m0"
 write Sources/OnboardStudioApp/View.swift 'struct View { let title = "" }'
@@ -129,7 +159,9 @@ write project.yml 'settings:
     MARKETING_VERSION: "1.1.0"
     CURRENT_PROJECT_VERSION: "1"'
 write README.md 'The app is at v1.1.0.'
-write Sources/ProjectModel/Version.swift 'let marketing = "1.1.0"'
+write Sources/ProjectModel/Version.swift 'public enum Version {
+    public static let marketing = "1.1.0"
+}'
 bump=$(commit "chore: 1.1.0")
 expect "a version bump needs Lint and Test, not the UI tests" "$(classify "$m0" "$bump")" code=true app=false
 
@@ -142,9 +174,17 @@ write project.yml 'settings:
 target=$(commit "project")
 expect "any other change to project.yml needs the UI tests" "$(classify "$m0" "$target")" code=true app=true
 
+branch constant "$m0"
+write Sources/ProjectModel/Version.swift 'public enum Version {
+    public static let marketing = "1.1.0"
+    public static let build = 2
+}'
+constant=$(commit "version file")
+expect "any other change to the version file needs the UI tests" "$(classify "$m0" "$constant")" code=true app=true
+
 branch nested "$m0"
-write Sources/ProjectModel/Resources/Tracks/README.md 'Read by a test.'
-write Tests/Fixtures/notes.md 'A fixture.'
+write Sources/OnboardStudioCLI/README.md 'Read by a test.'
+write Tests/RenderKitTests/notes.md 'Read by a test.'
 nested=$(commit "nested markdown")
 expect "markdown under Sources or Tests is code" "$(classify "$m0" "$nested")" code=true app=false
 

@@ -48,8 +48,13 @@ journeys and the commit signature check; those are the required checks, and a PR
 until they pass. A run asks for a Mac only for what the change can affect
 (`Scripts/ci-changes.sh`, with its cases in `Scripts/test-ci-changes.sh`): documentation alone —
 `docs/`, `.claude/` and the Markdown files at the top of the repository — runs neither Lint nor
-Test, and the XCUITest journeys run when the app, the UI tests, `project.yml` beyond its version
-line, `ci.yml` or that script changed. What a PR does not wait for runs afterwards: the push to
+Test, and the XCUITest journeys run when anything they are built from changed: the app, a
+library it links (everything under `Sources/` but `Sources/OnboardStudioCLI/`), the fixture
+files in `Tests/Fixtures/`, the UI tests, `Package.swift` and `Package.resolved`, `project.yml`,
+`ci.yml` or that script. A release's version bump — the version line of `project.yml` and of
+`Sources/ProjectModel/Version.swift` — does not count. A library was not in that list until
+#695: a change to one reordered the Logbook's sessions and merged with two journeys broken and
+unrun (#693). What a PR does not wait for runs afterwards: the push to
 `main` repeats the suite with coverage and, when red, opens the issue labelled `main-red` —
 unless the pull request was up to date with `main` and left it with exactly the tree its own run
 passed on, in which case there is nothing new to test and the push run says so (#646); the
