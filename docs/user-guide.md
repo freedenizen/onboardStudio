@@ -31,7 +31,8 @@ The first time, the Logbook shows a three-step tour of its sidebar, its sessions
 detail (**Help ▸ Take the Tour** repeats it while the Logbook is in front). While no session is
 chosen, the detail column holds the Logbook's **Getting Started**: add a track day's files, say
 what was driven, make a video of a session, be coached through a lap, see how you are getting on —
-each ticked as you do it, with a button that does or shows it.
+each ticked as you do it, with a button that does or shows it. The video is ticked once a project
+made from a session has been saved, or a video exported from one.
 
 Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a blank project instead;
 **Window ▸ Logbook** (⌃⌘L) brings it back. **Help ▸ Open the Sample Project** opens a short clip
@@ -146,7 +147,8 @@ The header's **Circuit** row says where the day was driven, and it can be set or
 the day exists: search the catalogue, pick a name you typed before, or keep what you type. A session
 whose trace is recognised nowhere and whose file names no track has no circuit: such sessions are
 gathered in the sidebar under **No circuit** rather than each under a circuit named after its file,
-and have no personal best or Trends until their day is named. Naming the day names every session on
+show a dash in the table's **Circuit** column, and have no personal best or Trends until their day
+is named. A session whose file gives no date shows the date of the day it is on. Naming the day names every session on
 it that had none; a session that says where it was keeps its own. A session with no circuit that is
 added to a named day, or lands on one by its date, takes that day's.
 

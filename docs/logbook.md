@@ -208,8 +208,12 @@ opening a saved project. The entry is found by the file's bytes or made, the inp
 `logbookEntryID` as bookkeeping written without an undo step of its own (an undo of Add Data
 takes the whole input away anyway), and blank car and driver details are filled from the entry.
 `Preferences.logbookAutoAdd` (Settings ▸ Logbook) turns it off. A project with a place on disk is
-recorded on its entries' `projects` after each compile; every finished export (the sheet, the
-vertical clip, the debrief) on `exports`. Relinking runs once per load: an input whose file is
+recorded on its entries' `projects` after each compile and when it is saved
+(`EditorModel.recordProjectInLogbook`, which asks the document where it is now: the editor's own
+`fileURL` is where the window was opened from, and stays `nil` for a project saved since). Until
+#667 it was recorded only as a data file was entered, so a project made from a session — new, with
+no place yet — was listed on no session however it was saved afterwards. Every finished export
+(the sheet, the vertical clip, the debrief) goes on `exports`. Relinking runs once per load: an input whose file is
 missing takes the entry's bookmark's place as an undoable *Relink Data File*; an entry whose path
 is stale while the project's is good learns the new one.
 
@@ -388,7 +392,9 @@ undoable, so no confirmation since #454).
 A session that names no circuit has none (#455). `LogbookFilter.circuitKey(of:)` used to fall back
 to the file's name, so every unrecognised file was a circuit of its own in the sidebar and two
 files named alike were two visits to one place. The key is now empty for such a session;
-`circuits(in:)` gathers them as one group, id `""`, titled *No circuit* and sorted last;
+`circuits(in:)` gathers them as one group, id `""`, titled *No circuit* and sorted last; the
+table's Circuit column lists `LogbookEntry.namedCircuit`, empty for them, where `circuitTitle`
+still falls back to the file's name as what to call the session (#667);
 `PersonalBests`, `LogbookTrends.points` and `LogbookReferences.sessions(at:)` answer nothing for
 the empty key. The project side asks the entry first: `LogbookDerived.circuitKey(for:session:entries:)`
 takes the key of the entry the input was entered as (`logbookEntryID`), which is where a circuit
