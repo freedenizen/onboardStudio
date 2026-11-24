@@ -65,7 +65,7 @@ final class CoachingUITests: OnboardStudioUITestCase {
         XCTAssertTrue(byPosition.waitForExistence(timeout: Self.timeout), "No Line up by position toggle")
         byPosition.click()
         let positioned = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value CONTAINS %@", "by position"),
+            predicate: NSPredicate(format: "value CONTAINS %@", "by where the car was on the track"),
             object: app.staticTexts["coaching.alignment"])
         XCTAssertEqual(XCTWaiter().wait(for: [positioned], timeout: Self.timeout * 2), .completed)
         menu("Edit", "Undo Change Coaching Alignment")
