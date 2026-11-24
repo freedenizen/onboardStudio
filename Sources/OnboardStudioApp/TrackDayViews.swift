@@ -50,6 +50,19 @@ struct TrackDayHeader: View {
                     .accessibilityIdentifier("trackday.header.remove")
             }
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+                // The date can be put right after the day exists (#654): a day begun with New
+                // Track Day… has whatever date was typed, and there was no way to change it short
+                // of removing the day.
+                GridRow(alignment: .firstTextBaseline) {
+                    Text("Date").foregroundStyle(.secondary)
+                    DatePicker("Date", selection: dateBinding, displayedComponents: .date)
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .fixedSize()
+                        .help("The day this was driven. Its sessions keep the dates their own files gave them")
+                        .accessibilityLabel("Date")
+                        .accessibilityIdentifier("trackday.header.date")
+                }
                 GridRow(alignment: .firstTextBaseline) {
                     Text("Circuit").foregroundStyle(.secondary)
                     circuitRow
@@ -103,6 +116,20 @@ struct TrackDayHeader: View {
     }
 
     private var sessionCount: Int { sessions.count }
+
+    /// The day's date, saved as a day (not a time) when another is chosen: one step of Undo,
+    /// "Change Date".
+    private var dateBinding: Binding<Date> {
+        Binding(
+            get: { day.date },
+            set: { chosen in
+                let start = TrackDay.startOfDay(chosen)
+                guard start != day.date else { return }
+                var changed = day
+                changed.date = start
+                save(changed)
+            })
+    }
 
     /// Where the day was driven, which can be named or corrected after the day exists (#455): a
     /// day made for files from a place the catalogue does not know begins with no circuit, and
