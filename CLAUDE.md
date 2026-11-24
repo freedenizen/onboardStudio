@@ -81,8 +81,9 @@ swift run onboard bench --export --codec hevc --seconds 60
   whose Swift 6.3 failed to compile what Swift 6.4 builds. The `.build` cache is keyed on the Xcode
   version, and `.github/actionlint.yaml` names the label, which actionlint does not know yet.
 - The nightly workflow (`.github/workflows/nightly.yml`) runs what a PR does not wait for:
-  the ffprobe-backed media tests, `onboard render` on the fixture, an unsigned bundle and the
-  bench against a budget; red opens the `nightly-red` issue.
+  the ffprobe-backed media tests, `onboard render` on the fixture, an unsigned bundle, the
+  command-line archive as a release packs it (`Scripts/make-cli-archive.sh`) and the bench
+  against a budget; red opens the `nightly-red` issue.
 - **A release that adds features (`vX.Y.0`) is followed by the new-user review**
   (`/new-user-review <version>`, `docs/new-user-review.md`): the published DMG, only the
   documentation a user is given, real track days, by computer use on a copy that starts as a first

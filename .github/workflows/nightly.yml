@@ -64,6 +64,10 @@ jobs:
           PY
       - name: Unsigned app bundle
         run: brew install xcodegen && Scripts/bundle-app.sh && test -d dist/OnboardStudio.app
+      # The archive a release publishes, unpacked and run: two releases shipped an `onboard` that
+      # could read no file, because only the release built the archive and nothing ran it (#662).
+      - name: The command-line tool, packed as a release packs it
+        run: Scripts/make-cli-archive.sh nightly
       - name: Coverage report
         run: |
           # The same script as CI's push to main: Swift 6.4 builds an .xctest per test target, and

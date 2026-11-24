@@ -80,10 +80,9 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: Scripts/make-appcast.sh
+      # With its resource bundles, and run from the archive before it is published (#662).
       - name: CLI tarball
-        run: |
-          swift build -c release --product onboard
-          tar -C .build/release -czf dist/onboard-cli-${{ github.ref_name }}-macos.tar.gz onboard
+        run: Scripts/make-cli-archive.sh "$GITHUB_REF_NAME"
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
