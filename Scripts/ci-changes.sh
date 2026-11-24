@@ -9,7 +9,8 @@
 # Both print `key=value` lines, the form $GITHUB_OUTPUT takes:
 #
 #   code   true when Lint and Test must run: anything changed outside the documentation
-#   app    true when the UI tests must run: the app, the tests or their plumbing changed
+#   app    true when the UI tests must run: the app, a library it links, the fixtures, the
+#          tests or their plumbing changed
 #   draft  true for a draft pull request, which waits for all of them (#237)
 #   why    the reason, for the log
 #
@@ -23,35 +24,55 @@ cd "$(dirname "$0")/.."
 # Scripts/ or .github/ belongs here, whatever its extension.
 documentation='^(docs/|\.claude/|[^/]+\.md$|LICENSE$)'
 
-# What the UI tests are built from. ci.yml and this script are in the list because the
-# build-once/shard plumbing and the decision to run it live in them: a change to either that
-# skipped the suite would be a change to the UI tests that the UI tests never saw (#142).
-app='^(Sources/OnboardStudioApp/|UITests/|project\.yml$|\.github/workflows/ci\.yml$|Scripts/ci-changes\.sh$)'
+# What the UI tests are built from: the app, every library it links, the fixture files the tests
+# open, the tests and the package they resolve. Until #695 a library was not in the list, and a
+# change to `ProjectModel` alone reordered the Logbook's sessions, broke two UI tests and merged
+# green: nothing ran them until the next pull request that touched the app, which failed as if it
+# had done it (#693). ci.yml and this script are here because the build-once/shard plumbing and
+# the decision to run it live in them: a change to either that skipped the suite would be a
+# change to the UI tests that the UI tests never saw (#142).
+app='^(Sources/|Tests/Fixtures/|UITests/|Package\.(swift|resolved)$|project\.yml$|\.github/workflows/ci\.yml$|Scripts/ci-changes\.sh$)'
 
-# True when project.yml changed between the two commits in its version line and nowhere else.
-# A release's version bump is that one line, and the app the UI tests drive does not differ by
-# it: before this, a three-line release commit ran the whole suite (#536).
+# The one target under Sources/ that the app does not link: the `onboard` tool's own commands.
+command_line='^Sources/OnboardStudioCLI/'
+
+# The line a release's version bump changes in each file it touches, as a pattern; nothing for
+# any other file.
+version_line() {
+  case "$1" in
+    project.yml) echo 'MARKETING_VERSION:' ;;
+    Sources/ProjectModel/Version.swift) echo 'public static let marketing =' ;;
+  esac
+}
+
+# True when <path> changed between the two commits in its version line and nowhere else. A
+# release's version bump is that one line in each of two files, and the app the UI tests drive
+# does not differ by it: before this, a three-line release commit ran the whole suite (#536).
 only_the_version_changed() {
-  local lines
-  lines=$(git diff -U0 "$1" "$2" -- project.yml | grep -E '^[+-]' | grep -vE '^(\+\+\+|---) ' || true)
-  [ -n "$lines" ] && ! grep -qvE '^[+-][[:space:]]*MARKETING_VERSION:' <<<"$lines"
+  local line lines
+  line=$(version_line "$3")
+  [ -n "$line" ] || return 1
+  lines=$(git diff -U0 "$1" "$2" -- "$3" | grep -E '^[+-]' | grep -vE '^(\+\+\+|---) ' || true)
+  [ -n "$lines" ] && ! grep -qvE "^[+-][[:space:]]*$line" <<<"$lines"
 }
 
 # `base...head`, not `base..head`: what the branch itself changed. Against a base that has moved
 # on, two dots would also list everything main gained since, and a documentation change would
 # look like a change to the code.
 classify() {
-  local base=$1 head=$2 paths code=false needs_app=false why
+  local base=$1 head=$2 paths path code=false needs_app=false why
   paths=$(git diff --name-only "$base...$head")
   if grep -qvE "$documentation" <<<"$paths"; then code=true; fi
   if [ -z "$paths" ]; then code=true; fi
-  if grep -E "$app" <<<"$paths" | grep -qv '^project\.yml$'; then
-    needs_app=true
-  elif grep -q '^project\.yml$' <<<"$paths" && ! only_the_version_changed "$base" "$head"; then
-    needs_app=true
-  fi
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    if ! only_the_version_changed "$base" "$head" "$path"; then
+      needs_app=true
+      break
+    fi
+  done < <(grep -E "$app" <<<"$paths" | grep -vE "$command_line" || true)
   if [ "$needs_app" = true ]; then
-    why="the app, the UI tests or their plumbing changed"
+    why="the app, a library it is built from, the UI tests or their plumbing changed"
   elif [ "$code" = true ]; then
     why="nothing the UI tests are built from changed"
   else
