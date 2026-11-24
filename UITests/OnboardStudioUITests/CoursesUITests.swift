@@ -9,6 +9,10 @@ final class CoursesUITests: OnboardStudioUITestCase {
         testing("Add Fixture Autocross to Logbook")
         let done = app.buttons["trackday.done"]
         XCTAssertTrue(done.waitForExistence(timeout: Self.timeout * 3), "No Add Track Day sheet")
+        // The report, not the reading: pressed while the file is read, the button sends the
+        // sheet away and it comes back over the project (#664).
+        XCTAssertTrue(
+            app.staticTexts["trackday.summary"].waitForExistence(timeout: Self.timeout * 3), "No import report")
         done.click()
 
         menu("Window", "Logbook")

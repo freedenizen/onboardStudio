@@ -259,7 +259,7 @@ struct LogbookWindow: View {
             // The session, the view and the window's actions, for the menu bar (#450).
             .focusedSceneValue(\.logbook, commandContext)
             .sheet(item: $model.trackDayRequest) { request in
-                TrackDayImportSheet(editor: active.editor, request: request, undo: undoManager)
+                TrackDayImportSheet(editor: active.editor, request: request, undo: undoManager, home: .logbook)
                     .onDisappear { model.reload() }
             }
             .sheet(
@@ -313,6 +313,7 @@ struct LogbookWindow: View {
             content
                 .frame(minWidth: 460, minHeight: 420)
                 .navigationSplitViewColumnWidth(min: 460, ideal: 660)
+                .safeAreaInset(edge: .bottom, spacing: 0) { ImportActivityBar() }
                 .toolbar(id: "logbook") { logbookToolbar }
                 .searchable(text: $search, placement: .toolbar, prompt: "Circuit, car, driver, notes")
                 .searchFocused($searchFocused)

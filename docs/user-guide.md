@@ -186,6 +186,15 @@ While the files are read, the sheet says which one of how many it is on (*Readin
 bar that fills; a camera's recording in several chapters counts as one. A long recording can stand
 there for some seconds.
 
+You need not wait for it. **Continue in Background** puts the sheet away and the files go on being
+read: a bar along the foot of the Logbook's sessions says which file of how many, and **Show
+Progress** there brings the sheet back. When the files are in, the sheet comes back by itself with
+its report — or with its question, if some files are from another day — on the window you added
+them from. If another sheet is open on that window just then, the report waits for it to go, and
+the bar says *The files are in the logbook* with **Show Report**. Files added while others are
+still being read wait their turn. Quitting stops the reading: the files read so far are in the
+logbook, and adding the folder again adds the rest.
+
 When the files are in, its first line counts what was added: *9 sessions added, 3 of them from
 camera recordings with no logger session, 9 clips*. The sessions counted are the rows the Logbook
 then shows, so a recording that was read as a session of its own (see [the day's
