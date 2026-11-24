@@ -97,4 +97,58 @@ struct CircuitBriefTests {
         #expect(library.definition(id: "Q1")?.name == "Stadium", "the definition stays")
         try library.forgetPlan(id: "Q9")
     }
+
+    // MARK: - A session whose file gives no date (#656)
+
+    /// A clip with no clock, added with a day's files months after the day: it is on that day, and
+    /// was counted as a second visit on the day of the import.
+    @Test func aSessionWithNoDateCountsOnTheDayItIsOnNotTheDayItWasAdded() throws {
+        // A day is the day of the Mac's own calendar, as `TrackDay` keeps it.
+        let local = Calendar(identifier: .gregorian)
+        let driven = try #require(local.date(from: DateComponents(year: 2026, month: 9, day: 20, hour: 11)))
+        let imported = try #require(local.date(from: DateComponents(year: 2026, month: 11, day: 22, hour: 21)))
+        let day = TrackDay(date: TrackDay.startOfDay(driven), trackName: "Stadium")
+        var logged = Self.session("a", on: driven, best: 60.0)
+        logged.trackDayID = day.id
+        logged.dayDate = day.date
+        var clip = LogbookEntry(
+            file: .init(path: "/d/clip.mp4", contentHash: "clip", byteCount: 1, importerID: "x"), trackName: "Stadium",
+            date: nil, trackDayID: day.id, added: imported)
+        #expect(clip.when == imported, "on no day it knows of, it is still counted when it was added")
+        #expect(CircuitBrief.make(entries: [logged, clip], circuitKey: "Stadium", calendar: local).visits == 2)
+        clip.dayDate = day.date
+        #expect(clip.when == day.date && clip.year == 2026)
+
+        let brief = CircuitBrief.make(entries: [logged, clip], circuitKey: "Stadium", calendar: local)
+        #expect(brief.visits == 1)
+        let last = try #require(brief.lastVisit)
+        #expect(last.date == day.date && last.sessions == 2 && last.best == 60.0)
+        #expect(PersonalBests.trackDays(in: [logged, clip], circuitKey: "Stadium", calendar: local) == 1)
+        #expect(SeasonSummary.make(entries: [logged, clip], year: 2026).trackDays == 1)
+    }
+
+    /// The logbook fills the day's date in as it reads an entry, and never writes it.
+    @Test func theLogbookReadsEachSessionWithTheDateOfItsDay() throws {
+        let logbook = Logbook(
+            directory: FileManager.default.temporaryDirectory.appending(path: "daydate-\(UUID().uuidString)"))
+        defer { try? FileManager.default.removeItem(at: logbook.directory) }
+        let day = TrackDay(date: TrackDay.startOfDay(Self.date(9, 20)), trackName: "Stadium")
+        try logbook.saveDay(day)
+        let clip = LogbookEntry(
+            file: .init(path: "/d/clip.mp4", contentHash: "clip", byteCount: 1, importerID: "x"), trackName: "Stadium",
+            date: nil, trackDayID: day.id, added: Self.date(11, 22))
+        let loose = LogbookEntry(
+            file: .init(path: "/d/loose.csv", contentHash: "loose", byteCount: 1, importerID: "x"), date: nil,
+            added: Self.date(11, 22))
+        try logbook.save(clip)
+        try logbook.save(loose)
+
+        let read = logbook.entries()
+        #expect(read.first { $0.id == clip.id }?.dayDate == day.date)
+        #expect(read.first { $0.id == clip.id } == logbook.entry(id: clip.id), "read alone, it is the same entry")
+        #expect(read.first { $0.id == loose.id }?.dayDate == nil)
+        #expect(read.first?.id == clip.id, "listed by its day's date, before a session with none at all")
+        let file = try String(contentsOf: logbook.url(for: clip.id), encoding: .utf8)
+        #expect(!file.contains("dayDate"))
+    }
 }

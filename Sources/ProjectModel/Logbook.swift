@@ -162,6 +162,10 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     /// session is looked up once and not again on every launch.
     public var weatherLookedUp: Date?
     public var added: Date
+    /// The date of the track day the session is on, filled in when the logbook reads the entry
+    /// and never written to its file (#656). What `when` falls back on for a session whose file
+    /// gives no date: it was driven on the day it is on, not on the day it was added.
+    public var dayDate: Date?
     public var modified: Date
 
     public init(
@@ -250,9 +254,6 @@ public struct LogbookEntry: Identifiable, Hashable, Codable, Sendable {
     public var namedCircuit: String {
         course == nil && LogbookFilter.venueKey(of: self).isEmpty ? "" : circuitTitle
     }
-
-    /// The year the session was driven, for grouping; `nil` when the date is unknown.
-    public var year: Int? { date.map { Calendar(identifier: .gregorian).component(.year, from: $0) } }
 
     /// The file, wherever it is now: the bookmark first, the path when the bookmark fails.
     public func resolveFile() -> URL? {
@@ -397,14 +398,24 @@ public struct Logbook: Sendable {
         let contents =
             (try? FileManager.default.contentsOfDirectory(
                 at: directory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])) ?? []
+        let dayDates = Dictionary(days().map { ($0.id, $0.date) }) { first, _ in first }
         return
             contents
             .filter { $0.pathExtension == Self.fileExtension }
             .compactMap { try? Self.read(from: $0) }
-            .sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
+            .map { entry in
+                var entry = entry
+                entry.dayDate = entry.trackDayID.flatMap { dayDates[$0] }
+                return entry
+            }
+            .sorted { ($0.date ?? $0.dayDate ?? .distantPast) > ($1.date ?? $1.dayDate ?? .distantPast) }
     }
 
-    public func entry(id: UUID) -> LogbookEntry? { try? Self.read(from: url(for: id)) }
+    public func entry(id: UUID) -> LogbookEntry? {
+        guard var entry = try? Self.read(from: url(for: id)) else { return nil }
+        entry.dayDate = entry.trackDayID.flatMap { day(id: $0) }?.date
+        return entry
+    }
 
     /// The entry made from a file with these bytes, if any: how the same file is never added twice.
     public func entry(forContentHash hash: String) -> LogbookEntry? {

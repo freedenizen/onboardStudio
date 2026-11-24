@@ -40,7 +40,7 @@ public struct TrendsFilter: Hashable, Sendable {
     }
 
     public static func choices(in entries: [LogbookEntry]) -> Choices {
-        let ordered = entries.sorted { ($0.date ?? $0.added) < ($1.date ?? $1.added) }
+        let ordered = entries.sorted { $0.when < $1.when }
         func distinct(_ values: [String]) -> [String] {
             values.reduce(into: [String]()) { kept, value in
                 let trimmed = value.trimmingCharacters(in: .whitespaces)

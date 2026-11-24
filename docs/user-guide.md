@@ -189,7 +189,10 @@ before it. It says too which of your [goals](#goals) the new sessions reached, o
 they came. **Show Trends** beside **Done** opens that circuit's Trends in the Logbook, the circuit
 chosen in the sidebar. After a first session somewhere, or files from several circuits at once, it
 is **Show Season** instead. Sessions that name no circuit are not counted as a visit anywhere, so
-they get no line.
+they get no line. A session whose file gives no date — a camera clip with no clock, read as a
+session of its own — counts on the day it is on: in the circuit's visits and its last visit, in
+Trends, in the Season and under its year in the sidebar. It is not a visit of its own on the day
+you added it.
 
 On a first import there is no earlier session and no day's car to take a car from, so the sheet
 says no car is set for the new day (or *the 3 new days*) and asks what was driven: type it, or pick

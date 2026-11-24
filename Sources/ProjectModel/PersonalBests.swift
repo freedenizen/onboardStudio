@@ -55,14 +55,15 @@ public enum PersonalBests {
     }
 
     /// How many track days the logbook has at the circuit (#426): the days it was driven, however
-    /// many sessions each, by the day it was entered when a file carries no date.
+    /// many sessions each. A session whose file carries no date counts on the day it is on (#656),
+    /// and by the day it was entered only when it is on none.
     public static func trackDays(
         in entries: [LogbookEntry], circuitKey: String? = nil, calendar: Calendar = .current
     ) -> Int {
         if let circuitKey, circuitKey.isEmpty { return 0 }
         return Set(
             entries.filter { entry in circuitKey.map { LogbookFilter.circuitKey(of: entry) == $0 } ?? true }
-                .map { calendar.startOfDay(for: $0.date ?? $0.added) }
+                .map { calendar.startOfDay(for: $0.when) }
         ).count
     }
 
@@ -77,7 +78,9 @@ public enum PersonalBests {
     /// `.former` for one since beaten. Sessions are taken in date order, undated ones last; a lap
     /// that only equals the best does not take it.
     public static func badges(in entries: [LogbookEntry]) -> [UUID: PersonalBestBadge] {
-        let ordered = entries.sorted { ($0.date ?? .distantFuture, $0.added) < ($1.date ?? .distantFuture, $1.added) }
+        let ordered = entries.sorted {
+            ($0.date ?? $0.dayDate ?? .distantFuture, $0.added) < ($1.date ?? $1.dayDate ?? .distantFuture, $1.added)
+        }
         var bestSoFar: [String: (seconds: Double, holder: UUID)] = [:]
         var setters = Set<UUID>()
         for entry in ordered {

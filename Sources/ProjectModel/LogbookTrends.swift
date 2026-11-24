@@ -86,10 +86,10 @@ public enum LogbookTrends {
             LogbookFilter.circuitKey(of: entry) == circuitKey
                 && (car.map { $0.isEmpty || entry.car.caseInsensitiveCompare($0) == .orderedSame } ?? true)
         }
-        .sorted { ($0.date ?? $0.added) < ($1.date ?? $1.added) }
+        .sorted { $0.when < $1.when }
         .map { entry in
             Point(
-                entryID: entry.id, date: entry.date ?? entry.added, car: entry.car, best: entry.bestLap,
+                entryID: entry.id, date: entry.when, car: entry.car, best: entry.bestLap,
                 optimal: entry.optimalLap, rolling: entry.fastestRollingLap, spread: lapSpread(of: entry),
                 corners: entry.corners)
         }

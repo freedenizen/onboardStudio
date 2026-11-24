@@ -49,7 +49,7 @@ public struct SeasonSummary: Sendable, Equatable {
     }
 
     public static func year(of entry: LogbookEntry) -> Int {
-        Calendar(identifier: .gregorian).component(.year, from: entry.date ?? entry.added)
+        Calendar(identifier: .gregorian).component(.year, from: entry.when)
     }
 
     /// The season `year` (in `car`, when given), with the circuits' open plans from `plans`.
@@ -61,7 +61,7 @@ public struct SeasonSummary: Sendable, Equatable {
             Self.year(of: entry) == year
                 && (car.map { $0.isEmpty || entry.car.caseInsensitiveCompare($0) == .orderedSame } ?? true)
         }
-        let days = Set(entries.map { calendar.startOfDay(for: $0.date ?? $0.added) })
+        let days = Set(entries.map { calendar.startOfDay(for: $0.when) })
         let distances = entries.compactMap(\.distanceMeters)
         let setters = PersonalBests.entriesSettingBests(in: all)
         var bests: [CircuitBest] = []

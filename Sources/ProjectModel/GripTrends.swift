@@ -29,14 +29,14 @@ public enum GripTrends {
             LogbookFilter.circuitKey(of: entry) == circuitKey
                 && (car.map { $0.isEmpty || Garage.same(entry.car, $0) } ?? true)
         }
-        .sorted { ($0.date ?? $0.added) < ($1.date ?? $1.added) }
+        .sorted { $0.when < $1.when }
         .compactMap { entry in
             let adjustment = Garage.car(named: entry.car, in: cars)?.gripAdjustment ?? 1
             guard let limit = CarGrip.limit(for: entry, among: learning, adjustment: adjustment),
                 let use = entry.gripUse(against: limit)
             else { return nil }
             return Point(
-                entryID: entry.id, date: entry.date ?? entry.added, meanUsed: use.meanUsed,
+                entryID: entry.id, date: entry.when, meanUsed: use.meanUsed,
                 nearLimit: use.nearLimit,
                 gaps: use.corners.filter { ($0.gap?.lowestUsed ?? 1) < options.gapBelow }.count)
         }
