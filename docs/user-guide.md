@@ -1666,7 +1666,9 @@ When a lap has video, **Picture** above the map shows it at the cursor: in a pro
 own picture with its overlays, from where the data's sync puts it; for a Logbook session, the day's
 clip that the camera's clock puts the lap in. **Play** runs it from the cursor and the cursor follows
 round every trace; **Pause** stops it. With more than one chosen lap filmed, the pop-up beside Play
-chooses whose picture; **Panels ▸ Picture** hides it.
+chooses whose picture; **Panels ▸ Picture** hides it. The picture, the map and the friction circle
+are one column that scrolls when the window is shorter than the three, as the traces beside them
+do.
 
 The same view is in two more places. In the **Coaching** window, **Data** beside *Walkthrough* and
 *All Corners* starts on the lap being coached against Coaching's reference lap. In the **Logbook**,
