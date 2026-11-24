@@ -38,6 +38,17 @@ Untick *Open the Logbook at launch* in **Settings ▸ Logbook** to start on a bl
 **Window ▸ Logbook** (⌃⌘L) brings it back. **Help ▸ Open the Sample Project** opens a short clip
 with a synthetic log if you just want to poke around.
 
+**Coming back to it.** The Logbook opens where you left it: on the day, circuit, car or year
+chosen in the sidebar, in the view it was showing (Sessions, Trends, Season or Analysis), with the
+session that was selected selected again. That holds at every launch and when the window is closed
+and opened again. Something that has since been removed gives way to All Sessions.
+
+Projects follow the Mac's own setting, as documents do in Pages: with **System Settings ▸ Desktop &
+Dock ▸ Close windows when quitting an application** turned off, the projects that were open when
+you quit reopen at the next launch; with it on, which is how a Mac is set to begin with, they do
+not, and are in **File ▸ Open Recent**. Either way a project with changes you have not saved asks
+about them before the app quits.
+
 ### From a track day to a video
 
 1. **Begin the day.** **New Track Day…** in the toolbar (⌥⌘N): the date, the circuit, the car.

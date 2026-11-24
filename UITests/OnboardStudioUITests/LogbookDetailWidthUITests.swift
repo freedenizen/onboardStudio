@@ -108,4 +108,30 @@ final class LogbookDetailWidthUITests: OnboardStudioUITestCase {
         showASessionsDetail()
         XCTAssertEqual(detailWidth, left, accuracy: 2, "The next launch lost the width")
     }
+
+    /// #701: after a quit the Logbook opened on All Sessions with nothing selected. It comes back
+    /// on the view and the session it was left on.
+    @MainActor
+    func testTheLogbookComesBackOnTheViewAndSessionItWasLeftOn() throws {
+        let logbook = FileManager.default.temporaryDirectory
+            .appending(path: "onboard-uitests-logbook-\(UUID().uuidString)").path
+        launch(logbook: true, environment: ["ONBOARD_TEST_LOGBOOK_DIR": logbook])
+        showASessionsDetail()
+        choose("Trends")
+        let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch
+        XCTAssertTrue(table.waitForNonExistence(timeout: Self.timeout), "Trends still shows the table of sessions")
+
+        // The same logbook, and what the app kept of the window: the store the tests' launches
+        // empty is the one the place is kept in.
+        app.terminate()
+        launch(
+            logbook: true, extraArguments: ["-keepPaneWidths", "YES"],
+            environment: ["ONBOARD_TEST_LOGBOOK_DIR": logbook])
+        XCTAssertTrue(app.windows["Logbook"].waitForExistence(timeout: Self.timeout))
+        // No row is clicked: the session's detail is there because the session is selected again.
+        XCTAssertTrue(detail.waitForExistence(timeout: Self.timeout), "The session selected before is not selected")
+        XCTAssertFalse(table.exists, "The Logbook came back on Sessions, not on Trends")
+        choose("Sessions")
+        XCTAssertTrue(table.waitForExistence(timeout: Self.timeout), "No table of sessions")
+    }
 }

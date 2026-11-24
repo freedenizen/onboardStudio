@@ -115,6 +115,18 @@ with it, and of two items on one key a dimmed one listed first blocks the other 
 project and Coach… in the Logbook, and why ⌘⌫ removes a session only while the table has the
 keyboard. The toolbar is customizable (`.toolbar(id: "logbook")` over the list, `"logbook.session"` over the session).
 
+The window comes back where it was (#701). `LogbookPlace` (ProjectModel) is the sidebar's
+choice, the view and the sessions selected; `LogbookPlaceKeeper`, in the window's background,
+writes it to the preferences (`logbook.place`) as any of them changes and puts it back once the
+model has read the logbook (`hasLoaded`), through `resolved(in:days:cars:)`, which lets go of
+whatever is no longer there. It is the preferences rather than `@SceneStorage` because scene
+storage is thrown away at a clean quit when macOS is set to close windows, which is the setting
+a Mac starts with; the view was scene storage, and came back only after a crash. A place another
+part of the app has already sent the window to — an import report's **Show Trends** — is not
+restored over. Projects are left to AppKit's own state restoration. Under the UI tests the place
+is kept in the store the panes' widths use (`UITestSupport.paneDefaults`), emptied at launch
+unless `-keepPaneWidths YES`.
+
 The detail keeps the width it was dragged to (#483). SwiftUI's `HSplitView`, where the detail
 was until #503, has no autosave name and puts a pane back at its minimum width every time it
 returns — after a visit to Trends, after the selection is lost and made again, at the next launch
