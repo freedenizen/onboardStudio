@@ -137,6 +137,16 @@ extension EditorModel {
     /// app's, the file's, the region's.
     func speedUnit(for object: DisplayObject) -> SpeedDisplayUnit { speedUnit(for: object, in: project) }
 
+    /// Every edit of the project goes through here: one undo step, named for the Edit menu.
+    /// An edit that changes the unit a speed is drawn in takes its scale along, in that step (#668).
+    func edit(_ name: String, _ change: (inout Project) -> Void) {
+        document.apply(undoManager, name: name) { [shown = shownSpeedUnits] project in
+            change(&project)
+            reshowSpeedScales(in: &project, from: shown)
+        }
+        syncFromDocument()
+    }
+
     /// The unit each speed dial and bar is drawn in now, to compare with after an edit (#668).
     var shownSpeedUnits: [DisplayObjectID: SpeedDisplayUnit] {
         Dictionary(project.speedScaleObjects.map { ($0.id, speedUnit(for: $0)) }) { first, _ in first }

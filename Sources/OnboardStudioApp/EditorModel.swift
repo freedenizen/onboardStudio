@@ -150,16 +150,7 @@ final class EditorModel {
     /// Inputs whose files could not be loaded, with the reason.
     var problems: [InputID: String] { loaded?.problems ?? [:] }
 
-    // MARK: - Editing
-
-    func edit(_ name: String, _ change: (inout Project) -> Void) {
-        // An edit that changes the unit a speed is drawn in takes its scale along, in one step (#668).
-        document.apply(undoManager, name: name) { [shown = shownSpeedUnits] project in
-            change(&project)
-            reshowSpeedScales(in: &project, from: shown)
-        }
-        syncFromDocument()
-    }
+    // MARK: - Editing (`edit` itself is in EditorModel+Styles.swift, with what it does for speed scales)
 
     /// A data input added by the user that should be synced from timestamps once it has loaded.
     var pendingAutoSync: InputID?
