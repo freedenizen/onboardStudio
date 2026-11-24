@@ -91,8 +91,10 @@ struct GettingStartedSection: View {
                                 .foregroundStyle(step.done ? .secondary : .primary)
                             if !step.done {
                                 Text(step.detail).font(.caption).foregroundStyle(.secondary)
-                                Button(Self.label(for: step.action)) { Self.perform(step.action, in: editor) }
-                                    .controlSize(.small).padding(.top, 2)
+                                StepButtons(
+                                    editor: editor, step: step, identifier: "gettingStarted.action", wraps: true
+                                )
+                                .controlSize(.small).padding(.top, 2)
                             }
                         }
                         Spacer(minLength: 0)
@@ -116,6 +118,7 @@ struct GettingStartedSection: View {
         case .useEmbedded: "Use the GoPro's GPS"
         case .sync: "Synchronize…"
         case .applyTemplate: "Apply the Classic Dash Template"
+        case .mapAttributes: "Map Attributes…"
         case .export: "Export Video…"
         }
     }
@@ -132,6 +135,8 @@ struct GettingStartedSection: View {
                 editor.showSyncWizard = true
             }
         case .applyTemplate: if let template = ProjectTemplate.builtIn.first { editor.apply(template) }
+        // Opened by `StepButtons`, which has the window to open; nothing to do from here.
+        case .mapAttributes: break
         case .export: if editor.canExport { editor.showExport = true }
         }
     }
@@ -266,5 +271,43 @@ struct ShortcutsView: View {
         }
         .padding(24)
         .frame(width: 460)
+    }
+}
+
+/// A step's button — or, for gauges with nothing to draw, its two: the window where a column is
+/// mapped to what the gauge reads, and the way to take the gauges out (#658).
+struct StepButtons: View {
+    let editor: EditorModel
+    let step: GettingStartedStep
+    let identifier: String
+    /// Whether the two may go on two rows, as in the inspector, where they do not fit side by
+    /// side. In the bar over the preview they are one row: a wrapping row there took every point
+    /// of width it was offered and pushed the pane wider than the window had for it.
+    var wraps = false
+
+    var body: some View {
+        if step.action == .mapAttributes {
+            if wraps { FlowLayout { dataButtons } } else { HStack { dataButtons } }
+        } else {
+            Button(GettingStartedSection.label(for: step.action)) {
+                GettingStartedSection.perform(step.action, in: editor)
+            }
+            .accessibilityIdentifier(identifier)
+        }
+    }
+
+    /// Map Attributes… and Remove Them, neither losing the end of its name.
+    @ViewBuilder private var dataButtons: some View {
+        OpenAttributeWindowButton(
+            GettingStartedSection.label(for: step.action), identifier: identifier,
+            scope: AttributeMappingWindow.scope(for: editor)
+        )
+        .fixedSize()
+        Button(ObjectsWithoutDataWording.removeTitle(editor.objectsWithoutData.count)) {
+            editor.removeObjectsWithoutData()
+        }
+        .fixedSize()
+        .help("Take the gauges with nothing to draw out of the project; Edit ▸ Undo brings them back")
+        .accessibilityIdentifier("\(identifier).remove")
     }
 }

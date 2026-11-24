@@ -27,14 +27,13 @@ struct NextStepBar: View {
                 }
                 .layoutPriority(1)
                 Spacer(minLength: 8)
-                Button(GettingStartedSection.label(for: step.action)) {
-                    GettingStartedSection.perform(step.action, in: editor)
-                }
-                .accessibilityIdentifier("nextStep.action")
+                StepButtons(editor: editor, step: step, identifier: "nextStep.action")
                 Button("Show All Steps") {
                     editor.deselectAll()
                     editor.showInspector = true
                 }
+                // Whole, beside a step with two buttons of its own: the line of detail gives way.
+                .fixedSize()
                 .help("The Getting Started checklist, first in the project's inspector")
                 .accessibilityIdentifier("nextStep.showAll")
                 Button {
