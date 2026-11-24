@@ -23,13 +23,10 @@ final class AccessibilityUITests: OnboardStudioUITestCase {
             return true
         }
         XCTAssertEqual(unnamed, [], "Controls VoiceOver cannot name")
-        // The toolbar's menus in particular were read by their symbols' names. macOS 26 gives a
-        // toolbar menu's name as its label; macOS 27 as its title, with the label empty (#509).
-        // VoiceOver says whichever it has.
-        for (identifier, name) in [("toolbar.addObject", "Add Object"), ("toolbar.layout", "Layout")] {
-            let menu = app.menuButtons[identifier]
-            XCTAssertEqual(menu.label.isEmpty ? menu.title : menu.label, name, "\(identifier) is not named")
-        }
+        // The toolbar's menus in particular were read by their symbols' names (#153), and by
+        // one of their two names still were once SwiftUI had rebuilt them (#691).
+        expectToolbarMenu("toolbar.addObject", isNamed: "Add Object")
+        expectToolbarMenu("toolbar.layout", isNamed: "Layout")
     }
 
     /// Text reads against what is behind it in the light appearance, which is what CI runners and
