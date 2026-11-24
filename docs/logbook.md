@@ -637,9 +637,13 @@ session (#397) and the same on the command line (#398).
 
 ## Performance runs (#553)
 
-`measuresPerformance: Bool?` is the session's switch; `nil` is automatic, on for a session with no
-laps and no runs (`measuresPerformanceInForce`), so a straight-line log is measured as soon as it is
-added and a track day only when asked. `performance` holds what was measured, as
+`measuresPerformance: Bool?` is the session's switch; `nil` is automatic, on for a logger's file
+with no laps and no runs (`measuresPerformanceInForce`), so a straight-line log is measured as soon
+as it is added and a track day only when asked. A camera's recording read as a session
+(`isCameraRecording`: its file is an `.mp4`, `.mov` or `.360`) is not measured unasked, wherever it
+was recorded (#677): a clip of the paddock has no laps either. Nothing is rewritten for the entries
+that were measured under the earlier rule, any session with no laps: a recording that has
+`performance` and no answer in `measuresPerformance` was measured then, and stays in force. `performance` holds what was measured, as
 `PerformanceRuns.Result`: each attempt's speed times, distance times and trap speeds keyed by
 measure, its slope and data rate, and each stop's speed, distance and time. It is written by
 `readLaps(of:)`, with the laps, so whatever reads a file again — an import, a re-reading of laps,

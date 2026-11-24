@@ -95,8 +95,10 @@ car quicker in a straight line.
 - `LogbookEntry.performance` holds the attempts and stops as numbers: each measure's seconds or
   metres, trap speeds, slope and data rate. It is written when the session is read, as laps are,
   and read again with it.
-- `LogbookEntry.measuresPerformance: Bool?` holds the switch. `nil` is automatic: on for a session
-  with no laps and no runs.
+- `LogbookEntry.measuresPerformance: Bool?` holds the switch. `nil` is automatic: on for a logger's
+  file with no laps and no runs. A camera's recording is measured only when asked (#677); one
+  measured before that rule keeps its numbers and stays measured. A project's data file is
+  unchanged: its own switch is on by itself for any file with no laps and no runs.
 - Personal bests per measure are kept per car, not per circuit. A straight line is the car's, not
   the venue's. They are read from the entries' `performance` (`PerformanceTrends`), not stored.
 - Trends has a **Performance** section keyed on the car: below the circuit's lap charts, or on its

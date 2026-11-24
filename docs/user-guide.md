@@ -338,10 +338,12 @@ venue.
 ### Performance runs: 0–60, the quarter mile and stops
 
 A session's **Performance** section times every standing start and every stop in it, as a GPS
-performance meter does. A session with no laps and no runs is measured as soon as it is added: a
-drag strip, a test road, an airfield. Any other session is measured once you turn on **Performance
-runs** beside the section's title. A track day is not measured unless asked, because every pit exit
-is a standing start too. Turning it on reads the session's file again; turning it on or off is one
+performance meter does. A session from a logger's file with no laps and no runs is measured as soon
+as it is added: a drag strip, a test road, an airfield. Any other session is measured once you turn
+on **Performance runs** beside the section's title. A track day is not measured unless asked,
+because every pit exit is a standing start too; nor is a camera's recording that came in as a
+session of its own, such as a clip of the paddock or of an out-lap cut short. A recording that was
+measured by an earlier version keeps its numbers. Turning it on reads the session's file again; turning it on or off is one
 step of Edit ▸ Undo.
 
 Each launch from standing still is a **Start**, with a column for each measure it reached:
