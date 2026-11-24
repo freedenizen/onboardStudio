@@ -150,12 +150,7 @@ final class EditorModel {
     /// Inputs whose files could not be loaded, with the reason.
     var problems: [InputID: String] { loaded?.problems ?? [:] }
 
-    // MARK: - Editing
-
-    func edit(_ name: String, _ change: (inout Project) -> Void) {
-        document.apply(undoManager, name: name, change)
-        syncFromDocument()
-    }
+    // MARK: - Editing (`edit` itself is in EditorModel+Styles.swift, with what it does for speed scales)
 
     /// A data input added by the user that should be synced from timestamps once it has loaded.
     var pendingAutoSync: InputID?

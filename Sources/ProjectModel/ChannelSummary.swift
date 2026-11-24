@@ -64,7 +64,11 @@ extension ChannelSummary {
     /// that factor — a 0…58 dial for a car that reaches 130 mph. Such a channel is left to the
     /// scale its template carries until the display-unit work (#89) puts the conversion somewhere
     /// this can ask.
-    public var isConvertedForDisplay: Bool { identifier == "speed" || identifier == "speedDelta" }
+    public var isConvertedForDisplay: Bool { Self.isSpeed(identifier) }
+
+    /// Whether the channel called `identifier` is a speed, stored in metres per second and drawn
+    /// in the unit its object shows.
+    public static func isSpeed(_ identifier: String) -> Bool { identifier == "speed" || identifier == "speedDelta" }
 
     /// A speed's range in the unit it is drawn in (#487): the stored range is in metres per
     /// second, and a scale has to be fitted in the numbers the dial will show.

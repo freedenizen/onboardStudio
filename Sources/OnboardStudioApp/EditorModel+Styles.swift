@@ -135,7 +135,35 @@ extension EditorModel {
 
     /// The unit `object` is drawn in, as the renderer resolves it: its own, the project's, the
     /// app's, the file's, the region's.
-    func speedUnit(for object: DisplayObject) -> SpeedDisplayUnit {
+    func speedUnit(for object: DisplayObject) -> SpeedDisplayUnit { speedUnit(for: object, in: project) }
+
+    /// Every edit of the project goes through here: one undo step, named for the Edit menu.
+    /// An edit that changes the unit a speed is drawn in takes its scale along, in that step (#668).
+    func edit(_ name: String, _ change: (inout Project) -> Void) {
+        document.apply(undoManager, name: name) { [shown = shownSpeedUnits] project in
+            change(&project)
+            reshowSpeedScales(in: &project, from: shown)
+        }
+        syncFromDocument()
+    }
+
+    /// The unit each speed dial and bar is drawn in now, to compare with after an edit (#668).
+    var shownSpeedUnits: [DisplayObjectID: SpeedDisplayUnit] {
+        Dictionary(project.speedScaleObjects.map { ($0.id, speedUnit(for: $0)) }) { first, _ in first }
+    }
+
+    /// Gives the speed dials and bars of `edited` whose unit is no longer the one in `shown` —
+    /// the object's own was changed, or the project's — the scale for the unit they have now.
+    func reshowSpeedScales(in edited: inout Project, from shown: [DisplayObjectID: SpeedDisplayUnit]) {
+        guard !shown.isEmpty else { return }
+        let project = edited
+        edited.reshowSpeedScales(from: shown, channels: loaded?.channelSummaries ?? [:]) {
+            speedUnit(for: $0, in: project)
+        }
+    }
+
+    /// The same for `object` as it is in `project`: this project as an edit is about to leave it.
+    func speedUnit(for object: DisplayObject, in project: Project) -> SpeedDisplayUnit {
         let app = SpeedUnitSetting(rawValue: UserDefaults.standard.value(for: Preferences.speedUnit)) ?? .automatic
         return RenderPlanner.unitResolver(
             for: object, in: project, sessions: sessions, appSpeedUnit: app, regionalSpeedUnit: .regional()
