@@ -101,7 +101,7 @@ final class DocumentationScreenshots: OnboardStudioUITestCase {
         settle()
         shoot(logbook, "logbook")
         // The same session raced in 3D (#415): the standings up and the cars a few seconds in.
-        app.buttons["logbook.replay"].click()
+        toolbarMenu("logbook.more", "Replay…")
         let replay = app.windows["Replay"]
         XCTAssertTrue(replay.waitForExistence(timeout: Self.timeout), "No Replay window")
         let standings = app.descendants(matching: .any).matching(

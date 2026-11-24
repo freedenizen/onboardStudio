@@ -453,7 +453,6 @@ struct LogbookWindow: View {
             analyse: { AnalysisWindow.open(openWindow, entry: entry) },
             exportTelemetry: { exportingTelemetry = entry },
             addToProject: { addToCurrentProject(entry) },
-            remove: { remove([entry.id]) },
             save: { model.save($0, undo: undoManager) },
             gripLimit: model.gripLimit(for: entry),
             knownCars: model.knownCars,

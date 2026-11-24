@@ -149,7 +149,6 @@ struct LogbookDetail: View {
     var analyse: () -> Void = {}
     var exportTelemetry: () -> Void = {}
     let addToProject: () -> Void
-    let remove: () -> Void
     let save: (LogbookEntry) -> Void
     /// The car's grip in the session's conditions (#558), when the logbook has read some.
     var gripLimit: CarGripLimit?
@@ -294,8 +293,13 @@ struct LogbookDetail: View {
     }
 
     /// What can be done with the session. Under the detail rather than at the end of it, so the
-    /// buttons are in view however many laps there are, and in rows that wrap, so each keeps its
+    /// buttons are in view however many laps there are, and in a row that wraps, so each keeps its
     /// whole title however narrow the pane is (#448).
+    ///
+    /// Three buttons and a menu (#681): making a video, being coached and comparing are what a
+    /// session is for, and the other six were ten buttons of one weight in four rows. Removing
+    /// the session is not among them: it is on the row's right-click menu and in the Session
+    /// menu, away from Show in Finder.
     private var actions: some View {
         VStack(alignment: .leading) {
             FlowLayout {
@@ -320,31 +324,9 @@ struct LogbookDetail: View {
                 .fixedSize()
                 .help(newProjectHelp)
                 .accessibilityIdentifier("logbook.open")
-                Button("Add to Current Project", action: addToProject)
-                    .disabled(!hasProject)
-                    .help(
-                        hasProject
-                            ? "Add this session's data file to the project in front"
-                            : "Adds this session to the project in front: open or make one first"
-                    )
-                    .accessibilityIdentifier("logbook.addToProject")
-            }
-            FlowLayout {
                 Button("Coach…", action: coach)
                     .help("Where this session's laps lost time, with no project needed")
                     .accessibilityIdentifier("logbook.coach")
-                Button("Replay…", action: replay)
-                    .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
-                    .accessibilityIdentifier("logbook.replay")
-                Button("Analyse Laps…", action: analyse)
-                    .help(
-                        "Lay up to four laps over each other: delta-T, speed, any channel, the map and the "
-                            + "friction circle"
-                    )
-                    .accessibilityIdentifier("logbook.analyse")
-                Button("Export Telemetry…", action: exportTelemetry)
-                    .help("Write the session or one lap as CSV, GPX, KML or VBO for another app")
-                    .accessibilityIdentifier("logbook.exportTelemetry")
                 Menu("Compare With") {
                     ForEach(comparisons, id: \.entry.id) { choice in
                         Button(choice.title) { compare(choice.entry) }
@@ -354,27 +336,7 @@ struct LogbookDetail: View {
                 .disabled(comparisons.isEmpty)
                 .help("Coach this session against another of the logbook's at this circuit")
                 .accessibilityIdentifier("logbook.compareWith")
-                Button("Export Coaching Debrief…", action: debrief)
-                    .disabled(clips.isEmpty)
-                    .help(
-                        clips.isEmpty
-                            ? "A debrief video needs the session's clip: assign one on its day first"
-                            : "A project laid out for a debrief from this session, with the export sheet up"
-                    )
-                    .accessibilityIdentifier("logbook.debrief")
-            }
-            FlowLayout {
-                Button("Show in Finder") {
-                    if let url = entry.resolveFile() { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-                }
-                .help("Show this session's data file in the Finder")
-                .accessibilityIdentifier("logbook.showInFinder")
-                Button("Remove from Logbook", role: .destructive, action: remove)
-                    .help(
-                        "Take this session out of the logbook; its file is not touched, and Edit ▸ Undo brings "
-                            + "it back"
-                    )
-                    .accessibilityIdentifier("logbook.remove")
+                moreMenu
             }
         }
         .controlSize(.small)
@@ -382,6 +344,45 @@ struct LogbookDetail: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
+    }
+
+    /// The rest of what a session can do, by what it is for: into a project, its laps, out to a
+    /// file, and where its file is.
+    private var moreMenu: some View {
+        Menu("More") {
+            Button("Add to Current Project", action: addToProject)
+                .disabled(!hasProject)
+                .help(
+                    hasProject
+                        ? "Add this session's data file to the project in front"
+                        : "Adds this session to the project in front: open or make one first")
+            Divider()
+            Button("Replay…", action: replay)
+                .help("Race this session's laps round the circuit in 3D, with the logbook's other laps here")
+            Button("Analyse Laps…", action: analyse)
+                .help(
+                    "Lay up to four laps over each other: delta-T, speed, any channel, the map and the friction circle")
+            Divider()
+            Button("Export Telemetry…", action: exportTelemetry)
+                .help("Write the session or one lap as CSV, GPX, KML or VBO for another app")
+            Button("Export Coaching Debrief…", action: debrief)
+                .disabled(clips.isEmpty)
+                .help(
+                    clips.isEmpty
+                        ? "A debrief video needs the session's clip: assign one on its day first"
+                        : "A project laid out for a debrief from this session, with the export sheet up")
+            Divider()
+            Button("Show in Finder") {
+                if let url = entry.resolveFile() { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            }
+            .help("Show this session's data file in the Finder")
+        }
+        .fixedSize()
+        .help(
+            "Add the session to the project in front, replay or analyse its laps, export it, or show its file "
+                + "in the Finder"
+        )
+        .accessibilityIdentifier("logbook.more")
     }
 
     /// "A new project with this session's data file, 2 clips and the Classic Dash layout; the

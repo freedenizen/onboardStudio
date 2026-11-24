@@ -21,10 +21,7 @@ final class LapAnalysisUITests: OnboardStudioUITestCase {
         let rows = table.descendants(matching: .any).matching(rowTypes)
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: Self.timeout), "No session listed")
         rows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
-        let analyse = app.buttons["logbook.analyse"]
-        XCTAssertTrue(analyse.waitForExistence(timeout: Self.timeout), "No Analyse Laps… on the session")
-        reveal(analyse)
-        analyse.click()
+        toolbarMenu("logbook.more", "Analyse Laps…")
 
         let window = app.windows["Analysis"]
         XCTAssertTrue(window.waitForExistence(timeout: Self.timeout), "No Analysis window")
