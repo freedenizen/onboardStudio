@@ -39,9 +39,9 @@ final class PrepareForACircuitUITests: OnboardStudioUITestCase {
         sonoma.click()
         XCTAssertTrue(experiment.waitForExistence(timeout: Self.timeout))
         expect(experiment, toRead: "Brake at the 2 board into turn 2")
-        menu("Edit", "Undo Change Experiment")
+        menu("Edit", "Undo Edit Plan")
         expect(experiment, toRead: "")
-        menu("Edit", "Redo Change Experiment")
+        menu("Edit", "Redo Edit Plan")
         expect(experiment, toRead: "Brake at the 2 board into turn 2")
 
         // The next day there begins at the circuit, and shows the plan until its first session.
@@ -110,7 +110,7 @@ final class PrepareForACircuitUITests: OnboardStudioUITestCase {
         app.typeKey(.escape, modifierFlags: [])
         let next = app.buttons["coaching.walkthrough.next"]
         for _ in 0..<6 where next.exists { next.click() }
-        expect(step, toRead: "Your Plan")
+        expect(step, toRead: "Plan for Next Time")
         let save = app.buttons["coaching.walkthrough.savePlan"]
         XCTAssertTrue(save.isEnabled, "Nothing to save for Sonoma")
         save.click()

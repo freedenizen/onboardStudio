@@ -130,7 +130,8 @@ struct CoachingWalkthroughView<Change: View>: View {
                 Text(opportunity.note.suggestion)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("coaching.walkthrough.suggestion")
-                Toggle("Try this next time", isOn: tryBinding(opportunity.corner.index))
+                // One name for it everywhere: the Plan for Next Time, made of things to try (#671).
+                Toggle("Add to the plan for next time", isOn: tryBinding(opportunity.corner.index))
                     .accessibilityIdentifier("coaching.walkthrough.try")
                 CornerTrafficControls(
                     corner: opportunity.corner, units: units, markTraffic: markTraffic,
@@ -159,7 +160,7 @@ struct CoachingWalkthroughView<Change: View>: View {
 
     private var planStep: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Your Plan").font(.largeTitle.weight(.semibold))
+            Text("Plan for Next Time").font(.largeTitle.weight(.semibold))
             Text(keptWhere).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let draft, !draft.experiments.isEmpty {
                 ForEach(Array(draft.experiments.enumerated()), id: \.element.id) { index, experiment in
@@ -171,7 +172,7 @@ struct CoachingWalkthroughView<Change: View>: View {
                     }
                 }
             } else {
-                Text("Nothing to try has been chosen. Go back to a corner and turn on Try this next time.")
+                Text("Nothing to try has been chosen. Go back to a corner and turn on Add to the plan for next time.")
                     .foregroundStyle(.secondary)
             }
             if let previous = source.circuitPlan, !previous.experiments.isEmpty,
@@ -282,7 +283,7 @@ struct CoachingWalkthroughView<Change: View>: View {
             let label = analysis.top.first { $0.corner.index == index }?.corner.label ?? "\(index)"
             guard let position = walkthrough.position(of: step) else { return "Turn \(label)" }
             return "Turn \(label) · \(position.number) of \(position.count)"
-        case .plan: return "Your Plan"
+        case .plan: return "Plan for Next Time"
         }
     }
 

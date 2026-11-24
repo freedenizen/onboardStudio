@@ -20,11 +20,11 @@ extension EditorModel {
     }
 
     func addExperiment(for input: Input) {
-        edit("Add Experiment") { $0.plan?.experiments.append(PlannedExperiment(cornerLabel: "", text: "")) }
+        edit("Add to Plan") { $0.plan?.experiments.append(PlannedExperiment(cornerLabel: "", text: "")) }
     }
 
     func removeExperiment(id: UUID, for input: Input) {
-        edit("Remove Experiment") { $0.plan?.experiments.removeAll { $0.id == id } }
+        edit("Remove from Plan") { $0.plan?.experiments.removeAll { $0.id == id } }
         rememberPlan(for: input)
     }
 
@@ -77,7 +77,7 @@ struct NextSessionPlanView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Next Session").font(.subheadline.weight(.semibold))
+            Text("Plan for Next Time").font(.subheadline.weight(.semibold))
             if let plan = editor.project.plan {
                 experiments(plan)
             } else {
@@ -125,7 +125,7 @@ struct NextSessionPlanView: View {
                 }
             }
             HStack {
-                Button("Add Experiment") { editor.addExperiment(for: input) }
+                Button("Add to Plan") { editor.addExperiment(for: input) }
                     .accessibilityIdentifier("coaching.plan.add")
                 if let analysis, !analysis.opportunities.isEmpty {
                     Button("Start Over") { editor.makePlan(from: analysis, lapNumber: lapNumber, for: input) }
@@ -165,16 +165,19 @@ struct ExperimentRow: View {
             Text(experiment.title).font(.callout.weight(.semibold)).frame(width: 64, alignment: .leading)
             TextField("What to try", text: $text, axis: .vertical)
                 .lineLimit(1...4)
+                // As tall as its words: above the Logbook's table the field was held to one line
+                // and each thing to try was cut off mid-sentence (#671).
+                .fixedSize(horizontal: false, vertical: true)
                 .focused($focused)
                 .onSubmit { commit(text) }
                 .onChange(of: focused) { _, isFocused in if !isFocused { commit(text) } }
-                .accessibilityLabel("Experiment \(number)")
+                .accessibilityLabel("Thing to Try \(number)")
                 .accessibilityIdentifier("coaching.plan.experiment.\(number)")
             Button(action: remove) { Image(systemName: "minus.circle") }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("Remove Experiment \(number)")
+                .accessibilityLabel("Remove Thing to Try \(number)")
                 .accessibilityIdentifier("coaching.plan.remove.\(number)")
-                .help("Remove this experiment from the plan")
+                .help("Remove this from the plan")
         }
         .onAppear { text = experiment.text }
         // The model is the truth: an undo while the field is focused must show too.

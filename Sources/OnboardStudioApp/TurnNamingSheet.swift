@@ -98,6 +98,14 @@ struct TurnNamingSheet: View {
                     .frame(width: 280, height: 300)
                 ScrollView {
                     Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
+                        // The two words are two things: a corner is a bend found on the lap, a turn
+                        // is what the circuit calls it. Unheaded, a sheet called Turns whose every
+                        // row said Corner read as one thing under two names (#671).
+                        GridRow {
+                            Text("Found on the lap").gridCellColumns(2)
+                            Text("The circuit's turn")
+                        }
+                        .font(.caption).foregroundStyle(.secondary)
                         ForEach(corners.indices, id: \.self) { index in row(index) }
                     }
                     .padding(.trailing, 4)

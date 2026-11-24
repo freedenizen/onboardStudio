@@ -1423,8 +1423,8 @@ plays the corner in the window, from a moment before the brakes go on to a momen
 this lap's, then the same corner on the lap it is compared with, when that lap was filmed too (not
 the spliced optimal lap, nor a lap from another session in the Logbook). From a project it plays
 the project's own picture, overlays and all; from the Logbook, the clips of the session's day,
-lined up by the camera's clock and the logger's. When no video covers the corner it says so. Last, **Your Plan**:
-the corners you chose, as next session's experiments in the analysis's own words, which you can
+lined up by the camera's clock and the logger's. When no video covers the corner it says so. Last, the **Plan for Next Time**:
+the corners you chose, as things to try in the analysis's own words, which you can
 edit before **Save Plan**. **Next** (Return) and **Back** (⌘[) move between the steps. The plan is
 kept for the circuit, so it is there when you prepare to go back and on the Season page, and in the
 project when there is one, undoably; from the Logbook it needs no project, only a circuit the
@@ -1450,7 +1450,7 @@ position** and they are matched by where the car was instead (undoable, saved wi
 The headline says how far behind the lap finished. Below it the **top three opportunities** are
 cards, their advice in full: which turn, how much time and in which phase (braking, entry, apex or exit), what happened
 ("Braked 22 m earlier than your best lap", "Minimum speed 4 km/h lower, 12 m later", "Coasted
-0.49 s longer") and what to try next time, phrased as an experiment. A corner you drive
+0.49 s longer") and what to try next time, phrased as something to try and see. A corner you drive
 differently every lap is told so, and asked for the same brake point first. **Show Me** puts the
 playhead where that corner's braking began on the lap being read, so the preview shows it.
 
@@ -1557,14 +1557,14 @@ facing backwards finds little.
 
 ### A plan for next session
 
-**Next session.** Under the opportunities, **Make a Plan** writes up to three experiments for next
+**Plan for Next Time.** Under the opportunities, **Make a Plan** writes up to three things to try next
 time, one per corner that cost the most, in the window's own words; edit any line to say it your
-way (Return or leaving the field keeps it), **Add Experiment** adds a line for the lap as a whole,
+way (Return or leaving the field keeps it), **Add to Plan** adds a line for the lap as a whole,
 the minus removes one, **Start Over** rewrites the plan from the current opportunities. The plan is
 saved with the project and, when the circuit is recognised, remembered for the circuit in its
 track definition — so the next project at the same circuit opens the Coaching window with **Last
 time at Sonoma you planned to try…** and **Use It Again**. Every step is one undo (*Undo Make
-Plan*, *Undo Edit Plan*, *Undo Remove Experiment*). The circuit's card in the Logbook shows the
+Plan*, *Undo Edit Plan*, *Undo Remove from Plan*). The circuit's card in the Logbook shows the
 plan again before you go back, and changes it too.
 
 ### On paper
@@ -1628,7 +1628,7 @@ before the next one: a title card with the track, the day, the best lap, the opt
 fastest rolling lap; then the corners of the coaching lap that cost the most against the reference
 (three at first; **Corners** sets how many), biggest loss first, each as a clip in your project's
 own layout from two seconds before the brake point to two seconds after the corner; then a closing
-card, *Next session, try…*, with one experiment per corner from the Coaching window's notes. The
+card, *Next session, try…*, with one thing to try per corner from the Coaching window's notes. The
 sheet lists the pieces and the running time before you start; one progress bar covers them all,
 and the pieces are joined into `<project> – Coaching Debrief.mp4` in the project's size and codec.
 **Project ▸ Apply Template ▸ Coaching Debrief** gives the clips a Corner Callout, a track map that
@@ -1821,7 +1821,9 @@ above its sessions, gathers what to take with you.
 The card says how many visits you have made, your personal best there (when, and in what car) and
 how your last visit went against it. Under **Plan for Next Time** is the plan you made in the
 Coaching window for that circuit ([A plan for next session](#a-plan-for-next-session)) — each line
-can be changed right there, **Add Experiment** adds one and the minus removes one. With no plan
+can be changed right there, **Add to Plan** adds one and the minus removes one. A line is shown in
+full, on as many rows as it needs. The card's buttons sit beside the circuit's name where there is
+room and under it in a narrow window, so their names are never cut short. With no plan
 yet, **Start a Plan** begins one from **Where the Last Visit Lost Time** — the corners where your
 last visit's best session was slowest against your best lap, with how much and whether you braked
 earlier or were slower at the apex — and **Make a Plan in Coaching…** opens Coaching on that session
@@ -1837,6 +1839,8 @@ hand the card says so.
 Out of the box the app counts a circuit's corners 1, 2, 3…, which is rarely what the circuit calls
 them. **Name Turns…** on the card draws the circuit from your best lap there, with each corner
 numbered on the map and a field for each beside it; the field you are typing in lights its corner.
+The list is headed for its two halves: on the left the corners *found on the lap*, on the right
+*the circuit's turn* for each.
 Type what the circuit calls each turn — *3a*, *Carousel*. After the one turn the circuit numbers its
 own way, **Number the Following Turns from Here** (also on a field's right-click menu) calls the
 turns after it 4, 5, 6…. Leave a kink blank: it is not one of the circuit's turns, the map does not
@@ -1877,7 +1881,7 @@ Back from the next day, the same steps close the loop:
    before and your personal best — so the corners in your plan can be checked
    ([Trends](#trends)).
 4. **Coach…** the new session, or **Compare With ▸** to read it against the last visit or your
-   personal best there. The walkthrough's **Your Plan** becomes the plan for the visit after
+   personal best there. The walkthrough's **Plan for Next Time** becomes the plan for the visit after
    ([Being coached](#4-being-coached)).
 5. **New Project** lays the session out with the template you used last time; export the best lap,
    every lap, every corner or a debrief ([Making a video](#3-making-a-video)).

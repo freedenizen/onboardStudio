@@ -28,7 +28,7 @@ extension CoachingContent {
     var makeProject: some View {
         let open = openProject
         return VStack(alignment: .leading, spacing: 6) {
-            Text("Next Session").font(.subheadline.weight(.semibold))
+            Text("Plan for Next Time").font(.subheadline.weight(.semibold))
             Text(Self.projectNeeded(openTitle: open.map { ActiveEditor.shared.window(of: $0)?.title ?? "A project" }))
                 .font(.callout).foregroundStyle(.secondary)
             if open != nil {
