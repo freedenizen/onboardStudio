@@ -24,6 +24,12 @@ final class SessionProjectNameUITests: OnboardStudioUITestCase {
         row.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
         XCTAssertTrue(sessionNewProject.waitForExistence(timeout: Self.timeout), "No detail for the session")
 
+        // The toolbar's menus are still named for what they do. The import and the choice of a
+        // session have each made SwiftUI rebuild one of them, and a rebuilt menu used to be read
+        // by its symbol: "Share" and "doc.badge.plus" (#691).
+        expectToolbarMenu("logbook.transfer", isNamed: "Export or Import")
+        expectToolbarMenu("logbook.newProject", isNamed: "New Project")
+
         // The name the Logbook gives the session, from the heading of the toolbar's New Project.
         let newProject = app.menuButtons["logbook.newProject"]
         newProject.click()

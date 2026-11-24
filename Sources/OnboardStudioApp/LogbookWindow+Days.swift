@@ -191,7 +191,7 @@ extension LogbookWindow {
             Button("Open the Sample Project") { SampleProject.open() }.disabled(
                 !SampleProject.isAvailable)
         } label: {
-            Label("New Project", systemImage: "doc.badge.plus")
+            Label(toolbarMenu: "New Project", systemImage: "doc.badge.plus")
         }
     }
 

@@ -228,7 +228,7 @@ struct ReplayWindow: View {
                     Button("Turn \(index + 1)") { model.goToCorner(index) }
                 }
             } label: {
-                Label("Go to Turn", systemImage: "arrow.turn.up.right")
+                Label(toolbarMenu: "Go to Turn", systemImage: "arrow.turn.up.right")
             }
             .disabled((model.scene?.cornerCount ?? 0) == 0)
             .accessibilityLabel("Go to Turn")
@@ -241,7 +241,7 @@ struct ReplayWindow: View {
                     Button(rate == 1 ? "Normal speed" : "\(rate.formatted())×") { model.rate = rate }
                 }
             } label: {
-                Label("Speed", systemImage: "gauge.with.needle")
+                Label(toolbarMenu: "Speed", systemImage: "gauge.with.needle", named: "Replay Speed")
             }
             .accessibilityLabel("Replay Speed")
             .help("How fast the replay runs")

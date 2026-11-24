@@ -139,6 +139,19 @@ class OnboardStudioUITestCase: XCTestCase {
         entry.click()
     }
 
+    /// A toolbar menu is called `name` by every name it has. macOS 26 gives the name as the
+    /// menu's label and macOS 27 as its title, with the label empty (#509); a menu SwiftUI has
+    /// rebuilt kept the right one of those and was called by its symbol in the other — "Share",
+    /// "doc.badge.plus" — which is what some assistive tools read (#691).
+    func expectToolbarMenu(_ identifier: String, isNamed name: String) {
+        let menu = app.menuButtons[identifier]
+        XCTAssertTrue(menu.waitForExistence(timeout: Self.timeout), "No toolbar menu \(identifier)")
+        let names = [menu.label, menu.title].filter { !$0.isEmpty }
+        XCTAssertFalse(names.isEmpty, "\(identifier) has no name")
+        XCTAssertEqual(
+            Set(names), [name], "\(identifier): label “\(menu.label)”, title “\(menu.title)”")
+    }
+
     /// Chooses an item in a pop-up found by identifier rather than by the value it happens to
     /// show, which `choose(_:inPopUpShowing:)` needs and a table of near-identical pop-ups cannot
     /// give. An item may say more after its name, as the Coaching window's laps do once they are

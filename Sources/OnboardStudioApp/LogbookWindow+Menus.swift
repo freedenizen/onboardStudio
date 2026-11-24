@@ -89,7 +89,7 @@ extension LogbookWindow {
                 // A logbook exported from this app, read back in: not data files, which are Add Files….
                 Button("Import Logbook Export…") { importLogbook() }
             } label: {
-                Label("Export or Import", systemImage: "square.and.arrow.up")
+                Label(toolbarMenu: "Export or Import", systemImage: "square.and.arrow.up")
             }
             .accessibilityLabel("Export or Import")
             .help("Take the logbook with you as files, as CSV or Markdown, or read an export back in")
