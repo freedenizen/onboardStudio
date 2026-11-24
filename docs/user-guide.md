@@ -28,7 +28,9 @@ days, circuits and cars on the left, a day's sessions in the middle, the chosen 
 right.
 
 The first time, the Logbook shows a three-step tour of its sidebar, its sessions and the session's
-detail (**Help ▸ Take the Tour** repeats it while the Logbook is in front). While no session is
+detail (**Help ▸ Take the Tour** repeats it while the Logbook is in front). Each card sits beside
+the part of the window it is about, with an arrow towards it, and the tour ends by itself when you
+drop files on the window or begin a day. While no session is
 chosen, the detail column holds the Logbook's **Getting Started**: add a track day's files, say
 what was driven, make a video of a session, be coached through a lap, see how you are getting on —
 each ticked as you do it, with a button that does or shows it. The video is ticked once a project
