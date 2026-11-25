@@ -383,6 +383,13 @@ knows a click away, and keeps what you put there whatever the day says later. A 
 corrected in its header's **Circuit** row ([Starting a day](#starting-a-day)), a car's name with
 **Rename…** in the [garage](#the-garage-your-cars).
 
+**The date.** A day's date is in its header too, under its name: click it and choose another, or
+type one, and the day moves to that date in the sidebar (*Undo Change Date* puts it back). That is
+for a day begun with **New Track Day…** on the wrong date, and for a day made for a recording whose
+camera had no clock. The sessions keep the dates and times their own files gave them, which is what
+Trends and the Season count them by; a session whose file gave no date is counted on its day's date,
+and follows it.
+
 **Configuration.** Most circuits run more than one layout — a long course and a club course, with
 or without a chicane — and a lap of one says nothing about a lap of another. A session at a circuit
 timed in laps has a **Configuration** field under its car and driver (a course timed in runs is a
