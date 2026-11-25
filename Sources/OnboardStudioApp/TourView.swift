@@ -50,7 +50,7 @@ struct TourCallouts: View {
                         if let arrow = current.arrow, arrow == "arrow.left" {
                             Image(systemName: arrow).accessibilityHidden(true)
                         }
-                        Text(current.title).accessibilityIdentifier("tour.title")
+                        Text(current.title)
                         if let arrow = current.arrow, arrow == "arrow.right" {
                             Image(systemName: arrow).accessibilityHidden(true)
                         }
