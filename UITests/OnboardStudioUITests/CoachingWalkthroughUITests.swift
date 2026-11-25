@@ -38,7 +38,7 @@ final class CoachingWalkthroughUITests: OnboardStudioUITestCase {
             "The corner does not say there is no video of it")
         XCTAssertFalse(app.buttons["coaching.walkthrough.watch"].exists, "Watch with nothing to play")
         let tryIt = app.checkBoxes["coaching.walkthrough.try"]
-        XCTAssertTrue(tryIt.exists, "No Try this next time")
+        XCTAssertTrue(tryIt.exists, "No Add to the plan for next time")
         XCTAssertEqual(tryIt.value as? Int, 1, "A corner is not chosen to try to begin with")
         tryIt.click()
         XCTAssertEqual(tryIt.value as? Int, 0)
@@ -55,7 +55,7 @@ final class CoachingWalkthroughUITests: OnboardStudioUITestCase {
 
         // The plan: only the corner still chosen, kept with the project and undoable.
         next.click()
-        expect(step, toRead: "Your Plan")
+        expect(step, toRead: "Plan for Next Time")
         let experiment = app.textFields["coaching.walkthrough.experiment.0"]
         XCTAssertTrue(experiment.waitForExistence(timeout: Self.timeout), "No experiment in the plan")
         XCTAssertEqual(experiment.value as? String, second, "The plan is not the chosen corner's advice")
@@ -118,7 +118,7 @@ final class CoachingWalkthroughUITests: OnboardStudioUITestCase {
             app.staticTexts["coaching.walkthrough.noVideo"].waitForExistence(timeout: Self.timeout),
             "A corner from the Logbook does not say there is no video of it")
         for _ in 0..<6 where next.exists { next.click() }
-        expect(step, toRead: "Your Plan")
+        expect(step, toRead: "Plan for Next Time")
         // The fixture's circuit is not one the logbook knows: it says so rather than pretending.
         let explanation = app.staticTexts.matching(NSPredicate(format: "value CONTAINS 'does not know'")).firstMatch
         XCTAssertTrue(explanation.exists, "The plan step does not say why the plan cannot be kept")

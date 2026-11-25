@@ -43,7 +43,7 @@ final class CoachingPlanUITests: OnboardStudioUITestCase {
         // Removing one and undoing it.
         app.buttons["coaching.plan.remove.2"].click()
         XCTAssertTrue(app.textFields["coaching.plan.experiment.2"].waitForNonExistence(timeout: Self.timeout))
-        menu("Edit", "Undo Remove Experiment")
+        menu("Edit", "Undo Remove from Plan")
         XCTAssertTrue(app.textFields["coaching.plan.experiment.2"].waitForExistence(timeout: Self.timeout))
 
         // And the plan itself.

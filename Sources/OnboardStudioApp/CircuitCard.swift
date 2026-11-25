@@ -29,23 +29,18 @@ struct CircuitCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.title3.weight(.semibold))
-                        .accessibilityIdentifier("circuit.card.title")
-                    Text(subtitle).font(.callout).foregroundStyle(.secondary)
-                        .accessibilityIdentifier("circuit.card.subtitle")
+            // Beside the name where there is room, else under it: side by side at the width the
+            // Logbook first opens at, the buttons lost the ends of their names and the line under
+            // the circuit's name wrapped to three (#671).
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline) {
+                    heading.fixedSize()
+                    Spacer()
+                    headerButtons
                 }
-                Spacer()
-                if let nameTurns {
-                    Button("Name Turns…", systemImage: "signpost.right", action: nameTurns)
-                        .help("Say what the circuit calls each of its turns, on your best lap here")
-                        .accessibilityIdentifier("circuit.card.nameTurns")
-                }
-                if showsNewDay {
-                    Button("New Track Day Here…", systemImage: "calendar.badge.plus", action: newDay)
-                        .help("Begin a day at \(title), before any file exists")
-                        .accessibilityIdentifier("circuit.card.newDay")
+                VStack(alignment: .leading, spacing: 6) {
+                    heading
+                    HStack { headerButtons }
                 }
             }
             if let line = lastVisitLine {
@@ -62,6 +57,31 @@ struct CircuitCard: View {
             if !brief.cornersToWorkOn.isEmpty { cornersSection }
         }
         .padding()
+    }
+
+    private var heading: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.title3.weight(.semibold))
+                .accessibilityIdentifier("circuit.card.title")
+            Text(subtitle).font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("circuit.card.subtitle")
+        }
+    }
+
+    @ViewBuilder private var headerButtons: some View {
+        if let nameTurns {
+            Button("Name Turns…", systemImage: "signpost.right", action: nameTurns)
+                .fixedSize()
+                .help("Say what the circuit calls each of its turns, on your best lap here")
+                .accessibilityIdentifier("circuit.card.nameTurns")
+        }
+        if showsNewDay {
+            Button("New Track Day Here…", systemImage: "calendar.badge.plus", action: newDay)
+                .fixedSize()
+                .help("Begin a day at \(title), before any file exists")
+                .accessibilityIdentifier("circuit.card.newDay")
+        }
     }
 
     /// "3 visits · personal best 1:42.31 on 12 Oct 2026 in a Miata".
@@ -107,18 +127,18 @@ struct CircuitCard: View {
             } else if let plan {
                 ForEach(Array(plan.experiments.enumerated()), id: \.element.id) { index, experiment in
                     ExperimentRow(experiment: experiment, number: index + 1) { text in
-                        savePlan(changing(plan, experiment.id) { $0.text = text }, "Change Experiment")
+                        savePlan(changing(plan, experiment.id) { $0.text = text }, "Edit Plan")
                     } remove: {
                         var changed = plan
                         changed.experiments.removeAll { $0.id == experiment.id }
-                        savePlan(changed, "Remove Experiment")
+                        savePlan(changed, "Remove from Plan")
                     }
                 }
                 HStack {
-                    Button("Add Experiment") {
+                    Button("Add to Plan") {
                         var changed = plan
                         changed.experiments.append(PlannedExperiment(cornerLabel: "", text: ""))
-                        savePlan(changed, "Add Experiment")
+                        savePlan(changed, "Add to Plan")
                     }
                     .accessibilityIdentifier("circuit.plan.add")
                     if let makePlan {

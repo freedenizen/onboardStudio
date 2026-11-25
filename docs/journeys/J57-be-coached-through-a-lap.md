@@ -12,7 +12,7 @@ the session had to assemble it from the parts.*
    lap's when it was filmed — from the project's picture, or from the Logbook from the day's clips;
    with no video of the corner it says so (#516). **Try this next time** is on; turn it off for a corner you will leave.
    **Back** (⌘[) goes a step back and keeps what was chosen.
-3. After the third corner, **Your Plan**: the chosen corners as experiments in the analysis's own
+3. After the third corner, the **Plan for Next Time**: the chosen corners as experiments in the analysis's own
    words, editable. **Save Plan** keeps it for the circuit — there when preparing to go back and on
    the Season page — and in the project, undoably, when there is one. From the Logbook it needs no
    project; a session whose circuit the Logbook does not know says so, and cannot keep a plan.
