@@ -34,6 +34,34 @@ struct PerformanceEntryTests {
         #expect(abs(launch.seconds - 26.8224 / 5) < 1e-6)
     }
 
+    /// #677: a clip of the paddock arrived measured, its pit-lane launches under the car's bests.
+    @Test func aCamerasRecordingIsMeasuredOnlyWhenAsked() {
+        var clip = LogbookEntry(
+            file: .init(path: "/days/GX010001.MP4", contentHash: "clip", byteCount: 1, importerID: "gopro"))
+        #expect(clip.isCameraRecording && !Self.entry().isCameraRecording)
+        #expect(!clip.measuresPerformanceInForce, "no laps, but not a logger's file")
+        clip.readPerformance(of: Self.launch)
+        #expect(clip.performance == nil, "nothing is measured unasked")
+        clip.measuresPerformance = true
+        clip.readPerformance(of: Self.launch)
+        #expect(clip.performance?.attempts.count == 1, "asked, it is measured like any session")
+        clip.measuresPerformance = false
+        #expect(!clip.measuresPerformanceInForce)
+    }
+
+    /// The recordings measured before the rule changed keep their numbers and stay measured.
+    @Test func aRecordingAlreadyMeasuredStaysMeasured() throws {
+        var before = LogbookEntry(
+            file: .init(path: "/days/GX010002.mp4", contentHash: "old", byteCount: 1, importerID: "gopro"))
+        before.performance = PerformanceRuns.measure(in: Self.launch)
+        let read = try JSONDecoder().decode(LogbookEntry.self, from: try JSONEncoder().encode(before))
+        #expect(read.measuresPerformance == nil, "nothing was asked: it was the rule then")
+        #expect(read.measuresPerformanceInForce)
+        var again = read
+        again.readPerformance(of: Self.launch)
+        #expect(again.performance == before.performance, "read again, it is measured again")
+    }
+
     @Test func aSessionWithLapsIsMeasuredOnlyWhenAsked() {
         var entry = Self.entry(laps: [.init(number: 1, seconds: 90, isComplete: true)])
         #expect(!entry.measuresPerformanceInForce)

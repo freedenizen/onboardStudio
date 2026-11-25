@@ -27,8 +27,9 @@ struct SessionPerformanceSection: View {
                 Toggle("Performance runs", isOn: switchBinding)
                     .disabled(reading)
                     .help(
-                        "Time every standing start and every stop: 0–60, the quarter mile, 60–0. "
-                            + "On by itself for a session with no laps and no runs"
+                        "Time every standing start and every stop: 0–60, the quarter mile, 60–0. On by itself "
+                            + "for a logger's file with no laps and no runs; a camera's recording is timed "
+                            + "when you turn this on"
                     )
                     .accessibilityIdentifier("logbook.performance.measure")
             }

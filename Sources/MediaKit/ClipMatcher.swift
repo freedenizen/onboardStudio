@@ -9,7 +9,7 @@ import TelemetryKit
 /// span against the day's sessions. The clocks decide; nothing about the content does.
 public enum ClipMatcher {
     /// Camera clip extensions, as the editor accepts them.
-    public static let clipExtensions: Set<String> = ["mp4", "mov", "360"]
+    public static let clipExtensions = LogbookEntry.recordingExtensions
 
     public static func isClip(_ url: URL) -> Bool { clipExtensions.contains(url.pathExtension.lowercased()) }
 
