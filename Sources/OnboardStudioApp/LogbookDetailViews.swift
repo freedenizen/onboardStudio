@@ -184,6 +184,22 @@ struct LogbookDetail: View {
     private var noun: String { entry.isRuns ? "run" : "lap" }
 
     var body: some View {
+        // The buttons under the detail, not over it. As a safe-area inset they lay on top of the
+        // scroll view, and what had scrolled beneath them was still there to a click: one aimed at
+        // the tyres field landed on Coach… (#681).
+        VStack(spacing: 0) {
+            detail
+            actions
+        }
+        .task(id: entry.id) {
+            guard entry.needsAReading else { return }
+            readingSplits = entry.needsSplitReading
+            await readSplits()
+            readingSplits = false
+        }
+    }
+
+    private var detail: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -283,13 +299,6 @@ struct LogbookDetail: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("logbook.detail")
-        .task(id: entry.id) {
-            guard entry.needsAReading else { return }
-            readingSplits = entry.needsSplitReading
-            await readSplits()
-            readingSplits = false
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) { actions }
     }
 
     /// What can be done with the session. Under the detail rather than at the end of it, so the

@@ -21,7 +21,13 @@ final class DataAlignmentUITests: OnboardStudioUITestCase {
         XCTAssertTrue(byRPM.waitForExistence(timeout: Self.timeout), "RPM is not offered")
         byRPM.click()
         expectStatus(containing: "Lined up by rpm")
+        // With the menu open, and given a moment: read at once from a closed menu, the item was
+        // still plain Undo on a slow runner (#512).
+        let edit = app.menuBars.menuBarItems["Edit"]
+        edit.click()
         XCTAssertTrue(
-            app.menuBarItems["Edit"].menus.menuItems["Undo Line Up Data File"].exists, "Not a step of Undo")
+            edit.menus.menuItems["Undo Line Up Data File"].waitForExistence(timeout: Self.timeout),
+            "Not a step of Undo")
+        app.typeKey(.escape, modifierFlags: [])
     }
 }

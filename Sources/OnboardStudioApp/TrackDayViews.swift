@@ -186,11 +186,13 @@ struct TrackDayHeader: View {
         } label: {
             HStack(spacing: 6) {
                 Text("Clips").font(.subheadline.weight(.semibold))
+                // The identifier is on the words: on the group it replaced each clip's own, and
+                // the journeys that assign a clip could no longer find it (#681).
                 Text(Self.clipSummary(count: day.clips.count, unassigned: unassigned))
                     .font(.callout).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("trackday.header.clips")
             }
         }
-        .accessibilityIdentifier("trackday.header.clips")
     }
 
     /// "9 clips, each with its session", "9 clips, 2 not assigned to a session".
