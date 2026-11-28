@@ -182,11 +182,30 @@ at once: each file goes on the day its date and circuit say, made if need be, an
 says which. Files added with no day chosen take the car of an earlier session at the same circuit,
 or the car of the day they go on when it names one.
 
+One file dated away from the rest is asked about here too. When the other dated files are all from
+one day and a file is dated another — a recording from a camera whose clock was wrong, most often —
+the sheet adds the rest, then stops: *1 of these 12 files is not from* that day, with the file's own
+date in its line. **Add to That Day** puts it on the day the other files went on, where a recording
+is matched to the session it filmed; **Put on Its Own Day** files it by its own date, as before;
+**Leave It Out** adds nothing for it. Until you answer, nothing is in the logbook for that file and
+no track day is made for it. It is asked only when there is one day it could belong to: folders
+holding several days' files are filed day by day unasked, and so is a file dated a track day the
+logbook already has. `onboard logbook add` cannot ask, and files each by its own date.
+
 ### What the import says
 
 While the files are read, the sheet says which one of how many it is on (*Reading 3 of 15*), with a
 bar that fills; a camera's recording in several chapters counts as one. A long recording can stand
 there for some seconds.
+
+You need not wait for it. **Continue in Background** puts the sheet away and the files go on being
+read: a bar along the foot of the Logbook's sessions says which file of how many, and **Show
+Progress** there brings the sheet back. When the files are in, the sheet comes back by itself with
+its report — or with its question, if some files are from another day — on the window you added
+them from. If another sheet is open on that window just then, the report waits for it to go, and
+the bar says *The files are in the logbook* with **Show Report**. Files added while others are
+still being read wait their turn. Quitting stops the reading: the files read so far are in the
+logbook, and adding the folder again adds the rest.
 
 When the files are in, its first line counts what was added: *9 sessions added, 3 of them from
 camera recordings with no logger session, 9 clips*. The sessions counted are the rows the Logbook

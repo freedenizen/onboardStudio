@@ -53,6 +53,15 @@ enum UITestSupport {
         }
     }
 
+    /// `ONBOARD_TEST_IMPORT_DELAY`: seconds an Add Files waits before it reads, so a test has time
+    /// to send its sheet away and see the Logbook say the files are being read (#664).
+    static var importDelay: Duration? {
+        guard isActive else { return nil }
+        return ProcessInfo.processInfo.environment["ONBOARD_TEST_IMPORT_DELAY"].flatMap(Double.init).map {
+            .seconds($0)
+        }
+    }
+
     /// `ONBOARD_TEST_LOGBOOK_DIR`: a scratch logbook, so a test never writes a track day into
     /// the real one. `nil` outside the UI tests.
     static var logbookDirectory: URL? {
@@ -291,6 +300,11 @@ struct UITestCommands: Commands {
                 guard let folder = UITestSupport.fixtures else { return }
                 let model = LogbookModel.shared
                 model.trackDayRequest = TrackDayRequest(urls: [folder], day: model.selectedDay)
+            }
+            // A day's files with one of them dated another day, and no day chosen (#655).
+            Button("Add Fixture Day With One File Dated Apart") {
+                let names = ["racechrono-v2.csv", "session.vbo", "track.nmea", "racechrono-v3.csv"]
+                LogbookModel.shared.trackDayRequest = TrackDayRequest(urls: names.compactMap(UITestSupport.fixture))
             }
             // A second visit to the coaching fixture's "circuit": the same file name, one row
             // shorter, so it is another session at the same place (#352).

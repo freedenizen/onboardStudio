@@ -1,4 +1,3 @@
-import AVFoundation
 import Foundation
 import Importers
 import ProjectModel
@@ -176,6 +175,10 @@ public enum TrackDayImport {
         let telemetry = files.filter { !ClipMatcher.isClip($0) }
         let count = telemetry.count + clips.count
         let batch = Batch(tracks: tracks, car: car, driver: driver, day: day, strays: strays)
+        // With no day chosen, a file dated away from the rest waits to be asked about (#655).
+        if day == nil, strays == .kept {
+            return await runApart(telemetry: telemetry, clips: clips, into: logbook, batch: batch, progress: progress)
+        }
         var reports: [Report] = []
         for (index, url) in telemetry.enumerated() {
             progress(index, count, url)
@@ -229,96 +232,5 @@ public enum TrackDayImport {
         }
         return Report(
             url: url, outcome: filed.outcome, dayLabel: label, notes: notes, madeSession: filed.madeSession)
-    }
-
-    /// A camera recording (#394): probed for its clock and length, then filed on its day — or kept
-    /// back, when a day was chosen and the clip's clock says another (#456).
-    static func importClip(_ first: URL, chapters: [URL], into logbook: Logbook, batch: Batch) async -> Filed {
-        // A video exported from a session's project, picked up with the day's folder or offered by
-        // the panel beside the footage, is the finished overlay, not that session's picture (#468).
-        let path = first.standardizedFileURL.path
-        if let source = logbook.entries().first(where: { entry in
-            entry.exports.contains { URL(fileURLWithPath: $0.path).standardizedFileURL.path == path }
-        }) {
-            return Filed(outcome: .ownExport(source))
-        }
-        do {
-            let clip = try await ClipMatcher.record(first, chapters: chapters)
-            if let existing = knownClip(clip, in: logbook) { return Filed(outcome: .clipAlreadyThere(existing)) }
-            if batch.strays == .kept, let day = batch.day, let stray = Stray(clip, at: first, against: day) {
-                return Filed(outcome: .waiting(stray))
-            }
-            return try fileClip(clip, first: first, into: logbook, batch: batch)
-        } catch {
-            return Filed(outcome: .failed(unreadableClip(first, error)))
-        }
-    }
-
-    /// Why a recording could not be read, about the file and what to do with it. The system's
-    /// own words for an empty file are "Cannot Open", which says neither (#665).
-    static func unreadableClip(_ url: URL, _ error: Error) -> String {
-        if (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize == 0 {
-            return "the file is empty; copy it from the camera's card again"
-        }
-        if (error as NSError).domain == AVFoundationErrorDomain {
-            return "macOS cannot open it as a video. It may be incomplete; copy it from the camera's card again"
-        }
-        return error.localizedDescription
-    }
-
-    /// One telemetry file: read, then filed on its day — or kept back, when a day was chosen and
-    /// the file says it is from another (#456).
-    static func importOne(_ url: URL, into logbook: Logbook, batch: Batch) -> Filed {
-        do {
-            let (hash, _) = try LogbookEntry.hash(of: url)
-            if let existing = logbook.entry(forContentHash: hash) { return Filed(outcome: .alreadyThere(existing)) }
-            guard let candidate = try FormatDetector.detect(url) else { return Filed(outcome: .notRecognised) }
-            var session = try candidate.importer.importSession(at: url, options: SessionBuilder.Options())
-            guard session[.latitude] != nil || !session.laps.isEmpty || !session.channels.isEmpty else {
-                return Filed(outcome: .noData)
-            }
-            let match = CircuitCatalog.identify(session)
-            // A clip or a phone log with no laps of its own, at a circuit whose line is known:
-            // read it again with that line, as adding it to a project would.
-            if session.laps.isEmpty, let match, let line = batch.tracks?.definition(id: match.circuit.id)?.startFinish {
-                var options = SessionBuilder.Options()
-                options.finishLine = FinishLine(
-                    latitude: line.latitude, longitude: line.longitude, headingDegrees: line.headingDegrees,
-                    halfWidthMeters: line.halfWidthMeters, headingToleranceDegrees: line.headingToleranceDegrees)
-                options.ignoreFirstCrossings = line.ignoreFirstCrossings
-                if let again = try? candidate.importer.importSession(at: url, options: options) { session = again }
-            }
-            // A file that recorded a start and a finish gate is a point-to-point course: read it
-            // again in runs between them (#552), as adding it to a project does.
-            let lines = RunLines(session.lapGeometry)
-            if let lines {
-                var settings = DataInputSettings(lapLine: lines.start, runFinishLine: lines.finish)
-                settings.importerID = candidate.id
-                if let again = try? ProjectCompiler.importData(at: url, settings: settings) { session = again }
-            }
-            // Which of the circuit's configurations it drove, from where its turns are (#549), and
-            // the names that configuration keeps for them, so its corners are read by their names.
-            // A course timed in runs is a layout of its own, not one of a circuit's configurations.
-            let kept = lines == nil ? match.map { batch.tracks?.configurations(of: $0.circuit.id) ?? [] } ?? [] : []
-            let configuration = ConfigurationMatch.configuration(of: session, among: kept)
-            if let definition = kept.first(where: { $0.configuration == configuration }) {
-                session.turnNames = definition.turnNames
-                session.cornerLabels = definition.cornerLabels
-            }
-            // As the file alone describes it; the day's circuit, car and driver come with the filing.
-            var entry = try LogbookEntry.make(
-                session: session, file: url, importerID: candidate.id, circuitID: match?.circuit.id)
-            entry.configuration = configuration
-            if lines != nil { entry.readRuns(lines, of: session, among: logbook.entries()) }
-            let reading = Reading(entry: entry, fileDriver: session.info.driverName)
-            if batch.strays == .kept, let day = batch.day, let stray = Stray(reading, at: url, against: day) {
-                // A drive the logbook has from another file is that, not a file to ask about (#465).
-                if let twin = logbook.entry(sameSessionAs: entry) { return Filed(outcome: .sameSession(twin)) }
-                return Filed(outcome: .waiting(stray))
-            }
-            return file(reading, into: logbook, batch: batch)
-        } catch {
-            return Filed(outcome: .failed(error.localizedDescription))
-        }
     }
 }

@@ -10,9 +10,24 @@ enum AppLogbook {
 /// The files and folders of one Add Track Day… (#346), and the day they go on when one was
 /// chosen (#393) — else each file goes on the day its date and circuit say.
 struct TrackDayRequest: Identifiable {
-    let id = UUID()
+    /// One showing of the sheet. An import whose sheet comes back (#664) is shown under a new
+    /// one, so the sheet is made afresh rather than taken up where a closed one left off.
+    var id = UUID()
+    /// The import, whichever showing of its sheet this is.
+    let runID = UUID()
     let urls: [URL]
     var day: TrackDay?
+
+    init(urls: [URL], day: TrackDay? = nil) {
+        self.urls = urls
+        self.day = day
+    }
+
+    func shownAgain() -> TrackDayRequest {
+        var copy = self
+        copy.id = UUID()
+        return copy
+    }
 }
 
 extension EditorModel {
@@ -26,7 +41,8 @@ extension EditorModel {
 
 /// Enters a track day in the logbook and says what happened to each file (#346). With a day
 /// chosen, files that are not from that day are read and kept back, and the sheet asks where they
-/// go before anything is filed for them (#456).
+/// go before anything is filed for them (#456). The import itself is a `TrackDayImportRun`, which
+/// goes on when the sheet is sent away and brings it back at the end (#664).
 struct TrackDayImportSheet: View {
     /// The front project, for its track library and status line; `nil` from the Logbook window
     /// with no project open.
@@ -36,100 +52,124 @@ struct TrackDayImportSheet: View {
     /// and the car set in the report another (#454). From a project's window, `nil` — the project's
     /// undo manager is the document's.
     var undo: UndoManager?
-    /// The logbook before the files went in.
-    @State private var before: LogbookChange.Snapshot?
+    /// The window the sheet is on.
+    var home = TrackDayImportRun.Home.project
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openWindow) private var openWindow
-    @State private var reports: [TrackDayImport.Report] = []
-    /// How the new days compare with the visits before them (#459), once the sessions are in.
-    @State private var progress = ImportProgress(circuits: [])
-    /// The goals the new sessions reached or brought closer (#461).
-    @State private var goalNews: [GoalNews] = []
-    /// The days the new sessions went on with no car (#489), and the car the report gives them.
-    @State private var carlessDays: [TrackDay] = []
-    @State private var car = ""
-    @State private var carSet: String?
-    /// The file being read, and how many there are (#665).
-    @State private var step: TrackDayImport.Step?
-    @State private var phase = Phase.reading
+    private var runs = ImportRuns.shared
+    /// The import, kept while the sheet leaves after Done has ended it.
+    @State private var held: TrackDayImportRun?
 
-    private enum Phase {
-        case reading
-        /// Files of another day are waiting to be told where they go.
-        case asking
-        case placing
-        case done
+    init(
+        editor: EditorModel?, request: TrackDayRequest, undo: UndoManager? = nil,
+        home: TrackDayImportRun.Home = .project
+    ) {
+        self.editor = editor
+        self.request = request
+        self.undo = undo
+        self.home = home
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(request.day.map { "Add Sessions to \($0.label)" } ?? "Add Files to Logbook").font(.title2)
-            switch phase {
-            case .reading: reading
-            case .asking: question
-            case .placing: ProgressView("Adding…")
-            case .done:
-                Text(summary).accessibilityIdentifier("trackday.summary")
-                progressLines
-                goalLines
-                if !carlessDays.isEmpty {
-                    ImportCarField(
-                        days: carlessDays, knownCars: LogbookModel.shared.knownCars, car: $car, carSet: carSet,
-                        set: setCar)
-                }
-            }
-            List(Array(reports.enumerated()), id: \.offset) { _, report in
-                Label(report.line, systemImage: symbol(for: report))
-                    .foregroundStyle(report.isAdded || report.isClip || report.isWaiting ? .primary : .secondary)
-            }
-            .frame(minHeight: 180)
-            .accessibilityIdentifier("trackday.report")
-            HStack {
-                if phase == .asking {
-                    answers
-                } else {
-                    Spacer()
-                    if phase == .done, let destination = progress.destination {
-                        Button(destination.buttonTitle) { show(destination) }
-                            .help(destination.help)
-                            .accessibilityIdentifier("trackday.showProgress")
-                    }
-                    Button(phase == .done ? "Done" : "Close") {
-                        setCar()
-                        dismiss()
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(phase == .placing)
-                    .accessibilityIdentifier("trackday.done")
-                }
+            if let run = held ?? runs.run(for: request) {
+                TrackDayImportReport(run: run, day: request.day, show: { show($0, run) }, close: { dismiss() })
+            } else {
+                ProgressView("Looking for files…")
             }
         }
         .padding(20)
         .frame(width: 560)
-        .task { await run() }
+        .task { held = runs.begin(request, home: home, editor: editor, undo: undo) }
+        // The window closed under the sheet, or it went some way that pressed no button.
+        .onDisappear { (held ?? runs.run(for: request))?.sheetGone(request.id) }
+    }
+
+    /// The Logbook, brought forward, on the circuit's Trends or on the Season.
+    private func show(_ destination: ImportProgress.Destination, _ run: TrackDayImportRun) {
+        run.close()
+        LogbookModel.shared.requestedView = destination
+        openWindow(id: LogbookWindow.windowID)
+        dismiss()
+    }
+}
+
+/// What the sheet shows of its import: how far the reading has got, the question about files of
+/// another day, then the report.
+private struct TrackDayImportReport: View {
+    @Bindable var run: TrackDayImportRun
+    let day: TrackDay?
+    let show: (ImportProgress.Destination) -> Void
+    let close: () -> Void
+
+    var body: some View {
+        switch run.phase {
+        case .waiting: ProgressView(run.activity.line)
+        case .reading: reading
+        case .asking: question
+        case .placing: ProgressView(run.activity.line)
+        case .done:
+            Text(run.summary).accessibilityIdentifier("trackday.summary")
+            progressLines
+            goalLines
+            if !run.carlessDays.isEmpty {
+                ImportCarField(
+                    days: run.carlessDays, knownCars: LogbookModel.shared.knownCars, car: $run.car,
+                    carSet: run.carSet, set: run.setCar)
+            }
+        }
+        List(Array(run.reports.enumerated()), id: \.offset) { _, report in
+            Label(report.line, systemImage: symbol(for: report))
+                .foregroundStyle(report.isAdded || report.isClip || report.isWaiting ? .primary : .secondary)
+        }
+        .frame(minHeight: 180)
+        .accessibilityIdentifier("trackday.report")
+        HStack {
+            if run.phase == .asking {
+                answers
+            } else {
+                Spacer()
+                if run.phase == .done, let destination = run.progress.destination {
+                    Button(destination.buttonTitle) { show(destination) }
+                        .help(destination.help)
+                        .accessibilityIdentifier("trackday.showProgress")
+                }
+                // While files are read this sends the sheet away and they go on being read: it
+                // said Close, which said neither (#664).
+                Button(run.activity.closeTitle) {
+                    if run.phase == .done { run.close() } else { run.sendToBackground() }
+                    close()
+                }
+                .keyboardShortcut(.defaultAction)
+                .help(
+                    run.phase == .done
+                        ? "" : "The files go on being read, and this report comes back when they are in"
+                )
+                .accessibilityIdentifier("trackday.done")
+            }
+        }
     }
 
     /// Which file of how many: the count is known as soon as the folders are listed, and a
     /// spinner beside one file's name for ten seconds said nothing of how far there was to go
     /// (#665).
     @ViewBuilder private var reading: some View {
-        if let step {
+        if let step = run.step {
             ProgressView(value: Double(step.index), total: Double(max(step.count, 1))) {
                 Text(step.sentence).lineLimit(1).truncationMode(.middle)
             }
             .accessibilityIdentifier("trackday.reading")
         } else {
-            ProgressView("Looking for files…")
+            ProgressView(run.activity.line)
         }
     }
 
     // MARK: - Progress (#459)
 
-    /// A line for each circuit the new sessions were driven at: the day's best against the visit
-    /// before it.
     /// A line for each goal the new sessions reached or brought closer.
     @ViewBuilder private var goalLines: some View {
-        ForEach(goalNews) { news in
+        ForEach(run.goalNews) { news in
             Label {
                 Text(news.sentence)
                     .fixedSize(horizontal: false, vertical: true)
@@ -142,8 +182,10 @@ struct TrackDayImportSheet: View {
         }
     }
 
+    /// A line for each circuit the new sessions were driven at: the day's best against the visit
+    /// before it.
     @ViewBuilder private var progressLines: some View {
-        ForEach(progress.circuits) { circuit in
+        ForEach(run.progress.circuits) { circuit in
             Label {
                 Text(circuit.sentence)
                     .fixedSize(horizontal: false, vertical: true)
@@ -156,14 +198,6 @@ struct TrackDayImportSheet: View {
         }
     }
 
-    /// The Logbook, brought forward, on the circuit's Trends or on the Season.
-    private func show(_ destination: ImportProgress.Destination) {
-        setCar()
-        LogbookModel.shared.requestedView = destination
-        openWindow(id: LogbookWindow.windowID)
-        dismiss()
-    }
-
     private func symbol(for report: TrackDayImport.Report) -> String {
         if report.isWaiting { return "calendar.badge.exclamationmark" }
         return report.isAdded ? "checkmark.circle" : report.isClip ? "video" : "minus.circle"
@@ -171,17 +205,17 @@ struct TrackDayImportSheet: View {
 
     // MARK: - Files of another day (#456)
 
-    private var strays: [TrackDayImport.Stray] {
-        reports.compactMap { if case .waiting(let stray) = $0.outcome { stray } else { nil } }
-    }
+    /// The day the question is about: the one chosen before the files, else — a file dated away
+    /// from the rest (#655) — the day the others went on.
+    private var asked: TrackDay? { day ?? run.strays.first?.rest }
 
     /// How many are not the day's, and what can be done with them.
     private var question: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(TrackDayImport.Stray.headline(strays.count, of: reports.count, day: request.day?.label ?? ""))
+            Text(TrackDayImport.Stray.headline(run.strays.count, of: run.reports.count, day: asked?.label ?? ""))
                 .font(.headline)
                 .accessibilityIdentifier("trackday.strays.question")
-            Text(TrackDayImport.Stray.explanation(strays.count))
+            Text(TrackDayImport.Stray.explanation(run.strays.count, chosen: day != nil))
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -189,91 +223,23 @@ struct TrackDayImportSheet: View {
 
     /// The three answers, the one that follows the files' own account as the default.
     @ViewBuilder private var answers: some View {
-        let one = strays.count == 1
+        let one = run.strays.count == 1
         Button(one ? "Leave It Out" : "Leave Them Out", role: .cancel) {
-            finish()
-            dismiss()
+            run.finish()
+            run.close()
+            close()
         }
         .keyboardShortcut(.cancelAction)
         .help("The other files are in the logbook; \(one ? "this one is" : "these are") not added")
         .accessibilityIdentifier("trackday.strays.leaveOut")
         Spacer()
-        Button("Add to This Day") { place(onto: request.day) }
-            .help("For a logger or camera whose clock was wrong: the day you chose decides")
+        Button(TrackDayImport.Stray.addTitle(chosen: day != nil)) { run.place(onto: asked) }
+            .help(TrackDayImport.Stray.addHelp(chosen: day != nil))
             .accessibilityIdentifier("trackday.strays.thisDay")
-        Button(one ? "Put on Its Own Day" : "Put on Their Own Days") { place(onto: nil) }
+        Button(one ? "Put on Its Own Day" : "Put on Their Own Days") { run.place(onto: nil) }
             .keyboardShortcut(.defaultAction)
             .help("Each goes on the day its own date and circuit say, made if there is none yet")
             .accessibilityIdentifier("trackday.strays.ownDays")
-    }
-
-    /// Files the waiting files where the user said, each line taking its file's place in the list.
-    private func place(onto day: TrackDay?) {
-        let waiting = strays
-        let logbook = AppLogbook.shared
-        let tracks = editor?.trackLibrary ?? TrackLibrary.app
-        phase = .placing
-        Task {
-            let placed = await Task.detached(priority: .userInitiated) {
-                TrackDayImport.place(waiting, onto: day, into: logbook, tracks: tracks)
-            }.value
-            let lines = Dictionary(placed.map { ($0.url, $0) }, uniquingKeysWith: { first, _ in first })
-            reports = reports.map { report in report.isWaiting ? lines[report.url] ?? report : report }
-            finish()
-        }
-    }
-
-    // MARK: - Reading
-
-    private var summary: String { TrackDayImport.summary(of: reports, onChosenDay: request.day != nil) }
-
-    private func run() async {
-        if undo != nil { before = AppLogbook.shared.snapshot() }
-        let urls = request.urls
-        let day = request.day
-        let logbook = AppLogbook.shared
-        let tracks = editor?.trackLibrary ?? TrackLibrary.app
-        let result = await Task.detached(priority: .userInitiated) {
-            // A file that is not from the chosen day waits for the question, rather than going on
-            // the day whatever it says (#456).
-            await TrackDayImport.run(urls, into: logbook, tracks: tracks, day: day, strays: .kept) {
-                index, count, url in
-                Task { @MainActor in
-                    step = TrackDayImport.Step(index: index, count: count, name: url.lastPathComponent)
-                }
-            }
-        }.value
-        reports = result
-        if strays.isEmpty {
-            finish()
-        } else {
-            phase = .asking
-            LogbookModel.shared.reload()
-        }
-    }
-
-    private func finish() {
-        phase = .done
-        // A recording read as a session of its own is one of them (#665): it was left out of the
-        // count, and of the progress, the goals and the question about the car with it.
-        let ids = reports.compactMap(\.addedEntry?.id)
-        editor?.statusMessage = "Added \(ids.count) session\(ids.count == 1 ? "" : "s") to the logbook."
-        let model = LogbookModel.shared
-        model.reload()
-        if let before { model.record("Add Files", since: before, undo: undo) }
-        progress = ImportProgress.make(added: Set(ids), in: model.entries)
-        goalNews = GoalNews.make(
-            goals: model.goals, added: Set(ids), in: model.entries, speed: LogbookWindow.speedUnit)
-        carlessDays = Garage.daysWithoutCar(added: Set(ids), entries: model.entries, days: model.days)
-    }
-
-    /// The car typed in the report goes on the days that had none, once — on Set Car or Return,
-    /// else as the report is closed, so a car typed and not set is not lost.
-    private func setCar() {
-        let name = car.trimmingCharacters(in: .whitespaces)
-        guard carSet == nil, !name.isEmpty, !carlessDays.isEmpty else { return }
-        LogbookModel.shared.setCar(name, onDays: carlessDays.map(\.id), undo: undo)
-        carSet = name
     }
 }
 

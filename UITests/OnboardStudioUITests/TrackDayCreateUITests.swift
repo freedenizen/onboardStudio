@@ -117,6 +117,27 @@ final class TrackDayCreateUITests: OnboardStudioUITestCase {
         XCTAssertEqual(XCTWaiter().wait(for: [more], timeout: Self.timeout), .completed, "Only the day's sessions")
     }
 
+    /// #655: with no day chosen, a file dated away from the rest went on a track day of its own
+    /// without a word. The sheet asks, as it does for a day chosen first, and the answer for a
+    /// clock that was wrong puts the file on the day of the others.
+    @MainActor
+    func testAFileDatedAwayFromTheRestIsAskedAboutWithNoDayChosen() throws {
+        launch(logbook: true)
+        XCTAssertTrue(app.windows["Logbook"].waitForExistence(timeout: Self.timeout))
+        testing("Add Fixture Day With One File Dated Apart")
+        let question = app.staticTexts["trackday.strays.question"]
+        XCTAssertTrue(question.waitForExistence(timeout: Self.timeout * 3), "The sheet did not ask about the file")
+        XCTAssertTrue(text(of: question).hasPrefix("1 of these 4 files is not from "), text(of: question))
+        let add = app.buttons[StrayAnswer.thisDay.rawValue]
+        XCTAssertEqual(add.label.isEmpty ? add.title : add.label, "Add to That Day")
+        let summary = finishAddingToDay(.thisDay)
+        XCTAssertTrue(summary.hasPrefix("4 sessions added"), summary)
+        // One day holds all four: none was made for the file's own date.
+        let days = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'logbook.day.'"))
+        XCTAssertTrue(days.firstMatch.waitForExistence(timeout: Self.timeout), "No track day in the sidebar")
+        XCTAssertEqual(days.count, 1, "A track day was made for the file dated apart")
+    }
+
     /// The rows of the Logbook's table of sessions.
     private var rows: XCUIElementQuery {
         let table = app.descendants(matching: .any).matching(identifier: "logbook.table").firstMatch

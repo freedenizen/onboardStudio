@@ -29,6 +29,33 @@ final class TrackDayUITests: OnboardStudioUITestCase {
         expectStatus(containing: "to the logbook")
     }
 
+    /// #664: the sheet's button while files were read said Close, and closing left an import
+    /// nobody could see whose report never came. It says Continue in Background, the Logbook
+    /// says the files are being read, and the report comes back by itself.
+    @MainActor
+    func testFilesGoOnBeingReadInTheBackgroundAndTheReportComesBack() throws {
+        // The fixtures are read in a second or two: the import waits first, so that there is a
+        // reading to send away.
+        launch(logbook: true, environment: ["ONBOARD_TEST_IMPORT_DELAY": "6"])
+        testing("Add Fixture Track Day")
+        let done = app.buttons["trackday.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: Self.timeout), "No Add Files sheet")
+        XCTAssertEqual(done.label.isEmpty ? done.title : done.label, "Continue in Background")
+        done.click()
+        let show = app.buttons["logbook.import.show"]
+        XCTAssertTrue(show.waitForExistence(timeout: Self.timeout), "Nothing in the Logbook says files are being read")
+        XCTAssertTrue(app.staticTexts["logbook.import.line"].exists, "The Logbook's bar has no line")
+        // Nobody asks for it: the report is back when the files are in.
+        let summary = app.staticTexts["trackday.summary"]
+        XCTAssertTrue(summary.waitForExistence(timeout: Self.timeout * 3), "The report did not come back")
+        let text = summary.value as? String ?? summary.label
+        XCTAssertTrue(text.contains("sessions added"), text)
+        XCTAssertFalse(show.exists, "The Logbook still says files are being read")
+        XCTAssertEqual(done.label.isEmpty ? done.title : done.label, "Done")
+        done.click()
+        XCTAssertTrue(done.waitForNonExistence(timeout: Self.timeout))
+    }
+
     /// #455: a file from a place the catalogue does not know used to become a circuit of its own
     /// in the sidebar, named after the file. Such sessions are gathered as "No circuit", and
     /// naming the circuit on their day names it on them.
