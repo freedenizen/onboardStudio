@@ -3,8 +3,10 @@ name: Nightly
 # What is too slow, too noisy or too rarely failing to gate a pull request, run once a night on
 # main: the media tests that need ffprobe (never installed on a PR runner, so they silently skip
 # there), the headless render of the fixture project, an unsigned app bundle (otherwise first
-# built when a release is tagged), and the overlay benchmark against a budget. Red opens or
-# updates the issue labelled `nightly-red`; green closes it.
+# built when a release is tagged), and the overlay benchmark against a budget — and the optimised
+# build, run: every other test builds Debug, and a crash that only an optimised build showed
+# reached two releases (#675). Red opens or updates the issue labelled `nightly-red`; green
+# closes it.
 on:
   schedule:
     - cron: "0 11 * * *" # 04:00 Pacific
@@ -75,9 +77,45 @@ jobs:
           Scripts/coverage-report.sh
           { echo '### Coverage'; echo '```'; tail -1 coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
+  # The code that ships, run on the paths a release is used for (#675). #653 crashed the released
+  # app whenever a folder already in the logbook was added again; a Debug build, every unit test,
+  # every UI test and AddressSanitizer went through the same steps without a fault.
+  release-smoke:
+    name: The optimised build, run
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        id: xcode
+        run: |
+          sudo xcode-select -s "$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+          echo "version=$(xcodebuild -version | awk 'NR == 1 { print $2 }')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: .build
+          key: spm-release-${{ runner.os }}-xcode-${{ steps.xcode.outputs.version }}-${{ github.event.repository.name }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-release-${{ runner.os }}-xcode-${{ steps.xcode.outputs.version }}-${{ github.event.repository.name }}-
+      - name: The release-built onboard adds a day's folder, twice
+        run: Scripts/smoke-release.sh cli
+      - name: One journey against a Release build of the app
+        # Inside the job's 45, so a hung runner fails here and its result bundle is kept.
+        timeout-minutes: 35
+        env:
+          # xcodebuild hands the test runner only variables prefixed TEST_RUNNER_ (#153).
+          TEST_RUNNER_CI: "true"
+        run: brew install xcodegen && Scripts/smoke-release.sh app
+      - name: Keep the result bundle
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-smoke-xcresult
+          path: build/ReleaseSmoke.xcresult
+          retention-days: 7
+
   report:
     name: Nightly report
-    needs: nightly
+    needs: [nightly, release-smoke]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -87,19 +125,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Open or update the nightly-red issue
-        if: needs.nightly.result != 'success'
+        if: needs.nightly.result != 'success' || needs.release-smoke.result != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
-          RESULT: ${{ needs.nightly.result }}
+          RESULT: checks ${{ needs.nightly.result }}, optimised build ${{ needs.release-smoke.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           Scripts/report-ci-issue.sh open nightly-red \
             "The nightly is red as of ${SHA:0:7}" \
             "$RUN_URL: $RESULT on \`${SHA:0:7}\`. This issue closes itself when a nightly passes."
       - name: Close it once green
-        if: needs.nightly.result == 'success'
+        if: needs.nightly.result == 'success' && needs.release-smoke.result == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

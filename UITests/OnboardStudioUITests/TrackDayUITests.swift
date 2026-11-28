@@ -29,6 +29,31 @@ final class TrackDayUITests: OnboardStudioUITestCase {
         expectStatus(containing: "to the logbook")
     }
 
+    /// #653: adding a folder that was in the logbook already crashed the released app, every
+    /// time, and only an optimised build showed it. The nightly runs this class against a Release
+    /// build for that (#675); here it holds what the second import says.
+    @MainActor
+    func testAFolderAddedAgainIsSaidToBeThereAlready() throws {
+        launch()
+        for pass in 1...2 {
+            testing("Add Fixture Track Day")
+            let done = app.buttons["trackday.done"]
+            XCTAssertTrue(done.waitForExistence(timeout: Self.timeout), "No Add Track Day sheet, pass \(pass)")
+            let summary = app.staticTexts["trackday.summary"]
+            XCTAssertTrue(
+                summary.waitForExistence(timeout: Self.timeout * 3), "The import did not finish, pass \(pass)")
+            let text = summary.value as? String ?? summary.label
+            if pass == 1 {
+                XCTAssertFalse(text.hasPrefix("0 "), text)
+            } else {
+                XCTAssertTrue(text.hasPrefix("0 sessions added"), text)
+                XCTAssertTrue(text.contains("already in the logbook"), text)
+            }
+            done.click()
+            XCTAssertTrue(done.waitForNonExistence(timeout: Self.timeout))
+        }
+    }
+
     /// #455: a file from a place the catalogue does not know used to become a circuit of its own
     /// in the sidebar, named after the file. Such sessions are gathered as "No circuit", and
     /// naming the circuit on their day names it on them.

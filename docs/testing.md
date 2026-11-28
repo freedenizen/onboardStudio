@@ -62,7 +62,13 @@ passed on, in which case there is nothing new to test and the push run says so (
 runs the ffprobe-backed media tests (no PR runner has ffprobe, so they skip there), a headless
 `onboard render` of the fixture project, an unsigned app bundle, the command-line archive packed
 as a release packs it and run from where it is unpacked (`Scripts/make-cli-archive.sh`, #662) and
-the overlay benchmark against a budget, and opens `nightly-red` when it fails. Code scanning is the **CodeQL** workflow:
+the overlay benchmark against a budget, and opens `nightly-red` when it fails. A second job of the
+nightly runs the optimised build, which nothing else does (#675): `Scripts/smoke-release.sh cli`
+builds `onboard` as a release builds it and adds `Tests/Fixtures` to a logbook twice, and
+`Scripts/smoke-release.sh app` runs one XCUITest class (`TrackDayUITests`, which adds a day and adds
+it again) against a Release build of the app. The crash of #653 — the released app going down
+whenever a folder already in the logbook was added again — showed only in an optimised build, and
+both halves walk that path. Run either by hand the same way; `app` takes the screen. Code scanning is the **CodeQL** workflow:
 the workflow files and the Python scripts are scanned on every PR, and Swift — which CodeQL reads
 by compiling it, half an hour on a Mac — every Sunday, or on request from Actions ▸ CodeQL ▸ Run
 workflow; a Swift scan that fails opens `codeql-red` (#648). Locally, `Scripts/test.sh quick` skips the two-hour session and the
