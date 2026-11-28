@@ -219,7 +219,9 @@ The camera's clips live on the day too. Each recording added — GoPro chapters 
 under **Clips** in the day's header with when it started and how long it ran, and is matched to the
 session it is the picture of by the camera's clock (a GoPro's GPS clock, else the file's date)
 against the log's; a clip that overlaps no session says so, and the pop-up beside it lets you say
-whose it is. A clip with GPS in it and no session of its own is entered as a session as well. A
+whose it is. Once every clip has its session the list folds into one line — *Clips  9 clips, each
+with its session* — so the day's sessions are in view under the header; click the line to open it.
+While a clip is waiting for a session the list is open. A clip with GPS in it and no session of its own is entered as a session as well. A
 session's detail lists its clips under **Video**, and they go into a New Project with it.
 
 ### Conditions and notes
@@ -480,7 +482,9 @@ again; **Restore Default Thresholds** puts them back.
 ### What you can do with a session
 
 What can be done with the session stays at the foot of its detail, in view however many laps are
-listed above, and the buttons move onto another row rather than shorten when the detail is narrow
+listed above: three buttons for what a session is mostly for — **New Project**, **Coach…** and
+**Compare With** — and **More** for the rest. The buttons move onto another row rather than shorten
+when the detail is narrow
 (drag its left edge to widen it; it stays as wide as you left it, whichever session you choose next
 and the next time the app opens).
 
@@ -494,12 +498,14 @@ and the next time the app opens).
   session takes its name from its Details when they give the track or the day. The toolbar's **New Project** menu does the same while a session is selected,
   under a heading that names the session, so the two never disagree; its **New Project Without a
   Session** starts an empty project instead.
-- **Add to Current Project** adds the session to the project in front.
-- **Coach…**, **Compare With ▸** and **Export Coaching Debrief…** read the session's laps and say
-  where the time went ([Being coached](#4-being-coached)); **Replay…** races its laps in 3D
-  ([Replay](#replay-your-laps-in-3d)).
-- **Show in Finder** shows its file; **Remove from Logbook** takes it out
-  ([Putting mistakes right](#putting-mistakes-right)).
+- **Coach…** and **Compare With ▸** read the session's laps and say where the time went
+  ([Being coached](#4-being-coached)).
+- **More ▸** holds the rest: **Add to Current Project** adds the session to the project in front;
+  **Replay…** races its laps in 3D ([Replay](#replay-your-laps-in-3d)) and **Analyse Laps…** lays
+  them over each other; **Export Telemetry…** and **Export Coaching Debrief…** write it out; **Show
+  in Finder** shows its file.
+- **Remove from Logbook** is on the session's right-click menu and in the **Session** menu (⌘⌫),
+  not among these buttons ([Putting mistakes right](#putting-mistakes-right)).
 
 ### Laps that don't count
 

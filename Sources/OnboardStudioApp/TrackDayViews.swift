@@ -24,9 +24,13 @@ struct TrackDayHeader: View {
     @State private var circuit: Circuit?
     @State private var typedName = ""
     @State private var showConditions = false
+    /// Whether the clips are listed: as the driver last said, and until they say, folded away
+    /// when each has its session and listed when one is waiting for one (#681).
+    @State private var clipsShown = ClipsShown.automatic
     @FocusState private var focus: Field?
 
     enum Field: Hashable { case car, driver }
+    enum ClipsShown { case automatic, open, closed }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -101,7 +105,7 @@ struct TrackDayHeader: View {
                 }
             }
             .accessibilityIdentifier("trackday.header.conditions")
-            if !day.clips.isEmpty { clipList }
+            if !day.clips.isEmpty { clipsDisclosure }
             if sessionCount == 0 {
                 Text("No sessions yet. Add Files… or drop the day's files here.")
                     .font(.callout).foregroundStyle(.secondary)
@@ -110,7 +114,10 @@ struct TrackDayHeader: View {
         }
         .padding()
         .onAppear(perform: load)
-        .onChange(of: day.id) { load() }
+        .onChange(of: day.id) {
+            load()
+            clipsShown = .automatic
+        }
         .onChange(of: day.circuitKey) { loadCircuit() }
         .onChange(of: focus) { old, new in if old != nil, new != old { commit() } }
     }
@@ -165,11 +172,40 @@ struct TrackDayHeader: View {
         if changed.circuitKey != day.circuitKey { save(changed) }
     }
 
+    /// The clips in one line, to be opened: a day's nine recordings were nine lines above its
+    /// sessions, and at the size the Logbook first opens they left three session rows in view
+    /// (#681). Open by itself while a clip has no session, which is when the list is needed.
+    private var clipsDisclosure: some View {
+        let unassigned = day.clips.filter { $0.sessionID == nil }.count
+        return DisclosureGroup(
+            isExpanded: Binding(
+                get: { clipsShown == .automatic ? unassigned > 0 : clipsShown == .open },
+                set: { clipsShown = $0 ? .open : .closed })
+        ) {
+            clipList.padding(.top, 4)
+        } label: {
+            HStack(spacing: 6) {
+                Text("Clips").font(.subheadline.weight(.semibold))
+                // The identifier is on the words: on the group it replaced each clip's own, and
+                // the journeys that assign a clip could no longer find it (#681).
+                Text(Self.clipSummary(count: day.clips.count, unassigned: unassigned))
+                    .font(.callout).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("trackday.header.clips")
+            }
+        }
+    }
+
+    /// "9 clips, each with its session", "9 clips, 2 not assigned to a session".
+    static func clipSummary(count: Int, unassigned: Int) -> String {
+        let clips = "\(count) clip\(count == 1 ? "" : "s")"
+        if unassigned == 0 { return count == 1 ? "\(clips), with its session" : "\(clips), each with its session" }
+        return "\(clips), \(unassigned) not assigned to a session"
+    }
+
     /// The camera's clips, each with the session it is the picture of — matched by the clocks,
     /// or chosen here.
     private var clipList: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Clips").font(.subheadline.weight(.semibold))
             ForEach(day.clips) { clip in
                 HStack(spacing: 8) {
                     Image(systemName: "video").foregroundStyle(.secondary).accessibilityHidden(true)
@@ -209,6 +245,9 @@ struct TrackDayHeader: View {
             get: { clip.sessionID },
             set: { chosen in
                 guard let index = day.clips.firstIndex(where: { $0.id == clip.id }) else { return }
+                // The list stays as it is under the hand that is using it: assigning the last
+                // clip would otherwise fold it away the moment it was done.
+                if clipsShown == .automatic { clipsShown = .open }
                 var changed = day
                 changed.clips[index].sessionID = chosen
                 changed.clips[index].matchedBy = chosen == nil ? nil : .byHand

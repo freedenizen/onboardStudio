@@ -27,9 +27,7 @@ final class ReplayUITests: OnboardStudioUITestCase {
         let one = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == 1"), object: rows)
         XCTAssertEqual(XCTWaiter().wait(for: [one], timeout: Self.timeout), .completed)
         rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
-        let replay = app.buttons["logbook.replay"]
-        XCTAssertTrue(replay.waitForExistence(timeout: Self.timeout), "No Replay… in the detail")
-        replay.click()
+        toolbarMenu("logbook.more", "Replay…")
 
         // The window: the three quickest laps chosen and standing, the scene, the HUD.
         let window = app.windows["Replay"]

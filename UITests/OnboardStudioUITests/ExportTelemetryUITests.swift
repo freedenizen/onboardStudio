@@ -20,10 +20,7 @@ final class ExportTelemetryUITests: OnboardStudioUITestCase {
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: Self.timeout), "No session listed")
         rows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
 
-        let export = app.buttons["logbook.exportTelemetry"]
-        XCTAssertTrue(export.waitForExistence(timeout: Self.timeout), "No Export Telemetry… on the session")
-        reveal(export)
-        export.click()
+        toolbarMenu("logbook.more", "Export Telemetry…")
         let gpx = app.radioButtons["GPX — the path, for maps and fitness apps"]
         XCTAssertTrue(gpx.waitForExistence(timeout: Self.timeout), "No Export Telemetry sheet")
         gpx.click()

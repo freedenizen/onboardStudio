@@ -41,15 +41,19 @@ final class LogbookActionsUITests: OnboardStudioUITestCase {
         app.typeKey(.delete, modifierFlags: [])
         let all = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count > 3"), object: rows)
         XCTAssertEqual(XCTWaiter().wait(for: [all], timeout: Self.timeout), .completed)
-        let debrief = app.buttons["logbook.debrief"]
+        // The debrief is in the detail's More menu (#681), and offered where the session has a clip.
+        let more = app.menuButtons["logbook.more"]
         var found = false
         for index in 0..<min(rows.count, 10) where !found {
             rows.element(boundBy: index).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
-            XCTAssertTrue(debrief.waitForExistence(timeout: Self.timeout))
+            XCTAssertTrue(more.waitForExistence(timeout: Self.timeout))
+            more.click()
+            let debrief = more.menus.menuItems["Export Coaching Debrief…"]
+            XCTAssertTrue(debrief.waitForExistence(timeout: Self.timeout), "No debrief in More")
             found = debrief.isEnabled
+            if found { debrief.click() } else { app.typeKey(.escape, modifierFlags: []) }
         }
         XCTAssertTrue(found, "No session with a clip offers a debrief")
-        debrief.click()
         XCTAssertTrue(projectWindows.firstMatch.waitForExistence(timeout: Self.timeout), "No project")
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "debrief.corners").firstMatch.waitForExistence(

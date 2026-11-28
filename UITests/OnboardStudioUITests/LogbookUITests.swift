@@ -51,14 +51,15 @@ final class LogbookUITests: OnboardStudioUITestCase {
         // Selecting a session shows its laps and offers the way into the project.
         // The row is wider than the window's visible part; a point near its left edge is on screen.
         rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
-        let addToProject = app.buttons["logbook.addToProject"]
-        XCTAssertTrue(addToProject.waitForExistence(timeout: Self.timeout), "No detail for the selected session")
+        // Adding to the project in front is in the detail's More menu (#681).
+        let more = app.menuButtons["logbook.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: Self.timeout), "No detail for the selected session")
         XCTAssertTrue(sessionNewProject.exists)
         assertTheSessionsActionsAreInViewAndInFull()
-        assertASessionOutOfTheTableHasNoDetail(search: search, action: addToProject)
+        assertASessionOutOfTheTableHasNoDetail(search: search, action: more)
         let inputs = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'input.'"))
         let inputsBefore = inputs.count
-        addToProject.click()
+        toolbarMenu("logbook.more", "Add to Current Project")
         let added = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "count > %d", inputsBefore), object: inputs)
         XCTAssertEqual(XCTWaiter().wait(for: [added], timeout: Self.timeout), .completed, "Nothing added")
@@ -129,11 +130,10 @@ final class LogbookUITests: OnboardStudioUITestCase {
     private func assertTheSessionsActionsAreInViewAndInFull() {
         let window = app.windows["Logbook"]
         let font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+        // Three buttons and a menu (#681); the rest are in More.
         let actions = [
-            ("logbook.open", "New Project"), ("logbook.addToProject", "Add to Current Project"),
-            ("logbook.coach", "Coach…"), ("logbook.replay", "Replay…"), ("logbook.compareWith", "Compare With"),
-            ("logbook.debrief", "Export Coaching Debrief…"), ("logbook.showInFinder", "Show in Finder"),
-            ("logbook.remove", "Remove from Logbook"),
+            ("logbook.open", "New Project"), ("logbook.coach", "Coach…"), ("logbook.compareWith", "Compare With"),
+            ("logbook.more", "More"),
         ]
         for (identifier, title) in actions {
             let control = app.descendants(matching: .any).matching(identifier: identifier).firstMatch

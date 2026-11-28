@@ -29,6 +29,8 @@ final class LogbookConditionsUITests: OnboardStudioUITestCase {
         XCTAssertTrue(weather.waitForExistence(timeout: Self.timeout), "No conditions editor")
         choosePopUpItem("Sunny", in: weather)
         let tyres = app.textFields["logbook.tyres"]
+        // Clear of the buttons under the detail before it is clicked.
+        reveal(tyres)
         tyres.click()
         tyres.typeText("RE-71RS\n")
         let saved = XCTNSPredicateExpectation(
