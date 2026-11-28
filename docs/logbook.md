@@ -444,6 +444,20 @@ one*), or with `nil` onto the day each file's own date and circuit say, exactly 
 no day chosen. The default, `strays: .ontoTheDay`, is what `onboard logbook add --day` does:
 naming the day on the command line is the answer.
 
+The import is not the sheet's (#664). A `TrackDayImportRun` holds it from the files to the report
+— the reports, the question, the car — and `ImportRuns.shared` holds every run not yet read to its
+end; the sheet draws the run its request names (`TrackDayRequest.runID`). **Continue in
+Background** sends the sheet away (`sendToBackground`), `ImportActivityBar` at the foot of the
+Logbook's content column draws `TrackDayImport.Activity` for the oldest run in the background, and
+when a run reaches its question or its report `ImportRuns.surface()` sets the request again on the
+window it came from (`Home`: the Logbook's model or the project's), under a new `id` so the sheet
+is made afresh. A window showing another sheet is left alone until that sheet ends
+(`NSWindow.didEndSheetNotification`). A run ends only from its own buttons (`close`); a sheet
+that goes with none pressed, because its window closed, puts a run still reading in the
+background. Runs are read one after another, since two at once could each find the same file new.
+`ONBOARD_TEST_IMPORT_DELAY` (seconds, under `-uiTesting`) makes a run wait before it reads, so a
+UI test has a reading to send away.
+
 ## The day's clips (#394)
 
 `ClipMatcher` (`Sources/MediaKit/ClipMatcher.swift`) is the clocks and nothing else:

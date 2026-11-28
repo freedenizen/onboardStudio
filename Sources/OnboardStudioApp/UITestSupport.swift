@@ -53,6 +53,15 @@ enum UITestSupport {
         }
     }
 
+    /// `ONBOARD_TEST_IMPORT_DELAY`: seconds an Add Files waits before it reads, so a test has time
+    /// to send its sheet away and see the Logbook say the files are being read (#664).
+    static var importDelay: Duration? {
+        guard isActive else { return nil }
+        return ProcessInfo.processInfo.environment["ONBOARD_TEST_IMPORT_DELAY"].flatMap(Double.init).map {
+            .seconds($0)
+        }
+    }
+
     /// `ONBOARD_TEST_LOGBOOK_DIR`: a scratch logbook, so a test never writes a track day into
     /// the real one. `nil` outside the UI tests.
     static var logbookDirectory: URL? {

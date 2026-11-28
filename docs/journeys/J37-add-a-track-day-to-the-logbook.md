@@ -8,12 +8,16 @@ hundred files one project at a time, so a logbook that only filled that way woul
    1:56.88*; *already in the logbook as …*; *the same session as session_v3.csv, already in the
    logbook: …*; *not a telemetry file this app reads*; *no position or laps in it*. The circuit is
    recognised, the date read from the file, the car taken from your last session at that circuit.
+   While they are read the sheet's button is **Continue in Background** (#664): the sheet goes, a
+   bar at the foot of the Logbook's sessions says which file of how many, and the sheet comes back
+   by itself with the report.
 3. **Done**. The status bar says how many sessions were added. The same files added again are
    skipped, whatever they are called now — and so is a session in a second export format (a
    RaceChrono CSV beside its `.rcz`, or v2 beside v3): one drive is one session (#465).
 4. From the command line: `onboard logbook add <files or folders> --car Miata` and
    `onboard logbook list`.
 
-Tests: `TrackDayUITests.testAFolderOfSessionsIsEnteredAndReportedPerFile`. Model:
+Tests: `TrackDayUITests.testAFolderOfSessionsIsEnteredAndReportedPerFile` and
+`testFilesGoOnBeingReadInTheBackgroundAndTheReportComesBack`. Model: `TrackDayImportActivityTests`,
 `TrackDayImportTests` (`theSameSessionInASecondFormatIsNotAddedAgain` among them),
 `LogbookSameSessionTests`, `LogbookTests`.
