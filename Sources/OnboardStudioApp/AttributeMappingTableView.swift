@@ -43,6 +43,7 @@ struct DataInputAttributesSection: View {
                     }
                 }
                 importStatus(session.importReport)
+                unnamedChannels(in: session)
             } else {
                 // Says what is loading, so a slow file is not mistaken for a stuck one.
                 ProgressView {
@@ -62,6 +63,19 @@ struct DataInputAttributesSection: View {
                     + "objects show it in. The window's Import tab (⌘2) says what became of every column."
             )
             .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    /// Channels the file had no names for (#657), said above the button that names them: nothing
+    /// binds to a number, and the gauges that drew nothing did not say that this was why.
+    @ViewBuilder
+    private func unnamedChannels(in session: TelemetrySession) -> some View {
+        let fromArchive = session.info.sourceFormat == "RaceChrono archive"
+        if let notice = UnnamedChannels.notice(for: session, namesInCSV: fromArchive) {
+            Label(notice, systemImage: "questionmark.circle")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("attributes.unnamed")
         }
     }
 

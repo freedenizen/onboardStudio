@@ -240,6 +240,8 @@ struct UITestCommands: Commands {
             Divider()
             Button("Add Fixture Data (RaceRender)") { add(data: "racerender-basic.csv") }
             Button("Add Fixture Data (RaceChrono)") { add(data: "racechrono-v3.csv") }
+            // The same logger's archive, whose CAN channels have numbers for names (#657).
+            Button("Add Fixture Data (RaceChrono Archive)") { add(data: "session.rcz") }
             Button("Add Fixture Data (Noisy CAN)") { add(data: "racechrono-v3-noisy.csv") }
             Button("Add Fixture Data (GPX)") { add(data: "track.gpx") }
             Button("Add Fixture Data (Coaching Laps)") { add(data: "coaching-laps.csv") }

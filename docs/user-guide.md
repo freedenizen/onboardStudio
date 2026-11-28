@@ -814,6 +814,27 @@ brake sensor is `brake_pressure_front` in a RaceChrono CSV and `66569` in the `.
 same session. **Attributes** are the app's names for what those numbers *mean* — Speed, Brake
 pressure (front), Coolant temperature, ABS — and they are the same whatever file you opened.
 
+**Channels with no names.** Some files carry channels with numbers for names. A RaceChrono `.rcz`
+archive is one: its engine channels — RPM, throttle, brake, gear, whatever the car's CAN bus gave
+the logger — are `canbus:10024`, `canbus:66569` and so on, because the archive does not hold the
+names. Nothing can draw from a number, so a tachometer, a gear readout or a throttle bar shows
+nothing until you say which channel it is. The data file's inspector says so above **Map
+Attributes…**, with how many there are. Three ways to tell them apart:
+
+- **Export the session from RaceChrono as CSV** and add that instead, or as well: the CSV carries
+  the names, and the app treats the two files as one session.
+- **Draw one.** Add a **Graph**, choose a numbered channel in its inspector and play a lap: RPM
+  climbs and falls with the gears, the throttle sits at one end or the other, a brake pressure
+  spikes before each corner.
+- **Read its range.** `onboard probe session.rcz` lists every channel with its lowest and highest
+  value and how often it was sampled; a channel from a few hundred to several thousand is the RPM,
+  one from 0 to 100 a pedal.
+
+The same archive holds the logger's accelerometer as **x_acc**, **y_acc** and **z_acc**: the
+logger's own axes, not the car's. The G plot draws nothing from them until you map the axis that
+points across the car to **Lateral G** and the one along it to **Longitudinal G**, which depends on
+how the logger is mounted.
+
 **Project ▸ Map Attributes…** (⌥⌘A), or **Map Attributes…** in the data inspector or in Settings,
 opens the attribute window, pointed at the data file you have selected. One row per attribute,
 three columns:
