@@ -98,6 +98,10 @@ two thin executables.
   Developer ID and the hardened runtime and notarized (#683); a bare tool has nowhere to keep
   the notary's ticket, so Gatekeeper fetches it at the first run. Sparkle's feed URL points
   at `releases/latest/download/appcast.xml`.
+- The release's page is `Scripts/release-notes.sh <tag>`: *What's New* as written for drivers in
+  `docs/releases/<tag>.md`, then every `feat` and `fix` since the release before, from the
+  subjects of the commits on `main` (#702). A `vX.Y.0` tag with no written notes stops the
+  workflow at its first step; `Scripts/test-release-notes.sh` holds the script's cases.
 
 ## Icons
 

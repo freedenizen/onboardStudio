@@ -19,6 +19,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
+      # Before anything is built: a release that adds features opens its page with What's New
+      # as written for drivers (#702), and an hour's build should not end by finding none.
+      - name: Written release notes
+        run: Scripts/release-notes.sh --check "$GITHUB_REF_NAME"
       - name: Select Xcode
         id: xcode
         run: |
@@ -99,5 +103,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           PRERELEASE=""; [[ "$GITHUB_REF_NAME" == *-* ]] && PRERELEASE="--prerelease"
-          gh release create "${{ github.ref_name }}" $PRERELEASE --generate-notes \
+          # What's New from docs/releases, then the features and fixes: not GitHub's list of
+          # every pull request's title (#702).
+          Scripts/release-notes.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/release-notes.md"
+          gh release create "${{ github.ref_name }}" $PRERELEASE --notes-file "$RUNNER_TEMP/release-notes.md" \
             dist/OnboardStudio-*.dmg dist/appcast.xml dist/onboard-cli-*.tar.gz

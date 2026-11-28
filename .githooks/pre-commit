@@ -31,6 +31,12 @@ if grep -q '^Scripts/\(test-\)\{0,1\}ci-changes\.sh$' <<< "$staged"; then
   Scripts/test-ci-changes.sh >/dev/null
 fi
 
+# The script that writes a release's page: it runs once a release, at the end of the build.
+if grep -q '^Scripts/\(test-\)\{0,1\}release-notes\.sh$' <<< "$staged"; then
+  echo "pre-commit: release notes"
+  Scripts/test-release-notes.sh >/dev/null
+fi
+
 # A new XCUITest class that is on no shard runs nowhere and every shard still passes.
 if grep -q '^UITests/\|^\.github/workflows/ci\.yml$' <<< "$staged"; then
   echo "pre-commit: UI test shards"

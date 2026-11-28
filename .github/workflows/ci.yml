@@ -70,6 +70,8 @@ jobs:
         run: Scripts/check-ui-test-shards.sh
       - name: CI change detector
         run: Scripts/test-ci-changes.sh
+      - name: Release notes
+        run: Scripts/test-release-notes.sh
 
   test:
     name: Test
