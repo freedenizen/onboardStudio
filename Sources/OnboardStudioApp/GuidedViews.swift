@@ -176,7 +176,10 @@ struct WelcomeOverlay: View {
     }
 }
 
-/// Documentation links (the docs live in the repository; the app opens them in the browser).
+/// Where help is. The user guide is a help book inside the app (#700): Help Viewer opens it at a
+/// topic, with no network, and the Help menu's search field finds its topics. The other documents
+/// — file formats, scripting — live in the repository and open in the browser, as the guide does
+/// when the app is run without its bundle (`swift run`).
 enum HelpLinks {
     enum Page: String {
         case userGuide = "user-guide.md"
@@ -189,8 +192,27 @@ enum HelpLinks {
 
     static let base = "https://github.com/freedenizen/onboardStudio/blob/main/docs/"
 
-    /// Opens `page` in the browser, at `section` (a heading's anchor, such as `with-gyroflow`) if given.
+    /// The help book's name, when this build carries one: the bundle names it and holds its folder.
+    static var helpBook: String? {
+        guard let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleHelpBookName") as? String,
+            let folder = Bundle.main.object(forInfoDictionaryKey: "CFBundleHelpBookFolder") as? String,
+            let resources = Bundle.main.resourceURL,
+            FileManager.default.fileExists(atPath: resources.appending(path: folder).path)
+        else { return nil }
+        return name
+    }
+
+    /// Opens `page`, at `section` (a heading's anchor, such as `with-gyroflow`) if given: the user
+    /// guide in Help Viewer, the rest in the browser.
     static func open(_ page: Page, section: String? = nil) {
+        if page == .userGuide, let book = helpBook {
+            if let section {
+                NSHelpManager.shared.openHelpAnchor(section, inBook: book)
+            } else {
+                NSApp.showHelp(nil)
+            }
+            return
+        }
         if let url = URL(string: base + page.rawValue + (section.map { "#" + $0 } ?? "")) {
             NSWorkspace.shared.open(url)
         }
@@ -243,7 +265,7 @@ struct ShortcutsView: View {
         ("⇧ while resizing", "Keep the object's aspect ratio"), ("⌘Z / ⇧⌘Z", "Undo / redo"),
         ("⇧⌘A", "Deselect all: the inspector shows the project"),
         ("⇧C / ⇧T", "Crop / frame the picture on the preview"),
-        ("⌥⌘I", "Show / hide the inspector"),
+        ("⌥⌘I", "Show / hide the inspector"), ("⌘?", "This guide, in Help Viewer"),
         ("⇧⌘F / ⇧⌘B", "Bring to front / send to back; with ⌥, one place"),
         ("⌘1 / ⌘2 / ⌘3", "In the Logbook: sessions, trends, season"),
         ("⇧⌘N", "In the Logbook: a new project from the selected session"),

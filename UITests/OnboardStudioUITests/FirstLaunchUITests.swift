@@ -43,6 +43,17 @@ final class FirstLaunchUITests: OnboardStudioUITestCase {
     @MainActor
     func testShortcutsWindowOpens() throws {
         launch()
+        // The guide leads the Help menu under the name every Mac app's has, and the two documents
+        // for someone writing a script are in a menu of their own (#700). It is not chosen here:
+        // that would open Help Viewer on the runner.
+        let help = app.menuBars.menuBarItems["Help"]
+        XCTAssertTrue(help.waitForExistence(timeout: Self.timeout), "No Help menu")
+        help.click()
+        XCTAssertTrue(
+            help.menus.menuItems["Onboard Studio Help"].waitForExistence(timeout: Self.timeout),
+            "Help ▸ Onboard Studio Help is missing")
+        XCTAssertTrue(help.menus.menuItems["Developer Reference"].exists, "Help ▸ Developer Reference is missing")
+        app.typeKey(.escape, modifierFlags: [])
         menu("Help", "Keyboard Shortcuts")
         XCTAssertTrue(app.windows["Keyboard Shortcuts"].waitForExistence(timeout: Self.timeout))
         XCTAssertTrue(app.staticTexts["Add video"].exists)

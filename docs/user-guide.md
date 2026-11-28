@@ -112,6 +112,13 @@ inspector. Export is ticked once a video has been exported from the project. The
 and the checklist, in projects and in the Logbook; **Help ▸ Show Getting Started** brings them
 back.
 
+**This guide is in the app.** **Help ▸ Onboard Studio Help** (⌘?) opens it in Help Viewer, with
+no network needed, and a button that offers help with one thing — *How to Install Gyroflow* —
+opens it at that topic. Type in the Help menu's search field and the guide's topics are listed
+under the menu commands it finds. **Supported Data Formats** and **YouTube Upload Setup** open
+their pages on the web; **Developer Reference** holds the two that are for someone writing a
+script or reading a project file, not for making a video.
+
 ## 2. Your track days: the Logbook
 
 The app keeps a **logbook** of your track days and the sessions driven on them — which file, where

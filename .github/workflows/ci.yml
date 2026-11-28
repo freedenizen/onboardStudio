@@ -70,6 +70,10 @@ jobs:
         run: Scripts/check-ui-test-shards.sh
       - name: CI change detector
         run: Scripts/test-ci-changes.sh
+      # The user guide as the app's help book (#700): a broken link in the guide, or Markdown the
+      # converter does not know, is found here rather than in Help Viewer.
+      - name: Help book
+        run: Scripts/test-make-help-book.sh
 
   test:
     name: Test

@@ -41,6 +41,10 @@
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleHelpBookFolder</key>
+	<string>OnboardStudio.help</string>
+	<key>CFBundleHelpBookName</key>
+	<string>com.freedenizen.onboardstudio.help</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.freedenizen.onboardstudio</string>
 	<key>CFBundleInfoDictionaryVersion</key>

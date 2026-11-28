@@ -102,6 +102,10 @@ swift run onboard bench --export --codec hevc --seconds 60
   `docs/project-format.md` for a new field in the document; `docs/parity.md` when it changes what
   we do or do not have against RaceRender. Say what changed for the user, not what changed in
   the code.
+- `docs/user-guide.md` is also the app's help book (#700): each `##` is a page and every heading
+  an anchor a help button can open (`HelpLinks.open(.userGuide, section: "with-gyroflow")`).
+  Renaming a heading renames its anchor, so grep for the old one; a link to a heading that is
+  not there fails the build and `Scripts/test-make-help-book.sh`.
 - Every behaviour change ships unit tests. Parsers and renderers test against `Tests/Fixtures`;
   renderers additionally use golden images.
 - `swift format` (`.swift-format`) and SwiftLint (`.swiftlint.yml`) are enforced by the pre-commit
