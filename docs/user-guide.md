@@ -112,6 +112,14 @@ inspector. Export is ticked once a video has been exported from the project. The
 and the checklist, in projects and in the Logbook; **Help ▸ Show Getting Started** brings them
 back.
 
+**Gauges with nothing to draw.** A template lays out its gauges whole, whatever the data file has.
+When the file has no channel for some of them — no RPM, gear or G from a camera's or a phone's GPS,
+or a RaceChrono `.rcz` whose engine channels are unnamed — the step before Export says so: *Give 3
+gauges their data*, naming them. **Map Attributes…** opens the window where one of the file's
+columns is said to be what a gauge reads ([Data](#data)); **Remove Them** takes those gauges out of
+the project, and **Edit ▸ Undo** brings them back. A gauge you have hidden is not counted. Until one
+or the other is done, the step stays ahead of Export, in the bar and in the checklist.
+
 ## 2. Your track days: the Logbook
 
 The app keeps a **logbook** of your track days and the sessions driven on them — which file, where

@@ -127,7 +127,8 @@ extension EditorModel {
         let synced = project.dataInputs.contains { $0.sync != .identity } || !hasData
         let hasOverlays = project.displayObjects.contains { $0.kind.isOverlay }
         let gopro = project.videoInputs.first.flatMap { loaded?.mediaInfo[$0.id] }
-        return [
+        let withoutData = objectsWithoutData
+        var steps = [
             GettingStartedStep(
                 title: "Add a video", done: hasVideo,
                 detail: "A GoPro, dash cam or phone clip. Chapters of one recording are joined automatically.",
@@ -146,16 +147,39 @@ extension EditorModel {
                 title: "Add gauges", done: hasOverlays,
                 detail: "Start from a template, then drag objects around the preview and tune them in the inspector.",
                 action: .applyTemplate),
+        ]
+        // Before the export is suggested: a gauge with nothing to draw is in the video as it
+        // stands, and only its own inspector said so (#658).
+        if !withoutData.isEmpty {
+            steps.append(
+                GettingStartedStep(
+                    title: ObjectsWithoutDataWording.title(withoutData.count), done: false,
+                    detail: ObjectsWithoutDataWording.detail(withoutData.map(\.label)), action: .mapAttributes))
+        }
+        steps.append(
             GettingStartedStep(
                 title: "Export", done: hasExported, detail: "Render the video, then upload it to YouTube.",
-                action: .export),
-        ]
+                action: .export))
+        return steps
+    }
+
+    /// The objects on show whose data file has none of the channels they draw.
+    var objectsWithoutData: [DisplayObject] { project.objectsWithoutData(loaded?.channelSummaries ?? [:]) }
+
+    /// Takes them out of the project: one step of Undo.
+    func removeObjectsWithoutData() {
+        let ids = Set(objectsWithoutData.map(\.id))
+        guard !ids.isEmpty else { return }
+        if let selected = selectedObjectID, ids.contains(selected) { selectedObjectID = nil }
+        edit(ids.count == 1 ? "Remove Gauge Without Data" : "Remove Gauges Without Data") { project in
+            project.displayObjects.removeAll { ids.contains($0.id) }
+        }
     }
 }
 
 struct GettingStartedStep: Identifiable {
     enum Action {
-        case addVideo, addData, useEmbedded, sync, applyTemplate, export
+        case addVideo, addData, useEmbedded, sync, applyTemplate, mapAttributes, export
     }
 
     let title: String
