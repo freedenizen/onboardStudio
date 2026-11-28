@@ -203,9 +203,8 @@ final class PendingLogbookOpen {
 struct LogbookWindow: View {
     static let windowID = "logbook"
 
-    @SceneStorage("logbook.scope") private var storedScope = "all"
     /// Sessions, or the trends across visits (#353).
-    @SceneStorage("logbook.view") var view: LogbookView = .sessions
+    @State var view: LogbookView = .sessions
 
     enum LogbookView: String, CaseIterable, Identifiable {
         case sessions, trends, season
@@ -256,6 +255,7 @@ struct LogbookWindow: View {
         browser
             .overlay { if isDropTarget { dropHighlight } }
             .overlay { LogbookTourOverlay(model: model) }
+            .background(LogbookPlaceKeeper(scope: $scope, view: $view, selection: $selection))
             // The session, the view and the window's actions, for the menu bar (#450).
             .focusedSceneValue(\.logbook, commandContext)
             .sheet(item: $model.trackDayRequest) { request in

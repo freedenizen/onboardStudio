@@ -65,8 +65,11 @@ class OnboardStudioUITestCase: XCTestCase {
             path: "onboard-uitests-templates-\(UUID().uuidString)", directoryHint: .isDirectory)
         app.launchEnvironment["ONBOARD_TEST_TEMPLATES_DIR"] = templates.path
         // And an empty logbook, so a track day added by a test never reaches the real one (#346).
+        // A test that opens the app twice on one logbook names the folder itself (#701).
         app.launchEnvironment["ONBOARD_TEST_LOGBOOK_DIR"] =
-            FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-logbook-\(UUID().uuidString)").path
+            environment["ONBOARD_TEST_LOGBOOK_DIR"]
+            ?? FileManager.default.temporaryDirectory.appending(path: "onboard-uitests-logbook-\(UUID().uuidString)")
+            .path
         // And no circuits: a plan a test makes never reaches the real ones, and theirs never
         // change what a test sees (#458).
         app.launchEnvironment["ONBOARD_TEST_TRACKS_DIR"] =
