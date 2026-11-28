@@ -49,6 +49,13 @@ public struct GaugeParams: Hashable, Codable, Sendable {
     /// been fitted — or found to have been changed by hand. Absent from a file saved before the
     /// field existed, which reads as `false`: such a dial keeps the scale it was saved with.
     public var scaleAwaitsData = false
+    /// The unit the scale's numbers — its ends, its ticks and its zones — are written in, when
+    /// the gauge shows a speed (#699). Drawn in another unit, the scale is converted
+    /// (`drawn(in:)`), so a dial made 0–140 for mph is 0–240 when the unit becomes km/h by any
+    /// route, Settings included. `nil` takes the numbers as they stand whatever unit is drawn:
+    /// a gauge of anything but a speed, a speedometer still waiting for its file, and every
+    /// gauge of a project saved before schema 9.
+    public var scaleUnit: SpeedDisplayUnit?
 
     public init(
         channel: String,
@@ -114,7 +121,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         case channel, title, minValue, maxValue, speedUnit, unitLabel, majorTick, minorTick, sweep, rotation
         case counterClockwise, style, secondChannel, secondNeedleColor, needle, ticks, zones, zoneTargets
         case arcWidth, arcTrackColor, showFace, faceImageInputID, valueDivisor, showValue, decimals
-        case faceColor, needleColor, textColor, scaleAwaitsData
+        case faceColor, needleColor, textColor, scaleAwaitsData, scaleUnit
         // Pre-0.5 files: a single red zone.
         case redlineFrom, redlineColor
     }
@@ -158,6 +165,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         needleColor = try c.decodeIfPresent(RGBAColor.self, forKey: .needleColor) ?? d.needleColor
         textColor = try c.decodeIfPresent(RGBAColor.self, forKey: .textColor) ?? d.textColor
         scaleAwaitsData = try c.decodeIfPresent(Bool.self, forKey: .scaleAwaitsData) ?? false
+        scaleUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .scaleUnit)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -191,6 +199,7 @@ public struct GaugeParams: Hashable, Codable, Sendable {
         try c.encode(needleColor, forKey: .needleColor)
         try c.encode(textColor, forKey: .textColor)
         try c.encode(scaleAwaitsData, forKey: .scaleAwaitsData)
+        try c.encodeIfPresent(scaleUnit, forKey: .scaleUnit)
     }
 
     /// The start of the first zone that runs to the maximum (the classic red line), if any.

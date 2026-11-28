@@ -31,6 +31,9 @@ public struct BarParams: Hashable, Codable, Sendable {
     /// Fill from zero towards the value instead of from the minimum: a ± bar for deltas, steering
     /// or lateral g. Needs a range that spans zero.
     public var fillFromZero: Bool
+    /// The unit the bar's ends and zones are written in, when it shows a speed (#699); as a
+    /// gauge's. `nil` takes them as they stand whatever unit is drawn.
+    public var scaleUnit: SpeedDisplayUnit?
 
     public init(
         channel: String,
@@ -90,6 +93,7 @@ public struct BarParams: Hashable, Codable, Sendable {
         unitLabel = try c.decodeIfPresent(String.self, forKey: .unitLabel) ?? d.unitLabel
         cornerRadius = try c.decodeIfPresent(Double.self, forKey: .cornerRadius) ?? d.cornerRadius
         fillFromZero = try c.decodeIfPresent(Bool.self, forKey: .fillFromZero) ?? d.fillFromZero
+        scaleUnit = try c.decodeIfPresent(SpeedDisplayUnit.self, forKey: .scaleUnit)
     }
 }
 

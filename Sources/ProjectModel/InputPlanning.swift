@@ -148,6 +148,8 @@ extension Project {
             if untouched { changed = params.fitted(to: available, speedUnit: unit(object)) }
             // Fitted, or changed by hand: either way it no longer waits.
             changed.scaleAwaitsData = false
+            // Numbers typed before the file came are in the unit the dial is drawn in now (#699).
+            if !untouched, ChannelSummary.isSpeed(changed.channel) { changed.scaleUnit = unit(object) }
             displayObjects[index].kind = object.kind.replacingGaugeParams(changed)
             if untouched, changed.maxValue != params.maxValue || changed.majorTick != params.majorTick {
                 fitted.append(object.label)

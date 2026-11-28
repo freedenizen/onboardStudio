@@ -1204,9 +1204,19 @@ The scale follows the unit when you change it, too — **Speed unit** on the obj
 the project's units — in the same step, so one Undo takes both back. A dial or a speed bar still
 as its file fitted it becomes the one the new unit would have had from the start, and changing
 back restores it exactly. One whose scale you set keeps the speeds it ran between, rounded outwards
-to round labels (0–200 mph becomes 0–350 km/h), and its coloured zones move with it. Changing the
-unit in **Settings ▸ Units** does not rescale the dials of projects already made: set **Maximum**
-there, or choose the unit on the object.
+to round labels (0–200 mph becomes 0–350 km/h), and its coloured zones move with it.
+
+A dial also keeps up with a unit that changes without your touching the project: **Speed** in
+**Settings ▸ Units**, for the dials left on *Automatic*, or a data file recorded in another unit.
+Its scale knows which unit its numbers are in, so it is drawn with the same speeds at its ends and
+round labels in whatever unit is shown, and the inspector's **Minimum**, **Maximum** and ticks
+show the dial as it is drawn. Nothing in the project changes until you edit it; put the unit back
+and the dial is exactly as it was. Type a number there and the scale is from then on in the unit
+you typed it in.
+
+A project saved by 0.37 or earlier is the exception, because opening a project never changes how
+it renders: its dials keep the numbers they were saved with whatever the unit, as they always did,
+until you change the unit or the scale of one in the inspector. From then on that dial follows too.
 
 ### The timeline
 

@@ -232,9 +232,12 @@ struct ObjectInspector: View {
         case .image(let params):
             ImageObjectInspector(editor: editor, object: object, params: params)
         case .speedometer(let params), .tachometer(let params), .gauge(let params):
-            GaugeDesignerInspector(editor: editor, object: object, params: params)
+            // The scale as it is drawn (#699): the fields show the dial's own numbers, and an
+            // edit of one writes the scale in the unit they are in.
+            GaugeDesignerInspector(
+                editor: editor, object: object, params: params.drawn(in: editor.speedUnit(for: object)))
         case .bar(let params):
-            BarInspector(editor: editor, object: object, params: params)
+            BarInspector(editor: editor, object: object, params: params.drawn(in: editor.speedUnit(for: object)))
         case .graph(let params):
             GraphInspector(editor: editor, object: object, params: params)
         case .gear(let params):

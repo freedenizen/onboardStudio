@@ -64,6 +64,7 @@ struct BarInspector: View {
     func update(_ name: String, _ change: (inout BarParams) -> Void) {
         var new = params
         change(&new)
+        new = new.scaleUnitKept(after: params, drawnIn: editor.speedUnit(for: object))
         editor.updateObject(object.id, name: "Change \(name)") { $0.kind = .bar(new) }
     }
 

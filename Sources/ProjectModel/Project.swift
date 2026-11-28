@@ -89,7 +89,7 @@ public struct ProjectSettings: Hashable, Codable, Sendable {
 
 /// The document model. Pure data; saved as `project.json` inside a `.onboardproj` package.
 public struct Project: Hashable, Codable, Sendable {
-    public static let currentSchemaVersion = 8
+    public static let currentSchemaVersion = 9
 
     public var schemaVersion: Int
     public var settings: ProjectSettings
@@ -258,6 +258,12 @@ public struct Project: Hashable, Codable, Sendable {
             // 7 → 8 (#558): coaching said nothing of grip, and Corner Callouts draw its notes.
             onEveryDataInput { $0.legacyNoGripNotes = true }
             schemaVersion = 8
+        }
+        if schemaVersion < 9 {
+            // 8 → 9 (#699): a speed dial's and bar's scale had no unit, and its numbers stood in
+            // whatever unit was drawn — 0–140 was 0–140 in km/h too.
+            drawSpeedScalesAsWritten()
+            schemaVersion = 9
         }
         schemaVersion = Self.currentSchemaVersion
     }
